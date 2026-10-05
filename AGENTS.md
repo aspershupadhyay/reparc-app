@@ -16,6 +16,7 @@ Before you change code, data, design, or project rules:
 ## Authority and status
 
 - Follow direct user instructions first.
+- **Owner instruction (2026-10-05):** Push every change directly to the `main` branch on GitHub as soon as it is ready. Do not ask for confirmation first. Run the matching checks before each push.
 - Keep the five accepted tabs: Home, Workout, Meal, Analytics, and Me.
 - Keep the two supplied image files as visual references for Meal and Workout. Read them before changing those screens.
 - Treat the handbook as the product and architecture plan.

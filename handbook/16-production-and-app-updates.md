@@ -66,7 +66,7 @@ On Android installed from Google Play, start the Play in-app update flow after t
 
 Use these controls from the first repository commit:
 
-- Protect the main branch and require reviewed pull requests.
+- Protect the main branch and require reviewed pull requests before public release. During early development, the owner chose direct pushes to `main` with CI on every push.
 - Pin Flutter, Dart, and package versions. Commit the dependency lock file.
 - Run formatting, static analysis, unit tests, and relevant integration tests in CI.
 - Check dependencies, licenses, secrets, and known security advisories.

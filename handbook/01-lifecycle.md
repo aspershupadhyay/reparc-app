@@ -251,7 +251,7 @@ Keep a short stage report with:
 
 ## 2.5 Production bar from the first commit
 
-- Use protected pull requests and required CI checks.
+- Use required CI checks. **Owner decision (2026-10-05):** During early development, changes are pushed directly to `main` without a pull request. CI runs on every push. Re-enable protected pull requests before the first public release.
 - Keep development, test, and production settings separate.
 - Keep signing keys and service secrets out of source control.
 - Test saved data, migrations, permissions, exports, and updates.
