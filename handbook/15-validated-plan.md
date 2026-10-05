@@ -212,6 +212,25 @@ These sources were checked on 2026-10-05:
 
 A current package page does not prove compatibility, security, accessibility, or good performance in this app. The build must prove those points.
 
+## 16.13 Build progress
+
+Updated 2026-10-05. This records what exists in code. It is not evidence of device quality.
+
+**Built in `app/` (local-first, no network code):**
+
+- Five-tab shell with preserved tab state and a persistent control that returns to a live workout.
+- Workout: exercise library with custom exercises, plans with ordered exercises and optional targets, copy and delete plans, empty or plan-based sessions, set-by-set logging, set types, pause and continue, optional rest timer, finish or save as incomplete, discard with confirmation, history, and correction of saved sessions. Session time comes from stored timestamps, so it survives a restart.
+- Meal: day selector, meal slots that the user can add, rename, time, and remove, planned versus eaten entries, custom foods with optional nutrients, saved foods, serving size kept apart from amount eaten, estimate flag, and source.
+- Analytics: 7, 30, and 90 day ranges, workouts, training days, completed sets, recorded reps, meal coverage, nutrition totals with missing-value counts, a per-day bar chart without lines across missing days, the records behind each summary, and personal records with the named rule "Heaviest completed load".
+- Me: units, rest timer, energy view switch, honest states for account, health, and AI connections, app updates screen, JSON export through the system share sheet, delete all records, privacy summary, and licenses.
+- CI workflow for format, generated code, analysis, tests, and Android and iOS debug builds.
+
+**Checked:** 27 unit and widget tests pass on Linux with Flutter 3.47.6. Screens were rendered in a test harness and reviewed.
+
+**Not yet checked:** Real iPhone and Android devices, release builds, startup and set-entry timing, app size, VoiceOver, TalkBack, large text on devices, reduced motion on devices, and the CI workflow on GitHub runners. The Android and iOS builds did not run locally because the build machine has no Android SDK or Xcode.
+
+**Not built:** Goals, update metadata checks, update alerts, HealthKit, Health Connect, sign-in, sync, AI, MCP, an app icon, crash reporting, and release signing in CI.
+
 ## 16.12 AI context
 
 - **Purpose:** Give every contributor the current, evidence-based build order.

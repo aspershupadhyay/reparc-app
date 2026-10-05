@@ -54,12 +54,12 @@ Use short sentences for steps, rules, and checklists. Use common words and activ
 
 ## Current status
 
-This is a plan only. The mobile app, release pipeline, backend, and MCP service are not implemented. Technology and product choices marked **Proposed** or **To confirm** need validation.
+The first app foundation is in `app/`. It covers the local-first core of Stage C and Stage D. It has passed unit and widget tests in CI-equivalent runs only. It has not run on a real device. The release pipeline, store setup, backend, health access, and MCP service are not implemented. See [build progress](15-validated-plan.md#1613-build-progress). Technology and product choices marked **Proposed** or **To confirm** still need validation.
 
 
 ## AI context
 
-- This is a plan, not an app implementation.
+- The app foundation exists in `app/`. Check [build progress](15-validated-plan.md#1613-build-progress) before you claim a feature is built.
 - Follow the five accepted tabs and shared theme.
 - Read each feature's AI context and acceptance checks.
 - Treat proposed stack and release stages as unapproved until verified.

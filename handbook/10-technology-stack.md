@@ -99,6 +99,29 @@ The release pipeline must submit signed app builds to the official stores. The a
 
 See [Production readiness and app updates](16-production-and-app-updates.md) for release details.
 
+## 11.9 Implementation record
+
+Updated 2026-10-05. The app in `app/` follows the proposed stack. The stack decision stays **Proposed** until device measurements exist.
+
+| Item | Version or value | Note |
+|---|---|---|
+| Flutter | 3.47.6 stable, Dart 3.13.5 | Pinned in `.tool-versions` and CI |
+| flutter_riverpod | 3.4.3 | State and data streams |
+| go_router | 18.0.2 | Five-tab `StatefulShellRoute`; live workout is a root route |
+| drift, drift_dev | 2.35.1 | Dates stored as ISO 8601 text. Schema version 1 |
+| drift_flutter | 0.3.1 | Opens the database file. `sqlite3_flutter_libs` is end-of-life; native SQLite now comes from the `sqlite3` package build hooks |
+| lucide_icons_flutter | 3.1.22 | MIT wrapper around the ISC Lucide font. It bundles extra weight fonts. Measure the size cost and replace it with a reviewed subset if needed |
+| share_plus | 13.3.1 | User-started export only |
+| path_provider | 2.1.6 | Temporary export file |
+| package_info_plus | 10.2.2 | Installed version in App updates |
+| uuid, intl | 4.6.0, 0.20.3 | Record IDs; number and date formats |
+
+`flutter_secure_storage` and health packages are not added. No feature needs them yet.
+
+The Android release build has no INTERNET permission. Debug and profile builds keep it for development tools.
+
+**To confirm:** Application ID and bundle ID (`app.reparc.reparc` is a placeholder). Minimum OS versions (the Flutter defaults are in use: iOS 15.0). Android and iOS backup treatment of the database (platform defaults are in use).
+
 ## 11.8 AI context
 
 - **Purpose:** Give contributors one clear, maintainable technology plan.

@@ -93,6 +93,8 @@ Keep major choices here. Update the related chapter when a decision changes.
 - Backend and identity provider.
 - Food data source and license.
 - Minimum operating-system versions.
+- Final application ID and bundle ID.
+- Whether Android and iOS system backups include the local database.
 - Numeric app-size and performance targets.
 - Support owner and security contact.
 

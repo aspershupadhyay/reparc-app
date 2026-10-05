@@ -70,6 +70,10 @@ Export must include field names, units, timestamps, source, and missing values. 
 
 Deletion must remove the record from local storage and mark it for cloud deletion when sync is active. Explain backup retention before account deletion.
 
+## 7.6.1 Export format (built)
+
+The app exports one JSON file with `format: "reparc-export"` and `formatVersion: 1`. It contains every table, field names, units, ISO 8601 timestamps, UTC offsets for sessions, sources, and `null` for missing values. Meal entry nutrients are per source serving. `amount` and `amountUnit` are the amount eaten. Change `formatVersion` when fields change.
+
 ## 7.7 AI context
 
 - **Purpose:** Keep source records trustworthy and usable offline.
@@ -77,4 +81,5 @@ Deletion must remove the record from local storage and mark it for cloud deletio
 - **Write rule:** Local commit first; remote sync second.
 - **Conflict rule:** Never discard a change without notice.
 - **Export rule:** Include units, time, and source.
-- **To confirm:** Local database package, encryption at rest, and export format.
+- **Export:** JSON format version 1 is built. See 7.6.1.
+- **To confirm:** Encryption at rest and OS backup treatment.

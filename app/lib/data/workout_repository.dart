@@ -1,0 +1,599 @@
+import 'package:drift/drift.dart';
+import 'package:uuid/uuid.dart';
+
+import '../core/clock.dart';
+import 'database.dart';
+import 'models.dart';
+import 'watch.dart';
+
+const _uuid = Uuid();
+
+class SessionExerciseView {
+  const SessionExerciseView(this.item, this.exercise, this.sets);
+  final SessionExercise item;
+  final Exercise exercise;
+  final List<SetEntry> sets;
+
+  int get completedSets => sets.where((s) => s.completed).length;
+}
+
+class SessionDetail {
+  const SessionDetail(this.session, this.exercises);
+  final WorkoutSession session;
+  final List<SessionExerciseView> exercises;
+
+  int get completedSets => exercises.fold(0, (a, e) => a + e.completedSets);
+  int get totalSets => exercises.fold(0, (a, e) => a + e.sets.length);
+}
+
+class TemplateItemView {
+  const TemplateItemView(this.item, this.exercise);
+  final TemplateExercise item;
+  final Exercise exercise;
+}
+
+class TemplateDetail {
+  const TemplateDetail(this.template, this.items);
+  final WorkoutTemplate template;
+  final List<TemplateItemView> items;
+}
+
+class SessionSummary {
+  const SessionSummary(this.session, this.exerciseCount, this.completedSets);
+  final WorkoutSession session;
+  final int exerciseCount;
+  final int completedSets;
+}
+
+/// One completed set with its exercise, used for history and records.
+class SetRecord {
+  const SetRecord(this.set, this.exercise, this.session);
+  final SetEntry set;
+  final Exercise exercise;
+  final WorkoutSession session;
+}
+
+/// Saves and reads workout records. Every write goes to the local database
+/// first (handbook 4.2). There is no network path here.
+class WorkoutRepository {
+  WorkoutRepository(this.db, this.clock);
+
+  final AppDatabase db;
+  final Clock clock;
+
+  DateTime get _now => clock().toUtc();
+
+  // ---------------------------------------------------------------- Library
+
+  Stream<List<Exercise>> watchExercises() =>
+      (db.select(db.exercises)
+            ..where((e) => e.archived.equals(false))
+            ..orderBy([(e) => OrderingTerm.asc(e.name.lower())]))
+          .watch();
+
+  Stream<Exercise?> watchExercise(String id) =>
+      (db.select(db.exercises)..where((e) => e.id.equals(id))).watchSingleOrNull();
+
+  Future<String> createExercise({
+    required String name,
+    String? variation,
+    String? equipment,
+    String? targetMuscles,
+    String? note,
+  }) async {
+    final id = _uuid.v4();
+    final now = _now;
+    await db
+        .into(db.exercises)
+        .insert(
+          ExercisesCompanion.insert(
+            id: id,
+            name: name.trim(),
+            variation: Value(_clean(variation)),
+            equipment: Value(_clean(equipment)),
+            targetMuscles: Value(_clean(targetMuscles)),
+            note: Value(_clean(note)),
+            createdAt: now,
+            updatedAt: now,
+          ),
+        );
+    return id;
+  }
+
+  Future<void> updateExercise(
+    String id, {
+    required String name,
+    String? variation,
+    String? equipment,
+    String? targetMuscles,
+    String? note,
+  }) => (db.update(db.exercises)..where((e) => e.id.equals(id))).write(
+    ExercisesCompanion(
+      name: Value(name.trim()),
+      variation: Value(_clean(variation)),
+      equipment: Value(_clean(equipment)),
+      targetMuscles: Value(_clean(targetMuscles)),
+      note: Value(_clean(note)),
+      updatedAt: Value(_now),
+    ),
+  );
+
+  /// Removes an exercise from the library. Saved workouts keep it.
+  Future<void> archiveExercise(String id) => (db.update(db.exercises)..where((e) => e.id.equals(id))).write(
+    ExercisesCompanion(archived: const Value(true), updatedAt: Value(_now)),
+  );
+
+  /// Completed sets for one exercise, newest first.
+  Stream<List<SetRecord>> watchExerciseHistory(String exerciseId) {
+    return watchTables(
+      db,
+      [db.setEntries, db.sessionExercises, db.workoutSessions, db.exercises],
+      () => completedSets(exerciseId: exerciseId),
+    );
+  }
+
+  /// Completed sets in saved (finished or incomplete) sessions.
+  Future<List<SetRecord>> completedSets({
+    String? exerciseId,
+    DateTime? fromUtc,
+    DateTime? toUtc,
+  }) async {
+    final q =
+        db.select(db.setEntries).join([
+            innerJoin(db.sessionExercises, db.sessionExercises.id.equalsExp(db.setEntries.sessionExerciseId)),
+            innerJoin(db.exercises, db.exercises.id.equalsExp(db.sessionExercises.exerciseId)),
+            innerJoin(db.workoutSessions, db.workoutSessions.id.equalsExp(db.sessionExercises.sessionId)),
+          ])
+          ..where(db.setEntries.completed.equals(true))
+          ..where(db.workoutSessions.status.isNotInValues([SessionStatus.active, SessionStatus.paused]))
+          ..orderBy([
+            OrderingTerm.desc(db.workoutSessions.startedAt),
+            OrderingTerm.asc(db.sessionExercises.position),
+            OrderingTerm.asc(db.setEntries.position),
+          ]);
+    if (exerciseId != null) q.where(db.sessionExercises.exerciseId.equals(exerciseId));
+    if (fromUtc != null) q.where(db.workoutSessions.startedAt.isBiggerOrEqualValue(fromUtc));
+    if (toUtc != null) q.where(db.workoutSessions.startedAt.isSmallerThanValue(toUtc));
+    final rows = await q.get();
+    return [
+      for (final r in rows)
+        SetRecord(r.readTable(db.setEntries), r.readTable(db.exercises), r.readTable(db.workoutSessions)),
+    ];
+  }
+
+  // -------------------------------------------------------------- Templates
+
+  Stream<List<(WorkoutTemplate, int)>> watchTemplates() {
+    return watchTables(db, [db.workoutTemplates, db.templateExercises], () async {
+      final templates = await (db.select(
+        db.workoutTemplates,
+      )..orderBy([(t) => OrderingTerm.asc(t.name.lower())])).get();
+      final count = db.templateExercises.id.count();
+      final counts = {
+        for (final r
+            in await (db.selectOnly(db.templateExercises)
+                  ..addColumns([db.templateExercises.templateId, count])
+                  ..groupBy([db.templateExercises.templateId]))
+                .get())
+          r.read(db.templateExercises.templateId)!: r.read(count)!,
+      };
+      return [for (final t in templates) (t, counts[t.id] ?? 0)];
+    });
+  }
+
+  Stream<TemplateDetail?> watchTemplate(String id) {
+    return watchTables(db, [db.workoutTemplates, db.templateExercises, db.exercises], () => loadTemplate(id));
+  }
+
+  Future<TemplateDetail?> loadTemplate(String id) async {
+    final t = await (db.select(db.workoutTemplates)..where((t) => t.id.equals(id))).getSingleOrNull();
+    if (t == null) return null;
+    final rows =
+        await (db.select(db.templateExercises).join([
+                innerJoin(db.exercises, db.exercises.id.equalsExp(db.templateExercises.exerciseId)),
+              ])
+              ..where(db.templateExercises.templateId.equals(id))
+              ..orderBy([OrderingTerm.asc(db.templateExercises.position)]))
+            .get();
+    return TemplateDetail(t, [
+      for (final r in rows) TemplateItemView(r.readTable(db.templateExercises), r.readTable(db.exercises)),
+    ]);
+  }
+
+  Future<String> createTemplate(String name) async {
+    final id = _uuid.v4();
+    final now = _now;
+    await db
+        .into(db.workoutTemplates)
+        .insert(
+          WorkoutTemplatesCompanion.insert(id: id, name: name.trim(), createdAt: now, updatedAt: now),
+        );
+    return id;
+  }
+
+  Future<void> renameTemplate(String id, String name) =>
+      (db.update(db.workoutTemplates)..where((t) => t.id.equals(id))).write(
+        WorkoutTemplatesCompanion(name: Value(name.trim()), updatedAt: Value(_now)),
+      );
+
+  Future<String> copyTemplate(String id) => db.transaction(() async {
+    final src = await loadTemplate(id);
+    if (src == null) throw StateError('Plan not found');
+    final newId = await createTemplate('${src.template.name} (copy)');
+    for (final i in src.items) {
+      await _insertTemplateItem(newId, i.exercise.id, i.item.position, i.item.targetSets, i.item.targetReps);
+    }
+    return newId;
+  });
+
+  /// Deletes a plan. Saved workouts started from it do not change.
+  Future<void> deleteTemplate(String id) => (db.delete(db.workoutTemplates)..where((t) => t.id.equals(id))).go();
+
+  Future<void> addTemplateExercise(String templateId, String exerciseId, {int? targetSets, int? targetReps}) async {
+    final pos = await _nextPosition(db.templateExercises, db.templateExercises.templateId, templateId);
+    await _insertTemplateItem(templateId, exerciseId, pos, targetSets, targetReps);
+    await _touchTemplate(templateId);
+  }
+
+  Future<void> updateTemplateTargets(String itemId, {int? targetSets, int? targetReps}) =>
+      (db.update(db.templateExercises)..where((t) => t.id.equals(itemId))).write(
+        TemplateExercisesCompanion(
+          targetSets: Value(targetSets),
+          targetReps: Value(targetReps),
+          updatedAt: Value(_now),
+        ),
+      );
+
+  Future<void> removeTemplateExercise(String itemId) =>
+      (db.delete(db.templateExercises)..where((t) => t.id.equals(itemId))).go();
+
+  Future<void> moveTemplateExercise(String templateId, int from, int to) => db.transaction(() async {
+    final items =
+        await (db.select(db.templateExercises)
+              ..where((t) => t.templateId.equals(templateId))
+              ..orderBy([(t) => OrderingTerm.asc(t.position)]))
+            .get();
+    final moved = items.removeAt(from);
+    items.insert(to, moved);
+    for (final (i, item) in items.indexed) {
+      await (db.update(db.templateExercises)..where((t) => t.id.equals(item.id))).write(
+        TemplateExercisesCompanion(position: Value(i), updatedAt: Value(_now)),
+      );
+    }
+  });
+
+  Future<void> _insertTemplateItem(String templateId, String exerciseId, int pos, int? sets, int? reps) {
+    final now = _now;
+    return db
+        .into(db.templateExercises)
+        .insert(
+          TemplateExercisesCompanion.insert(
+            id: _uuid.v4(),
+            templateId: templateId,
+            exerciseId: exerciseId,
+            position: pos,
+            targetSets: Value(sets),
+            targetReps: Value(reps),
+            createdAt: now,
+            updatedAt: now,
+          ),
+        );
+  }
+
+  Future<void> _touchTemplate(String id) => (db.update(
+    db.workoutTemplates,
+  )..where((t) => t.id.equals(id))).write(WorkoutTemplatesCompanion(updatedAt: Value(_now)));
+
+  // --------------------------------------------------------------- Sessions
+
+  /// The session that is in progress or paused, if any.
+  Stream<WorkoutSession?> watchLiveSession() =>
+      (db.select(db.workoutSessions)
+            ..where((s) => s.status.isInValues([SessionStatus.active, SessionStatus.paused]))
+            ..orderBy([(s) => OrderingTerm.desc(s.startedAt)])
+            ..limit(1))
+          .watchSingleOrNull();
+
+  Future<WorkoutSession?> liveSession() =>
+      (db.select(db.workoutSessions)
+            ..where((s) => s.status.isInValues([SessionStatus.active, SessionStatus.paused]))
+            ..limit(1))
+          .getSingleOrNull();
+
+  /// Starts a new session. A plan is copied, so later plan edits do not
+  /// change this session (handbook 4.6).
+  Future<String> startSession({String? templateId}) => db.transaction(() async {
+    final live = await liveSession();
+    if (live != null) throw StateError('A workout is already in progress.');
+    final local = clock();
+    final now = local.toUtc();
+    final template = templateId == null ? null : await loadTemplate(templateId);
+    final id = _uuid.v4();
+    await db
+        .into(db.workoutSessions)
+        .insert(
+          WorkoutSessionsCompanion.insert(
+            id: id,
+            templateId: Value(template?.template.id),
+            name: template?.template.name ?? 'Workout',
+            status: SessionStatus.active,
+            startedAt: now,
+            utcOffsetMinutes: local.timeZoneOffset.inMinutes,
+            timeZoneName: local.timeZoneName,
+            createdAt: now,
+            updatedAt: now,
+          ),
+        );
+    for (final item in template?.items ?? const <TemplateItemView>[]) {
+      final seId = await _insertSessionExercise(id, item.exercise.id, item.item.position);
+      for (var i = 0; i < (item.item.targetSets ?? 0); i++) {
+        await _insertSet(seId, i, SetType.working);
+      }
+    }
+    return id;
+  });
+
+  Stream<SessionDetail?> watchSession(String id) => watchTables(
+    db,
+    [db.workoutSessions, db.sessionExercises, db.setEntries, db.exercises],
+    () => loadSession(id),
+  );
+
+  Future<SessionDetail?> loadSession(String id) async {
+    final s = await (db.select(db.workoutSessions)..where((s) => s.id.equals(id))).getSingleOrNull();
+    if (s == null) return null;
+    final rows =
+        await (db.select(db.sessionExercises).join([
+                innerJoin(db.exercises, db.exercises.id.equalsExp(db.sessionExercises.exerciseId)),
+              ])
+              ..where(db.sessionExercises.sessionId.equals(id))
+              ..orderBy([OrderingTerm.asc(db.sessionExercises.position)]))
+            .get();
+    final seIds = rows.map((r) => r.readTable(db.sessionExercises).id).toList();
+    final sets = seIds.isEmpty
+        ? <SetEntry>[]
+        : await (db.select(db.setEntries)
+                ..where((x) => x.sessionExerciseId.isIn(seIds))
+                ..orderBy([(x) => OrderingTerm.asc(x.position)]))
+              .get();
+    return SessionDetail(s, [
+      for (final r in rows)
+        SessionExerciseView(
+          r.readTable(db.sessionExercises),
+          r.readTable(db.exercises),
+          sets.where((x) => x.sessionExerciseId == r.readTable(db.sessionExercises).id).toList(),
+        ),
+    ]);
+  }
+
+  Stream<List<SessionSummary>> watchHistory() => watchTables(
+    db,
+    [db.workoutSessions, db.sessionExercises, db.setEntries],
+    () => sessionSummaries(),
+  );
+
+  Future<List<SessionSummary>> sessionSummaries({DateTime? fromUtc, DateTime? toUtc}) async {
+    final q = db.select(db.workoutSessions)
+      ..where((s) => s.status.isNotInValues([SessionStatus.active, SessionStatus.paused]))
+      ..orderBy([(s) => OrderingTerm.desc(s.startedAt)]);
+    if (fromUtc != null) q.where((s) => s.startedAt.isBiggerOrEqualValue(fromUtc));
+    if (toUtc != null) q.where((s) => s.startedAt.isSmallerThanValue(toUtc));
+    final sessions = await q.get();
+    if (sessions.isEmpty) return const [];
+    final ids = sessions.map((s) => s.id).toList();
+    final exCount = db.sessionExercises.id.count(distinct: true);
+    final setCount = db.setEntries.id.count(distinct: true, filter: db.setEntries.completed.equals(true));
+    final rows =
+        await (db.selectOnly(db.sessionExercises).join([
+                leftOuterJoin(db.setEntries, db.setEntries.sessionExerciseId.equalsExp(db.sessionExercises.id)),
+              ])
+              ..addColumns([db.sessionExercises.sessionId, exCount, setCount])
+              ..where(db.sessionExercises.sessionId.isIn(ids))
+              ..groupBy([db.sessionExercises.sessionId]))
+            .get();
+    final stats = {
+      for (final r in rows) r.read(db.sessionExercises.sessionId)!: (r.read(exCount)!, r.read(setCount)!),
+    };
+    return [
+      for (final s in sessions) SessionSummary(s, stats[s.id]?.$1 ?? 0, stats[s.id]?.$2 ?? 0),
+    ];
+  }
+
+  Future<void> pause(String id) async {
+    final s = await _session(id);
+    if (s.status != SessionStatus.active) return;
+    await _writeSession(id, WorkoutSessionsCompanion(status: const Value(SessionStatus.paused), pausedAt: Value(_now)));
+  }
+
+  Future<void> resume(String id) async {
+    final s = await _session(id);
+    if (s.status != SessionStatus.paused) return;
+    final now = _now;
+    final extra = s.pausedAt == null ? 0 : now.difference(s.pausedAt!).inMilliseconds;
+    await _writeSession(
+      id,
+      WorkoutSessionsCompanion(
+        status: const Value(SessionStatus.active),
+        pausedAt: const Value(null),
+        pausedMs: Value(s.pausedMs + extra),
+      ),
+    );
+  }
+
+  /// Ends a live session as finished or incomplete.
+  Future<void> end(String id, {required bool finished}) async {
+    final s = await _session(id);
+    final now = _now;
+    var pausedMs = s.pausedMs;
+    if (s.pausedAt != null) pausedMs += now.difference(s.pausedAt!).inMilliseconds;
+    await _writeSession(
+      id,
+      WorkoutSessionsCompanion(
+        status: Value(finished ? SessionStatus.finished : SessionStatus.incomplete),
+        endedAt: Value(now),
+        pausedAt: const Value(null),
+        pausedMs: Value(pausedMs),
+        restStartedAt: const Value(null),
+        restTargetSec: const Value(null),
+      ),
+    );
+  }
+
+  Future<void> renameSession(String id, String name) =>
+      _writeSession(id, WorkoutSessionsCompanion(name: Value(name.trim())));
+
+  Future<void> setSessionNote(String id, String? note) =>
+      _writeSession(id, WorkoutSessionsCompanion(note: Value(_clean(note))));
+
+  /// Deletes a session with its exercises and sets.
+  Future<void> deleteSession(String id) => (db.delete(db.workoutSessions)..where((s) => s.id.equals(id))).go();
+
+  Future<void> startRest(String id, int seconds) => _writeSession(
+    id,
+    WorkoutSessionsCompanion(restStartedAt: Value(_now), restTargetSec: Value(seconds)),
+  );
+
+  Future<void> setRestTarget(String id, int seconds) =>
+      _writeSession(id, WorkoutSessionsCompanion(restTargetSec: Value(seconds)));
+
+  Future<void> stopRest(String id) => _writeSession(
+    id,
+    const WorkoutSessionsCompanion(restStartedAt: Value(null), restTargetSec: Value(null)),
+  );
+
+  Future<WorkoutSession> _session(String id) =>
+      (db.select(db.workoutSessions)..where((s) => s.id.equals(id))).getSingle();
+
+  Future<void> _writeSession(String id, WorkoutSessionsCompanion c) =>
+      (db.update(db.workoutSessions)..where((s) => s.id.equals(id))).write(c.copyWith(updatedAt: Value(_now)));
+
+  // ------------------------------------------------------ Session exercises
+
+  Future<String> addSessionExercise(String sessionId, String exerciseId) async {
+    final pos = await _nextPosition(db.sessionExercises, db.sessionExercises.sessionId, sessionId);
+    final id = await _insertSessionExercise(sessionId, exerciseId, pos);
+    await _writeSession(sessionId, const WorkoutSessionsCompanion());
+    return id;
+  }
+
+  Future<void> replaceSessionExercise(String itemId, String exerciseId) =>
+      (db.update(db.sessionExercises)..where((x) => x.id.equals(itemId))).write(
+        SessionExercisesCompanion(exerciseId: Value(exerciseId), updatedAt: Value(_now)),
+      );
+
+  Future<void> setSkipped(String itemId, bool skipped) =>
+      (db.update(db.sessionExercises)..where((x) => x.id.equals(itemId))).write(
+        SessionExercisesCompanion(skipped: Value(skipped), updatedAt: Value(_now)),
+      );
+
+  Future<void> moveSessionExercise(String sessionId, int from, int to) => db.transaction(() async {
+    final items =
+        await (db.select(db.sessionExercises)
+              ..where((t) => t.sessionId.equals(sessionId))
+              ..orderBy([(t) => OrderingTerm.asc(t.position)]))
+            .get();
+    final moved = items.removeAt(from);
+    items.insert(to, moved);
+    for (final (i, item) in items.indexed) {
+      await (db.update(db.sessionExercises)..where((t) => t.id.equals(item.id))).write(
+        SessionExercisesCompanion(position: Value(i), updatedAt: Value(_now)),
+      );
+    }
+  });
+
+  /// Removes an exercise and its sets. Returns what is needed for undo.
+  Future<SessionExerciseView?> removeSessionExercise(String itemId) => db.transaction(() async {
+    final item = await (db.select(db.sessionExercises)..where((x) => x.id.equals(itemId))).getSingleOrNull();
+    if (item == null) return null;
+    final ex = await (db.select(db.exercises)..where((x) => x.id.equals(item.exerciseId))).getSingle();
+    final sets = await (db.select(db.setEntries)..where((x) => x.sessionExerciseId.equals(itemId))).get();
+    await (db.delete(db.sessionExercises)..where((x) => x.id.equals(itemId))).go();
+    return SessionExerciseView(item, ex, sets);
+  });
+
+  Future<void> restoreSessionExercise(SessionExerciseView v) => db.transaction(() async {
+    await db.into(db.sessionExercises).insert(v.item);
+    for (final s in v.sets) {
+      await db.into(db.setEntries).insert(s);
+    }
+  });
+
+  Future<String> _insertSessionExercise(String sessionId, String exerciseId, int pos) async {
+    final id = _uuid.v4();
+    final now = _now;
+    await db
+        .into(db.sessionExercises)
+        .insert(
+          SessionExercisesCompanion.insert(
+            id: id,
+            sessionId: sessionId,
+            exerciseId: exerciseId,
+            position: pos,
+            createdAt: now,
+            updatedAt: now,
+          ),
+        );
+    return id;
+  }
+
+  // ------------------------------------------------------------------- Sets
+
+  Future<String> addSet(String sessionExerciseId, {SetType type = SetType.working}) async {
+    final pos = await _nextPosition(db.setEntries, db.setEntries.sessionExerciseId, sessionExerciseId);
+    return _insertSet(sessionExerciseId, pos, type);
+  }
+
+  Future<String> _insertSet(String sessionExerciseId, int pos, SetType type) async {
+    final id = _uuid.v4();
+    final now = _now;
+    await db
+        .into(db.setEntries)
+        .insert(
+          SetEntriesCompanion.insert(
+            id: id,
+            sessionExerciseId: sessionExerciseId,
+            position: pos,
+            setType: type,
+            createdAt: now,
+            updatedAt: now,
+          ),
+        );
+    return id;
+  }
+
+  /// Saves set fields. Pass [Value.absent] for fields that do not change.
+  Future<void> updateSet(String id, SetEntriesCompanion c) =>
+      (db.update(db.setEntries)..where((s) => s.id.equals(id))).write(c.copyWith(updatedAt: Value(_now)));
+
+  Future<void> setCompleted(String id, bool completed) => updateSet(
+    id,
+    SetEntriesCompanion(completed: Value(completed), completedAt: Value(completed ? _now : null)),
+  );
+
+  Future<SetEntry?> deleteSet(String id) => db.transaction(() async {
+    final s = await (db.select(db.setEntries)..where((x) => x.id.equals(id))).getSingleOrNull();
+    if (s != null) await (db.delete(db.setEntries)..where((x) => x.id.equals(id))).go();
+    return s;
+  });
+
+  Future<void> restoreSet(SetEntry s) => db.into(db.setEntries).insert(s);
+
+  // ---------------------------------------------------------------- Helpers
+
+  Future<int> _nextPosition(TableInfo<Table, dynamic> table, GeneratedColumn<String> parent, String parentId) async {
+    final pos = table.columnsByName['position']! as GeneratedColumn<int>;
+    final maxPos = pos.max();
+    final row =
+        await (db.selectOnly(table)
+              ..addColumns([maxPos])
+              ..where(parent.equals(parentId)))
+            .getSingle();
+    final m = row.read(maxPos);
+    return m == null ? 0 : m + 1;
+  }
+}
+
+String? _clean(String? s) {
+  final t = s?.trim();
+  return t == null || t.isEmpty ? null : t;
+}
