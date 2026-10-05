@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -8,6 +10,7 @@ import 'package:reparc/data/database.dart';
 import 'package:reparc/data/models.dart';
 import 'package:reparc/data/providers.dart';
 import 'package:reparc/features/analytics/analytics_screen.dart';
+import 'package:reparc/features/exercises/library/library.dart';
 import 'package:reparc/features/me/me_screen.dart';
 import 'package:reparc/features/workout/session_detail_screen.dart';
 
@@ -16,6 +19,8 @@ import 'helpers.dart';
 void main() {
   late AppDatabase db;
   late FakeClock clock;
+  // Asset loading is real I/O, which never settles under fake async.
+  final library = ExerciseLibrary.parse(File('assets/exercises/library.json').readAsStringSync());
 
   setUp(() {
     db = memoryDb();
@@ -34,6 +39,7 @@ void main() {
         overrides: [
           databaseProvider.overrideWithValue(db),
           clockProvider.overrideWithValue(clock.call),
+          libraryProvider.overrideWith((ref) async => library),
         ],
         child: ReparcApp(router: buildRouter(initialLocation: at)),
       ),
@@ -124,6 +130,34 @@ void main() {
     expect(session.status, SessionStatus.finished);
     expect(find.byType(SessionDetailScreen), findsOneWidget);
     expect(find.text('Finished'), findsOneWidget);
+    await unmount(tester);
+  });
+
+  testWidgets('browse the library, open a library exercise, and log it', (tester) async {
+    // Reduced motion keeps the photo loop still so the test can settle.
+    tester.platformDispatcher.accessibilityFeaturesTestValue = const FakeAccessibilityFeatures(disableAnimations: true);
+    addTearDown(tester.platformDispatcher.clearAccessibilityFeaturesTestValue);
+    await pumpApp(tester, at: '/workout');
+
+    await tester.tap(find.text('Exercises'));
+    await tester.pumpAndSettle();
+    expect(find.text('Browse by body area'), findsOneWidget);
+    await tester.tap(find.textContaining('Search ${library.moves.length} exercises'));
+    await tester.pumpAndSettle();
+
+    await tester.enterText(find.byType(TextField), 'air bike');
+    await tester.pumpAndSettle();
+    expect(find.text('1 exercise'), findsOneWidget);
+    await tester.tap(find.text('Air Bike'));
+    await tester.pumpAndSettle();
+    expect(find.text('How to do it'), findsOneWidget);
+    expect(find.text('End'), findsOneWidget);
+
+    await tester.tap(find.widgetWithText(FilledButton, 'Start workout with this'));
+    await tester.pumpAndSettle();
+    final ex = (await db.select(db.exercises).get()).single;
+    expect(ex.catalogId, 'lib:Air_Bike');
+    expect(ex.name, 'Air Bike');
     await unmount(tester);
   });
 

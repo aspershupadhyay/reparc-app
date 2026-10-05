@@ -15,6 +15,7 @@ import '../../data/models.dart';
 import '../../data/providers.dart';
 import '../../domain/nutrition.dart';
 import '../exercises/catalog/catalog.dart';
+import '../exercises/library/library.dart';
 import '../meal/meal_entry_sheet.dart';
 import '../workout/session_clock.dart';
 import '../workout/start_workout.dart';
@@ -109,8 +110,8 @@ class HomeScreen extends ConsumerWidget {
                     color: p.blue,
                     soft: p.blueSoft,
                     label: 'Learn',
-                    value: '${catalog.length}',
-                    caption: 'exercise guides',
+                    value: '${ref.watch(libraryProvider).value?.moves.length ?? catalog.length}',
+                    caption: 'exercises',
                     onTap: () => context.go('/workout/library'),
                   ),
                 ),

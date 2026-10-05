@@ -18,6 +18,7 @@ import '../../data/models.dart';
 import '../../data/providers.dart';
 import '../../data/settings_repository.dart';
 import '../../data/workout_repository.dart';
+import '../exercises/library/library.dart';
 import 'exercise_form.dart';
 import 'exercise_picker.dart';
 
@@ -151,10 +152,10 @@ class _ExerciseCard extends ConsumerWidget {
                   ],
                 ),
               ),
-              if (view.exercise.catalogId != null)
+              if (guideRouteFor(view.exercise.catalogId) case final route?)
                 IconButton(
                   tooltip: 'How to do ${view.exercise.name}',
-                  onPressed: () => context.push('/workout/guide/${view.exercise.catalogId}'),
+                  onPressed: () => context.push(route),
                   icon: Icon(LucideIcons.bookOpen, color: context.pal.brand),
                 ),
               PopupMenuButton<_ExerciseAction>(

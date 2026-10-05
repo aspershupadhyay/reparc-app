@@ -11,6 +11,8 @@ import '../workout/exercise_form.dart';
 import 'area_style.dart';
 import 'catalog/catalog.dart';
 import 'catalog/model.dart';
+import 'library/library.dart';
+import 'library/photo_motion.dart';
 import 'viewer.dart';
 
 /// Area filter chips. Null means all areas.
@@ -92,7 +94,10 @@ class ExerciseCard extends StatelessWidget {
             children: [
               Stack(
                 children: [
-                  ExerciseThumb(e, height: 130),
+                  if (coachedPhotoPaths(e.id) case final photos?)
+                    PhotoThumb(photos.$1, height: 130)
+                  else
+                    ExerciseThumb(e, height: 130),
                   Positioned(
                     left: Space.s,
                     top: Space.s,
@@ -160,54 +165,52 @@ class CatalogGrid extends StatelessWidget {
   }
 }
 
-/// Exercise library: built-in coached exercises by body area, and the
-/// user's own exercises.
-class LibraryBody extends ConsumerStatefulWidget {
+/// Exercise library: search and browse every movement, coached guides,
+/// and the user's own exercises.
+class LibraryBody extends ConsumerWidget {
   const LibraryBody({super.key});
 
   @override
-  ConsumerState<LibraryBody> createState() => _LibraryBodyState();
-}
-
-class _LibraryBodyState extends ConsumerState<LibraryBody> {
-  BodyArea? _area;
-  final _q = TextEditingController();
-
-  @override
-  void dispose() {
-    _q.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final p = context.pal;
     final t = Theme.of(context).textTheme;
-    final q = _q.text.trim().toLowerCase();
     final own = (ref.watch(exercisesProvider).value ?? const []).where((e) => e.catalogId == null).toList();
-    bool match(String s) => q.isEmpty || s.toLowerCase().contains(q);
-    final areas = _area == null ? BodyArea.values : [_area!];
+    final lib = ref.watch(libraryProvider).value;
+    final total = lib?.moves.length;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        TextField(
-          controller: _q,
-          onChanged: (_) => setState(() {}),
-          decoration: InputDecoration(
-            prefixIcon: const Icon(LucideIcons.search, size: IconSizes.s),
-            hintText: 'Search ${catalog.length} exercises',
-            fillColor: context.pal.surface,
+        AppCard(
+          onTap: () => context.push('/workout/browse'),
+          semanticLabel: 'Search ${total ?? ''} exercises',
+          padding: const EdgeInsets.symmetric(horizontal: Space.l, vertical: Space.m),
+          child: ExcludeSemantics(
+            child: Row(
+              children: [
+                Icon(LucideIcons.search, size: IconSizes.s, color: p.inkSoft),
+                const SizedBox(width: Space.m),
+                Expanded(
+                  child: Text(
+                    total == null ? 'Search exercises' : 'Search $total exercises or muscles',
+                    style: t.bodyLarge?.copyWith(color: p.inkSoft),
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
+        const SectionHeader('Browse by body area'),
+        _AreaGrid(counts: {for (final a in BodyArea.values) a: lib?.moves.where((m) => m.area == a).length}),
+        SectionHeader(
+          'Coached guides',
+          action: Text('${catalog.length}', style: t.bodySmall),
+        ),
+        Text(
+          'Step-by-step coaching with cues, breathing, and common mistakes.',
+          style: t.bodyMedium?.copyWith(color: p.inkSoft),
+        ),
         const SizedBox(height: Space.m),
-        AreaChips(selected: _area, onChanged: (a) => setState(() => _area = a)),
-        for (final a in areas)
-          if (exercisesFor(a).where((e) => match('${e.name} ${e.equipment} ${e.area.label}')).isNotEmpty) ...[
-            SectionHeader(a.label, action: Text('${exercisesFor(a).length}', style: t.bodySmall)),
-            CatalogGrid(
-              items: exercisesFor(a).where((e) => match('${e.name} ${e.equipment} ${e.area.label}')).toList(),
-              onTap: (e) => context.push('/workout/guide/${e.id}'),
-            ),
-          ],
+        CatalogGrid(items: catalog, onTap: (e) => context.push('/workout/guide/${e.id}')),
         SectionHeader(
           'Your exercises',
           action: TextButton.icon(
@@ -217,13 +220,13 @@ class _LibraryBodyState extends ConsumerState<LibraryBody> {
           ),
         ),
         if (own.isEmpty)
-          Text('Add your own movements here.', style: t.bodyMedium?.copyWith(color: context.pal.inkSoft))
+          Text('Add your own movements here.', style: t.bodyMedium?.copyWith(color: p.inkSoft))
         else
           AppCard(
             padding: EdgeInsets.zero,
             child: Column(
               children: [
-                for (final (i, e) in own.where((e) => match(e.name)).indexed) ...[
+                for (final (i, e) in own.indexed) ...[
                   if (i > 0) const Divider(indent: Space.l),
                   ListTile(
                     title: Text(exerciseTitle(e)),
@@ -236,6 +239,66 @@ class _LibraryBodyState extends ConsumerState<LibraryBody> {
             ),
           ),
       ],
+    );
+  }
+}
+
+class _AreaGrid extends StatelessWidget {
+  const _AreaGrid({required this.counts});
+  final Map<BodyArea, int?> counts;
+
+  @override
+  Widget build(BuildContext context) {
+    final p = context.pal;
+    final t = Theme.of(context).textTheme;
+    return LayoutBuilder(
+      builder: (context, c) {
+        final cols = c.maxWidth > 600 ? 4 : 2;
+        final w = (c.maxWidth - Space.m * (cols - 1)) / cols;
+        Widget tile(String label, IconData icon, Color color, Color soft, int? n, String route) => SizedBox(
+          width: w,
+          child: AppCard(
+            color: soft,
+            padding: const EdgeInsets.all(Space.m),
+            onTap: () => context.push(route),
+            semanticLabel: n == null ? label : '$label, $n exercises',
+            child: ExcludeSemantics(
+              child: Row(
+                children: [
+                  Icon(icon, color: color, size: IconSizes.m),
+                  const SizedBox(width: Space.s),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(label, style: t.titleSmall, maxLines: 1, overflow: TextOverflow.ellipsis),
+                        if (n != null) Text('$n', style: t.bodySmall),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+        final all = counts.values.every((n) => n != null) ? counts.values.fold<int>(0, (a, n) => a + n!) : null;
+        return Wrap(
+          spacing: Space.m,
+          runSpacing: Space.m,
+          children: [
+            for (final a in BodyArea.values)
+              tile(
+                a.short,
+                a.icon,
+                areaColors(p, a).$1,
+                areaColors(p, a).$2,
+                counts[a],
+                '/workout/browse?area=${a.name}',
+              ),
+            tile('All', LucideIcons.layers, p.ink, p.surface, all, '/workout/browse'),
+          ],
+        );
+      },
     );
   }
 }

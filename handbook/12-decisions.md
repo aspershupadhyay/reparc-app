@@ -216,3 +216,17 @@ Keep major choices here. Update the related chapter when a decision changes.
 **Rule:** The text is original to this project and uses the project license. It is general technique coaching for healthy adults, not medical advice. The model is a procedural drawing, not footage of a person. Do not copy third-party exercise text, images, or video.
 
 **To confirm:** Review of the coaching text by a qualified strength coach before public release.
+
+## D-017: Bundled public-domain exercise photo library
+
+**Status:** Accepted by the user.
+**Date:** 2026-10-05.
+
+**Choice:** Bundle Free Exercise DB (873 exercises with a start and an end photo, steps, muscles, and equipment) in the app. Show the two photos as a slow cross-fade loop. Use the library photos on the coached guides in place of the body model.
+
+**Rule:** Use only media with a license that allows redistribution in this open-source repository. Free Exercise DB uses the Unlicense (public domain), pinned to one commit in `app/tool/exercise_library/build.py`. Keep a credit line on the detail screen and the license file in `app/assets/licenses/`. Do not bundle media whose license excludes images, forbids redistribution, or is unclear. This replaces the "do not copy third-party images" part of D-016 for this library only. Coached text stays original.
+
+**Why:** The owner chose an existing open dataset over custom animation. Checked alternatives: ExerciseDB-style GIF packs exclude the media from their open license or forbid redistribution; Mixamo forbids sharing raw files.
+
+**Trade-off:** About 26 MB of photos in the app. The photos show two positions, not full motion.
+

@@ -14,8 +14,8 @@ import '../../data/providers.dart';
 import '../../domain/analytics.dart';
 import '../../domain/nutrition.dart';
 import '../exercises/area_style.dart';
-import '../exercises/catalog/catalog.dart';
 import '../exercises/catalog/model.dart';
+import '../exercises/library/library.dart';
 import 'charts.dart';
 
 enum _Range {
@@ -261,18 +261,19 @@ class _LoadRow extends StatelessWidget {
   }
 }
 
-class _Muscles extends StatelessWidget {
+class _Muscles extends ConsumerWidget {
   const _Muscles({required this.s});
   final ProgressSummary s;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final lib = ref.watch(libraryProvider).value;
     final p = context.pal;
     final t = Theme.of(context).textTheme;
     final counts = <BodyArea, int>{};
     var other = 0;
     for (final r in s.sets) {
-      final area = catalogById[r.exercise.catalogId]?.area;
+      final area = areaForCatalogId(r.exercise.catalogId, lib);
       if (area == null) {
         other++;
       } else {

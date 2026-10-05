@@ -231,6 +231,8 @@ Updated 2026-10-05. This records what exists in code. It is not evidence of devi
 
 **Redesign (2026-10-05, owner request):** New light and dark themes without purple (D-015). Meal tab rebuilt to follow the meal reference. Home simplified to one main action and large tiles. Analytics rebuilt with a training heatmap, change against the previous period, volume, muscles trained by body area, best lifts, and a macro donut. Built-in catalog of 36 coached exercises with an animated, rotatable 3D body model (D-016). Database schema v2 with a tested migration. 38 tests pass.
 
+**Exercise library (2026-10-05, owner request):** Bundled 873 public-domain exercises from Free Exercise DB with start and end photos (D-017). Workout → Exercises now has search, body-area tiles, and a full list filtered by area and equipment. Library detail pages show the photos as a cross-fade loop, muscles, and steps. Coached guides use library photos in place of the body model. The add-exercise sheet searches the same list. CI uploads the release-mode APK as a plain file.
+
 **Not built:** Goals, update metadata checks, update alerts, HealthKit, Health Connect, sign-in, sync, AI, MCP, an app icon, crash reporting, and release signing in CI.
 
 ## 16.12 AI context

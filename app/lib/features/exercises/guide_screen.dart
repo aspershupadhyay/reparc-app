@@ -11,10 +11,12 @@ import '../../core/tokens.dart';
 import '../../core/widgets.dart';
 import '../../data/providers.dart';
 import '../../domain/analytics.dart';
-import '../workout/start_workout.dart';
 import 'area_style.dart';
 import 'catalog/catalog.dart';
 import 'catalog/model.dart';
+import 'library/library.dart';
+import 'library/photo_motion.dart';
+import 'library/use_move.dart';
 import 'viewer.dart';
 
 /// Coached guide for one built-in exercise.
@@ -50,7 +52,10 @@ class GuideScreen extends ConsumerWidget {
       body: ListView(
         padding: const EdgeInsets.fromLTRB(Space.l, 0, Space.l, Space.xxl),
         children: [
-          ExerciseViewer(e, height: 380),
+          if (coachedPhotoPaths(e.id) case final photos?)
+            PhotoMotion(photos: photos, name: e.name, height: 300)
+          else
+            ExerciseViewer(e, height: 380),
           const SizedBox(height: Space.l),
           Semantics(header: true, child: Text(e.name, style: t.headlineSmall)),
           const SizedBox(height: Space.s),
@@ -83,7 +88,7 @@ class GuideScreen extends ConsumerWidget {
           SectionHeader('Set up', top: Space.xl),
           _Bullets(items: e.setup, icon: LucideIcons.chevronRight, color: p.brand),
           const SectionHeader('How to do it'),
-          _Steps(items: e.steps),
+          StepsCard(items: e.steps),
           const SectionHeader('Breathing'),
           AppCard(
             color: p.brandSoft,
@@ -132,7 +137,7 @@ class GuideScreen extends ConsumerWidget {
               ),
             ],
           ),
-          _History(e: e),
+          ExerciseHistory(catalogId: e.id),
           const SizedBox(height: Space.xl),
           StatusLine(
             icon: LucideIcons.info,
@@ -143,25 +148,15 @@ class GuideScreen extends ConsumerWidget {
     );
   }
 
-  Future<void> _use(BuildContext context, WidgetRef ref, ExerciseDef e, {String? liveId}) async {
-    final repo = ref.read(workoutRepoProvider);
-    final exId = await guardedWrite(
-      context,
-      () => repo.ensureCatalogExercise(
-        catalogId: e.id,
-        name: e.name,
-        equipment: e.equipment,
-        targetMuscles: e.primary.map((m) => m.label).join(', '),
-      ),
-    );
-    if (exId == null || !context.mounted) return;
-    if (liveId != null) {
-      final ok = await guardedWrite(context, () => repo.addSessionExercise(liveId, exId));
-      if (ok != null && context.mounted) await context.push('/live/$liveId');
-      return;
-    }
-    await startWorkout(context, ref, firstExerciseId: exId);
-  }
+  Future<void> _use(BuildContext context, WidgetRef ref, ExerciseDef e, {String? liveId}) => useMove(
+    context,
+    ref,
+    catalogId: e.id,
+    name: e.name,
+    equipment: e.equipment,
+    muscles: e.primary.map((m) => m.label).join(', '),
+    liveId: liveId,
+  );
 }
 
 class _Muscles extends StatelessWidget {
@@ -276,8 +271,8 @@ class _Bullets extends StatelessWidget {
   }
 }
 
-class _Steps extends StatelessWidget {
-  const _Steps({required this.items});
+class StepsCard extends StatelessWidget {
+  const StepsCard({super.key, required this.items});
   final List<String> items;
 
   @override
@@ -317,13 +312,13 @@ class _Steps extends StatelessWidget {
 }
 
 /// The user's own sets for this exercise, if any.
-class _History extends ConsumerWidget {
-  const _History({required this.e});
-  final ExerciseDef e;
+class ExerciseHistory extends ConsumerWidget {
+  const ExerciseHistory({super.key, required this.catalogId});
+  final String catalogId;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final row = ref.watch(catalogExerciseProvider(e.id)).value;
+    final row = ref.watch(catalogExerciseProvider(catalogId)).value;
     if (row == null) return const SizedBox.shrink();
     final sets = ref.watch(exerciseHistoryProvider(row.id)).value ?? const [];
     if (sets.isEmpty) return const SizedBox.shrink();
