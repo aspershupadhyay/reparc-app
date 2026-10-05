@@ -17,3 +17,9 @@ Start with the [handbook](handbook/README.md). It defines the five-tab map, prod
 **Name status:** Reparc is the chosen working name. Trademark, domain, and app-store name clearance are still pending.
 
 **License:** GNU Affero General Public License v3.0 (AGPL-3.0-only). See [LICENSE](LICENSE).
+
+## Exercise motion samples
+
+The repository includes three draft movement loops: [squat](assets/exercise-demos/bodyweight_squat.gif), [push-up](assets/exercise-demos/push_up.gif), and [one-arm dumbbell row](assets/exercise-demos/one_arm_dumbbell_row.gif). These are original Blender drafts. A qualified coach has not reviewed them, so they are not approved exercise instructions.
+
+See [asset notes and rebuild steps](assets/exercise-demos/README.md).

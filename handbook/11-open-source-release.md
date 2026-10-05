@@ -54,7 +54,7 @@ Keep secrets and real user records out of the repository.
 - Add screenshots for visible screen changes.
 - Add migration notes for data changes.
 - Require extra review for health, privacy, sync, and MCP changes.
-- Review AI-generated code for correctness, security, and license fit.
+- Review generated code and media for correctness, safety, and license fit.
 
 A contributor must understand the code they submit.
 
