@@ -3,173 +3,172 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
+import '../../core/palette.dart';
 import '../../core/tokens.dart';
 import '../../core/widgets.dart';
 import '../../data/models.dart';
 import '../../data/providers.dart';
 
-/// Me tab. Groups settings by purpose (handbook 3.6). Account, health, and
-/// AI controls are separate rows.
+/// Me tab. Settings grouped by purpose (handbook 3.6). Account, health,
+/// and AI are separate rows.
 class MeScreen extends ConsumerWidget {
   const MeScreen({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final t = Theme.of(context).textTheme;
+    final p = context.pal;
     final s = ref.watch(currentSettingsProvider);
     final repo = ref.read(settingsRepoProvider);
 
-    Widget group(List<Widget> tiles) => AppCard(
-      padding: const EdgeInsets.symmetric(vertical: Space.xs),
-      child: Column(
-        children: [
-          for (final (i, tile) in tiles.indexed) ...[
-            if (i > 0) const Divider(indent: Space.l),
-            tile,
-          ],
-        ],
-      ),
+    Widget group(String title, List<Widget> tiles) => Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        SectionHeader(title, top: Space.l),
+        AppCard(
+          padding: const EdgeInsets.symmetric(vertical: Space.xs),
+          child: Column(
+            children: [
+              for (final (i, tile) in tiles.indexed) ...[
+                if (i > 0) const Divider(indent: 72),
+                tile,
+              ],
+            ],
+          ),
+        ),
+      ],
     );
 
-    Widget link(IconData icon, String title, String subtitle, String path) => ListTile(
-      leading: Icon(icon),
+    Widget lead(IconData icon, Color c, Color soft) => IconBadge(icon, color: soft, glyph: c, size: 40);
+
+    Widget link(Widget leading, String title, String subtitle, String path) => ListTile(
+      leading: leading,
       title: Text(title),
       subtitle: Text(subtitle),
-      trailing: const Icon(LucideIcons.chevronRight, size: IconSizes.s),
-      onTap: () => context.go(path),
+      trailing: Icon(LucideIcons.chevronRight, size: IconSizes.s, color: p.inkSoft),
+      onTap: () => context.push(path),
     );
 
-    Widget info(IconData icon, String title, String subtitle) =>
-        ListTile(leading: Icon(icon), title: Text(title), subtitle: Text(subtitle));
+    Widget info(Widget leading, String title, String subtitle, {String? tag}) => ListTile(
+      leading: leading,
+      title: Text(title),
+      subtitle: Text(subtitle),
+      trailing: tag == null ? null : Tag(tag),
+    );
+
+    Widget dropdown<T>(T value, List<(T, String)> items, ValueChanged<T?> onChanged) => DropdownButton<T>(
+      value: value,
+      underline: const SizedBox.shrink(),
+      borderRadius: Radii.medium,
+      items: [for (final (v, l) in items) DropdownMenuItem(value: v, child: Text(l))],
+      onChanged: onChanged,
+    );
 
     return Scaffold(
       body: SafeArea(
         child: ListView(
           padding: const EdgeInsets.fromLTRB(Space.l, Space.l, Space.l, Space.xxl),
           children: [
-            Semantics(header: true, child: Text('Me', style: t.headlineSmall)),
-            const SectionHeader('Units and display'),
-            group([
+            const ScreenTitle('Me'),
+            PillTabs<String>(
+              values: const ['system', 'light', 'dark'],
+              selected: s.themeMode,
+              label: (m) => switch (m) {
+                'light' => 'Light',
+                'dark' => 'Dark',
+                _ => 'Auto',
+              },
+              icon: (m) => switch (m) {
+                'light' => LucideIcons.sun,
+                'dark' => LucideIcons.moon,
+                _ => LucideIcons.sunMoon,
+              },
+              onChanged: repo.setThemeMode,
+            ),
+            group('Units', [
               ListTile(
-                leading: const Icon(LucideIcons.scale),
-                title: const Text('Load unit for new sets'),
-                subtitle: const Text('Saved sets keep the unit they were recorded in.'),
-                trailing: _Segmented(
-                  values: Units.loadUnits,
-                  selected: s.loadUnit,
-                  onChanged: repo.setLoadUnit,
-                ),
+                leading: lead(LucideIcons.weight, p.blue, p.blueSoft),
+                title: const Text('Weight'),
+                trailing: dropdown(s.loadUnit, [for (final u in Units.loadUnits) (u, u)], (v) => repo.setLoadUnit(v!)),
               ),
               ListTile(
-                leading: const Icon(LucideIcons.ruler),
-                title: const Text('Distance unit for new sets'),
-                trailing: _Segmented(
-                  values: Units.distanceUnits,
-                  selected: s.distanceUnit,
-                  onChanged: repo.setDistanceUnit,
-                ),
+                leading: lead(LucideIcons.ruler, p.green, p.greenSoft),
+                title: const Text('Distance'),
+                trailing: dropdown(s.distanceUnit, [
+                  for (final u in Units.distanceUnits) (u, u),
+                ], (v) => repo.setDistanceUnit(v!)),
               ),
+            ]),
+            group('Training', [
               ListTile(
-                leading: const Icon(LucideIcons.timer),
-                title: const Text('Rest timer after a set'),
-                subtitle: const Text('Starts when you mark a set done. It never blocks set entry.'),
-                trailing: DropdownButton<int?>(
-                  value: s.restAfterSetSec,
-                  underline: const SizedBox.shrink(),
-                  items: const [
-                    DropdownMenuItem(value: null, child: Text('Off')),
-                    DropdownMenuItem(value: 60, child: Text('60 s')),
-                    DropdownMenuItem(value: 90, child: Text('90 s')),
-                    DropdownMenuItem(value: 120, child: Text('2 min')),
-                    DropdownMenuItem(value: 180, child: Text('3 min')),
-                  ],
-                  onChanged: repo.setRestAfterSet,
-                ),
+                leading: lead(LucideIcons.timer, p.orange, p.orangeSoft),
+                title: const Text('Auto rest timer'),
+                subtitle: const Text('Starts when a set is done'),
+                trailing: dropdown<int?>(s.restAfterSetSec, const [
+                  (null, 'Off'),
+                  (60, '60 s'),
+                  (90, '90 s'),
+                  (120, '2 min'),
+                  (180, '3 min'),
+                ], repo.setRestAfterSet),
               ),
               SwitchListTile(
-                secondary: const Icon(LucideIcons.flame),
-                title: const Text('Show energy (calorie) values'),
-                subtitle: const Text('Turn off to hide calorie views in Home, Meal, and Analytics.'),
+                secondary: lead(LucideIcons.flame, p.coral, p.coralSoft),
+                title: const Text('Show calories'),
                 value: s.showEnergy,
                 onChanged: repo.setShowEnergy,
               ),
             ]),
-            const SectionHeader('Goals'),
-            group([
-              info(LucideIcons.flag, 'Goals', 'Not available in this version. Goals will always be optional.'),
-            ]),
-            const SectionHeader('Account and sync'),
-            group([
+            group('Connections', [
               info(
-                LucideIcons.cloudOff,
-                'No account. No sync.',
-                'Your records stay on this phone. Reparc has no server in this version. '
-                    'Export a copy to keep a backup.',
+                lead(LucideIcons.cloudOff, p.brand, p.brandSoft),
+                'Account and sync',
+                'Off. Records stay on this phone.',
               ),
-            ]),
-            const SectionHeader('Health connections'),
-            group([
               info(
-                LucideIcons.heartPulse,
-                'Apple Health and Health Connect',
-                'Planned. Not available in this version. Reparc does not request health permissions.',
+                lead(LucideIcons.heartPulse, p.coral, p.coralSoft),
+                'Health apps',
+                'Apple Health, Health Connect',
+                tag: 'Soon',
               ),
-            ]),
-            const SectionHeader('AI connections'),
-            group([
-              link(LucideIcons.sparkles, 'AI connections', 'No connections. No data is shared with AI.', '/me/ai'),
-            ]),
-            const SectionHeader('Your data'),
-            group([
               link(
-                LucideIcons.download,
-                'Export and delete',
-                'Export a copy, or delete all records on this phone.',
+                lead(LucideIcons.sparkles, p.orange, p.orangeSoft),
+                'AI connections',
+                'None. Nothing is shared.',
+                '/me/ai',
+              ),
+            ]),
+            group('Your data', [
+              link(
+                lead(LucideIcons.download, p.green, p.greenSoft),
+                'Export or delete',
+                'Back up all records',
                 '/me/data',
               ),
-              link(LucideIcons.shield, 'Privacy', 'What Reparc stores and where.', '/me/privacy'),
+              link(lead(LucideIcons.shield, p.blue, p.blueSoft), 'Privacy', 'What is stored and where', '/me/privacy'),
             ]),
-            const SectionHeader('App'),
-            group([
-              link(LucideIcons.refreshCw, 'App updates', 'Version, release notes, and update check.', '/me/updates'),
+            group('App', [
+              link(
+                lead(LucideIcons.refreshCw, p.brand, p.brandSoft),
+                'App updates',
+                'Version and updates',
+                '/me/updates',
+              ),
               ListTile(
-                leading: const Icon(LucideIcons.fileText),
+                leading: lead(LucideIcons.fileText, p.inkSoft, p.surfaceAlt),
                 title: const Text('Licenses'),
-                subtitle: const Text('Reparc uses GNU AGPL v3.0. Third-party notices are listed here.'),
-                trailing: const Icon(LucideIcons.chevronRight, size: IconSizes.s),
+                subtitle: const Text('GNU AGPL v3.0 and notices'),
+                trailing: Icon(LucideIcons.chevronRight, size: IconSizes.s, color: p.inkSoft),
                 onTap: () => showLicensePage(
                   context: context,
                   applicationName: 'Reparc',
                   applicationLegalese: 'Copyright the Reparc contributors.\nLicensed under GNU AGPL v3.0 only.',
                 ),
               ),
-              info(
-                LucideIcons.lifeBuoy,
-                'Support',
-                'Report a problem at github.com/aspershupadhyay/reparc/issues. '
-                    'Do not post your records or export file.',
-              ),
+              info(lead(LucideIcons.lifeBuoy, p.inkSoft, p.surfaceAlt), 'Support', 'github.com/aspershupadhyay/reparc'),
             ]),
           ],
         ),
       ),
-    );
-  }
-}
-
-class _Segmented extends StatelessWidget {
-  const _Segmented({required this.values, required this.selected, required this.onChanged});
-  final List<String> values;
-  final String selected;
-  final ValueChanged<String> onChanged;
-
-  @override
-  Widget build(BuildContext context) {
-    return DropdownButton<String>(
-      value: selected,
-      underline: const SizedBox.shrink(),
-      items: [for (final v in values) DropdownMenuItem(value: v, child: Text(v))],
-      onChanged: (v) => onChanged(v!),
     );
   }
 }

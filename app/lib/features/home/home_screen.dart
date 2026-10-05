@@ -6,6 +6,7 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../../core/clock.dart';
 import '../../core/dates.dart';
 import '../../core/format.dart';
+import '../../core/palette.dart';
 import '../../core/theme.dart';
 import '../../core/tokens.dart';
 import '../../core/widgets.dart';
@@ -13,89 +14,119 @@ import '../../data/meal_repository.dart';
 import '../../data/models.dart';
 import '../../data/providers.dart';
 import '../../domain/nutrition.dart';
+import '../exercises/catalog/catalog.dart';
 import '../meal/meal_entry_sheet.dart';
 import '../workout/session_clock.dart';
 import '../workout/start_workout.dart';
 
+/// Home: one main action, then four tiles that each open one part of the
+/// app. Short words, big numbers (handbook 3.2).
 class HomeScreen extends ConsumerWidget {
   const HomeScreen({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final t = Theme.of(context).textTheme;
-    final today = dayOf(ref.watch(clockProvider)());
+    final p = context.pal;
+    final now = ref.watch(clockProvider)();
+    final today = dayOf(now);
+    final weekStart = addDays(today, -(today.weekday - 1));
     final settings = ref.watch(currentSettingsProvider);
-    final settingsLoaded = ref.watch(settingsProvider).hasValue;
-    final live = ref.watch(liveSessionProvider);
-    final progress = ref.watch(progressProvider((today, today)));
-    final meals = ref.watch(mealDayProvider(dayKey(today)));
+    final week = ref.watch(progressProvider((weekStart, addDays(weekStart, 6)))).value;
+    final meals = ref.watch(mealDayProvider(dayKey(today))).value ?? const [];
+    final totals = totalsOf(meals.map((e) => e.input));
+    final eaten = meals.where((m) => m.status == MealStatus.eaten).length;
+    final greeting = now.hour < 12 ? 'Good morning' : (now.hour < 18 ? 'Good afternoon' : 'Good evening');
 
     return Scaffold(
       body: SafeArea(
         child: ListView(
           padding: const EdgeInsets.fromLTRB(Space.l, Space.l, Space.l, Space.xxl),
           children: [
-            Text(fmtDayLong(today), style: t.bodyMedium?.copyWith(color: AppColors.secondaryText)),
-            const SizedBox(height: Space.xs),
-            Semantics(header: true, child: Text('Today', style: t.headlineSmall)),
-            const SizedBox(height: Space.l),
-            if (settingsLoaded && !settings.storageNoticeSeen) ...[
-              const _StorageNotice(),
-              const SizedBox(height: Space.l),
+            ScreenTitle(greeting, subtitle: fmtDayLong(today)),
+            if (ref.watch(settingsProvider).hasValue && !settings.storageNoticeSeen) ...[
+              const _StorageNote(),
+              const SizedBox(height: Space.m),
             ],
-            _NextAction(liveId: live.value?.id, paused: live.value?.status == SessionStatus.paused),
+            const _Hero(),
             const SizedBox(height: Space.m),
-            OutlinedButton.icon(
-              onPressed: () => showMealEntrySheet(context, day: dayKey(today)),
-              icon: const Icon(LucideIcons.utensils, size: IconSizes.s),
-              label: const Text('Log a meal'),
-            ),
-            const SectionHeader('Today so far'),
-            AsyncBody(
-              value: progress,
-              builder: (p) => Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Expanded(
-                    child: AppCard(
-                      child: Metric(
-                        label: 'Completed sets',
-                        value: '${p.completedSets}',
-                        note: p.sessions.isEmpty
-                            ? 'No saved workout today'
-                            : '${p.sessions.length} saved workout${p.sessions.length == 1 ? '' : 's'}',
-                      ),
+            Row(
+              children: [
+                Expanded(
+                  child: _Tile(
+                    icon: LucideIcons.utensils,
+                    color: p.orange,
+                    soft: p.orangeSoft,
+                    label: 'Meals',
+                    value: meals.isEmpty ? '0' : '$eaten/${meals.length}',
+                    caption: meals.isEmpty ? 'Nothing yet' : 'eaten',
+                    onTap: () => context.go('/meal'),
+                    trailing: Ring(
+                      value: meals.isEmpty ? 0 : eaten / meals.length,
+                      color: p.orange,
+                      size: 40,
+                      stroke: 5,
+                      semanticLabel: '$eaten of ${meals.length} foods eaten',
                     ),
                   ),
-                  const SizedBox(width: Space.m),
-                  Expanded(
-                    child: AsyncBody(
-                      value: meals,
-                      builder: (entries) {
-                        final totals = totalsOf(entries.map((e) => e.input));
-                        return AppCard(
-                          child: settings.showEnergy
-                              ? _EnergyMetric(totals: totals)
-                              : Metric(
-                                  label: 'Foods eaten',
-                                  value: '${totals.entries}',
-                                  note: entries.isEmpty ? 'No meal logged today' : null,
-                                ),
-                        );
-                      },
-                    ),
-                  ),
-                ],
-              ),
+                ),
+                const SizedBox(width: Space.m),
+                Expanded(
+                  child: settings.showEnergy
+                      ? _Tile(
+                          icon: LucideIcons.flame,
+                          color: p.coral,
+                          soft: p.coralSoft,
+                          label: 'Energy',
+                          value: fmtNum(totals.energyKcal.value, maxDecimals: 0),
+                          caption: totals.energyKcal.value == null ? 'Not logged' : 'kcal eaten',
+                          onTap: () => context.go('/meal'),
+                        )
+                      : _Tile(
+                          icon: LucideIcons.clipboardList,
+                          color: p.brand,
+                          soft: p.brandSoft,
+                          label: 'Plans',
+                          value: '${ref.watch(templatesProvider).value?.length ?? 0}',
+                          caption: 'saved',
+                          onTap: () => context.go('/workout'),
+                        ),
+                ),
+              ],
             ),
             const SizedBox(height: Space.m),
-            Align(
-              alignment: Alignment.centerLeft,
-              child: TextButton.icon(
-                onPressed: () => context.go('/analytics'),
-                icon: const Icon(LucideIcons.chartNoAxesColumn, size: IconSizes.s),
-                label: const Text('See trends in Analytics'),
-              ),
+            _WeekCard(
+              weekStart: weekStart,
+              today: today,
+              trained: week?.trainingDays ?? const {},
+              count: week?.sessions.length ?? 0,
+            ),
+            const SizedBox(height: Space.m),
+            Row(
+              children: [
+                Expanded(
+                  child: _Tile(
+                    icon: LucideIcons.bookOpen,
+                    color: p.blue,
+                    soft: p.blueSoft,
+                    label: 'Learn',
+                    value: '${catalog.length}',
+                    caption: 'exercise guides',
+                    onTap: () => context.go('/workout/library'),
+                  ),
+                ),
+                const SizedBox(width: Space.m),
+                Expanded(
+                  child: _Tile(
+                    icon: LucideIcons.plus,
+                    color: p.green,
+                    soft: p.greenSoft,
+                    label: 'Food',
+                    value: 'Add',
+                    caption: 'log a meal',
+                    onTap: () => showMealEntrySheet(context, day: dayKey(today)),
+                  ),
+                ),
+              ],
             ),
           ],
         ),
@@ -104,113 +135,196 @@ class HomeScreen extends ConsumerWidget {
   }
 }
 
-class _EnergyMetric extends StatelessWidget {
-  const _EnergyMetric({required this.totals});
-  final NutritionTotals totals;
-
-  @override
-  Widget build(BuildContext context) {
-    final e = totals.energyKcal;
-    String? note;
-    if (totals.entries == 0) {
-      note = 'No food marked as eaten';
-    } else if (e.missing > 0) {
-      note = '${e.missing} food${e.missing == 1 ? ' has' : 's have'} no energy value';
-    } else if (totals.estimates > 0) {
-      note = 'Includes estimates';
-    }
-    return Metric(
-      label: 'Energy eaten',
-      value: fmtNum(e.value, maxDecimals: 0),
-      unit: e.value == null ? null : 'kcal',
-      semanticValue: e.value == null ? missingLabel : null,
-      note: note,
-    );
-  }
-}
-
-/// The one main action on Home (handbook 3.2).
-class _NextAction extends ConsumerWidget {
-  const _NextAction({required this.liveId, required this.paused});
-  final String? liveId;
-  final bool paused;
+/// The one main action: start or continue a workout.
+class _Hero extends ConsumerWidget {
+  const _Hero();
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final p = context.pal;
     final t = Theme.of(context).textTheme;
-    final live = liveId != null;
-    return AppCard(
-      color: AppColors.ink,
-      border: false,
-      padding: const EdgeInsets.all(Space.xl),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            live ? (paused ? 'Workout paused' : 'Workout in progress') : 'Ready to train?',
-            style: t.titleLarge?.copyWith(color: AppColors.surface),
-          ),
-          const SizedBox(height: Space.xs),
-          if (live)
-            SessionClock(
-              sessionId: liveId!,
-              style: t.displaySmall!.tabular.copyWith(color: AppColors.lime),
-            )
-          else
-            Text(
-              'Start an empty workout or pick a plan in Workout.',
-              style: t.bodyMedium?.copyWith(color: AppColors.border),
+    final live = ref.watch(liveSessionProvider).value;
+    return Semantics(
+      button: true,
+      label: live == null ? 'Start workout' : 'Continue workout',
+      excludeSemantics: true,
+      child: Material(
+        color: p.panel,
+        borderRadius: Radii.large,
+        clipBehavior: Clip.antiAlias,
+        child: InkWell(
+          onTap: live == null ? () => startWorkout(context, ref) : () => context.push('/live/${live.id}'),
+          child: Padding(
+            padding: const EdgeInsets.all(Space.xl),
+            child: Row(
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(live == null ? 'Train' : 'Training now', style: t.bodySmall?.copyWith(color: p.onPanelSoft)),
+                      const SizedBox(height: Space.xs),
+                      if (live == null)
+                        Text('Start workout', style: t.headlineSmall?.copyWith(color: p.onPanel))
+                      else
+                        SessionClock(
+                          sessionId: live.id,
+                          style: t.displaySmall!.tabular.copyWith(color: p.energy),
+                        ),
+                    ],
+                  ),
+                ),
+                Container(
+                  width: 64,
+                  height: 64,
+                  decoration: BoxDecoration(color: p.energy, shape: BoxShape.circle),
+                  child: Icon(live == null ? LucideIcons.play : LucideIcons.arrowRight, color: p.onEnergy, size: 28),
+                ),
+              ],
             ),
-          const SizedBox(height: Space.l),
-          SizedBox(
-            width: double.infinity,
-            child: FilledButton.icon(
-              onPressed: live ? () => context.push('/live/$liveId') : () => startWorkout(context, ref),
-              icon: Icon(live ? LucideIcons.play : LucideIcons.dumbbell, size: IconSizes.s),
-              label: Text(live ? 'Continue workout' : 'Start workout'),
-            ),
           ),
-        ],
+        ),
       ),
     );
   }
 }
 
-class _StorageNotice extends ConsumerWidget {
-  const _StorageNotice();
+class _Tile extends StatelessWidget {
+  const _Tile({
+    required this.icon,
+    required this.color,
+    required this.soft,
+    required this.label,
+    required this.value,
+    required this.caption,
+    required this.onTap,
+    this.trailing,
+  });
+
+  final IconData icon;
+  final Color color;
+  final Color soft;
+  final String label;
+  final String value;
+  final String caption;
+  final VoidCallback onTap;
+  final Widget? trailing;
+
+  @override
+  Widget build(BuildContext context) {
+    final t = Theme.of(context).textTheme;
+    final p = context.pal;
+    return AppCard(
+      color: soft,
+      onTap: onTap,
+      semanticLabel: '$label: $value $caption',
+      child: ExcludeSemantics(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                IconBadge(icon, color: color, size: 40),
+                const Spacer(),
+                ?trailing,
+              ],
+            ),
+            const SizedBox(height: Space.l),
+            Text(label, style: t.labelMedium?.copyWith(color: p.ink)),
+            Text(value, style: t.headlineSmall?.tabular, maxLines: 1, overflow: TextOverflow.ellipsis),
+            Text(caption, style: t.bodySmall, maxLines: 1, overflow: TextOverflow.ellipsis),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// Seven days. A filled day means you trained.
+class _WeekCard extends StatelessWidget {
+  const _WeekCard({required this.weekStart, required this.today, required this.trained, required this.count});
+  final DateTime weekStart;
+  final DateTime today;
+  final Set<String> trained;
+  final int count;
+
+  @override
+  Widget build(BuildContext context) {
+    final p = context.pal;
+    final t = Theme.of(context).textTheme;
+    return AppCard(
+      onTap: () => context.go('/analytics'),
+      semanticLabel: 'This week: $count workouts on ${trained.length} days. Open Analytics',
+      child: ExcludeSemantics(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                IconBadge(LucideIcons.calendarCheck, color: p.green, size: 40),
+                const SizedBox(width: Space.m),
+                Expanded(child: Text('This week', style: t.titleMedium)),
+                Text('$count', style: t.headlineSmall?.tabular),
+                const SizedBox(width: 4),
+                Text(count == 1 ? 'workout' : 'workouts', style: t.bodySmall),
+              ],
+            ),
+            const SizedBox(height: Space.l),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                for (var i = 0; i < 7; i++)
+                  Builder(
+                    builder: (context) {
+                      final d = addDays(weekStart, i);
+                      final done = trained.contains(dayKey(d));
+                      final isToday = d == today;
+                      return Column(
+                        children: [
+                          Text('MTWTFSS'[i], style: t.labelSmall?.copyWith(color: isToday ? p.ink : p.inkSoft)),
+                          const SizedBox(height: 6),
+                          Container(
+                            width: 36,
+                            height: 36,
+                            decoration: BoxDecoration(
+                              color: done ? p.energy : p.surfaceAlt,
+                              shape: BoxShape.circle,
+                              border: isToday ? Border.all(color: p.ink, width: 2) : null,
+                            ),
+                            child: done ? Icon(LucideIcons.check, size: 18, color: p.onEnergy) : null,
+                          ),
+                        ],
+                      );
+                    },
+                  ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _StorageNote extends ConsumerWidget {
+  const _StorageNote();
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final p = context.pal;
     final t = Theme.of(context).textTheme;
     return AppCard(
-      color: AppColors.softSurface,
-      border: false,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      color: p.brandSoft,
+      padding: const EdgeInsets.fromLTRB(Space.l, Space.s, Space.s, Space.s),
+      child: Row(
         children: [
-          Row(
-            children: [
-              const ExcludeSemantics(child: Icon(LucideIcons.cloudOff, size: IconSizes.s)),
-              const SizedBox(width: Space.s),
-              Expanded(child: Text('Saved on this phone only', style: t.titleSmall)),
-            ],
-          ),
-          const SizedBox(height: Space.s),
-          Text(
-            'Reparc saves your records on this phone. It does not back them up to a server. '
-            'If you lose or erase this phone, you can lose your records. Export a copy from Me.',
-            style: t.bodyMedium,
-          ),
-          const SizedBox(height: Space.s),
-          Wrap(
-            spacing: Space.s,
-            children: [
-              TextButton(
-                onPressed: () => ref.read(settingsRepoProvider).setStorageNoticeSeen(),
-                child: const Text('Got it'),
-              ),
-              TextButton(onPressed: () => context.go('/me/data'), child: const Text('Export options')),
-            ],
+          Icon(LucideIcons.smartphone, size: 20, color: p.brand),
+          const SizedBox(width: Space.m),
+          Expanded(child: Text('Saved on this phone only. Back up in Me.', style: t.bodyMedium)),
+          IconButton(
+            tooltip: 'Dismiss',
+            onPressed: () => ref.read(settingsRepoProvider).setStorageNoticeSeen(),
+            icon: Icon(LucideIcons.x, size: 18, color: p.inkSoft),
           ),
         ],
       ),

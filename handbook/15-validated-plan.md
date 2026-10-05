@@ -229,6 +229,8 @@ Updated 2026-10-05. This records what exists in code. It is not evidence of devi
 
 **Not yet checked:** Real iPhone and Android devices, release builds, startup and set-entry timing, app size, VoiceOver, TalkBack, large text on devices, reduced motion on devices, and the CI workflow on GitHub runners. The Android and iOS builds did not run locally because the build machine has no Android SDK or Xcode.
 
+**Redesign (2026-10-05, owner request):** New light and dark themes without purple (D-015). Meal tab rebuilt to follow the meal reference. Home simplified to one main action and large tiles. Analytics rebuilt with a training heatmap, change against the previous period, volume, muscles trained by body area, best lifts, and a macro donut. Built-in catalog of 36 coached exercises with an animated, rotatable 3D body model (D-016). Database schema v2 with a tested migration. 38 tests pass.
+
 **Not built:** Goals, update metadata checks, update alerts, HealthKit, Health Connect, sign-in, sync, AI, MCP, an app icon, crash reporting, and release signing in CI.
 
 ## 16.12 AI context

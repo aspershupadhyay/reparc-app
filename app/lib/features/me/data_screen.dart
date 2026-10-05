@@ -8,6 +8,7 @@ import 'package:share_plus/share_plus.dart';
 
 import '../../core/clock.dart';
 import '../../core/dates.dart';
+import '../../core/palette.dart';
 import '../../core/tokens.dart';
 import '../../core/widgets.dart';
 import '../../data/providers.dart';
@@ -133,7 +134,7 @@ class _DataScreenState extends ConsumerState<DataScreen> {
                 const SizedBox(height: Space.l),
                 OutlinedButton.icon(
                   onPressed: _busy ? null : _deleteAll,
-                  style: OutlinedButton.styleFrom(foregroundColor: AppColors.error),
+                  style: OutlinedButton.styleFrom(foregroundColor: context.pal.error),
                   icon: const Icon(LucideIcons.trash2, size: IconSizes.s),
                   label: const Text('Delete all records'),
                 ),

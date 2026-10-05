@@ -9,6 +9,7 @@ class AppSettings {
     this.restAfterSetSec,
     this.showEnergy = true,
     this.storageNoticeSeen = false,
+    this.themeMode = 'system',
   });
 
   final String loadUnit;
@@ -23,12 +24,16 @@ class AppSettings {
   /// The user read the phone-only storage notice.
   final bool storageNoticeSeen;
 
+  /// 'system', 'light', or 'dark'.
+  final String themeMode;
+
   static AppSettings fromMap(Map<String, String> m) => AppSettings(
     loadUnit: Units.loadUnits.contains(m['loadUnit']) ? m['loadUnit']! : Units.kg,
     distanceUnit: Units.distanceUnits.contains(m['distanceUnit']) ? m['distanceUnit']! : Units.km,
     restAfterSetSec: int.tryParse(m['restAfterSetSec'] ?? ''),
     showEnergy: m['showEnergy'] != 'false',
     storageNoticeSeen: m['storageNoticeSeen'] == 'true',
+    themeMode: const ['light', 'dark'].contains(m['themeMode']) ? m['themeMode']! : 'system',
   );
 }
 
@@ -56,4 +61,5 @@ class SettingsRepository {
   Future<void> setRestAfterSet(int? sec) => set('restAfterSetSec', sec?.toString());
   Future<void> setShowEnergy(bool v) => set('showEnergy', v.toString());
   Future<void> setStorageNoticeSeen() => set('storageNoticeSeen', 'true');
+  Future<void> setThemeMode(String m) => set('themeMode', m);
 }

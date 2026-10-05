@@ -5,6 +5,7 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../core/dates.dart';
 import '../../core/format.dart';
+import '../../core/palette.dart';
 import '../../core/theme.dart';
 import '../../core/tokens.dart';
 import '../../core/widgets.dart';
@@ -104,8 +105,7 @@ class ExerciseDetailScreen extends ConsumerWidget {
                     children: [
                       for (final r in records) ...[
                         AppCard(
-                          color: AppColors.lime,
-                          border: false,
+                          color: context.pal.energy,
                           onTap: () => context.go('/workout/session/${r.source.session.id}'),
                           child: Row(
                             children: [

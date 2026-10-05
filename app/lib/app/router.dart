@@ -3,6 +3,8 @@ import 'package:go_router/go_router.dart';
 
 import '../features/analytics/analytics_screen.dart';
 import '../features/analytics/source_records_screen.dart';
+import '../features/exercises/guide_screen.dart';
+import '../features/exercises/library_screen.dart';
 import '../features/home/home_screen.dart';
 import '../features/me/ai_connections_screen.dart';
 import '../features/me/app_updates_screen.dart';
@@ -43,6 +45,11 @@ GoRouter buildRouter({String initialLocation = '/home'}) => GoRouter(
                 GoRoute(
                   path: 'session/:id',
                   builder: (_, s) => SessionDetailScreen(id: s.pathParameters['id']!),
+                ),
+                GoRoute(path: 'library', builder: (_, _) => const LibraryScreen()),
+                GoRoute(
+                  path: 'guide/:id',
+                  builder: (_, s) => GuideScreen(id: s.pathParameters['id']!),
                 ),
                 GoRoute(
                   path: 'exercise/:id',

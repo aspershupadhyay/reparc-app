@@ -21,7 +21,7 @@ void main() {
 
   test('new database has default meal slots', () async {
     final slots = await MealRepository(db, clock.call).watchSlots().first;
-    expect(slots.map((s) => s.name), ['Breakfast', 'Lunch', 'Dinner', 'Snacks']);
+    expect(slots.map((s) => s.name), ['Breakfast', 'Lunch', 'Snacks', 'Dinner']);
   });
 
   test('export keeps units, sources, timestamps, and null for missing values', () async {

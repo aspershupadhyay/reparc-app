@@ -8,6 +8,7 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../core/clock.dart';
 import '../../core/format.dart';
+import '../../core/palette.dart';
 import '../../core/theme.dart';
 import '../../core/tokens.dart';
 import '../../core/widgets.dart';
@@ -138,10 +139,10 @@ class _Hero extends ConsumerWidget {
     final s = detail.session;
     final paused = s.status == SessionStatus.paused;
     final repo = ref.read(workoutRepoProvider);
-    final onInk = t.bodySmall?.copyWith(color: AppColors.border);
+    final onInk = t.bodySmall?.copyWith(color: context.pal.onPanelSoft);
     return Container(
-      decoration: const BoxDecoration(
-        color: AppColors.ink,
+      decoration: BoxDecoration(
+        color: context.pal.panel,
         borderRadius: BorderRadius.vertical(bottom: Radius.circular(Radii.l)),
       ),
       child: SafeArea(
@@ -156,7 +157,7 @@ class _Hero extends ConsumerWidget {
                   IconButton(
                     tooltip: 'Leave screen. The workout keeps running.',
                     onPressed: () => context.canPop() ? context.pop() : context.go('/workout'),
-                    icon: const Icon(LucideIcons.chevronDown, color: AppColors.surface),
+                    icon: Icon(LucideIcons.chevronDown, color: context.pal.onPanel),
                   ),
                   Expanded(
                     child: Semantics(
@@ -180,7 +181,7 @@ class _Hero extends ConsumerWidget {
                           padding: const EdgeInsets.symmetric(vertical: Space.s),
                           child: Text(
                             s.name,
-                            style: t.titleLarge?.copyWith(color: AppColors.surface),
+                            style: t.titleLarge?.copyWith(color: context.pal.onPanel),
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                           ),
@@ -190,7 +191,10 @@ class _Hero extends ConsumerWidget {
                   ),
                   IconButton.filled(
                     tooltip: paused ? 'Continue workout' : 'Pause workout',
-                    style: IconButton.styleFrom(backgroundColor: AppColors.lime, foregroundColor: AppColors.ink),
+                    style: IconButton.styleFrom(
+                      backgroundColor: context.pal.energy,
+                      foregroundColor: context.pal.onEnergy,
+                    ),
                     onPressed: () => guardedWrite(context, () => paused ? repo.resume(s.id) : repo.pause(s.id)),
                     icon: Icon(paused ? LucideIcons.play : LucideIcons.pause),
                   ),
@@ -201,16 +205,16 @@ class _Hero extends ConsumerWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const SizedBox(height: Space.s),
+                    SizedBox(height: Space.s),
                     Semantics(
                       liveRegion: true,
                       child: Text(paused ? 'Paused' : 'Elapsed', style: onInk),
                     ),
                     SessionClock(
                       sessionId: s.id,
-                      style: t.displaySmall!.copyWith(fontSize: 48, color: AppColors.lime).tabular,
+                      style: t.displaySmall!.copyWith(fontSize: 48, color: context.pal.energy).tabular,
                     ),
-                    const SizedBox(height: Space.l),
+                    SizedBox(height: Space.l),
                     Row(
                       children: [
                         Expanded(child: _RestValue(session: s)),
@@ -219,7 +223,8 @@ class _Hero extends ConsumerWidget {
                             label: 'Sets done',
                             value: '${detail.completedSets} / ${detail.totalSets}',
                             semanticValue: '${detail.completedSets} of ${detail.totalSets}',
-                            color: AppColors.surface,
+                            color: context.pal.onPanel,
+                            labelColor: context.pal.onPanelSoft,
                           ),
                         ),
                       ],
@@ -245,7 +250,7 @@ class _RestValue extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final clock = ref.watch(clockProvider);
     if (session.restStartedAt == null) {
-      return const Metric(label: 'Rest', value: 'Off', color: AppColors.surface);
+      return Metric(label: 'Rest', value: 'Off', color: context.pal.onPanel, labelColor: context.pal.onPanelSoft);
     }
     return Ticker1s(
       builder: (_) {
@@ -259,7 +264,8 @@ class _RestValue extends ConsumerWidget {
           label: over ? 'Rest over by' : 'Rest left',
           value: fmtClock(r.abs()),
           semanticValue: speakDuration(r.abs()),
-          color: over ? AppColors.lavender : AppColors.surface,
+          color: over ? context.pal.orange : context.pal.onPanel,
+          labelColor: context.pal.onPanelSoft,
         );
       },
     );
@@ -277,9 +283,9 @@ class _RestControls extends ConsumerWidget {
     final chipStyle = Theme.of(context).textTheme.labelMedium;
     Widget chip(String label, VoidCallback onTap) => ActionChip(
       label: Text(label),
-      backgroundColor: AppColors.ink,
-      side: const BorderSide(color: AppColors.secondaryText),
-      labelStyle: chipStyle?.copyWith(color: AppColors.surface),
+      backgroundColor: context.pal.panelRaised,
+      side: BorderSide(color: context.pal.panelRaised),
+      labelStyle: chipStyle?.copyWith(color: context.pal.onPanel),
       onPressed: onTap,
     );
     return Wrap(
@@ -319,7 +325,7 @@ class _FinishSheet extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Text('Finish workout', style: t.titleLarge),
-          const SizedBox(height: Space.s),
+          SizedBox(height: Space.s),
           Text(
             '${detail.completedSets} of ${detail.totalSets} sets done in ${detail.exercises.length} '
             'exercise${detail.exercises.length == 1 ? '' : 's'}.'
@@ -337,7 +343,7 @@ class _FinishSheet extends StatelessWidget {
           TextButton(onPressed: () => Navigator.pop(context), child: const Text('Keep going')),
           TextButton(
             onPressed: () => Navigator.pop(context, 'discard'),
-            style: TextButton.styleFrom(foregroundColor: AppColors.error),
+            style: TextButton.styleFrom(foregroundColor: context.pal.error),
             child: const Text('Discard workout'),
           ),
         ],

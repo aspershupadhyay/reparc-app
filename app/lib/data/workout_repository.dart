@@ -118,6 +118,46 @@ class WorkoutRepository {
     ),
   );
 
+  /// Returns the row that logs built-in exercise [catalogId], creating it
+  /// on first use. One row per built-in exercise keeps its history together.
+  Future<String> ensureCatalogExercise({
+    required String catalogId,
+    required String name,
+    String? equipment,
+    String? targetMuscles,
+  }) => db.transaction(() async {
+    final found = await (db.select(db.exercises)..where((e) => e.catalogId.equals(catalogId))).getSingleOrNull();
+    if (found != null) {
+      if (found.archived) {
+        await (db.update(db.exercises)..where((e) => e.id.equals(found.id))).write(
+          ExercisesCompanion(archived: const Value(false), updatedAt: Value(_now)),
+        );
+      }
+      return found.id;
+    }
+    final id = _uuid.v4();
+    final now = _now;
+    await db
+        .into(db.exercises)
+        .insert(
+          ExercisesCompanion.insert(
+            id: id,
+            name: name,
+            equipment: Value(equipment),
+            targetMuscles: Value(targetMuscles),
+            catalogId: Value(catalogId),
+            instructionSource: const Value('Reparc coaching guide'),
+            createdAt: now,
+            updatedAt: now,
+          ),
+        );
+    return id;
+  });
+
+  /// The logged row for a built-in exercise, if the user has used it.
+  Stream<Exercise?> watchCatalogExercise(String catalogId) =>
+      (db.select(db.exercises)..where((e) => e.catalogId.equals(catalogId))).watchSingleOrNull();
+
   /// Removes an exercise from the library. Saved workouts keep it.
   Future<void> archiveExercise(String id) => (db.update(db.exercises)..where((e) => e.id.equals(id))).write(
     ExercisesCompanion(archived: const Value(true), updatedAt: Value(_now)),

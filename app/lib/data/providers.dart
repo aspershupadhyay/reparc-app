@@ -77,3 +77,11 @@ final progressProvider = StreamProvider.autoDispose.family(
 );
 
 final recordsProvider = StreamProvider.autoDispose((ref) => ref.watch(analyticsRepoProvider).watchRecords());
+
+final catalogExerciseProvider = StreamProvider.autoDispose.family(
+  (ref, String catalogId) => ref.watch(workoutRepoProvider).watchCatalogExercise(catalogId),
+);
+
+final mealRangeProvider = StreamProvider.autoDispose.family(
+  (ref, (String, String) range) => ref.watch(mealRepoProvider).watchRange(range.$1, range.$2),
+);

@@ -5,19 +5,20 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../core/dates.dart';
 import '../../core/format.dart';
+import '../../core/palette.dart';
+import '../../core/theme.dart';
 import '../../core/tokens.dart';
 import '../../core/widgets.dart';
 import '../../data/models.dart';
 import '../../data/providers.dart';
-import 'exercise_form.dart';
+import '../exercises/library_screen.dart';
 import 'session_clock.dart';
 import 'start_workout.dart';
-import '../../core/theme.dart';
 
-enum _Section { plans, library, history }
+enum _Section { plans, exercises, history }
 
-/// Workout tab: plans, exercise library, history, and the way into live
-/// logging (decision D-008).
+/// Workout tab: plans, the exercise library, history, and the way into
+/// live logging (decision D-008). Layout follows the second reference.
 class WorkoutScreen extends ConsumerStatefulWidget {
   const WorkoutScreen({super.key});
 
@@ -30,54 +31,31 @@ class _WorkoutScreenState extends ConsumerState<WorkoutScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final t = Theme.of(context).textTheme;
     final live = ref.watch(liveSessionProvider).value;
     return Scaffold(
       body: SafeArea(
-        child: CustomScrollView(
-          slivers: [
-            SliverPadding(
-              padding: const EdgeInsets.fromLTRB(Space.l, Space.l, Space.l, 0),
-              sliver: SliverList.list(
-                children: [
-                  Semantics(header: true, child: Text('Workout', style: t.headlineSmall)),
-                  const SizedBox(height: Space.l),
-                  _StartCard(liveId: live?.id),
-                  const SizedBox(height: Space.l),
-                  SingleChildScrollView(
-                    scrollDirection: Axis.horizontal,
-                    child: Row(
-                      children: [
-                        for (final s in _Section.values)
-                          Padding(
-                            padding: const EdgeInsets.only(right: Space.s),
-                            child: ChoiceChip(
-                              label: Text(switch (s) {
-                                _Section.plans => 'Plans',
-                                _Section.library => 'Exercise library',
-                                _Section.history => 'History',
-                              }),
-                              selected: _section == s,
-                              onSelected: (_) => setState(() => _section = s),
-                            ),
-                          ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: Space.l),
-                ],
-              ),
+        child: ListView(
+          padding: const EdgeInsets.fromLTRB(Space.l, Space.l, Space.l, Space.xxl),
+          children: [
+            const ScreenTitle('Workout'),
+            _StartCard(liveId: live?.id),
+            const SizedBox(height: Space.l),
+            PillTabs<_Section>(
+              values: _Section.values,
+              selected: _section,
+              label: (s) => switch (s) {
+                _Section.plans => 'Plans',
+                _Section.exercises => 'Exercises',
+                _Section.history => 'History',
+              },
+              onChanged: (s) => setState(() => _section = s),
             ),
-            SliverPadding(
-              padding: const EdgeInsets.fromLTRB(Space.l, 0, Space.l, Space.xxl),
-              sliver: SliverToBoxAdapter(
-                child: switch (_section) {
-                  _Section.plans => const _Plans(),
-                  _Section.library => const _Library(),
-                  _Section.history => const _History(),
-                },
-              ),
-            ),
+            const SizedBox(height: Space.l),
+            switch (_section) {
+              _Section.plans => const _Plans(),
+              _Section.exercises => const LibraryBody(),
+              _Section.history => const _History(),
+            },
           ],
         ),
       ),
@@ -92,9 +70,10 @@ class _StartCard extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final t = Theme.of(context).textTheme;
-    return AppCard(
-      color: AppColors.ink,
-      border: false,
+    final p = context.pal;
+    return Container(
+      padding: const EdgeInsets.all(Space.xl),
+      decoration: BoxDecoration(color: p.panel, borderRadius: Radii.large),
       child: Row(
         children: [
           Expanded(
@@ -102,22 +81,25 @@ class _StartCard extends ConsumerWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  liveId == null ? 'Empty workout' : 'Workout in progress',
-                  style: t.titleMedium?.copyWith(color: AppColors.surface),
+                  liveId == null ? 'Free workout' : 'Training now',
+                  style: t.bodySmall?.copyWith(color: p.onPanelSoft),
                 ),
+                const SizedBox(height: Space.xs),
                 if (liveId != null)
                   SessionClock(
                     sessionId: liveId!,
-                    style: t.titleLarge!.tabular.copyWith(color: AppColors.lime),
+                    style: t.displaySmall!.tabular.copyWith(color: p.energy),
                   )
                 else
-                  Text('Add exercises as you go.', style: t.bodySmall?.copyWith(color: AppColors.border)),
+                  Text('Add moves\nas you go', style: t.titleLarge?.copyWith(color: p.onPanel)),
               ],
             ),
           ),
-          FilledButton(
+          FilledButton.icon(
+            style: FilledButton.styleFrom(backgroundColor: p.energy, foregroundColor: p.onEnergy),
             onPressed: liveId == null ? () => startWorkout(context, ref) : () => context.push('/live/$liveId'),
-            child: Text(liveId == null ? 'Start' : 'Continue'),
+            icon: Icon(liveId == null ? LucideIcons.play : LucideIcons.arrowRight, size: 20),
+            label: Text(liveId == null ? 'Start' : 'Open'),
           ),
         ],
       ),
@@ -131,6 +113,14 @@ class _Plans extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final t = Theme.of(context).textTheme;
+    final p = context.pal;
+    final colors = [
+      (p.energy, p.onEnergy),
+      (p.brandSoft, p.ink),
+      (p.orangeSoft, p.ink),
+      (p.greenSoft, p.ink),
+      (p.blueSoft, p.ink),
+    ];
     return AsyncBody(
       value: ref.watch(templatesProvider),
       builder: (plans) => Column(
@@ -140,99 +130,60 @@ class _Plans extends ConsumerWidget {
             const EmptyState(
               icon: LucideIcons.clipboardList,
               title: 'No plans yet',
-              body: 'A plan is an ordered list of exercises. Starting a plan creates a new workout.',
+              body: 'Save the moves you repeat.',
             ),
-          for (final (plan, count) in plans) ...[
-            AppCard(
-              color: AppColors.lavender,
-              border: false,
-              onTap: () => context.go('/workout/plan/${plan.id}'),
-              semanticLabel: '${plan.name}, $count exercise${count == 1 ? '' : 's'}. Open plan',
-              child: Row(
-                children: [
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(plan.name, style: t.titleMedium),
-                        Text(
-                          '$count exercise${count == 1 ? '' : 's'}',
-                          style: t.bodySmall?.copyWith(color: AppColors.ink),
+          for (final (i, (plan, count)) in plans.indexed) ...[
+            Builder(
+              builder: (context) {
+                final (bg, fg) = colors[i % colors.length];
+                return AppCard(
+                  color: bg,
+                  padding: const EdgeInsets.all(Space.xl),
+                  onTap: () => context.push('/workout/plan/${plan.id}'),
+                  semanticLabel: '${plan.name}, $count exercise${count == 1 ? '' : 's'}. Open plan',
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(plan.name, style: t.titleLarge?.copyWith(color: fg)),
+                            const SizedBox(height: Space.s),
+                            Tag(
+                              '$count exercise${count == 1 ? '' : 's'}',
+                              color: fg.withValues(alpha: 0.1),
+                              textColor: fg,
+                              icon: LucideIcons.dumbbell,
+                            ),
+                          ],
                         ),
-                      ],
-                    ),
+                      ),
+                      IconButton.filled(
+                        tooltip: 'Start ${plan.name}',
+                        style: IconButton.styleFrom(
+                          backgroundColor: p.panel,
+                          foregroundColor: p.energy,
+                          fixedSize: const Size(56, 56),
+                        ),
+                        onPressed: count == 0 ? null : () => startWorkout(context, ref, templateId: plan.id),
+                        icon: const Icon(LucideIcons.play),
+                      ),
+                    ],
                   ),
-                  ExcludeSemantics(
-                    excluding: false,
-                    child: IconButton.filled(
-                      tooltip: 'Start ${plan.name}',
-                      style: IconButton.styleFrom(backgroundColor: AppColors.ink, foregroundColor: AppColors.lime),
-                      onPressed: count == 0 ? null : () => startWorkout(context, ref, templateId: plan.id),
-                      icon: const Icon(LucideIcons.play),
-                    ),
-                  ),
-                ],
-              ),
+                );
+              },
             ),
             const SizedBox(height: Space.m),
           ],
-          const SizedBox(height: Space.s),
           OutlinedButton.icon(
             onPressed: () async {
               final name = await promptText(context, title: 'New plan', label: 'Plan name', confirmLabel: 'Create');
               if (name == null || !context.mounted) return;
               final id = await guardedWrite(context, () => ref.read(workoutRepoProvider).createTemplate(name));
-              if (id != null && context.mounted) context.go('/workout/plan/$id');
+              if (id != null && context.mounted) await context.push('/workout/plan/$id');
             },
             icon: const Icon(LucideIcons.plus, size: IconSizes.s),
             label: const Text('New plan'),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _Library extends ConsumerWidget {
-  const _Library();
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    return AsyncBody(
-      value: ref.watch(exercisesProvider),
-      builder: (list) => Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          if (list.isEmpty)
-            const EmptyState(
-              icon: LucideIcons.library,
-              title: 'Your library is empty',
-              body: 'Create the exercises you train. You can also add one during a workout.',
-            )
-          else
-            AppCard(
-              padding: EdgeInsets.zero,
-              child: Column(
-                children: [
-                  for (final (i, e) in list.indexed) ...[
-                    if (i > 0) const Divider(indent: Space.l),
-                    ListTile(
-                      title: Text(exerciseTitle(e)),
-                      subtitle: e.equipment == null && e.targetMuscles == null
-                          ? null
-                          : Text([?e.equipment, ?e.targetMuscles].join(' · ')),
-                      trailing: const Icon(LucideIcons.chevronRight, size: IconSizes.s),
-                      onTap: () => context.go('/workout/exercise/${e.id}'),
-                    ),
-                  ],
-                ],
-              ),
-            ),
-          const SizedBox(height: Space.l),
-          OutlinedButton.icon(
-            onPressed: () => showExerciseForm(context),
-            icon: const Icon(LucideIcons.plus, size: IconSizes.s),
-            label: const Text('New exercise'),
           ),
         ],
       ),
@@ -246,43 +197,72 @@ class _History extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final t = Theme.of(context).textTheme;
+    final p = context.pal;
     return AsyncBody(
       value: ref.watch(historyProvider),
       builder: (list) {
         if (list.isEmpty) {
           return const EmptyState(
             icon: LucideIcons.history,
-            title: 'No saved workouts',
-            body: 'Finished and incomplete workouts appear here. You can open one to correct it.',
+            title: 'No workouts yet',
+            body: 'Finished workouts show up here.',
           );
         }
         return Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             for (final h in list) ...[
-              AppCard(
-                onTap: () => context.go('/workout/session/${h.session.id}'),
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
+              Builder(
+                builder: (context) {
+                  final d = localDayOfInstant(h.session.startedAt, h.session.utcOffsetMinutes);
+                  final incomplete = h.session.status == SessionStatus.incomplete;
+                  return AppCard(
+                    padding: const EdgeInsets.all(Space.m),
+                    onTap: () => context.push('/workout/session/${h.session.id}'),
+                    semanticLabel:
+                        '${h.session.name}, ${fmtDayLong(d)}, ${h.completedSets} sets${incomplete ? ', incomplete' : ''}',
+                    child: ExcludeSemantics(
+                      child: Row(
                         children: [
-                          Text(h.session.name, style: t.titleMedium),
-                          Text(
-                            '${fmtDayShort(localDayOfInstant(h.session.startedAt, h.session.utcOffsetMinutes))} · '
-                            '${h.exerciseCount} exercise${h.exerciseCount == 1 ? '' : 's'} · '
-                            '${h.completedSets} set${h.completedSets == 1 ? '' : 's'} done',
-                            style: t.bodySmall,
+                          Container(
+                            width: 56,
+                            height: 56,
+                            decoration: BoxDecoration(color: p.brandSoft, borderRadius: Radii.medium),
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Text('${d.day}', style: t.titleLarge?.copyWith(color: p.brand, height: 1)),
+                                Text(
+                                  fmtDayMonth(d).split(' ').last.toUpperCase(),
+                                  style: t.labelSmall?.copyWith(color: p.brand),
+                                ),
+                              ],
+                            ),
                           ),
-                          if (h.session.status == SessionStatus.incomplete)
-                            Text('Saved as incomplete', style: t.bodySmall?.copyWith(color: AppColors.warning)),
+                          const SizedBox(width: Space.m),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(h.session.name, style: t.titleSmall),
+                                const SizedBox(height: 4),
+                                Wrap(
+                                  spacing: 6,
+                                  children: [
+                                    Tag('${h.exerciseCount} moves'),
+                                    Tag('${h.completedSets} sets'),
+                                    if (incomplete) Tag('Incomplete', color: p.orangeSoft),
+                                  ],
+                                ),
+                              ],
+                            ),
+                          ),
+                          Icon(LucideIcons.chevronRight, size: IconSizes.s, color: p.inkSoft),
                         ],
                       ),
                     ),
-                    const Icon(LucideIcons.chevronRight, size: IconSizes.s),
-                  ],
-                ),
+                  );
+                },
               ),
               const SizedBox(height: Space.s),
             ],

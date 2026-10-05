@@ -90,7 +90,7 @@ Do not hide data controls under a vague label such as “More.” Put update con
 
 The two references use different palettes. Use their screen layouts as references. Use one shared theme.
 
-**Proposed style:** Use one light base, soft cool background, dark text, white cards, one lime action color, and one lavender accent. Use an ink-colored panel for the active workout hero. This panel reuses the shared ink and lime colors. It is not a second theme. The Meal and Workout screens must use the same token set.
+**Accepted style (owner, 2026-10-05):** One design system with a light and a dark mode. No purple. A soft mint-grey canvas, white cards, deep-teal selection, lime for training energy, and four warm category colours (green, blue, orange, coral) for meals, muscles, and charts. A dark ink panel holds the live workout and the exercise body model in both modes. The Meal tab follows the meal reference closely: day pills with a progress ring, a summary card, and a timeline of tinted meal pills with check circles.
 
 Use one font family: **Manrope**. Use font weight, size, and spacing to create hierarchy. Manrope uses the SIL Open Font License. Keep its license notice. Source: https://github.com/google/fonts/blob/main/ofl/manrope/OFL.txt
 
@@ -106,27 +106,25 @@ Use images when they help a user choose a food, recognize an exercise, or unders
 
 Define color and size roles once. Screens must use these named roles. Do not add screen-only token sets.
 
-### First-pass palette
+### Palette
 
-These values are the first visual proposal. They use one palette across the app. The ink workout panel uses the same ink and lime tokens.
+Colours live in `app/lib/core/palette.dart`. Screens read colours only from there.
 
-| Role | Color | Use |
-|---|---|---|
-| Canvas | #F6F8F5 | Main screen background |
-| Surface | #FFFFFF | Cards and input fields |
-| Soft surface | #E8F1F1 | Quiet groups and meal panels |
-| Ink | #141B18 | Main text and active workout panel |
-| Secondary text | #5D6B66 | Supporting labels |
-| Border | #DCE3E0 | Dividers and field edges |
-| Brand lime | #D8FF75 | Main highlight and selected states |
-| Lavender | #CDBBFF | Secondary highlight only |
-| Success text | #246B4C | Success label and icon |
-| Warning text | #8A4B00 | Warning label and icon |
-| Error text | #B3261E | Error label and icon |
+| Role | Light | Dark | Use |
+|---|---|---|---|
+| Canvas | #EEF4F4 | #0A1012 | Screen background |
+| Surface | #FFFFFF | #121A1D | Cards |
+| Ink | #0F1B1D | #EAF1F1 | Main text |
+| Ink soft | #56686B | #93A5A9 | Supporting text |
+| Brand teal | #1E5B66 | #5CC1CC | Selection, links, main buttons (light) |
+| Energy lime | #C6F432 | #C6F432 | Training actions, active tab, main buttons (dark) |
+| Panel | #0F1B1D | #141E21 | Workout hero and body model |
+| Green / soft | #6FA83A / #E8F3DC | #8CC657 / #1A2914 | Lunch, legs, nutrition |
+| Blue / soft | #2F4FD9 / #E5E9FB | #5B86FF / #142140 | Breakfast, back, volume |
+| Orange / soft | #F29F1F / #FFF0DA | #FFB547 / #2C2010 | Snacks, shoulders, helper muscles |
+| Coral / soft | #E85A43 / #FCE7E2 | #FF7B63 / #331A17 | Dinner, chest, warnings of effort |
 
-Use dark ink text on lime, lavender, and soft surfaces. Do not use light text on the lime or lavender fills.
-
-A first-pass contrast calculation gives 4.86:1 or higher for the listed text and background pairs. For example, secondary text on the soft surface is 4.86:1. These calculations use the listed hex values. This does not replace a rendered contrast and accessibility review. Recheck every actual pairing before release.
+`app/test/palette_test.dart` checks that every main text pair is at least 4.5:1 and every icon glyph on a category colour is at least 3:1. This is a calculated check. A rendered review on devices is still required.
 
 ### First-pass size system
 
@@ -143,7 +141,7 @@ Use Manrope for every text role. Use weight and size for hierarchy. Do not add a
 
 These are proposed starting values. Check text scaling, translated labels, and real device layouts before treating them as final.
 
-**To confirm:** Whether to support a full dark theme. The first release uses one light theme with a limited ink workout panel.
+**Decided:** Light and dark modes, plus an Auto option that follows the system. The setting is in Me.
 
 ## 3.9 Components and states
 
@@ -237,6 +235,10 @@ Avoid rebuilding a large screen for each animation tick. Do not animate large im
 - Respect reduced motion.
 - Test with VoiceOver and TalkBack.
 - Test motion and focus on a real phone, not only a simulator.
+
+## 3.14.1 Exercise body model
+
+Each built-in exercise has an animated 3D body model. It is a drawn mannequin, not a video. The user can drag to turn it to any angle, pick Front, Side, 3/4, or Back, pause, play at half speed, and show live joint-angle labels. Main muscles glow lime. Helper muscles glow orange. The model starts paused when the system asks to reduce motion.
 
 ## 3.15 Visual quality gate
 

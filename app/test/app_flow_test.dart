@@ -49,22 +49,22 @@ void main() {
     }
     await tester.tap(find.bySemanticsLabel('Workout, tab 2 of 5'));
     await tester.pumpAndSettle();
-    expect(find.text('Empty workout'), findsOneWidget);
+    expect(find.text('Free workout'), findsOneWidget);
     await tester.tap(find.bySemanticsLabel('Meal, tab 3 of 5'));
     await tester.pumpAndSettle();
-    expect(find.text('Energy eaten'), findsOneWidget);
+    expect(find.text('Eaten'), findsOneWidget);
     await tester.tap(find.bySemanticsLabel('Analytics, tab 4 of 5'));
     await tester.pumpAndSettle();
     await tester.scrollUntilVisible(
-      find.text('Personal records'),
+      find.text('Best lifts'),
       300,
       scrollable: _scrollableIn(find.byType(AnalyticsScreen)),
     );
-    expect(find.text('Personal records'), findsOneWidget);
+    expect(find.text('Best lifts'), findsOneWidget);
     await tester.tap(find.bySemanticsLabel('Me, tab 5 of 5'));
     await tester.pumpAndSettle();
     await tester.scrollUntilVisible(
-      find.text('No connections. No data is shared with AI.'),
+      find.text('None. Nothing is shared.'),
       300,
       scrollable: _scrollableIn(find.byType(MeScreen)),
     );
@@ -82,7 +82,7 @@ void main() {
     // Create an exercise without leaving the workout.
     await tester.tap(find.widgetWithText(OutlinedButton, 'Add exercise'));
     await tester.pumpAndSettle();
-    await tester.tap(find.widgetWithText(OutlinedButton, 'New exercise'));
+    await tester.tap(find.widgetWithText(OutlinedButton, 'Create your own'));
     await tester.pumpAndSettle();
     await tester.enterText(find.widgetWithText(TextField, 'Name'), 'Squat');
     await tester.tap(find.widgetWithText(FilledButton, 'Save exercise'));
@@ -110,8 +110,8 @@ void main() {
     // Leaving the screen keeps the session live.
     await tester.tap(find.byTooltip('Leave screen. The workout keeps running.'));
     await tester.pumpAndSettle();
-    expect(find.text('Workout in progress'), findsWidgets);
-    await tester.tap(find.bySemanticsLabel('Workout in progress. Continue workout'));
+    expect(find.text('Training now'), findsWidgets);
+    await tester.tap(find.widgetWithText(FilledButton, 'Open'));
     await tester.pumpAndSettle();
 
     await tester.ensureVisible(find.widgetWithText(FilledButton, 'Finish workout'));
@@ -129,7 +129,7 @@ void main() {
 
   testWidgets('log a meal; missing values stay missing', (tester) async {
     await pumpApp(tester, at: '/meal');
-    await tester.tap(find.byTooltip('Add food to Breakfast'));
+    await tester.tap(find.text('Add food'));
     await tester.pumpAndSettle();
     await tester.enterText(find.widgetWithText(TextField, 'Food name'), 'Oats');
     await tester.enterText(find.widgetWithText(TextField, 'Serving size'), '40');
@@ -148,24 +148,26 @@ void main() {
     expect(e.amountUnit, 'serving');
     expect(e.proteinG, isNull);
     expect(find.text('Oats'), findsOneWidget);
-    expect(find.text('300 kcal'), findsOneWidget);
+    expect(find.text('300 kcal'), findsWidgets);
     await unmount(tester);
   });
 
   testWidgets('Me shows honest connection states', (tester) async {
     await pumpApp(tester, at: '/me');
     await tester.scrollUntilVisible(
-      find.text('No account. No sync.'),
+      find.text('Account and sync'),
       300,
       scrollable: _scrollableIn(find.byType(MeScreen)),
     );
-    expect(find.textContaining('Not available in this version'), findsWidgets);
+    expect(find.text('Off. Records stay on this phone.'), findsOneWidget);
     await tester.scrollUntilVisible(
-      find.text('No connections. No data is shared with AI.'),
+      find.text('None. Nothing is shared.'),
       300,
       scrollable: _scrollableIn(find.byType(MeScreen)),
     );
-    await tester.tap(find.text('No connections. No data is shared with AI.'));
+    await tester.drag(_scrollableIn(find.byType(MeScreen)), const Offset(0, -250));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('None. Nothing is shared.'));
     await tester.pumpAndSettle();
     expect(find.text('No AI connections'), findsOneWidget);
     await unmount(tester);

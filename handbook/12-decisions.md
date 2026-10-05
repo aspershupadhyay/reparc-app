@@ -193,3 +193,26 @@ Keep major choices here. Update the related chapter when a decision changes.
 **Reason:** The user selected AGPL 3.0 for the public project.
 
 **Rule:** Keep the license text in the repository root. Review third-party assets and dependencies separately. Do not imply that app data or third-party assets use this license.
+
+
+## D-015: Light and dark themes, no purple
+
+**Status:** Accepted by the user.
+**Date:** 2026-10-05.
+
+**Choice:** Replace the lavender accent. Ship light and dark modes with one token set. Follow the meal reference closely for the Meal tab.
+
+**Reason:** The owner found the first palette off from the references and asked for both modes without purple.
+
+**Supersedes:** The palette part of D-002. One design system and one font remain.
+
+## D-016: Built-in coached exercise catalog with a body model
+
+**Status:** Accepted by the user.
+**Date:** 2026-10-05.
+
+**Choice:** Ship a built-in catalog grouped by body area. Each exercise has original coaching text (setup, steps, breathing, cues, mistakes, easier and harder options, dose, tempo) and an animated 3D body model with muscle highlights and joint-angle labels.
+
+**Rule:** The text is original to this project and uses the project license. It is general technique coaching for healthy adults, not medical advice. The model is a procedural drawing, not footage of a person. Do not copy third-party exercise text, images, or video.
+
+**To confirm:** Review of the coaching text by a qualified strength coach before public release.

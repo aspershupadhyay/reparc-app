@@ -107,6 +107,17 @@ class $ExercisesTable extends Exercises
         type: DriftSqlType.string,
         requiredDuringInsert: false,
       );
+  static const VerificationMeta _catalogIdMeta = const VerificationMeta(
+    'catalogId',
+  );
+  @override
+  late final GeneratedColumn<String> catalogId = GeneratedColumn<String>(
+    'catalog_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
   static const VerificationMeta _archivedMeta = const VerificationMeta(
     'archived',
   );
@@ -133,6 +144,7 @@ class $ExercisesTable extends Exercises
     targetMuscles,
     note,
     instructionSource,
+    catalogId,
     archived,
   ];
   @override
@@ -212,6 +224,12 @@ class $ExercisesTable extends Exercises
         ),
       );
     }
+    if (data.containsKey('catalog_id')) {
+      context.handle(
+        _catalogIdMeta,
+        catalogId.isAcceptableOrUnknown(data['catalog_id']!, _catalogIdMeta),
+      );
+    }
     if (data.containsKey('archived')) {
       context.handle(
         _archivedMeta,
@@ -263,6 +281,10 @@ class $ExercisesTable extends Exercises
         DriftSqlType.string,
         data['${effectivePrefix}instruction_source'],
       ),
+      catalogId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}catalog_id'],
+      ),
       archived: attachedDatabase.typeMapping.read(
         DriftSqlType.bool,
         data['${effectivePrefix}archived'],
@@ -287,6 +309,9 @@ class Exercise extends DataClass implements Insertable<Exercise> {
   final String? note;
   final String? instructionSource;
 
+  /// ID of the built-in coached exercise this row logs, if any. Added in v2.
+  final String? catalogId;
+
   /// Archived exercises stay linked to old sessions but leave the library.
   final bool archived;
   const Exercise({
@@ -299,6 +324,7 @@ class Exercise extends DataClass implements Insertable<Exercise> {
     this.targetMuscles,
     this.note,
     this.instructionSource,
+    this.catalogId,
     required this.archived,
   });
   @override
@@ -323,6 +349,9 @@ class Exercise extends DataClass implements Insertable<Exercise> {
     if (!nullToAbsent || instructionSource != null) {
       map['instruction_source'] = Variable<String>(instructionSource);
     }
+    if (!nullToAbsent || catalogId != null) {
+      map['catalog_id'] = Variable<String>(catalogId);
+    }
     map['archived'] = Variable<bool>(archived);
     return map;
   }
@@ -346,6 +375,9 @@ class Exercise extends DataClass implements Insertable<Exercise> {
       instructionSource: instructionSource == null && nullToAbsent
           ? const Value.absent()
           : Value(instructionSource),
+      catalogId: catalogId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(catalogId),
       archived: Value(archived),
     );
   }
@@ -367,6 +399,7 @@ class Exercise extends DataClass implements Insertable<Exercise> {
       instructionSource: serializer.fromJson<String?>(
         json['instructionSource'],
       ),
+      catalogId: serializer.fromJson<String?>(json['catalogId']),
       archived: serializer.fromJson<bool>(json['archived']),
     );
   }
@@ -383,6 +416,7 @@ class Exercise extends DataClass implements Insertable<Exercise> {
       'targetMuscles': serializer.toJson<String?>(targetMuscles),
       'note': serializer.toJson<String?>(note),
       'instructionSource': serializer.toJson<String?>(instructionSource),
+      'catalogId': serializer.toJson<String?>(catalogId),
       'archived': serializer.toJson<bool>(archived),
     };
   }
@@ -397,6 +431,7 @@ class Exercise extends DataClass implements Insertable<Exercise> {
     Value<String?> targetMuscles = const Value.absent(),
     Value<String?> note = const Value.absent(),
     Value<String?> instructionSource = const Value.absent(),
+    Value<String?> catalogId = const Value.absent(),
     bool? archived,
   }) => Exercise(
     id: id ?? this.id,
@@ -412,6 +447,7 @@ class Exercise extends DataClass implements Insertable<Exercise> {
     instructionSource: instructionSource.present
         ? instructionSource.value
         : this.instructionSource,
+    catalogId: catalogId.present ? catalogId.value : this.catalogId,
     archived: archived ?? this.archived,
   );
   Exercise copyWithCompanion(ExercisesCompanion data) {
@@ -429,6 +465,7 @@ class Exercise extends DataClass implements Insertable<Exercise> {
       instructionSource: data.instructionSource.present
           ? data.instructionSource.value
           : this.instructionSource,
+      catalogId: data.catalogId.present ? data.catalogId.value : this.catalogId,
       archived: data.archived.present ? data.archived.value : this.archived,
     );
   }
@@ -445,6 +482,7 @@ class Exercise extends DataClass implements Insertable<Exercise> {
           ..write('targetMuscles: $targetMuscles, ')
           ..write('note: $note, ')
           ..write('instructionSource: $instructionSource, ')
+          ..write('catalogId: $catalogId, ')
           ..write('archived: $archived')
           ..write(')'))
         .toString();
@@ -461,6 +499,7 @@ class Exercise extends DataClass implements Insertable<Exercise> {
     targetMuscles,
     note,
     instructionSource,
+    catalogId,
     archived,
   );
   @override
@@ -476,6 +515,7 @@ class Exercise extends DataClass implements Insertable<Exercise> {
           other.targetMuscles == this.targetMuscles &&
           other.note == this.note &&
           other.instructionSource == this.instructionSource &&
+          other.catalogId == this.catalogId &&
           other.archived == this.archived);
 }
 
@@ -489,6 +529,7 @@ class ExercisesCompanion extends UpdateCompanion<Exercise> {
   final Value<String?> targetMuscles;
   final Value<String?> note;
   final Value<String?> instructionSource;
+  final Value<String?> catalogId;
   final Value<bool> archived;
   final Value<int> rowid;
   const ExercisesCompanion({
@@ -501,6 +542,7 @@ class ExercisesCompanion extends UpdateCompanion<Exercise> {
     this.targetMuscles = const Value.absent(),
     this.note = const Value.absent(),
     this.instructionSource = const Value.absent(),
+    this.catalogId = const Value.absent(),
     this.archived = const Value.absent(),
     this.rowid = const Value.absent(),
   });
@@ -514,6 +556,7 @@ class ExercisesCompanion extends UpdateCompanion<Exercise> {
     this.targetMuscles = const Value.absent(),
     this.note = const Value.absent(),
     this.instructionSource = const Value.absent(),
+    this.catalogId = const Value.absent(),
     this.archived = const Value.absent(),
     this.rowid = const Value.absent(),
   }) : id = Value(id),
@@ -530,6 +573,7 @@ class ExercisesCompanion extends UpdateCompanion<Exercise> {
     Expression<String>? targetMuscles,
     Expression<String>? note,
     Expression<String>? instructionSource,
+    Expression<String>? catalogId,
     Expression<bool>? archived,
     Expression<int>? rowid,
   }) {
@@ -543,6 +587,7 @@ class ExercisesCompanion extends UpdateCompanion<Exercise> {
       if (targetMuscles != null) 'target_muscles': targetMuscles,
       if (note != null) 'note': note,
       if (instructionSource != null) 'instruction_source': instructionSource,
+      if (catalogId != null) 'catalog_id': catalogId,
       if (archived != null) 'archived': archived,
       if (rowid != null) 'rowid': rowid,
     });
@@ -558,6 +603,7 @@ class ExercisesCompanion extends UpdateCompanion<Exercise> {
     Value<String?>? targetMuscles,
     Value<String?>? note,
     Value<String?>? instructionSource,
+    Value<String?>? catalogId,
     Value<bool>? archived,
     Value<int>? rowid,
   }) {
@@ -571,6 +617,7 @@ class ExercisesCompanion extends UpdateCompanion<Exercise> {
       targetMuscles: targetMuscles ?? this.targetMuscles,
       note: note ?? this.note,
       instructionSource: instructionSource ?? this.instructionSource,
+      catalogId: catalogId ?? this.catalogId,
       archived: archived ?? this.archived,
       rowid: rowid ?? this.rowid,
     );
@@ -606,6 +653,9 @@ class ExercisesCompanion extends UpdateCompanion<Exercise> {
     if (instructionSource.present) {
       map['instruction_source'] = Variable<String>(instructionSource.value);
     }
+    if (catalogId.present) {
+      map['catalog_id'] = Variable<String>(catalogId.value);
+    }
     if (archived.present) {
       map['archived'] = Variable<bool>(archived.value);
     }
@@ -627,6 +677,7 @@ class ExercisesCompanion extends UpdateCompanion<Exercise> {
           ..write('targetMuscles: $targetMuscles, ')
           ..write('note: $note, ')
           ..write('instructionSource: $instructionSource, ')
+          ..write('catalogId: $catalogId, ')
           ..write('archived: $archived, ')
           ..write('rowid: $rowid')
           ..write(')'))
@@ -4887,6 +4938,15 @@ class $MealSlotsTable extends MealSlots
     type: DriftSqlType.int,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _kindMeta = const VerificationMeta('kind');
+  @override
+  late final GeneratedColumn<String> kind = GeneratedColumn<String>(
+    'kind',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
   static const VerificationMeta _archivedMeta = const VerificationMeta(
     'archived',
   );
@@ -4910,6 +4970,7 @@ class $MealSlotsTable extends MealSlots
     name,
     position,
     usualMinute,
+    kind,
     archived,
   ];
   @override
@@ -4970,6 +5031,12 @@ class $MealSlotsTable extends MealSlots
         ),
       );
     }
+    if (data.containsKey('kind')) {
+      context.handle(
+        _kindMeta,
+        kind.isAcceptableOrUnknown(data['kind']!, _kindMeta),
+      );
+    }
     if (data.containsKey('archived')) {
       context.handle(
         _archivedMeta,
@@ -5009,6 +5076,10 @@ class $MealSlotsTable extends MealSlots
         DriftSqlType.int,
         data['${effectivePrefix}usual_minute'],
       ),
+      kind: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}kind'],
+      ),
       archived: attachedDatabase.typeMapping.read(
         DriftSqlType.bool,
         data['${effectivePrefix}archived'],
@@ -5031,6 +5102,9 @@ class MealSlot extends DataClass implements Insertable<MealSlot> {
 
   /// Usual time as minutes after midnight. Optional.
   final int? usualMinute;
+
+  /// Icon and colour group: drink, breakfast, snack, lunch, dinner. Added in v2.
+  final String? kind;
   final bool archived;
   const MealSlot({
     required this.id,
@@ -5039,6 +5113,7 @@ class MealSlot extends DataClass implements Insertable<MealSlot> {
     required this.name,
     required this.position,
     this.usualMinute,
+    this.kind,
     required this.archived,
   });
   @override
@@ -5051,6 +5126,9 @@ class MealSlot extends DataClass implements Insertable<MealSlot> {
     map['position'] = Variable<int>(position);
     if (!nullToAbsent || usualMinute != null) {
       map['usual_minute'] = Variable<int>(usualMinute);
+    }
+    if (!nullToAbsent || kind != null) {
+      map['kind'] = Variable<String>(kind);
     }
     map['archived'] = Variable<bool>(archived);
     return map;
@@ -5066,6 +5144,7 @@ class MealSlot extends DataClass implements Insertable<MealSlot> {
       usualMinute: usualMinute == null && nullToAbsent
           ? const Value.absent()
           : Value(usualMinute),
+      kind: kind == null && nullToAbsent ? const Value.absent() : Value(kind),
       archived: Value(archived),
     );
   }
@@ -5082,6 +5161,7 @@ class MealSlot extends DataClass implements Insertable<MealSlot> {
       name: serializer.fromJson<String>(json['name']),
       position: serializer.fromJson<int>(json['position']),
       usualMinute: serializer.fromJson<int?>(json['usualMinute']),
+      kind: serializer.fromJson<String?>(json['kind']),
       archived: serializer.fromJson<bool>(json['archived']),
     );
   }
@@ -5095,6 +5175,7 @@ class MealSlot extends DataClass implements Insertable<MealSlot> {
       'name': serializer.toJson<String>(name),
       'position': serializer.toJson<int>(position),
       'usualMinute': serializer.toJson<int?>(usualMinute),
+      'kind': serializer.toJson<String?>(kind),
       'archived': serializer.toJson<bool>(archived),
     };
   }
@@ -5106,6 +5187,7 @@ class MealSlot extends DataClass implements Insertable<MealSlot> {
     String? name,
     int? position,
     Value<int?> usualMinute = const Value.absent(),
+    Value<String?> kind = const Value.absent(),
     bool? archived,
   }) => MealSlot(
     id: id ?? this.id,
@@ -5114,6 +5196,7 @@ class MealSlot extends DataClass implements Insertable<MealSlot> {
     name: name ?? this.name,
     position: position ?? this.position,
     usualMinute: usualMinute.present ? usualMinute.value : this.usualMinute,
+    kind: kind.present ? kind.value : this.kind,
     archived: archived ?? this.archived,
   );
   MealSlot copyWithCompanion(MealSlotsCompanion data) {
@@ -5126,6 +5209,7 @@ class MealSlot extends DataClass implements Insertable<MealSlot> {
       usualMinute: data.usualMinute.present
           ? data.usualMinute.value
           : this.usualMinute,
+      kind: data.kind.present ? data.kind.value : this.kind,
       archived: data.archived.present ? data.archived.value : this.archived,
     );
   }
@@ -5139,6 +5223,7 @@ class MealSlot extends DataClass implements Insertable<MealSlot> {
           ..write('name: $name, ')
           ..write('position: $position, ')
           ..write('usualMinute: $usualMinute, ')
+          ..write('kind: $kind, ')
           ..write('archived: $archived')
           ..write(')'))
         .toString();
@@ -5152,6 +5237,7 @@ class MealSlot extends DataClass implements Insertable<MealSlot> {
     name,
     position,
     usualMinute,
+    kind,
     archived,
   );
   @override
@@ -5164,6 +5250,7 @@ class MealSlot extends DataClass implements Insertable<MealSlot> {
           other.name == this.name &&
           other.position == this.position &&
           other.usualMinute == this.usualMinute &&
+          other.kind == this.kind &&
           other.archived == this.archived);
 }
 
@@ -5174,6 +5261,7 @@ class MealSlotsCompanion extends UpdateCompanion<MealSlot> {
   final Value<String> name;
   final Value<int> position;
   final Value<int?> usualMinute;
+  final Value<String?> kind;
   final Value<bool> archived;
   final Value<int> rowid;
   const MealSlotsCompanion({
@@ -5183,6 +5271,7 @@ class MealSlotsCompanion extends UpdateCompanion<MealSlot> {
     this.name = const Value.absent(),
     this.position = const Value.absent(),
     this.usualMinute = const Value.absent(),
+    this.kind = const Value.absent(),
     this.archived = const Value.absent(),
     this.rowid = const Value.absent(),
   });
@@ -5193,6 +5282,7 @@ class MealSlotsCompanion extends UpdateCompanion<MealSlot> {
     required String name,
     required int position,
     this.usualMinute = const Value.absent(),
+    this.kind = const Value.absent(),
     this.archived = const Value.absent(),
     this.rowid = const Value.absent(),
   }) : id = Value(id),
@@ -5207,6 +5297,7 @@ class MealSlotsCompanion extends UpdateCompanion<MealSlot> {
     Expression<String>? name,
     Expression<int>? position,
     Expression<int>? usualMinute,
+    Expression<String>? kind,
     Expression<bool>? archived,
     Expression<int>? rowid,
   }) {
@@ -5217,6 +5308,7 @@ class MealSlotsCompanion extends UpdateCompanion<MealSlot> {
       if (name != null) 'name': name,
       if (position != null) 'position': position,
       if (usualMinute != null) 'usual_minute': usualMinute,
+      if (kind != null) 'kind': kind,
       if (archived != null) 'archived': archived,
       if (rowid != null) 'rowid': rowid,
     });
@@ -5229,6 +5321,7 @@ class MealSlotsCompanion extends UpdateCompanion<MealSlot> {
     Value<String>? name,
     Value<int>? position,
     Value<int?>? usualMinute,
+    Value<String?>? kind,
     Value<bool>? archived,
     Value<int>? rowid,
   }) {
@@ -5239,6 +5332,7 @@ class MealSlotsCompanion extends UpdateCompanion<MealSlot> {
       name: name ?? this.name,
       position: position ?? this.position,
       usualMinute: usualMinute ?? this.usualMinute,
+      kind: kind ?? this.kind,
       archived: archived ?? this.archived,
       rowid: rowid ?? this.rowid,
     );
@@ -5265,6 +5359,9 @@ class MealSlotsCompanion extends UpdateCompanion<MealSlot> {
     if (usualMinute.present) {
       map['usual_minute'] = Variable<int>(usualMinute.value);
     }
+    if (kind.present) {
+      map['kind'] = Variable<String>(kind.value);
+    }
     if (archived.present) {
       map['archived'] = Variable<bool>(archived.value);
     }
@@ -5283,6 +5380,7 @@ class MealSlotsCompanion extends UpdateCompanion<MealSlot> {
           ..write('name: $name, ')
           ..write('position: $position, ')
           ..write('usualMinute: $usualMinute, ')
+          ..write('kind: $kind, ')
           ..write('archived: $archived, ')
           ..write('rowid: $rowid')
           ..write(')'))
@@ -6835,6 +6933,7 @@ typedef $$ExercisesTableCreateCompanionBuilder = ExercisesCompanion Function({
   Value<String?> targetMuscles,
   Value<String?> note,
   Value<String?> instructionSource,
+  Value<String?> catalogId,
   Value<bool> archived,
   Value<int> rowid,
 });
@@ -6848,6 +6947,7 @@ typedef $$ExercisesTableUpdateCompanionBuilder = ExercisesCompanion Function({
   Value<String?> targetMuscles,
   Value<String?> note,
   Value<String?> instructionSource,
+  Value<String?> catalogId,
   Value<bool> archived,
   Value<int> rowid,
 });
@@ -6949,6 +7049,11 @@ class $$ExercisesTableFilterComposer
 
   ColumnFilters<String> get instructionSource => $composableBuilder(
     column: $table.instructionSource,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get catalogId => $composableBuilder(
+    column: $table.catalogId,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -7062,6 +7167,11 @@ class $$ExercisesTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get catalogId => $composableBuilder(
+    column: $table.catalogId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<bool> get archived => $composableBuilder(
     column: $table.archived,
     builder: (column) => ColumnOrderings(column),
@@ -7107,6 +7217,9 @@ class $$ExercisesTableAnnotationComposer
     column: $table.instructionSource,
     builder: (column) => column,
   );
+
+  GeneratedColumn<String> get catalogId =>
+      $composableBuilder(column: $table.catalogId, builder: (column) => column);
 
   GeneratedColumn<bool> get archived =>
       $composableBuilder(column: $table.archived, builder: (column) => column);
@@ -7203,6 +7316,7 @@ class $$ExercisesTableTableManager
                 Value<String?> targetMuscles = const Value.absent(),
                 Value<String?> note = const Value.absent(),
                 Value<String?> instructionSource = const Value.absent(),
+                Value<String?> catalogId = const Value.absent(),
                 Value<bool> archived = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => ExercisesCompanion(
@@ -7215,6 +7329,7 @@ class $$ExercisesTableTableManager
                 targetMuscles: targetMuscles,
                 note: note,
                 instructionSource: instructionSource,
+                catalogId: catalogId,
                 archived: archived,
                 rowid: rowid,
               ),
@@ -7229,6 +7344,7 @@ class $$ExercisesTableTableManager
                 Value<String?> targetMuscles = const Value.absent(),
                 Value<String?> note = const Value.absent(),
                 Value<String?> instructionSource = const Value.absent(),
+                Value<String?> catalogId = const Value.absent(),
                 Value<bool> archived = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => ExercisesCompanion.insert(
@@ -7241,6 +7357,7 @@ class $$ExercisesTableTableManager
                 targetMuscles: targetMuscles,
                 note: note,
                 instructionSource: instructionSource,
+                catalogId: catalogId,
                 archived: archived,
                 rowid: rowid,
               ),
@@ -10175,6 +10292,7 @@ typedef $$MealSlotsTableCreateCompanionBuilder = MealSlotsCompanion Function({
   required String name,
   required int position,
   Value<int?> usualMinute,
+  Value<String?> kind,
   Value<bool> archived,
   Value<int> rowid,
 });
@@ -10185,6 +10303,7 @@ typedef $$MealSlotsTableUpdateCompanionBuilder = MealSlotsCompanion Function({
   Value<String> name,
   Value<int> position,
   Value<int?> usualMinute,
+  Value<String?> kind,
   Value<bool> archived,
   Value<int> rowid,
 });
@@ -10248,6 +10367,11 @@ class $$MealSlotsTableFilterComposer
 
   ColumnFilters<int> get usualMinute => $composableBuilder(
     column: $table.usualMinute,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get kind => $composableBuilder(
+    column: $table.kind,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -10321,6 +10445,11 @@ class $$MealSlotsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get kind => $composableBuilder(
+    column: $table.kind,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<bool> get archived => $composableBuilder(
     column: $table.archived,
     builder: (column) => ColumnOrderings(column),
@@ -10355,6 +10484,9 @@ class $$MealSlotsTableAnnotationComposer
     column: $table.usualMinute,
     builder: (column) => column,
   );
+
+  GeneratedColumn<String> get kind =>
+      $composableBuilder(column: $table.kind, builder: (column) => column);
 
   GeneratedColumn<bool> get archived =>
       $composableBuilder(column: $table.archived, builder: (column) => column);
@@ -10419,6 +10551,7 @@ class $$MealSlotsTableTableManager
                 Value<String> name = const Value.absent(),
                 Value<int> position = const Value.absent(),
                 Value<int?> usualMinute = const Value.absent(),
+                Value<String?> kind = const Value.absent(),
                 Value<bool> archived = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => MealSlotsCompanion(
@@ -10428,6 +10561,7 @@ class $$MealSlotsTableTableManager
                 name: name,
                 position: position,
                 usualMinute: usualMinute,
+                kind: kind,
                 archived: archived,
                 rowid: rowid,
               ),
@@ -10439,6 +10573,7 @@ class $$MealSlotsTableTableManager
                 required String name,
                 required int position,
                 Value<int?> usualMinute = const Value.absent(),
+                Value<String?> kind = const Value.absent(),
                 Value<bool> archived = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => MealSlotsCompanion.insert(
@@ -10448,6 +10583,7 @@ class $$MealSlotsTableTableManager
                 name: name,
                 position: position,
                 usualMinute: usualMinute,
+                kind: kind,
                 archived: archived,
                 rowid: rowid,
               ),

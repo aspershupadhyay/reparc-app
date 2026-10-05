@@ -167,4 +167,13 @@ void main() {
     expect(copy.items.map((i) => i.exercise.name), ['B', 'A']);
     expect(copy.items.map((i) => i.item.targetSets), [4, 2]);
   });
+
+  test('a built-in exercise maps to one row and keeps its history', () async {
+    final a = await repo.ensureCatalogExercise(catalogId: 'back-squat', name: 'Back squat');
+    final b = await repo.ensureCatalogExercise(catalogId: 'back-squat', name: 'Back squat');
+    expect(a, b);
+    await repo.archiveExercise(a);
+    expect(await repo.ensureCatalogExercise(catalogId: 'back-squat', name: 'Back squat'), a);
+    expect((await repo.watchExercises().first).single.catalogId, 'back-squat');
+  });
 }

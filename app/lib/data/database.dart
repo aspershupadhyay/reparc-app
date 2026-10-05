@@ -25,6 +25,9 @@ class Exercises extends Table with RecordColumns {
   TextColumn get note => text().nullable()();
   TextColumn get instructionSource => text().nullable()();
 
+  /// ID of the built-in coached exercise this row logs, if any. Added in v2.
+  TextColumn get catalogId => text().nullable()();
+
   /// Archived exercises stay linked to old sessions but leave the library.
   BoolColumn get archived => boolean().withDefault(const Constant(false))();
 }
@@ -111,6 +114,9 @@ class MealSlots extends Table with RecordColumns {
 
   /// Usual time as minutes after midnight. Optional.
   IntColumn get usualMinute => integer().nullable()();
+
+  /// Icon and colour group: drink, breakfast, snack, lunch, dinner. Added in v2.
+  TextColumn get kind => text().nullable()();
   BoolColumn get archived => boolean().withDefault(const Constant(false))();
 }
 
@@ -149,6 +155,13 @@ class Settings extends Table {
   Set<Column<Object>> get primaryKey => {key};
 }
 
+const _defaultKinds = [
+  ('slot-breakfast', 'breakfast'),
+  ('slot-lunch', 'lunch'),
+  ('slot-dinner', 'dinner'),
+  ('slot-snacks', 'snack'),
+];
+
 @DriftDatabase(
   tables: [
     Exercises,
@@ -172,13 +185,23 @@ class AppDatabase extends _$AppDatabase {
   /// Current local data format. Every change needs a migration, a test from
   /// the last supported version, and a recovery plan (handbook 7.5).
   @override
-  int get schemaVersion => 1;
+  int get schemaVersion => 2;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
     onCreate: (m) async {
       await m.createAll();
       await seedMealSlots();
+    },
+    onUpgrade: (m, from, to) async {
+      // v1 -> v2: built-in exercise link and meal slot kind.
+      if (from < 2) {
+        await m.addColumn(exercises, exercises.catalogId);
+        await m.addColumn(mealSlots, mealSlots.kind);
+        for (final (id, kind) in _defaultKinds) {
+          await (update(mealSlots)..where((s) => s.id.equals(id))).write(MealSlotsCompanion(kind: Value(kind)));
+        }
+      }
     },
     beforeOpen: (details) async {
       await customStatement('PRAGMA foreign_keys = ON');
@@ -189,10 +212,10 @@ class AppDatabase extends _$AppDatabase {
   Future<void> seedMealSlots() async {
     final now = DateTime.now().toUtc();
     const defaults = [
-      ('slot-breakfast', 'Breakfast', 8 * 60),
-      ('slot-lunch', 'Lunch', 13 * 60),
-      ('slot-dinner', 'Dinner', 19 * 60),
-      ('slot-snacks', 'Snacks', null),
+      ('slot-breakfast', 'Breakfast', 8 * 60, 'breakfast'),
+      ('slot-lunch', 'Lunch', 13 * 60, 'lunch'),
+      ('slot-snacks', 'Snacks', 16 * 60 + 30, 'snack'),
+      ('slot-dinner', 'Dinner', 19 * 60 + 30, 'dinner'),
     ];
     for (final (i, d) in defaults.indexed) {
       await into(mealSlots).insert(
@@ -201,6 +224,7 @@ class AppDatabase extends _$AppDatabase {
           name: d.$2,
           position: i,
           usualMinute: Value(d.$3),
+          kind: Value(d.$4),
           createdAt: now,
           updatedAt: now,
         ),

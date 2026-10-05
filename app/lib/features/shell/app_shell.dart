@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../core/motion.dart';
+import '../../core/palette.dart';
 import '../../core/theme.dart';
 import '../../core/tokens.dart';
 import '../../data/models.dart';
@@ -37,7 +38,8 @@ class AppShell extends ConsumerWidget {
       bottomNavigationBar: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          if (live != null) _LiveBar(sessionId: live.id, paused: live.status == SessionStatus.paused),
+          if (live != null && shell.currentIndex > 1)
+            _LiveBar(sessionId: live.id, paused: live.status == SessionStatus.paused),
           _TabBar(
             index: shell.currentIndex,
             onSelect: (i) => shell.goBranch(i, initialLocation: i == shell.currentIndex),
@@ -57,34 +59,42 @@ class _LiveBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final t = Theme.of(context).textTheme;
-    return Material(
-      color: AppColors.ink,
-      child: InkWell(
-        onTap: () => context.push('/live/$sessionId'),
-        child: Semantics(
-          button: true,
-          label: paused ? 'Workout paused. Continue workout' : 'Workout in progress. Continue workout',
-          excludeSemantics: true,
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(minHeight: minTarget),
+    final p = context.pal;
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(Space.l, 0, Space.l, Space.s),
+      child: Material(
+        color: p.panel,
+        borderRadius: BorderRadius.circular(999),
+        child: InkWell(
+          borderRadius: BorderRadius.circular(999),
+          onTap: () => context.push('/live/$sessionId'),
+          child: Semantics(
+            button: true,
+            label: paused ? 'Workout paused. Continue workout' : 'Workout in progress. Continue workout',
+            excludeSemantics: true,
             child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: Space.l, vertical: Space.s),
+              padding: const EdgeInsets.fromLTRB(Space.s, Space.s, Space.l, Space.s),
               child: Row(
                 children: [
-                  Icon(paused ? LucideIcons.pause : LucideIcons.timer, color: AppColors.lime, size: IconSizes.s),
+                  Container(
+                    width: 36,
+                    height: 36,
+                    decoration: BoxDecoration(color: p.energy, shape: BoxShape.circle),
+                    child: Icon(paused ? LucideIcons.pause : LucideIcons.dumbbell, color: p.onEnergy, size: 18),
+                  ),
                   const SizedBox(width: Space.m),
                   Expanded(
                     child: Text(
-                      paused ? 'Workout paused' : 'Workout in progress',
-                      style: t.labelMedium?.copyWith(color: AppColors.surface),
+                      paused ? 'Paused' : 'Training',
+                      style: t.labelLarge?.copyWith(color: p.onPanel),
                     ),
                   ),
                   SessionClock(
                     sessionId: sessionId,
-                    style: t.labelMedium!.tabular.copyWith(color: AppColors.lime),
+                    style: t.titleMedium!.tabular.copyWith(color: p.energy),
                   ),
                   const SizedBox(width: Space.s),
-                  const Icon(LucideIcons.chevronRight, color: AppColors.surface, size: IconSizes.s),
+                  Icon(LucideIcons.chevronRight, color: p.onPanelSoft, size: IconSizes.s),
                 ],
               ),
             ),
@@ -104,65 +114,65 @@ class _TabBar extends StatelessWidget {
   Widget build(BuildContext context) {
     final duration = motionOf(context, Motion.standard);
     final t = Theme.of(context).textTheme;
-    return Material(
-      color: AppColors.surface,
-      child: DecoratedBox(
-        decoration: const BoxDecoration(
-          border: Border(top: BorderSide(color: AppColors.border)),
-        ),
-        child: SafeArea(
-          top: false,
-          child: MediaQuery.withClampedTextScaling(
-            maxScaleFactor: 1.5,
-            child: Padding(
-              padding: const EdgeInsets.symmetric(vertical: Space.s),
-              child: Row(
-                children: [
-                  for (final (i, tab) in _tabs.indexed)
-                    Expanded(
-                      child: Semantics(
-                        selected: i == index,
-                        button: true,
-                        label: '${tab.label}, tab ${i + 1} of ${_tabs.length}',
-                        excludeSemantics: true,
-                        child: InkResponse(
-                          onTap: () => onSelect(i),
-                          containedInkWell: true,
-                          highlightShape: BoxShape.rectangle,
-                          borderRadius: Radii.small,
-                          child: ConstrainedBox(
-                            constraints: const BoxConstraints(minHeight: 56),
-                            child: Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                AnimatedContainer(
-                                  duration: duration,
-                                  curve: Motion.change,
-                                  width: 56,
-                                  height: 32,
-                                  decoration: BoxDecoration(
-                                    color: i == index ? AppColors.lime : AppColors.lime.withValues(alpha: 0),
-                                    borderRadius: BorderRadius.circular(16),
-                                  ),
-                                  child: Icon(tab.icon, size: IconSizes.m, color: AppColors.ink),
+    final p = context.pal;
+    return Container(
+      decoration: BoxDecoration(
+        color: p.surface,
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(Radii.l)),
+        boxShadow: [
+          BoxShadow(color: Colors.black.withValues(alpha: 0.06), blurRadius: 20, offset: const Offset(0, -4)),
+        ],
+      ),
+      child: SafeArea(
+        top: false,
+        child: MediaQuery.withClampedTextScaling(
+          maxScaleFactor: 1.4,
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(Space.s, Space.s, Space.s, Space.xs),
+            child: Row(
+              children: [
+                for (final (i, tab) in _tabs.indexed)
+                  Expanded(
+                    child: Semantics(
+                      selected: i == index,
+                      button: true,
+                      label: '${tab.label}, tab ${i + 1} of ${_tabs.length}',
+                      excludeSemantics: true,
+                      child: InkResponse(
+                        onTap: () => onSelect(i),
+                        containedInkWell: true,
+                        highlightShape: BoxShape.rectangle,
+                        borderRadius: Radii.medium,
+                        child: ConstrainedBox(
+                          constraints: const BoxConstraints(minHeight: 58),
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              AnimatedContainer(
+                                duration: duration,
+                                curve: Motion.change,
+                                width: 54,
+                                height: 32,
+                                decoration: BoxDecoration(
+                                  color: i == index ? p.energy : p.energy.withValues(alpha: 0),
+                                  borderRadius: BorderRadius.circular(16),
                                 ),
-                                const SizedBox(height: Space.xs),
-                                Text(
-                                  tab.label,
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                  style: (i == index ? t.labelSmall?.weight(FontWeight.w800) : t.labelSmall)?.copyWith(
-                                    color: i == index ? AppColors.ink : AppColors.secondaryText,
-                                  ),
-                                ),
-                              ],
-                            ),
+                                child: Icon(tab.icon, size: 22, color: i == index ? p.onEnergy : p.inkSoft),
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                tab.label,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: t.labelSmall?.copyWith(color: i == index ? p.ink : p.inkSoft),
+                              ),
+                            ],
                           ),
                         ),
                       ),
                     ),
-                ],
-              ),
+                  ),
+              ],
             ),
           ),
         ),

@@ -5,6 +5,7 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../../core/clock.dart';
 import '../../core/dates.dart';
 import '../../core/format.dart';
+import '../../core/palette.dart';
 import '../../core/tokens.dart';
 import '../../core/widgets.dart';
 import '../../data/database.dart';
@@ -213,6 +214,14 @@ class _EntrySheetState extends ConsumerState<_EntrySheet> {
   Widget build(BuildContext context) {
     final t = Theme.of(context).textTheme;
     final slots = ref.watch(mealSlotsProvider).value ?? const <MealSlot>[];
+    if (_slotId == null && slots.isNotEmpty) {
+      // Default to the meal closest to the current time.
+      final now = ref.read(clockProvider)();
+      final m = now.hour * 60 + now.minute;
+      final timed = slots.where((s) => s.usualMinute != null).toList()
+        ..sort((a, b) => (a.usualMinute! - m).abs().compareTo((b.usualMinute! - m).abs()));
+      _slotId = (timed.isEmpty ? slots.first : timed.first).id;
+    }
     final foods = ref.watch(foodsProvider).value ?? const <Food>[];
     final q = _search.text.trim().toLowerCase();
     final matches = q.isEmpty
@@ -406,7 +415,7 @@ class _EntrySheetState extends ConsumerState<_EntrySheet> {
             const SizedBox(height: Space.s),
             Semantics(
               liveRegion: true,
-              child: StatusLine(icon: LucideIcons.circleAlert, text: _error!, color: AppColors.error),
+              child: StatusLine(icon: LucideIcons.circleAlert, text: _error!, color: context.pal.error),
             ),
           ],
           const SizedBox(height: Space.l),
@@ -415,7 +424,7 @@ class _EntrySheetState extends ConsumerState<_EntrySheet> {
             const SizedBox(height: Space.s),
             TextButton.icon(
               onPressed: _delete,
-              style: TextButton.styleFrom(foregroundColor: AppColors.error),
+              style: TextButton.styleFrom(foregroundColor: context.pal.error),
               icon: const Icon(LucideIcons.trash2, size: IconSizes.s),
               label: const Text('Delete food from this day'),
             ),

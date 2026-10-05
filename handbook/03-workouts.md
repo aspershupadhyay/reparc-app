@@ -44,6 +44,10 @@ An exercise can have:
 
 Let users create custom exercises. Do not require a catalog match before they can log a movement.
 
+### Built-in catalog
+
+The app ships 36 coached exercises in seven body areas: chest, back, shoulders, arms, legs, glutes and hamstrings, and core. They live in `app/lib/features/exercises/catalog/`. Logging a built-in exercise creates one exercise row linked by `catalogId`, so all its history stays together. Users can still create their own exercises. See decision D-016.
+
 ## 4.4 Set details
 
 Support fields that match the set type:
@@ -105,4 +109,5 @@ Do not infer exercise form, injury, or medical status. Do not estimate calories 
 - **Data:** Preserve units, order, time, and source.
 - **Safety:** Do not infer form, injury, or calories from set data.
 - **Done when:** A session survives offline use, app closure, and restart without losing a set.
-- **To confirm:** Catalog source, effort scale, and exact personal-record rules.
+- **Catalog:** Built-in, original, 36 exercises (D-016). Coach review is **To confirm**.
+- **To confirm:** Effort scale and further personal-record rules.

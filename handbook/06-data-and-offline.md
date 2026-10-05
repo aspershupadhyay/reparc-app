@@ -62,6 +62,13 @@ A migration changes the local data format. Every migration must have:
 
 Do not downgrade a database unless a tested recovery path exists.
 
+### Schema history
+
+| Version | Change | Test |
+|---|---|---|
+| 1 | First local schema | — |
+| 2 | `exercises.catalog_id` links a built-in exercise. `meal_slots.kind` sets the meal icon and colour. | `app/test/migration_test.dart` upgrades a real v1 file and checks that no record is lost |
+
 ## 7.6 Backup, export, and delete
 
 A local database is not a backup. Explain when records exist only on this phone. Define how iOS and Android device backups treat the database and secure keys. Do not restore an encrypted database without its key. Test restore and export before release. Keep a user-controlled export path.

@@ -4,10 +4,12 @@ import 'package:drift/drift.dart' show Value;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../core/format.dart';
 import '../../core/motion.dart';
+import '../../core/palette.dart';
 import '../../core/theme.dart';
 import '../../core/tokens.dart';
 import '../../core/widgets.dart';
@@ -149,6 +151,12 @@ class _ExerciseCard extends ConsumerWidget {
                   ],
                 ),
               ),
+              if (view.exercise.catalogId != null)
+                IconButton(
+                  tooltip: 'How to do ${view.exercise.name}',
+                  onPressed: () => context.push('/workout/guide/${view.exercise.catalogId}'),
+                  icon: Icon(LucideIcons.bookOpen, color: context.pal.brand),
+                ),
               PopupMenuButton<_ExerciseAction>(
                 tooltip: 'Exercise options',
                 icon: const Icon(LucideIcons.ellipsisVertical),
@@ -200,7 +208,7 @@ class _SetHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final s = Theme.of(context).textTheme.labelSmall?.copyWith(color: AppColors.secondaryText);
+    final s = Theme.of(context).textTheme.labelSmall?.copyWith(color: context.pal.inkSoft);
     return ExcludeSemantics(
       child: Padding(
         padding: const EdgeInsets.only(right: Space.s, bottom: Space.xs),
@@ -353,7 +361,7 @@ class _SetRowState extends ConsumerState<SetRow> {
       curve: Motion.change,
       margin: const EdgeInsets.only(bottom: Space.xs, right: Space.s),
       decoration: BoxDecoration(
-        color: s.completed ? AppColors.lime.withValues(alpha: 0.35) : Colors.transparent,
+        color: s.completed ? context.pal.energy.withValues(alpha: 0.28) : Colors.transparent,
         borderRadius: Radii.small,
       ),
       child: Row(
@@ -375,7 +383,7 @@ class _SetRowState extends ConsumerState<SetRow> {
               ),
             ),
           ),
-          const SizedBox(width: Space.s),
+          SizedBox(width: Space.s),
           Expanded(
             child: TextField(
               controller: _load,
@@ -430,12 +438,12 @@ class _SetRowState extends ConsumerState<SetRow> {
               onPressed: _toggleDone,
               tooltip: s.completed ? 'Mark set not complete' : 'Mark set complete',
               style: IconButton.styleFrom(
-                backgroundColor: s.completed ? AppColors.ink : AppColors.surface,
-                side: const BorderSide(color: AppColors.border),
+                backgroundColor: s.completed ? context.pal.ink : context.pal.surfaceAlt,
+                side: BorderSide(color: context.pal.line),
               ),
               icon: Icon(
                 s.completed ? LucideIcons.check : LucideIcons.circle,
-                color: s.completed ? AppColors.lime : AppColors.secondaryText,
+                color: s.completed ? context.pal.energy : context.pal.inkSoft,
               ),
             ),
           ),
@@ -567,7 +575,7 @@ class _SetDetailsState extends ConsumerState<_SetDetails> {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Text('Set details', style: t.titleLarge),
-          const SizedBox(height: Space.l),
+          SizedBox(height: Space.l),
           Text('Set type', style: t.labelMedium),
           const SizedBox(height: Space.s),
           Wrap(
@@ -636,15 +644,15 @@ class _SetDetailsState extends ConsumerState<_SetDetails> {
             const SizedBox(height: Space.m),
             Semantics(
               liveRegion: true,
-              child: StatusLine(icon: LucideIcons.circleAlert, text: _error!, color: AppColors.error),
+              child: StatusLine(icon: LucideIcons.circleAlert, text: _error!, color: context.pal.error),
             ),
           ],
-          const SizedBox(height: Space.l),
+          SizedBox(height: Space.l),
           FilledButton(onPressed: _save, child: const Text('Save set')),
           const SizedBox(height: Space.s),
           TextButton.icon(
             onPressed: _delete,
-            style: TextButton.styleFrom(foregroundColor: AppColors.error),
+            style: TextButton.styleFrom(foregroundColor: context.pal.error),
             icon: const Icon(LucideIcons.trash2, size: IconSizes.s),
             label: const Text('Delete set'),
           ),
