@@ -24,9 +24,9 @@ Assign an owner for each responsibility before public release. One person can ow
 
 ## 12.2 Source license
 
-Choose a source license before publishing the repository.
+The project uses the GNU Affero General Public License, version 3.0 (AGPL-3.0-only). The user selected this license on 2026-10-05. See the repository root [LICENSE](../LICENSE).
 
-**To confirm:** The project owner must choose the license after reviewing patent needs, reuse goals, trademark needs, and contributor rules. Apache-2.0 is one candidate. This handbook does not make that choice.
+AGPL-3.0 is a strong copyleft license. It requires a user who modifies the program and lets people use it over a network to offer those users the corresponding source under the license terms. Review the terms with contributors and service operators before launch.
 
 Keep app code, brand assets, exercise text, food data, fonts, and user data rights clear. Open-source source code does not make user records public.
 
@@ -143,7 +143,7 @@ Do not delete user records without a clear reason and notice.
 
 - **Purpose:** Keep the open-source project safe and supportable.
 - **Roles:** Name owners before public release.
-- **License:** To confirm before public source release.
+- **License:** GNU AGPL v3.0 (AGPL-3.0-only).
 - **Tests:** Use synthetic data and test user-visible behavior.
 - **Release:** Use signed builds and staged rollout.
 - **Support:** Publish support and security contacts before launch.

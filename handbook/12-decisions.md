@@ -92,7 +92,6 @@ Keep major choices here. Update the related chapter when a decision changes.
 - Database encryption and account recovery.
 - Backend and identity provider.
 - Food data source and license.
-- Final source license.
 - Minimum operating-system versions.
 - Numeric app-size and performance targets.
 - Support owner and security contact.
@@ -180,3 +179,15 @@ Keep major choices here. Update the related chapter when a decision changes.
 **Reason:** The user selected Reparc to move into project setup.
 
 **Open check:** Existing companies use Reparc, including an active UK IT consultancy. The name is not proven unique or legally clear. Check trademarks, app listings, domains, and launch regions before public product branding.
+
+
+## D-014: License the project under GNU AGPL v3.0
+
+**Status:** Accepted by the user.
+**Date:** 2026-10-05.
+
+**Choice:** Use GNU Affero General Public License version 3.0 only (SPDX: AGPL-3.0-only).
+
+**Reason:** The user selected AGPL 3.0 for the public project.
+
+**Rule:** Keep the license text in the repository root. Review third-party assets and dependencies separately. Do not imply that app data or third-party assets use this license.
