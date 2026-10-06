@@ -39,7 +39,7 @@ Use the iOS tab bar: a translucent bar with a thin top line. The selected tab's 
 
 Home answers three questions, in order:
 
-1. **What do I do now?** One main action: **Continue workout** when a session is active, today's roadmap day when the user follows a roadmap, or **Start workout**.
+1. **What do I do now?** One main action: **Continue workout** when a session is active, **Start workout** on the next roadmap day when the user follows a roadmap (it starts the session at once), or **Start workout** for an empty workout.
 2. **How is today's eating going?** Rings for protein, fibre, carbs, and energy (or fat when calories are hidden), against the user's targets when they are on.
 3. **How is my week going?** Training days, and roadmap workouts done this week.
 

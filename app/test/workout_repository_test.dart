@@ -31,10 +31,21 @@ void main() {
     // Template targets do not become recorded values.
     expect(detail.exercises.single.sets.every((s) => s.reps == null && !s.completed), isTrue);
 
+    expect(detail.exercises.single.item.note, 'Target: 3 sets × 5 reps');
+
     final item = (await repo.loadTemplate(plan))!.items.single.item;
     await repo.removeTemplateExercise(item.id);
     detail = (await repo.loadSession(sessionId))!;
     expect(detail.exercises, hasLength(1));
+  });
+
+  test('a plan exercise without a target starts with one empty set', () async {
+    final row = await repo.createExercise(name: 'Row');
+    final plan = await repo.createTemplate('Back');
+    await repo.addTemplateExercise(plan, row);
+    final detail = (await repo.loadSession(await repo.startSession(templateId: plan)))!;
+    expect(detail.exercises.single.sets, hasLength(1));
+    expect(detail.exercises.single.item.note, isNull);
   });
 
   test('only one live session at a time', () async {

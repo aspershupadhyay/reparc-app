@@ -70,8 +70,8 @@ void main() {
     await tester.tap(find.widgetWithText(FilledButton, 'Use this roadmap'));
     await tester.pumpAndSettle();
 
-    expect(find.textContaining('Next: Skills A'), findsOneWidget);
-    await tester.tap(find.widgetWithText(FilledButton, 'Warm up and start'));
+    expect(find.text('Next on your roadmap'), findsOneWidget);
+    await tester.tap(find.text('See the day'));
     await tester.pumpAndSettle();
     expect(find.text('1. Warm-up (about 8 min)'), findsOneWidget);
     // Let the "Roadmap saved" message close.
@@ -85,9 +85,12 @@ void main() {
     expect(session.programId, isNotNull);
     final sets = await db.select(db.setEntries).get();
     final warm = sets.where((s) => s.setType == SetType.warmup).toList();
-    // Five warm-up moves (one set each to tick off) plus two ramp-up sets of the first lift.
-    expect(warm, hasLength(5 + 2), reason: 'Warm-up moves and beginner ramp-up');
+    // Five warm-up moves, one set each to tick off. Body-weight moves get no ramp-up sets.
+    expect(warm, hasLength(5), reason: 'Warm-up moves only');
     expect(warm.every((s) => !s.completed && s.reps == null && s.load == null), isTrue);
+    final notes = (await db.select(db.sessionExercises).get()).map((e) => e.note ?? '').toList();
+    expect(notes.where((n) => n.startsWith('Warm-up')), hasLength(5));
+    expect(notes.where((n) => n.contains('Ramp-up')), isEmpty);
     await unmount(tester);
   });
 

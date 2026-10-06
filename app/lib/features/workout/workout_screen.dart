@@ -18,8 +18,9 @@ import 'start_workout.dart';
 
 enum _Section { roadmap, plans, exercises, history }
 
-/// Workout tab: plans, the exercise library, history, and the way into
-/// live logging (decision D-008). Layout follows the second reference.
+/// Workout tab: one start card, then the roadmap, plans, the exercise
+/// library, and history (decision D-008). Layout follows the second
+/// reference.
 class WorkoutScreen extends ConsumerStatefulWidget {
   const WorkoutScreen({super.key});
 
@@ -66,6 +67,8 @@ class _WorkoutScreenState extends ConsumerState<WorkoutScreen> {
   }
 }
 
+/// The one way to start: continue the live workout, start the next roadmap
+/// day, or start an empty workout.
 class _StartCard extends ConsumerWidget {
   const _StartCard({required this.liveId});
   final String? liveId;
@@ -74,36 +77,72 @@ class _StartCard extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final t = Theme.of(context).textTheme;
     final p = context.pal;
+    final prog = ref.watch(activeProgramProvider).value;
+    final next = liveId != null || prog == null || prog.plan.days.isEmpty ? null : prog.plan.days[prog.nextDay];
+    final (String eyebrow, String? title, String? sub) = switch ((liveId, next)) {
+      (_?, _) => ('Training now', null, null),
+      (null, final d?) => (
+        'Next on your roadmap',
+        d.name,
+        '${d.focus} · ${d.work.length} exercises · ~${d.minutes} min',
+      ),
+      _ => ('Free workout', 'Add exercises as you go', null),
+    };
     return Container(
       padding: const EdgeInsets.all(Space.xl),
       decoration: BoxDecoration(color: p.panel, borderRadius: Radii.large),
-      child: Row(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  liveId == null ? 'Free workout' : 'Training now',
-                  style: t.bodySmall?.copyWith(color: p.onPanelSoft),
+          Row(
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(eyebrow, style: t.bodySmall?.copyWith(color: p.onPanelSoft)),
+                    const SizedBox(height: Space.xs),
+                    if (liveId != null)
+                      SessionClock(
+                        sessionId: liveId!,
+                        style: t.displaySmall!.tabular.copyWith(color: p.energy),
+                      )
+                    else
+                      OneLine(title!, style: t.titleMedium?.copyWith(color: p.onPanel)),
+                    if (sub != null) Text(sub, style: t.bodySmall?.copyWith(color: p.onPanelSoft)),
+                  ],
                 ),
-                const SizedBox(height: Space.xs),
-                if (liveId != null)
-                  SessionClock(
-                    sessionId: liveId!,
-                    style: t.displaySmall!.tabular.copyWith(color: p.energy),
-                  )
-                else
-                  OneLine('Add moves as you go', style: t.titleMedium?.copyWith(color: p.onPanel)),
+              ),
+              FilledButton.icon(
+                style: FilledButton.styleFrom(backgroundColor: p.energy, foregroundColor: p.onEnergy),
+                onPressed: switch ((liveId, next)) {
+                  (final id?, _) => () => context.push('/live/$id'),
+                  (null, _?) => () => startWorkout(context, ref, programId: prog!.id, programDay: prog.nextDay),
+                  _ => () => startWorkout(context, ref),
+                },
+                icon: Icon(liveId == null ? LucideIcons.play : LucideIcons.arrowRight, size: 20),
+                label: Text(liveId == null ? 'Start' : 'Open'),
+              ),
+            ],
+          ),
+          if (next != null) ...[
+            const SizedBox(height: Space.s),
+            Wrap(
+              spacing: Space.s,
+              children: [
+                TextButton(
+                  style: TextButton.styleFrom(foregroundColor: p.onPanel),
+                  onPressed: () => context.push('/workout/roadmap/${prog!.id}/day/${prog.nextDay}'),
+                  child: const Text('See the day'),
+                ),
+                TextButton(
+                  style: TextButton.styleFrom(foregroundColor: p.onPanelSoft),
+                  onPressed: () => startWorkout(context, ref),
+                  child: const Text('Empty workout'),
+                ),
               ],
             ),
-          ),
-          FilledButton.icon(
-            style: FilledButton.styleFrom(backgroundColor: p.energy, foregroundColor: p.onEnergy),
-            onPressed: liveId == null ? () => startWorkout(context, ref) : () => context.push('/live/$liveId'),
-            icon: Icon(liveId == null ? LucideIcons.play : LucideIcons.arrowRight, size: 20),
-            label: Text(liveId == null ? 'Start' : 'Open'),
-          ),
+          ],
         ],
       ),
     );
@@ -133,7 +172,7 @@ class _Plans extends ConsumerWidget {
             const EmptyState(
               icon: LucideIcons.clipboardList,
               title: 'No plans yet',
-              body: 'Save the moves you repeat.',
+              body: 'A plan is one workout you repeat. Your roadmap plans the whole week.',
             ),
           for (final (i, (plan, count)) in plans.indexed) ...[
             Builder(
@@ -252,7 +291,7 @@ class _History extends ConsumerWidget {
                                 Wrap(
                                   spacing: 6,
                                   children: [
-                                    Tag('${h.exerciseCount} moves'),
+                                    Tag('${h.exerciseCount} exercises'),
                                     Tag('${h.completedSets} sets'),
                                     if (incomplete) Tag('Incomplete', color: p.orangeSoft),
                                   ],

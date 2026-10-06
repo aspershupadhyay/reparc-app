@@ -5,10 +5,18 @@ import 'package:go_router/go_router.dart';
 import '../../core/widgets.dart';
 import '../../data/providers.dart';
 
-/// Starts a session and opens the live workout.
+/// Starts a session and opens the live workout: an empty workout, a saved
+/// plan ([templateId]), or one roadmap day ([programId] and [programDay]).
 ///
 /// If a session is already live, the user returns to it instead.
-Future<void> startWorkout(BuildContext context, WidgetRef ref, {String? templateId, String? firstExerciseId}) async {
+Future<void> startWorkout(
+  BuildContext context,
+  WidgetRef ref, {
+  String? templateId,
+  String? firstExerciseId,
+  String? programId,
+  int? programDay,
+}) async {
   final repo = ref.read(workoutRepoProvider);
   final live = await repo.liveSession();
   if (!context.mounted) return;
@@ -18,6 +26,9 @@ Future<void> startWorkout(BuildContext context, WidgetRef ref, {String? template
     return;
   }
   final id = await guardedWrite(context, () async {
+    if (programId != null && programDay != null) {
+      return repo.startProgramDay(programId: programId, dayIndex: programDay);
+    }
     final id = await repo.startSession(templateId: templateId);
     if (firstExerciseId != null) {
       final se = await repo.addSessionExercise(id, firstExerciseId);

@@ -126,14 +126,24 @@ class PlanItem {
   final bool rampUp;
   final String? note;
 
+  /// Sets and reps or time: "3 × 8–12", "10 reps", "2 × 45 s", "5 min".
   String get target {
     if (seconds != null) {
       final t = seconds! >= 60 && seconds! % 60 == 0 ? '${seconds! ~/ 60} min' : '$seconds s';
       return sets > 1 ? '$sets × $t' : t;
     }
-    final reps = repsLow == null ? '' : (repsHigh == null || repsHigh == repsLow ? '$repsLow' : '$repsLow–$repsHigh');
-    return sets > 1 || reps.isNotEmpty ? '$sets × $reps' : '';
+    if (repsLow == null) return sets > 1 ? '$sets sets' : '';
+    final reps = repsHigh == null || repsHigh == repsLow ? '$repsLow' : '$repsLow–$repsHigh';
+    return sets > 1 ? '$sets × $reps' : '$reps reps';
   }
+
+  /// Target, rest, and effort on one line. The roadmap day and the live
+  /// workout both show this text.
+  String get details => [
+    target,
+    if (restSec != null && kind != ItemKind.warmup) '${restText(restSec!)} rest',
+    if (rir != null) rir == 0 ? 'to failure' : '$rir reps left',
+  ].where((s) => s.isNotEmpty).join(' · ');
 
   PlanItem copyWith({
     ItemKind? kind,
@@ -209,7 +219,12 @@ class PlanDay {
 
   /// Rough length in minutes: about 40 s per set plus rest, plus warm-up
   /// and cool-down time.
-  int get minutes {
+  int get minutes => _minutes(items);
+
+  /// Rough length of the warm-up in minutes.
+  int get warmupMinutes => _minutes(warmup);
+
+  static int _minutes(Iterable<PlanItem> items) {
     var s = 0;
     for (final i in items) {
       final perSet = i.seconds ?? 40;
@@ -406,7 +421,6 @@ const patterns = <String, (Ex, Ex, Ex)>{
     ('lib:Band_Pull_Apart', 'Band pull-apart'),
   ),
   'vPull': (('lat-pulldown', 'Lat pulldown'), ('pull-up', 'Pull-up'), ('pull-up', 'Pull-up')),
-  'pullUp': (('pull-up', 'Pull-up'), ('pull-up', 'Pull-up'), ('pull-up', 'Pull-up')),
   'hPull': (
     ('barbell-row', 'Barbell row'),
     ('lib:One-Arm_Dumbbell_Row', 'One-arm dumbbell row'),
@@ -614,7 +628,7 @@ const _templates = <String, (String, List<_Slot>)>{
   'Squat + bench': ('Heavy squat and bench', [('squat', _m), ('hPress', _m), ('hPull', _s), ('plank', _c)]),
   'Deadlift + press': (
     'Heavy deadlift and overhead press',
-    [('deadlift', _m), ('vPress', _m), ('pullUp', _s), ('coreFlex', _c)],
+    [('deadlift', _m), ('vPress', _m), ('vPull', _s), ('coreFlex', _c)],
   ),
   'Squat + bench (light)': (
     'Lighter squat, more bench',
@@ -627,7 +641,7 @@ const _templates = <String, (String, List<_Slot>)>{
   'Squat + hinge': ('Lower body strength', [('squat', _m), ('hinge', _s), ('lunge', _a), ('plank', _c)]),
   'Press + bench volume': (
     'Overhead strength and bench volume',
-    [('vPress', _m), ('hPress', _s), ('pullUp', _s), ('biceps', _a), ('tricepsOverhead', _a)],
+    [('vPress', _m), ('hPress', _s), ('vPull', _s), ('biceps', _a), ('tricepsOverhead', _a)],
   ),
   'Deadlift + squat volume': (
     'Deadlift strength and squat volume',
@@ -750,8 +764,10 @@ Ex _pick(String pattern, GymSetup setup, RoadmapLevel level) {
   if (ladder != null) {
     return [ladder.$1, ladder.$2, ladder.$3][level.index];
   }
-  // Most beginners cannot do a full pull-up yet.
-  if ((pattern == 'vPull' || pattern == 'pullUp') && level == RoadmapLevel.beginner) {
+  // Most beginners cannot do a full pull-up yet. Everyone else does the
+  // pull-up, in any setup.
+  if (pattern == 'vPull') {
+    if (level != RoadmapLevel.beginner) return ('pull-up', 'Pull-up');
     return setup == GymSetup.fullGym
         ? ('lat-pulldown', 'Lat pulldown')
         : ('lib:Band_Assisted_Pull-Up', 'Band-assisted pull-up');
@@ -809,7 +825,7 @@ PlanItem _work(String pattern, ItemKind kind, RoadmapGoal g, RoadmapLevel l, Gym
   );
 }
 
-bool _isLower(String focus, List<_Slot> slots) =>
+bool _isLower(List<_Slot> slots) =>
     slots
         .where(
           (s) =>
@@ -934,9 +950,7 @@ ProgramPlan buildProgram({
     final (focus, slots) = _templates[name]!;
     var items = <PlanItem>[];
     for (final (pattern, kind) in slots) {
-      // Gym beginners pull down; everyone else does the pull-up.
-      final p = pattern == 'vPull' && setup == GymSetup.fullGym && level != RoadmapLevel.beginner ? 'pullUp' : pattern;
-      items.add(_work(p, kind, goal, level, setup));
+      items.add(_work(pattern, kind, goal, level, setup));
     }
     // Beginners: fewer extras so sessions stay near an hour.
     if (level == RoadmapLevel.beginner && goal != RoadmapGoal.strength) {
@@ -946,10 +960,19 @@ ProgramPlan buildProgram({
           if (i.kind != ItemKind.accessory || extras-- > 2) i,
       ];
     }
-    // Ramp up into the first barbell-style lift of the day.
-    final first = items.indexWhere((i) => i.kind == ItemKind.main && i.seconds == null);
+    // Ramp up into the first loaded main lift of the day. Ramp-up sets are
+    // shares of a working weight, so body-weight moves do not get them.
+    final first = setup == GymSetup.home
+        ? -1
+        : items.indexWhere(
+            (i) =>
+                i.kind == ItemKind.main &&
+                i.seconds == null &&
+                i.pattern != 'vPull' &&
+                !skillLadders.containsKey(i.pattern),
+          );
     if (first >= 0) items[first] = items[first].copyWith(rampUp: true);
-    final lower = _isLower(focus, slots);
+    final lower = _isLower(slots);
     final label = counts.update(name, (c) => c + 1, ifAbsent: () => 1) > 1 ? '$name 2' : name;
     out.add(
       PlanDay(name: label, focus: focus, items: [..._warmup(lower, setup), ...items, ..._cooldown(lower)]),
@@ -969,7 +992,8 @@ ProgramPlan buildProgram({
 /// Exercises the user can swap in for [item]: the same pattern in every
 /// equipment setup, and every step of a skill ladder.
 List<Ex> alternativesFor(PlanItem item) {
-  final p = item.pattern;
+  // Older saved roadmaps call the pull-up slot 'pullUp'.
+  final p = item.pattern == 'pullUp' ? 'vPull' : item.pattern;
   if (p == null) return const [];
   final row = patterns[p] ?? skillLadders[p];
   if (row == null) return const [];
@@ -984,6 +1008,16 @@ List<Ex> alternativesFor(PlanItem item) {
 /// weight: about 50% × 8, 70% × 5, 85% × 3. Beginners skip the heaviest.
 List<(double share, int reps)> rampUpSets(RoadmapLevel level) =>
     level == RoadmapLevel.beginner ? const [(0.5, 8), (0.7, 5)] : const [(0.5, 8), (0.7, 5), (0.85, 3)];
+
+/// The ramp-up sets as text: "50% × 8, 70% × 5".
+String rampUpText(RoadmapLevel level) => rampUpSets(level).map((r) => '${(r.$1 * 100).round()}% × ${r.$2}').join(', ');
+
+/// Rest as text: "45 s", "2 min", "1:30 min".
+String restText(int seconds) => seconds < 60
+    ? '$seconds s'
+    : seconds % 60 == 0
+    ? '${seconds ~/ 60} min'
+    : '${seconds ~/ 60}:${(seconds % 60).toString().padLeft(2, '0')} min';
 
 /// Hard sets each pattern gets in a week, for checking balance.
 Map<String, int> weeklySetsByPattern(ProgramPlan plan) {

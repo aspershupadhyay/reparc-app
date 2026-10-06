@@ -92,6 +92,8 @@ Supersets group exercises. They do not merge set records.
 
 A template contains an ordered list of exercises and optional targets. Starting a template creates a new session. Later edits to the template must not change a saved workout.
 
+In the app a template is called a **plan**. A plan is one workout the user repeats. A roadmap (4.11) is a whole training week. When a plan starts, each exercise gets one empty set for each target set, or one empty set when there is no target. The target shows as a note on the exercise, for example "Target: 3 sets × 5 reps". It is never saved as a done value.
+
 Let the user rename, copy, edit, and delete templates. Do not require a weekly training split.
 
 ## 4.7 Personal records
@@ -133,11 +135,17 @@ Built 2026-10-06 (D-024, D-025).
 - Each muscle about twice a week.
 - Sets per exercise rise with level (beginner 2–3, intermediate 3–4, advanced 4–5). Reps in reserve fall with level (3, 2, 1).
 - Rep ranges by goal: strength 3–5 on main lifts; muscle and look 6–10 main, 10–15 extras; lean & fit 8–15 with short rest and a cardio finisher; calisthenics 5–10 with a level-based progression for each movement.
-- Every day starts with 5 minutes of easy cardio and 4 joint moves for the day's focus. The first main lift gets ramp-up sets (about 50%, 70%, and 85% of the working weight; beginners do two).
+- Every day starts with 5 minutes of easy cardio and 4 joint moves for the day's focus. The first loaded main lift gets ramp-up sets (about 50%, 70%, and 85% of the working weight; beginners do two). Body-weight moves (home setup, calisthenics, and pull-ups) get none, because the shares need a working weight.
 - Every exercise has a version for a full gym, dumbbells, and home. The user can swap to any of them or to any library exercise.
 - Each plan has a progression rule and an easy-week (deload) rule by level.
 
-Starting a roadmap day creates a session. The day's warm-up moves come first, one warm-up set each to tick off (a timed move shows its time). Then the working exercises, with ramp-up sets on the first lift and the day's target as a note. Warm-up sets never count toward volume, set counts, or records. Targets are never saved as done values. Finishing the session moves the roadmap to the next day; saving it as incomplete does not. Training days are saved only when their number matches the roadmap's days. The plan is JSON in `programs.plan`; the user can change any part.
+**Starting.** The Workout tab has one start card at the top. It shows the live workout, else the next roadmap day, else an empty workout. With a roadmap, **Start** starts the next day at once, **See the day** opens the day page, and **Empty workout** starts a workout with no exercises. Home's main card starts the same next day. Any day in the week list opens its day page, which has its own **Start workout** button. All start buttons use one function (`app/lib/features/workout/start_workout.dart`). If a workout is already live, they open it instead.
+
+**In the workout.** The day's warm-up moves come first. Each move gets one warm-up set for each set on the day page (a timed move shows its time). Then the working exercises. Each has a note with the same target line as the day page, for example "Target: 3 × 6–10 · 2:30 min rest · 2 reps left". The first loaded main lift also gets ramp-up sets, and its note gives their weights, for example "50% × 8, 70% × 5 of your working weight". Cool-down stretches show on the day page only; they are not logged. Warm-up sets never count toward volume, set counts, exercise counts in History, or records. Targets are never saved as done values.
+
+**Moving on.** The next day is the one after the last finished day, in roadmap order. Saving a workout as incomplete does not move the roadmap. The user can pick the next day in Customize. Training days are saved only when their number matches the roadmap's days. The plan is JSON in `programs.plan`; the user can change any part.
+
+**Builder.** Changing the goal or level keeps the chosen days a week when the goal offers that number.
 
 **Weight calculator.** Workout → Exercises → Weight calculator (`app/lib/domain/strength.dart`).
 

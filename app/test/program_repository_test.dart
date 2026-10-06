@@ -52,7 +52,8 @@ void main() {
     expect(first.exercise.catalogId, main.exerciseId);
     expect(first.sets.where((s) => s.setType == SetType.warmup), hasLength(3));
     expect(first.sets.where((s) => s.setType == SetType.working), hasLength(main.sets));
-    expect(first.item.note, startsWith('Target: '));
+    expect(first.item.note, startsWith('Target: ${main.details}'));
+    expect(first.item.note, contains('Ramp-up sets first: 50% × 8, 70% × 5, 85% × 3'));
     // Targets are never saved as done values.
     expect(first.sets.every((s) => s.reps == null && s.load == null && !s.completed), isTrue);
 

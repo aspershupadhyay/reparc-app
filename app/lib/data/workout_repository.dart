@@ -42,6 +42,8 @@ class TemplateDetail {
 class SessionSummary {
   const SessionSummary(this.session, this.exerciseCount, this.completedSets);
   final WorkoutSession session;
+
+  /// Exercises with at least one working set. Warm-up moves are not counted.
   final int exerciseCount;
 
   /// Completed working sets. Warm-up sets are not counted.
@@ -369,17 +371,22 @@ class WorkoutRepository {
         );
     for (final item in template?.items ?? const <TemplateItemView>[]) {
       final seId = await _insertSessionExercise(id, item.exercise.id, item.item.position);
-      for (var i = 0; i < (item.item.targetSets ?? 0); i++) {
+      final (sets, reps) = (item.item.targetSets, item.item.targetReps);
+      final target = [if (sets != null && sets > 0) '$sets sets', if (reps != null) '$reps reps'].join(' × ');
+      if (target.isNotEmpty) await _setNote(seId, 'Target: $target');
+      // Without a target, start with one empty set, as an added exercise does.
+      for (var i = 0; i < (sets == null || sets < 1 ? 1 : sets); i++) {
         await _insertSet(seId, i, SetType.working);
       }
     }
     return id;
   });
 
-  /// Starts a session from one roadmap day. Warm-up moves come first, each
-  /// with one warm-up set to tick off (warm-up sets never count toward
-  /// volume, sets, or records). Then the working exercises, with lighter
-  /// ramp-up sets before the first big lift and the day's target as a note.
+  /// Starts a session from one roadmap day. Warm-up moves come first, with
+  /// warm-up sets to tick off (warm-up sets never count toward volume, sets,
+  /// or records). Then the working exercises, with lighter ramp-up sets
+  /// before the first big lift and the day's target as a note. Cool-down
+  /// stretches stay on the roadmap day; they are not logged.
   Future<String> startProgramDay({required String programId, required int dayIndex}) => db.transaction(() async {
     final live = await liveSession();
     if (live != null) throw StateError('A workout is already in progress.');
@@ -411,34 +418,26 @@ class WorkoutRepository {
       for (final item in day.warmup) {
         final exId = await ensureCatalogExercise(catalogId: item.exerciseId, name: item.name);
         final seId = await _insertSessionExercise(id, exId, pos++);
-        await (db.update(db.sessionExercises)..where((s) => s.id.equals(seId))).write(
-          SessionExercisesCompanion(
-            note: Value(
-              [
-                'Warm-up',
-                if (item.seconds == null && item.repsLow != null) '${item.repsLow} reps',
-                if (item.note != null) item.note!,
-              ].join(' · '),
-            ),
-          ),
-        );
-        final setId = await _insertSet(seId, 0, SetType.warmup);
-        if (item.seconds != null) {
-          // A target time to start from, not a completed value.
-          await updateSet(setId, SetEntriesCompanion(durationSec: Value(item.seconds)));
+        await _setNote(seId, ['Warm-up', item.details, ?item.note].where((s) => s.isNotEmpty).join(' · '));
+        for (var i = 0; i < item.sets; i++) {
+          final setId = await _insertSet(seId, i, SetType.warmup);
+          if (item.seconds != null) {
+            // A target time to start from, not a completed value.
+            await updateSet(setId, SetEntriesCompanion(durationSec: Value(item.seconds)));
+          }
         }
       }
     }
     for (final item in day.work) {
       final exId = await ensureCatalogExercise(catalogId: item.exerciseId, name: item.name);
       final seId = await _insertSessionExercise(id, exId, pos++);
-      final target = [
-        if (item.target.isNotEmpty) item.target,
-        if (item.restSec != null) 'rest ${_restText(item.restSec!)}',
-        if (item.rir != null) item.rir == 0 ? 'to failure' : '${item.rir} reps left',
-      ].join(' · ');
-      await (db.update(db.sessionExercises)..where((s) => s.id.equals(seId))).write(
-        SessionExercisesCompanion(note: Value('Target: $target')),
+      await _setNote(
+        seId,
+        [
+          'Target: ${item.details}',
+          if (item.rampUp) 'Ramp-up sets first: ${rampUpText(plan.level)} of your working weight',
+          ?item.note,
+        ].join('\n'),
       );
       var setPos = 0;
       if (item.rampUp) {
@@ -457,11 +456,9 @@ class WorkoutRepository {
     return id;
   });
 
-  static String _restText(int s) => s >= 60 && s % 60 == 0
-      ? '${s ~/ 60} min'
-      : s > 60
-      ? '${s ~/ 60} min ${s % 60} s'
-      : '$s s';
+  Future<void> _setNote(String sessionExerciseId, String note) => (db.update(
+    db.sessionExercises,
+  )..where((s) => s.id.equals(sessionExerciseId))).write(SessionExercisesCompanion(note: Value(note)));
 
   Stream<SessionDetail?> watchSession(String id) => watchTables(
     db,
@@ -511,11 +508,13 @@ class WorkoutRepository {
     final sessions = await q.get();
     if (sessions.isEmpty) return const [];
     final ids = sessions.map((s) => s.id).toList();
-    final exCount = db.sessionExercises.id.count(distinct: true);
-    // Working sets only: warm-up sets never count toward totals (as in Analytics).
+    // Working sets only: warm-up sets never count toward totals (as in
+    // Analytics). A warm-up move with no working set is not counted either.
+    final notWarmup = db.setEntries.setType.equalsValue(SetType.warmup).not();
+    final exCount = db.sessionExercises.id.count(distinct: true, filter: notWarmup);
     final setCount = db.setEntries.id.count(
       distinct: true,
-      filter: db.setEntries.completed.equals(true) & db.setEntries.setType.equalsValue(SetType.warmup).not(),
+      filter: db.setEntries.completed.equals(true) & notWarmup,
     );
     final rows =
         await (db.selectOnly(db.sessionExercises).join([

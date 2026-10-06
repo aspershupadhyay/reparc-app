@@ -24,7 +24,7 @@ import '../workout/session_clock.dart';
 import '../workout/start_workout.dart';
 
 /// Home answers three questions, in this order (handbook 3.2):
-/// 1. What do I do now? One main action: continue, today's roadmap day,
+/// 1. What do I do now? One main action: continue, the next roadmap day,
 ///    or start a workout.
 /// 2. How is today's eating going? Protein, fibre, carbs, and energy.
 /// 3. How is my week going? Training days, and the roadmap count.
@@ -328,7 +328,7 @@ class _Shortcut extends StatelessWidget {
   }
 }
 
-/// The one main action: continue, today's roadmap day, or start.
+/// The one main action: continue, the next roadmap day, or start.
 class _Hero extends ConsumerWidget {
   const _Hero();
 
@@ -343,11 +343,11 @@ class _Hero extends ConsumerWidget {
     final (String eyebrow, String title, String? sub, String label, VoidCallback onTap) = switch ((live, next)) {
       (final l?, _) => ('Training now', '', null, 'Continue workout', () => context.push('/live/${l.id}')),
       (null, final d?) => (
-        'Today on your roadmap',
+        'Next on your roadmap',
         d.name,
         '${d.focus} · ${d.work.length} exercises · about ${d.minutes} min',
-        'Warm up and start',
-        () => context.push('/workout/roadmap/${program!.id}/day/${program.nextDay}'),
+        'Start workout',
+        () => startWorkout(context, ref, programId: program!.id, programDay: program.nextDay),
       ),
       _ => ('Train', 'Start workout', 'Add exercises as you go', 'Start workout', () => startWorkout(context, ref)),
     };

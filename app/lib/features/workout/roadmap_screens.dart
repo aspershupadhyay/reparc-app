@@ -11,6 +11,7 @@ import '../../data/providers.dart';
 import '../../domain/roadmap.dart';
 import '../exercises/library/library.dart';
 import '../exercises/library/move_browser.dart';
+import 'start_workout.dart';
 
 IconData goalIcon(RoadmapGoal g) => switch (g) {
   RoadmapGoal.aesthetic => LucideIcons.sparkles,
@@ -21,26 +22,6 @@ IconData goalIcon(RoadmapGoal g) => switch (g) {
 };
 
 const _dayNames = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
-
-String _rest(int? s) => s == null
-    ? ''
-    : s >= 60
-    ? '${s ~/ 60}${s % 60 == 0 ? '' : ':${(s % 60).toString().padLeft(2, '0')}'} min rest'
-    : '$s s rest';
-
-/// Starts the session for one roadmap day and opens the live workout.
-Future<void> startRoadmapDay(BuildContext context, WidgetRef ref, String programId, int day) async {
-  final repo = ref.read(workoutRepoProvider);
-  final live = await repo.liveSession();
-  if (!context.mounted) return;
-  if (live != null) {
-    showMessage(context, 'Finish the workout in progress first.');
-    await context.push('/live/${live.id}');
-    return;
-  }
-  final id = await guardedWrite(context, () => repo.startProgramDay(programId: programId, dayIndex: day));
-  if (id != null && context.mounted) await context.push('/live/$id');
-}
 
 /// Roadmap section of the Workout tab.
 class RoadmapSection extends ConsumerWidget {
@@ -112,53 +93,11 @@ class _ActiveRoadmap extends ConsumerWidget {
     final p = context.pal;
     final t = Theme.of(context).textTheme;
     final plan = prog.plan;
-    final next = plan.days.isEmpty ? null : plan.days[prog.nextDay];
+    // The card at the top of the Workout tab starts the next day.
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Container(
-          padding: const EdgeInsets.all(Space.xl),
-          decoration: BoxDecoration(color: p.panel, borderRadius: Radii.large),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  Icon(goalIcon(plan.goal), color: p.energy, size: 18),
-                  const SizedBox(width: 6),
-                  Expanded(
-                    child: Text(
-                      '${plan.title} · ${plan.setup.label}',
-                      style: t.bodySmall?.copyWith(color: p.onPanelSoft),
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: Space.s),
-              Text('Next: ${next?.name ?? '—'}', style: t.titleLarge?.copyWith(color: p.onPanel)),
-              if (next != null)
-                Text(
-                  '${next.focus} · ${next.work.length} exercises · about ${next.minutes} min',
-                  style: t.bodySmall?.copyWith(color: p.onPanelSoft),
-                ),
-              const SizedBox(height: Space.l),
-              Row(
-                children: [
-                  Expanded(
-                    child: FilledButton.icon(
-                      style: FilledButton.styleFrom(backgroundColor: p.energy, foregroundColor: p.onEnergy),
-                      onPressed: next == null
-                          ? null
-                          : () => context.push('/workout/roadmap/${prog.id}/day/${prog.nextDay}'),
-                      icon: const Icon(LucideIcons.play, size: 20),
-                      label: const Text('Warm up and start'),
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          ),
-        ),
+        StatusLine(icon: goalIcon(plan.goal), text: '${plan.title} · ${plan.setup.label}', color: p.ink),
         SectionHeader(
           'This week',
           action: TextButton.icon(
@@ -187,7 +126,7 @@ class _ActiveRoadmap extends ConsumerWidget {
                       style: t.labelMedium?.copyWith(color: i == prog.nextDay ? p.onEnergy : p.ink),
                     ),
                   ),
-                  title: Text(d.name),
+                  title: Text(i == prog.nextDay ? '${d.name} · next' : d.name),
                   subtitle: Text('${d.focus} · ${d.workSets} sets · ~${d.minutes} min'),
                   trailing: Icon(LucideIcons.chevronRight, size: IconSizes.s, color: p.inkSoft),
                   onTap: () => context.push('/workout/roadmap/${prog.id}/day/$i'),
@@ -384,7 +323,8 @@ class _RoadmapBuilderScreenState extends ConsumerState<RoadmapBuilderScreen> {
   late int _days = _goal.defaultDays(_level);
   bool _saving = false;
 
-  void _fixDays() {
+  /// Keeps the chosen days a week unless the new goal does not offer them.
+  void _keepDays() {
     if (!_goal.dayOptions.contains(_days)) _days = _goal.defaultDays(_level);
   }
 
@@ -432,7 +372,7 @@ class _RoadmapBuilderScreenState extends ConsumerState<RoadmapBuilderScreen> {
                   selected: _goal == g,
                   onSelected: (_) => setState(() {
                     _goal = g;
-                    _days = g.defaultDays(_level);
+                    _keepDays();
                   }),
                 ),
             ],
@@ -446,10 +386,7 @@ class _RoadmapBuilderScreenState extends ConsumerState<RoadmapBuilderScreen> {
             values: RoadmapLevel.values,
             selected: _level,
             label: (l) => l.label,
-            onChanged: (l) => setState(() {
-              _level = l;
-              _days = _goal.defaultDays(l);
-            }),
+            onChanged: (l) => setState(() => _level = l),
           ),
           const SizedBox(height: Space.xs),
           Text(_level.hint, style: t.bodySmall),
@@ -463,10 +400,7 @@ class _RoadmapBuilderScreenState extends ConsumerState<RoadmapBuilderScreen> {
                 ChoiceChip(
                   label: Text('$d'),
                   selected: _days == d,
-                  onSelected: (_) => setState(() {
-                    _days = d;
-                    _fixDays();
-                  }),
+                  onSelected: (_) => setState(() => _days = d),
                 ),
             ],
           ),
@@ -632,6 +566,7 @@ class RoadmapDayScreen extends ConsumerWidget {
     );
 
     final indexed = d.items.indexed.toList();
+    final rampUp = d.work.where((i) => i.rampUp).firstOrNull;
     return Scaffold(
       appBar: AppBar(
         title: Text(d.name),
@@ -651,7 +586,7 @@ class RoadmapDayScreen extends ConsumerWidget {
           padding: const EdgeInsets.fromLTRB(Space.l, Space.s, Space.l, Space.s),
           child: FilledButton.icon(
             style: FilledButton.styleFrom(backgroundColor: p.energy, foregroundColor: p.onEnergy),
-            onPressed: d.work.isEmpty ? null : () => startRoadmapDay(context, ref, programId, day),
+            onPressed: d.work.isEmpty ? null : () => startWorkout(context, ref, programId: programId, programDay: day),
             icon: const Icon(LucideIcons.play, size: 20),
             label: const Text('Start workout'),
           ),
@@ -665,14 +600,19 @@ class RoadmapDayScreen extends ConsumerWidget {
             style: t.bodyMedium?.copyWith(color: p.inkSoft),
           ),
           if (plan.showWarmup && d.warmup.isNotEmpty) ...[
-            section('1. Warm-up (about 8 min)', indexed.where((e) => e.$2.kind == ItemKind.warmup)),
+            section(
+              '1. Warm-up (about ${d.warmupMinutes} min)',
+              indexed.where((e) => e.$2.kind == ItemKind.warmup),
+            ),
             const SizedBox(height: Space.s),
-            const StatusLine(
+            StatusLine(
               icon: LucideIcons.flame,
-              text:
-                  'These moves are in your workout as warm-up sets to tick off. Then do 2–3 lighter sets of '
-                  'the first lift (about 50%, 70%, and 85% of your working weight). Warm-up sets never count '
-                  'toward volume or records.',
+              text: [
+                'Each move is a warm-up set to tick off in your workout.',
+                if (rampUp != null)
+                  '${rampUp.name} starts with lighter ramp-up sets: ${rampUpText(plan.level)} of your working weight.',
+                'Warm-up sets never count toward volume or records.',
+              ].join(' '),
             ),
           ],
           section(
@@ -687,8 +627,14 @@ class RoadmapDayScreen extends ConsumerWidget {
               label: const Text('Add exercise'),
             ),
           ),
-          if (plan.showCooldown && d.cooldown.isNotEmpty)
+          if (plan.showCooldown && d.cooldown.isNotEmpty) ...[
             section('3. Cool-down', indexed.where((e) => e.$2.kind == ItemKind.cooldown)),
+            const SizedBox(height: Space.s),
+            const StatusLine(
+              icon: LucideIcons.info,
+              text: 'Stretch after you finish. Cool-down stretches are not logged in the workout.',
+            ),
+          ],
           const SizedBox(height: Space.m),
           const StatusLine(
             icon: LucideIcons.info,
@@ -709,15 +655,7 @@ class _ItemRow extends StatelessWidget {
   Widget build(BuildContext context) {
     final p = context.pal;
     final t = Theme.of(context).textTheme;
-    final details = [
-      // A one-set warm-up reads "10 reps", not "1 × 10 · 10 reps".
-      if (item.kind == ItemKind.warmup && item.repsLow != null && item.sets == 1)
-        '${item.repsLow} reps'
-      else if (item.target.isNotEmpty)
-        item.target,
-      if (item.restSec != null && item.kind != ItemKind.warmup) _rest(item.restSec),
-      if (item.rir != null) item.rir == 0 ? 'to failure' : '${item.rir} reps left',
-    ].where((s) => s.isNotEmpty).toSet().join(' · ');
+    final details = item.details;
     return Semantics(
       button: true,
       label: '${item.name}. ${item.kind.label}. $details. Edit',

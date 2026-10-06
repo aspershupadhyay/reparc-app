@@ -111,4 +111,42 @@ void main() {
     expect(alternativesFor(item).length, greaterThanOrEqualTo(2));
     expect(rampUpSets(RoadmapLevel.beginner), hasLength(2));
   });
+
+  test('the pull-up slot can swap to a lat pulldown, also in older saved roadmaps', () {
+    final p = buildProgram(
+      goal: RoadmapGoal.strength,
+      level: RoadmapLevel.intermediate,
+      setup: GymSetup.fullGym,
+      days: 2,
+    );
+    final pull = p.days.expand((d) => d.work).firstWhere((i) => i.exerciseId == 'pull-up');
+    expect(alternativesFor(pull).map((e) => e.$1), contains('lat-pulldown'));
+    final old = PlanItem(kind: ItemKind.secondary, exerciseId: 'pull-up', name: 'Pull-up', pattern: 'pullUp');
+    expect(alternativesFor(old).map((e) => e.$1), contains('lat-pulldown'));
+  });
+
+  test('targets read cleanly', () {
+    const reps = PlanItem(kind: ItemKind.main, exerciseId: 'x', name: 'X', sets: 3, repsLow: 6, repsHigh: 10);
+    expect(reps.copyWith(restSec: 150, rir: 2).details, '3 × 6–10 · 2:30 min rest · 2 reps left');
+    expect(const PlanItem(kind: ItemKind.warmup, exerciseId: 'x', name: 'X', repsLow: 10).details, '10 reps');
+    expect(const PlanItem(kind: ItemKind.main, exerciseId: 'x', name: 'X', sets: 3).target, '3 sets');
+    expect(restText(45), '45 s');
+    expect(restText(120), '2 min');
+    expect(rampUpText(RoadmapLevel.advanced), '50% × 8, 70% × 5, 85% × 3');
+  });
+
+  test('ramp-up sets go on a loaded lift, never on a body-weight move', () {
+    for (final goal in RoadmapGoal.values) {
+      for (final setup in GymSetup.values) {
+        final p = buildProgram(goal: goal, level: RoadmapLevel.intermediate, setup: setup);
+        final ramps = p.days.expand((d) => d.work).where((i) => i.rampUp);
+        if (setup == GymSetup.home || goal == RoadmapGoal.calisthenics) {
+          expect(ramps, isEmpty, reason: '${goal.name} ${setup.name}');
+        }
+        expect(ramps.where((i) => i.exerciseId == 'pull-up'), isEmpty);
+      }
+    }
+    final gym = buildProgram(goal: RoadmapGoal.strength, level: RoadmapLevel.beginner, setup: GymSetup.fullGym);
+    expect(gym.days.every((d) => d.work.any((i) => i.rampUp)), isTrue);
+  });
 }
