@@ -151,6 +151,7 @@ class _BodyScreenState extends ConsumerState<BodyScreen> {
           ),
           label('Sex (for the energy formula)'),
           SegmentedButton<Sex>(
+            showSelectedIcon: false,
             segments: [for (final s in Sex.values) ButtonSegment(value: s, label: Text(s.label))],
             emptySelectionAllowed: true,
             selected: {?_p.sex},

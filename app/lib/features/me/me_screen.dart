@@ -62,10 +62,7 @@ class MeScreen extends ConsumerWidget {
       value: value,
       underline: const SizedBox.shrink(),
       borderRadius: Radii.medium,
-      icon: Padding(
-        padding: const EdgeInsets.only(left: 4),
-        child: Icon(LucideIcons.chevronsUpDown, size: 16, color: context.pal.inkSoft),
-      ),
+      icon: pickerIcon(context),
       items: [for (final (v, l) in items) DropdownMenuItem(value: v, child: Text(l))],
       onChanged: onChanged,
     );

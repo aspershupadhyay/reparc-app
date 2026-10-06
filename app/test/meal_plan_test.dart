@@ -24,6 +24,15 @@ void main() {
     }
   });
 
+  test('portion counts read naturally', () {
+    expect(countOf(2, '1 roti'), '2 rotis');
+    expect(countOf(1, '1 medium'), '1 medium');
+    expect(countOf(2, '1 medium'), '2 medium');
+    expect(countOf(3, '1 large egg'), '3 large eggs');
+    expect(countOf(2, '1 slice'), '2 slices');
+    expect(countOf(2, '2 tbsp'), '2 × 2 tbsp');
+  });
+
   test('every meal idea uses known foods', () {
     for (final m in mealIdeas) {
       for (final (id, g) in m.parts) {

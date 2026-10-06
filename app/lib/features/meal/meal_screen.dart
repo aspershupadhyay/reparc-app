@@ -268,7 +268,7 @@ class _Summary extends StatelessWidget {
       final target = byN[n];
       final unit = n.unit;
       final value = v == null ? missingText : '${fmtNum(v, maxDecimals: 0)} $unit';
-      return target == null ? value : '$value (under ${fmtNum(target.amount, maxDecimals: 0)})';
+      return target == null ? value : '$value (under ${fmtNum(target.amount, maxDecimals: 0)} $unit)';
     }
 
     final plannedProtein = planned.proteinG.value;
@@ -321,7 +321,7 @@ class _Summary extends StatelessWidget {
                 child: Text('Sugar: ${limitText(Nutrient.sugar)}', style: t.bodySmall),
               ),
               Expanded(
-                child: Text('Salt: ${limitText(Nutrient.sodium)}', style: t.bodySmall, textAlign: TextAlign.end),
+                child: Text('Sodium: ${limitText(Nutrient.sodium)}', style: t.bodySmall, textAlign: TextAlign.end),
               ),
             ],
           ),
@@ -503,6 +503,7 @@ class _EntryPill extends ConsumerWidget {
         child: InkWell(
           borderRadius: BorderRadius.circular(999),
           onTap: () => showMealEntrySheet(context, day: entry.day, existing: entry),
+          onLongPress: () => showMealEntrySheet(context, day: entry.day, existing: entry),
           child: Padding(
             padding: const EdgeInsets.all(6),
             child: Row(
@@ -522,7 +523,10 @@ class _EntryPill extends ConsumerWidget {
                     ],
                   ),
                 ),
+                // Its own node, so screen readers can reach both the row
+                // (opens the editor) and this check.
                 Semantics(
+                  container: true,
                   label: '${entry.name} eaten',
                   checked: eaten,
                   button: true,

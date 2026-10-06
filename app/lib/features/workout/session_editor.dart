@@ -358,7 +358,9 @@ class _SetRowState extends ConsumerState<SetRow> {
     final t = Theme.of(context).textTheme;
     final s = widget.set;
     final p = widget.previous;
-    final timed = s.setType == SetType.timed;
+    // Timed sets, and any set with a time and no reps (such as a 5-minute
+    // cardio warm-up), show the time field.
+    final timed = s.setType == SetType.timed || (s.durationSec != null && s.reps == null);
     final typeMark = s.setType.short;
     final dense = InputDecoration(
       isDense: true,
@@ -562,10 +564,7 @@ class _SetDetailsState extends ConsumerState<_SetDetails> {
     Navigator.pop(context);
     if (removed != null) {
       messenger.showSnackBar(
-        SnackBar(
-          content: const Text('Set deleted.'),
-          action: SnackBarAction(label: 'Undo', onPressed: () => repo.restoreSet(removed)),
-        ),
+        messageBar('Set deleted.', actionLabel: 'Undo', onAction: () => repo.restoreSet(removed)),
       );
     }
   }
@@ -575,6 +574,7 @@ class _SetDetailsState extends ConsumerState<_SetDetails> {
     final t = Theme.of(context).textTheme;
     Widget unitPicker(String value, List<String> units, ValueChanged<String> on) => DropdownButton<String>(
       value: value,
+      icon: pickerIcon(context),
       underline: const SizedBox.shrink(),
       items: [for (final u in units) DropdownMenuItem(value: u, child: Text(u))],
       onChanged: (v) => setState(() => on(v!)),

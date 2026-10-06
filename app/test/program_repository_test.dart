@@ -56,8 +56,11 @@ void main() {
     // Targets are never saved as done values.
     expect(first.sets.every((s) => s.reps == null && s.load == null && !s.completed), isTrue);
 
-    // Without a warm-up the session starts with the first lift.
-    await workouts.end(sessionId, finished: true);
+    // Saving as incomplete keeps the same day next; finishing moves on.
+    await workouts.end(sessionId, finished: false);
+    expect((await programs.active())!.nextDay, 0);
+    final again = await workouts.startProgramDay(programId: id, dayIndex: 0);
+    await workouts.end(again, finished: true);
     expect((await programs.active())!.nextDay, 1);
     final noWarm = (await programs.active())!;
     await programs.save(id, noWarm.plan.copyWith(showWarmup: false));

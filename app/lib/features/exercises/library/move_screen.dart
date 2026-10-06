@@ -15,8 +15,12 @@ import 'use_move.dart';
 
 /// Detail page for one library exercise: photos, muscles, and steps.
 class MoveScreen extends ConsumerWidget {
-  const MoveScreen({super.key, required this.id});
+  const MoveScreen({super.key, required this.id, this.fromWorkout = false});
   final String id;
+
+  /// Opened from a live workout: the move is already in it, so there is no
+  /// add button.
+  final bool fromWorkout;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -36,24 +40,26 @@ class MoveScreen extends ConsumerWidget {
     final (_, areaSoft) = areaColors(p, e.area);
     return Scaffold(
       appBar: AppBar(title: Text(e.target.label)),
-      bottomNavigationBar: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(Space.l, Space.s, Space.l, Space.s),
-          child: FilledButton.icon(
-            onPressed: () => useMove(
-              context,
-              ref,
-              catalogId: e.catalogId,
-              name: e.name,
-              equipment: e.equipment == 'No equipment' ? null : e.equipment,
-              muscles: e.primary.join(', '),
-              liveId: live?.id,
+      bottomNavigationBar: fromWorkout
+          ? null
+          : SafeArea(
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(Space.l, Space.s, Space.l, Space.s),
+                child: FilledButton.icon(
+                  onPressed: () => useMove(
+                    context,
+                    ref,
+                    catalogId: e.catalogId,
+                    name: e.name,
+                    equipment: e.equipment == 'No equipment' ? null : e.equipment,
+                    muscles: e.primary.join(', '),
+                    liveId: live?.id,
+                  ),
+                  icon: Icon(live == null ? LucideIcons.play : LucideIcons.plus, size: 20),
+                  label: Text(live == null ? 'Start workout with this' : 'Add to workout'),
+                ),
+              ),
             ),
-            icon: Icon(live == null ? LucideIcons.play : LucideIcons.plus, size: 20),
-            label: Text(live == null ? 'Start workout with this' : 'Add to workout'),
-          ),
-        ),
-      ),
       body: ListView(
         padding: const EdgeInsets.fromLTRB(Space.l, 0, Space.l, Space.xxl),
         children: [

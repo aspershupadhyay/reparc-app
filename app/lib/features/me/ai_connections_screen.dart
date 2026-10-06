@@ -135,7 +135,7 @@ class _AiConnectionsScreenState extends ConsumerState<AiConnectionsScreen> {
                 for (final scope in aiScopeNames)
                   SwitchListTile(
                     title: Text(_scopeTitle(scope)),
-                    subtitle: Text(contract?.scopes[scope] ?? ''),
+                    subtitle: Text(_scopeHint(scope) ?? contract?.scopes[scope] ?? ''),
                     value: settings.aiScopes.contains(scope),
                     onChanged: (v) => ref.read(settingsRepoProvider).setAiScope(scope, v),
                   ),
@@ -214,6 +214,16 @@ String _scopeTitle(String scope) => switch (scope) {
   'health' => 'Health data',
   'plans' => 'Plan suggestions',
   _ => scope,
+};
+
+/// What each switch shares, said to the user. (The contract's own wording
+/// is written for the AI.)
+String? _scopeHint(String scope) => switch (scope) {
+  'gym' => 'Workouts, sets, exercise history, personal records, and plans',
+  'meal' => 'Meals, foods, and nutrition totals',
+  'health' => 'Steps, active energy, and body weight you allowed from Apple Health or Health Connect',
+  'plans' => 'Let the AI send workout and meal plans for you to approve',
+  _ => null,
 };
 
 String _until(DateTime? until) => until == null ? '' : 'On until ${DateFormat.jm().format(until)}';
@@ -392,7 +402,7 @@ class _OnlineCard extends ConsumerWidget {
                 Expanded(
                   child: Text(
                     'Works with AI apps anywhere, including claude.ai and ChatGPT. The gateway is yours: it runs in your '
-                    'own free Vercel account, and only you hold its key. It stores no records.',
+                    'own free Vercel account, and only you hold its key. It stores no records. Setup takes about 5 minutes.',
                     style: t.bodySmall,
                   ),
                 ),
@@ -402,7 +412,7 @@ class _OnlineCard extends ConsumerWidget {
             FilledButton.icon(
               onPressed: () => context.push('/me/ai/setup'),
               icon: const Icon(LucideIcons.rocket, size: 18),
-              label: const Text('Set up my gateway (about 5 minutes)'),
+              label: const OneLine('Set up my gateway'),
             ),
           ],
         ),

@@ -22,8 +22,12 @@ import 'viewer.dart';
 
 /// Coached guide for one built-in exercise.
 class GuideScreen extends ConsumerWidget {
-  const GuideScreen({super.key, required this.id});
+  const GuideScreen({super.key, required this.id, this.fromWorkout = false});
   final String id;
+
+  /// Opened from a live workout: the move is already in it, so there is no
+  /// add button.
+  final bool fromWorkout;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -40,16 +44,18 @@ class GuideScreen extends ConsumerWidget {
     final live = ref.watch(liveSessionProvider).value;
     return Scaffold(
       appBar: AppBar(title: Text(e.area.label)),
-      bottomNavigationBar: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(Space.l, Space.s, Space.l, Space.s),
-          child: FilledButton.icon(
-            onPressed: () => _use(context, ref, e, liveId: live?.id),
-            icon: Icon(live == null ? LucideIcons.play : LucideIcons.plus, size: 20),
-            label: Text(live == null ? 'Start workout with this' : 'Add to workout'),
-          ),
-        ),
-      ),
+      bottomNavigationBar: fromWorkout
+          ? null
+          : SafeArea(
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(Space.l, Space.s, Space.l, Space.s),
+                child: FilledButton.icon(
+                  onPressed: () => _use(context, ref, e, liveId: live?.id),
+                  icon: Icon(live == null ? LucideIcons.play : LucideIcons.plus, size: 20),
+                  label: Text(live == null ? 'Start workout with this' : 'Add to workout'),
+                ),
+              ),
+            ),
       body: ListView(
         padding: const EdgeInsets.fromLTRB(Space.l, 0, Space.l, Space.xxl),
         children: [
@@ -78,7 +84,11 @@ class GuideScreen extends ConsumerWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Expanded(
-                child: _InfoTile(icon: LucideIcons.repeat, label: e.timed ? 'Hold' : 'Sets × reps', text: e.dose),
+                child: _InfoTile(
+                  icon: LucideIcons.repeat,
+                  label: e.timed ? 'Hold' : 'Sets × reps',
+                  text: e.dose.replaceAll(' · ', '\n'),
+                ),
               ),
               const SizedBox(width: Space.m),
               Expanded(

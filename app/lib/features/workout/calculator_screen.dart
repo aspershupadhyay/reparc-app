@@ -247,6 +247,7 @@ class _CalculatorScreenState extends ConsumerState<CalculatorScreen> {
           const SizedBox(width: Space.s),
           Expanded(
             child: SegmentedButton<bool>(
+              showSelectedIcon: false,
               segments: const [
                 ButtonSegment(value: false, label: Text('Male')),
                 ButtonSegment(value: true, label: Text('Female')),

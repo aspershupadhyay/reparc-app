@@ -266,10 +266,24 @@ class PlannedPart {
   String get amountText {
     if (_wholePieces.contains(food.id)) {
       final n = (grams / food.portionG).round();
-      return '$n × ${food.portion} (${grams.round()} g)';
+      return '${countOf(n, food.portion)} (${grams.round()} g)';
     }
     return '${grams.round()} g';
   }
+}
+
+/// "2 rotis", "1 medium", "3 large eggs": a count of a "1 …" portion, said
+/// the way people say it. Portions that do not start with "1 " keep "n ×".
+String countOf(int n, String portion) {
+  if (!portion.startsWith('1 ')) return '$n × $portion';
+  final unit = portion.substring(2);
+  if (n == 1) return '1 $unit';
+  // Size words stay as they are ("2 medium").
+  if (const {'medium', 'small', 'large'}.contains(unit)) return '$n $unit';
+  final words = unit.split(' ');
+  final noun = words.last;
+  words[words.length - 1] = noun.endsWith('s') || noun.endsWith(')') ? noun : '${noun}s';
+  return '$n ${words.join(' ')}';
 }
 
 class PlannedMeal {

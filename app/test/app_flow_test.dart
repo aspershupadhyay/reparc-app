@@ -195,7 +195,8 @@ void main() {
     await tester.tap(find.byTooltip('How to do Back squat'));
     await tester.pumpAndSettle();
     expect(find.textContaining('king of leg strength'), findsOneWidget);
-    expect(find.text('Add to workout'), findsOneWidget);
+    // The move is already in the workout, so the guide offers no add button.
+    expect(find.text('Add to workout'), findsNothing);
 
     await tester.tap(find.byTooltip('Back'));
     await tester.pumpAndSettle();
@@ -250,7 +251,7 @@ void main() {
     expect(switches, hasLength(4));
     expect(switches.every((s) => !s.value), isTrue);
     await tester.scrollUntilVisible(
-      find.text('Set up my gateway (about 5 minutes)'),
+      find.text('Set up my gateway'),
       300,
       scrollable: _scrollableIn(find.byType(AiConnectionsScreen)),
     );

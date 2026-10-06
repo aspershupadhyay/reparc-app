@@ -94,11 +94,7 @@ class _StartCard extends ConsumerWidget {
                     style: t.displaySmall!.tabular.copyWith(color: p.energy),
                   )
                 else
-                  Text(
-                    'Add moves as you go',
-                    style: t.titleMedium?.copyWith(color: p.onPanel),
-                    maxLines: 2,
-                  ),
+                  OneLine('Add moves as you go', style: t.titleMedium?.copyWith(color: p.onPanel)),
               ],
             ),
           ),

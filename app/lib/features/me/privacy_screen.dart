@@ -39,6 +39,11 @@ class PrivacyScreen extends StatelessWidget {
         'Backups go to your own iCloud or Google account: through the phone\'s backup, or as a file encrypted with '
             'your passphrase. AI and health switches are not restored on a new phone.',
       ),
+      (
+        LucideIcons.refreshCw,
+        'Update check: once a day (you can turn it off in Me → App updates), Reparc asks GitHub for the latest '
+            'release. It sends no records, account, or device data. GitHub sees your IP address, as with any website.',
+      ),
       (LucideIcons.download, 'Records leave the phone only through the choices above or a file you export yourself.'),
       (
         LucideIcons.lock,

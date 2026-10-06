@@ -323,7 +323,9 @@ class _RoadmapAdherence extends StatelessWidget {
             color: p.brand,
             size: 64,
             stroke: 7,
-            semanticLabel: 'Roadmap: $done of $planned planned workouts',
+            semanticLabel: planned == 0
+                ? 'Roadmap: no planned days in this range yet'
+                : 'Roadmap: $done of $planned planned workouts',
             child: Text(planned == 0 ? missingText : '$done/$planned', style: t.labelMedium?.tabular),
           ),
           const SizedBox(width: Space.m),
@@ -483,6 +485,7 @@ class _StrengthTrendState extends ConsumerState<_StrengthTrend> {
             DropdownButton<String>(
               value: key,
               isExpanded: true,
+              icon: pickerIcon(context),
               underline: const SizedBox.shrink(),
               items: [
                 for (final k in keys) DropdownMenuItem(value: k, child: Text('${usable[k]!.$1} (${usable[k]!.$2})')),
@@ -702,6 +705,8 @@ class _MealTab extends StatelessWidget {
                                 Text(
                                   hit == null
                                       ? (avg.days == 0 ? 'No values yet' : 'on ${avg.days} days')
+                                      : hit.$2 == 0
+                                      ? 'No days with a value yet'
                                       : '${target!.isLimit ? 'Under' : 'Reached'} on ${hit.$1} of ${hit.$2} days',
                                   style: t.labelSmall,
                                 ),

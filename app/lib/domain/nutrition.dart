@@ -27,7 +27,7 @@ enum Nutrient {
   fiber('Fibre', 'g'),
   fat('Fat', 'g'),
   sugar('Sugar', 'g'),
-  sodium('Salt (sodium)', 'mg');
+  sodium('Sodium', 'mg');
 
   const Nutrient(this.label, this.unit);
   final String label;

@@ -20,10 +20,10 @@ class _Phase {
 /// A rep at a teaching pace: pause, move up in 1.5 s, pause, lower in
 /// 2.5 s. Slow enough to follow; the slow lowering matches common coaching.
 const _rep = [
-  _Phase('Start position', 'Set up and brace', 1.2, 0, 0),
-  _Phase('Move', 'Smooth and controlled. Breathe out', 1.5, 0, 1),
-  _Phase('End position', 'Pause and squeeze', 1.0, 1, 1),
-  _Phase('Return', 'Slowly, about 2–3 seconds. Breathe in', 2.5, 1, 0),
+  _Phase('Start position', 'Set up, brace', 1.2, 0, 0),
+  _Phase('Move', 'Smooth, breathe out', 1.5, 0, 1),
+  _Phase('End position', 'Pause, squeeze', 1.0, 1, 1),
+  _Phase('Return', 'Slowly, 2–3 s, breathe in', 2.5, 1, 0),
 ];
 
 final double _repSeconds = _rep.fold(0.0, (a, p) => a + p.seconds);

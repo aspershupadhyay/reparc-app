@@ -4,6 +4,7 @@ import 'package:flutter/cupertino.dart' show CupertinoAlertDialog, CupertinoDial
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import 'motion.dart';
 import 'palette.dart';
@@ -360,11 +361,10 @@ class PillTabs<T> extends StatelessWidget {
                           Icon(icon!(v), size: 16, color: p.ink),
                           const SizedBox(width: 6),
                         ],
+                        // Shrinks a little instead of cutting the label off.
                         Flexible(
-                          child: Text(
+                          child: OneLine(
                             label(v),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
                             style: (v == selected ? t.labelMedium : t.bodyMedium)?.copyWith(color: p.ink, fontSize: 14),
                           ),
                         ),
@@ -607,13 +607,24 @@ class _PromptDialogState extends State<_PromptDialog> {
 void showMessage(BuildContext context, String text, {String? actionLabel, VoidCallback? onAction}) {
   final m = ScaffoldMessenger.of(context);
   m.hideCurrentSnackBar();
-  m.showSnackBar(
-    SnackBar(
-      content: Text(text),
-      action: actionLabel == null ? null : SnackBarAction(label: actionLabel, onPressed: onAction ?? () {}),
-    ),
-  );
+  m.showSnackBar(messageBar(text, actionLabel: actionLabel, onAction: onAction));
 }
+
+/// A snack bar that always closes by itself, even with an action button.
+/// (Flutter keeps snack bars with an action open until dismissed.)
+SnackBar messageBar(String text, {String? actionLabel, VoidCallback? onAction}) => SnackBar(
+  content: Text(text),
+  persist: false,
+  duration: Duration(seconds: actionLabel == null ? 3 : 5),
+  action: actionLabel == null ? null : SnackBarAction(label: actionLabel, onPressed: onAction ?? () {}),
+);
+
+/// The iOS-style up/down chevron for pop-up pickers (instead of the Material
+/// arrow).
+Widget pickerIcon(BuildContext context) => Padding(
+  padding: const EdgeInsets.only(left: 4),
+  child: Icon(LucideIcons.chevronsUpDown, size: 16, color: context.pal.inkSoft),
+);
 
 /// Runs a local write and shows an error if it fails.
 ///

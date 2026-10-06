@@ -137,7 +137,7 @@ Built 2026-10-06 (D-024, D-025).
 - Every exercise has a version for a full gym, dumbbells, and home. The user can swap to any of them or to any library exercise.
 - Each plan has a progression rule and an easy-week (deload) rule by level.
 
-Starting a roadmap day creates a session with warm-up sets and the day's target as a note. Targets are never saved as done values. Finishing the session moves the roadmap to the next day. The plan is JSON in `programs.plan`; the user can change any part.
+Starting a roadmap day creates a session. The day's warm-up moves come first, one warm-up set each to tick off (a timed move shows its time). Then the working exercises, with ramp-up sets on the first lift and the day's target as a note. Warm-up sets never count toward volume, set counts, or records. Targets are never saved as done values. Finishing the session moves the roadmap to the next day; saving it as incomplete does not. Training days are saved only when their number matches the roadmap's days. The plan is JSON in `programs.plan`; the user can change any part.
 
 **Weight calculator.** Workout → Exercises → Weight calculator (`app/lib/domain/strength.dart`).
 

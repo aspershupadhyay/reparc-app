@@ -150,7 +150,7 @@ class _EntrySheetState extends ConsumerState<_EntrySheet> {
     fatG: _opt(_fat, 'Fat'),
     fiberG: _opt(_fiber, 'Fibre'),
     sugarG: _opt(_sugar, 'Sugar'),
-    sodiumMg: _opt(_sodium, 'Salt (sodium)'),
+    sodiumMg: _opt(_sodium, 'Sodium'),
     isEstimate: _estimate,
     source: _source,
   );
@@ -210,10 +210,7 @@ class _EntrySheetState extends ConsumerState<_EntrySheet> {
     Navigator.pop(context);
     if (removed != null) {
       messenger.showSnackBar(
-        SnackBar(
-          content: Text('${removed.name} deleted.'),
-          action: SnackBarAction(label: 'Undo', onPressed: () => repo.restoreEntry(removed)),
-        ),
+        messageBar('${removed.name} deleted.', actionLabel: 'Undo', onAction: () => repo.restoreEntry(removed)),
       );
     }
   }
@@ -319,6 +316,7 @@ class _EntrySheetState extends ConsumerState<_EntrySheet> {
           ),
           const SizedBox(height: Space.l),
           SegmentedButton<MealStatus>(
+            showSelectedIcon: false,
             segments: const [
               ButtonSegment(value: MealStatus.eaten, label: Text('Eaten'), icon: Icon(LucideIcons.check)),
               ButtonSegment(value: MealStatus.planned, label: Text('Planned'), icon: Icon(LucideIcons.clock)),
@@ -395,6 +393,7 @@ class _EntrySheetState extends ConsumerState<_EntrySheet> {
               const SizedBox(width: Space.s),
               DropdownButton<String>(
                 value: _servingUnit,
+                icon: pickerIcon(context),
                 underline: const SizedBox.shrink(),
                 items: [for (final u in _servingUnits) DropdownMenuItem(value: u, child: Text(u))],
                 onChanged: (v) => setState(() => _servingUnit = v!),
@@ -472,7 +471,7 @@ class _EntrySheetState extends ConsumerState<_EntrySheet> {
             controller: _sodium,
             onChanged: (_) => setState(() {}),
             keyboardType: const TextInputType.numberWithOptions(decimal: true),
-            decoration: num('Salt (sodium)', 'mg'),
+            decoration: num('Sodium', 'mg'),
           ),
           SwitchListTile(
             contentPadding: EdgeInsets.zero,
@@ -496,6 +495,7 @@ class _EntrySheetState extends ConsumerState<_EntrySheet> {
               const SizedBox(width: Space.s),
               DropdownButton<String>(
                 value: _amountUnit,
+                icon: pickerIcon(context),
                 underline: const SizedBox.shrink(),
                 items: [for (final u in Units.amountUnits) DropdownMenuItem(value: u, child: Text(u))],
                 onChanged: (v) => setState(() => _amountUnit = v!),

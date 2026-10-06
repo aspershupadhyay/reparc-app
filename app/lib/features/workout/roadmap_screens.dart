@@ -219,6 +219,61 @@ class _ActiveRoadmap extends ConsumerWidget {
   }
 }
 
+/// Weekday picker. Changes are kept here until the number of days matches
+/// the roadmap, then saved, so the roadmap never has fewer days than it needs.
+class _TrainingDays extends StatefulWidget {
+  const _TrainingDays({super.key, required this.saved, required this.needed, required this.onSave});
+  final List<int> saved;
+  final int needed;
+  final ValueChanged<List<int>> onSave;
+
+  @override
+  State<_TrainingDays> createState() => _TrainingDaysState();
+}
+
+class _TrainingDaysState extends State<_TrainingDays> {
+  late final Set<int> _picked = {...widget.saved};
+
+  void _toggle(int d, bool on) {
+    setState(() => on ? _picked.add(d) : _picked.remove(d));
+    if (_picked.length == widget.needed) widget.onSave(_picked.toList()..sort());
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final diff = widget.needed - _picked.length;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Wrap(
+          spacing: Space.s,
+          runSpacing: Space.s,
+          children: [
+            for (var d = 1; d <= 7; d++)
+              FilterChip(
+                label: Text(_dayNames[d - 1]),
+                selected: _picked.contains(d),
+                onSelected: (on) => _toggle(d, on),
+              ),
+          ],
+        ),
+        if (diff != 0) ...[
+          const SizedBox(height: Space.s),
+          Semantics(
+            liveRegion: true,
+            child: StatusLine(
+              icon: LucideIcons.info,
+              text: diff > 0
+                  ? 'Pick $diff more ${diff == 1 ? 'day' : 'days'}, one for each roadmap day. Saved when it adds up.'
+                  : 'Remove ${-diff} ${diff == -1 ? 'day' : 'days'}. This roadmap has ${widget.needed} days a week.',
+            ),
+          ),
+        ],
+      ],
+    );
+  }
+}
+
 /// What the user sees in the roadmap, training days, and stop.
 class _RoadmapSettings extends ConsumerWidget {
   const _RoadmapSettings({required this.prog});
@@ -260,24 +315,11 @@ class _RoadmapSettings extends ConsumerWidget {
           const SizedBox(height: Space.s),
           Text('Training days (${plan.days.length} a week)', style: t.labelMedium),
           const SizedBox(height: Space.s),
-          Wrap(
-            spacing: Space.s,
-            runSpacing: Space.s,
-            children: [
-              for (var d = 1; d <= 7; d++)
-                FilterChip(
-                  label: Text(_dayNames[d - 1]),
-                  selected: plan.weekdays.contains(d),
-                  onSelected: (on) {
-                    final next = {...plan.weekdays};
-                    on ? next.add(d) : next.remove(d);
-                    if (next.length != plan.days.length) {
-                      showMessage(context, 'Pick ${plan.days.length} days, one for each roadmap day.');
-                    }
-                    save(plan.copyWith(weekdays: next.toList()..sort()));
-                  },
-                ),
-            ],
+          _TrainingDays(
+            key: ValueKey(plan.weekdays.join(',')),
+            saved: plan.weekdays,
+            needed: plan.days.length,
+            onSave: (days) => save(plan.copyWith(weekdays: days)),
           ),
           const SizedBox(height: Space.l),
           Text('Next day to train', style: t.labelMedium),
@@ -668,8 +710,11 @@ class _ItemRow extends StatelessWidget {
     final p = context.pal;
     final t = Theme.of(context).textTheme;
     final details = [
-      if (item.target.isNotEmpty) item.target,
-      if (item.kind == ItemKind.warmup && item.repsLow != null && item.sets == 1) '${item.repsLow} reps',
+      // A one-set warm-up reads "10 reps", not "1 × 10 · 10 reps".
+      if (item.kind == ItemKind.warmup && item.repsLow != null && item.sets == 1)
+        '${item.repsLow} reps'
+      else if (item.target.isNotEmpty)
+        item.target,
       if (item.restSec != null && item.kind != ItemKind.warmup) _rest(item.restSec),
       if (item.rir != null) item.rir == 0 ? 'to failure' : '${item.rir} reps left',
     ].where((s) => s.isNotEmpty).toSet().join(' · ');

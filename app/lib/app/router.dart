@@ -166,12 +166,12 @@ GoRouter buildRouter({String initialLocation = '/home'}) => GoRouter(
     GoRoute(
       path: '/learn/guide/:id',
       parentNavigatorKey: rootNavigatorKey,
-      builder: (_, s) => GuideScreen(id: s.pathParameters['id']!),
+      builder: (_, s) => GuideScreen(id: s.pathParameters['id']!, fromWorkout: true),
     ),
     GoRoute(
       path: '/learn/move/:id',
       parentNavigatorKey: rootNavigatorKey,
-      builder: (_, s) => MoveScreen(id: s.pathParameters['id']!),
+      builder: (_, s) => MoveScreen(id: s.pathParameters['id']!, fromWorkout: true),
     ),
   ],
 );

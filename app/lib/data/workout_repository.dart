@@ -43,6 +43,8 @@ class SessionSummary {
   const SessionSummary(this.session, this.exerciseCount, this.completedSets);
   final WorkoutSession session;
   final int exerciseCount;
+
+  /// Completed working sets. Warm-up sets are not counted.
   final int completedSets;
 }
 
@@ -510,7 +512,11 @@ class WorkoutRepository {
     if (sessions.isEmpty) return const [];
     final ids = sessions.map((s) => s.id).toList();
     final exCount = db.sessionExercises.id.count(distinct: true);
-    final setCount = db.setEntries.id.count(distinct: true, filter: db.setEntries.completed.equals(true));
+    // Working sets only: warm-up sets never count toward totals (as in Analytics).
+    final setCount = db.setEntries.id.count(
+      distinct: true,
+      filter: db.setEntries.completed.equals(true) & db.setEntries.setType.equalsValue(SetType.warmup).not(),
+    );
     final rows =
         await (db.selectOnly(db.sessionExercises).join([
                 leftOuterJoin(db.setEntries, db.setEntries.sessionExerciseId.equalsExp(db.sessionExercises.id)),
@@ -565,8 +571,8 @@ class WorkoutRepository {
         restTargetSec: const Value(null),
       ),
     );
-    // A roadmap moves on to the next day once its session is saved.
-    if (s.programId != null && s.programDay != null) {
+    // Only a finished day moves the roadmap on. An incomplete one stays next.
+    if (finished && s.programId != null && s.programDay != null) {
       final prog = await (db.select(db.programs)..where((p) => p.id.equals(s.programId!))).getSingleOrNull();
       if (prog != null) {
         final days = ProgramPlan.decode(prog.plan).days.length;

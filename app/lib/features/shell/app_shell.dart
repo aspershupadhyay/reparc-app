@@ -51,7 +51,11 @@ class AppShell extends ConsumerWidget {
             _LiveBar(sessionId: live.id, paused: live.status == SessionStatus.paused),
           _TabBar(
             index: shell.currentIndex,
-            onSelect: (i) => shell.goBranch(i, initialLocation: i == shell.currentIndex),
+            onSelect: (i) {
+              // A message belongs to the screen it came from.
+              if (i != shell.currentIndex) ScaffoldMessenger.of(context).hideCurrentSnackBar();
+              shell.goBranch(i, initialLocation: i == shell.currentIndex);
+            },
           ),
         ],
       ),
