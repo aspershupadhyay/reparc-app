@@ -42,18 +42,6 @@ An exercise can have:
 - Optional user note.
 - Optional source for exercise instructions.
 
-### Movement demonstrations
-
-An exercise can show an optional short looping visual. Keep the core log usable when a visual is absent or offline.
-
-- Start with a still preview. Play the loop only when the user opens it.
-- Use captions or written cues for any important instruction.
-- Record the media source and license for every demonstration.
-- Do not say a demonstration has expert approval until a qualified reviewer records that review.
-- Do not score a user's form or make health claims from a demonstration.
-
-The first Blender renders in `assets/exercise-demos/` are visual drafts. They use a stylized figure. A coach has not reviewed their movement. Do not ship them as exercise instruction until review is complete.
-
 Let users create custom exercises. Do not require a catalog match before they can log a movement.
 
 ### Built-in catalog
@@ -129,7 +117,6 @@ Do not infer exercise form, injury, or medical status. Do not estimate calories 
 - **Reliability:** Local save comes before sync.
 - **Data:** Preserve units, order, time, and source.
 - **Safety:** Do not infer form, injury, or calories from set data.
-- **Movement media:** Demos are optional. Keep text guidance and manual logging available. Track media rights and reviewer status.
 - **Done when:** A session survives offline use, app closure, and restart without losing a set.
 - **Catalog:** Built-in, original, 36 exercises (D-016). Coach review is **To confirm**.
 - **To confirm:** Effort scale and further personal-record rules.
