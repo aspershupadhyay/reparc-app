@@ -84,7 +84,10 @@ void main() {
     expect(session.name, 'Skills A');
     expect(session.programId, isNotNull);
     final sets = await db.select(db.setEntries).get();
-    expect(sets.where((s) => s.setType == SetType.warmup), hasLength(2), reason: 'Beginner ramp-up: 2 sets');
+    final warm = sets.where((s) => s.setType == SetType.warmup).toList();
+    // Five warm-up moves (one set each to tick off) plus two ramp-up sets of the first lift.
+    expect(warm, hasLength(5 + 2), reason: 'Warm-up moves and beginner ramp-up');
+    expect(warm.every((s) => !s.completed && s.reps == null && s.load == null), isTrue);
     await unmount(tester);
   });
 

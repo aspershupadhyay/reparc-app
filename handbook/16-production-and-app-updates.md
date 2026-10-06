@@ -54,7 +54,9 @@ Show:
 
 Check for update metadata at launch, when the app returns to the foreground, and when the user asks. Cache results. Add a delay between checks. Do not block app start if the network or metadata service fails.
 
-The metadata source, hosting, schema, and backend are **To confirm**. It may be a small public release manifest, but it must contain data only, such as version, notes, minimum supported version, and store links. Validate its signature or integrity where the chosen hosting supports it. The app must not execute content from the manifest. If metadata is unavailable, use the platform store as the source of truth.
+**Built for the GitHub test builds (D-029, 2026-10-06):** the metadata source is the GitHub "latest release" API for `aspershupadhyay/reparc`. `app/lib/updates/` reads the tag, notes, and download links (data only), compares the version with the installed one, and saves the result on the phone. It checks once a day when the app opens (the user can turn this off) and when the user taps **Check for updates**. Home shows a notice that the user can hide until the next version. **Download and install** opens the APK (Android) or the release page (iPhone) in the browser. The phone's installer does the install and asks the user. The first line of `release-notes/<version>.md` is the notice text. Store builds will use the store flows below instead.
+
+For store builds, the metadata source, hosting, schema, and backend are **To confirm**. It may be a small public release manifest, but it must contain data only, such as version, notes, minimum supported version, and store links. Validate its signature or integrity where the chosen hosting supports it. The app must not execute content from the manifest. If metadata is unavailable, use the platform store as the source of truth.
 
 Use an in-app notice by default. Offer push update notices only as an opt-in. Request notification permission when the user turns the option on. If permission is denied, keep the in-app notice and manual check available. Send a notice only after the version is available through the relevant store or beta channel.
 

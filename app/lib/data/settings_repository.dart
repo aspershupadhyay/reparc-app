@@ -18,6 +18,10 @@ class AppSettings {
     this.health = const {},
     this.lastBackupAt,
     this.introSeen = false,
+    this.updatesAuto = true,
+    this.updatesCheckedAt,
+    this.updatesLatest,
+    this.updatesDismissed,
   });
 
   final String loadUnit;
@@ -61,6 +65,19 @@ class AppSettings {
   /// The user has seen the animated intro once.
   final bool introSeen;
 
+  /// Check GitHub for a newer build once a day when the app opens (D-029).
+  /// On unless the user turns it off in Me → App updates.
+  final bool updatesAuto;
+
+  /// When the last update check finished.
+  final DateTime? updatesCheckedAt;
+
+  /// The latest release seen by the last check, as JSON (ReleaseInfo).
+  final String? updatesLatest;
+
+  /// A version the user chose to hide from the Home notice.
+  final String? updatesDismissed;
+
   bool aiAllows(String? scope) => scope == null || aiScopes.contains(scope);
 
   static AppSettings fromMap(Map<String, String> m) => AppSettings(
@@ -86,6 +103,10 @@ class AppSettings {
     },
     lastBackupAt: DateTime.tryParse(m['backup.lastAt'] ?? ''),
     introSeen: m['introSeen'] == 'true',
+    updatesAuto: m['updates.auto'] != 'false',
+    updatesCheckedAt: DateTime.tryParse(m['updates.checkedAt'] ?? ''),
+    updatesLatest: m['updates.latest'],
+    updatesDismissed: m['updates.dismissed'],
   );
 }
 
@@ -118,6 +139,12 @@ class SettingsRepository {
   Future<void> setStorageNoticeSeen() => set('storageNoticeSeen', 'true');
   Future<void> setThemeMode(String m) => set('themeMode', m);
   Future<void> setTargetsOn(bool v) => set('targetsOn', v.toString());
+  Future<void> setUpdatesAuto(bool v) => set('updates.auto', v ? null : 'false');
+  Future<void> setUpdatesDismissed(String? version) => set('updates.dismissed', version);
+  Future<void> setUpdateResult({required DateTime at, String? latestJson}) => db.transaction(() async {
+    await set('updates.checkedAt', at.toUtc().toIso8601String());
+    if (latestJson != null) await set('updates.latest', latestJson);
+  });
   Future<void> setMealHidden(Set<String> hidden) => set('mealHidden', hidden.isEmpty ? null : hidden.join(','));
 
   Future<void> setProfile(Profile p) => db.transaction(() async {

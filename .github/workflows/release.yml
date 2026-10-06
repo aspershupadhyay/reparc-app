@@ -144,7 +144,14 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          cat > notes.md <<NOTES
+          # What's new comes first: the app shows its first line (D-029).
+          if [ -f "release-notes/${TAG#v}.md" ]; then
+            cat "release-notes/${TAG#v}.md" > notes.md
+            echo >> notes.md
+          else
+            : > notes.md
+          fi
+          cat >> notes.md <<NOTES
           Reparc ${TAG} (beta). Tested by automated checks; real-device testing is ongoing.
 
           **Android:** download \`reparc-android.apk\` on the phone and open it (Android 8+; Health Connect needs Android 9+).
@@ -153,7 +160,7 @@ jobs:
 
           **AI connections:** Me → AI connections. Wi-Fi mode for AI apps on your computer, or deploy your own gateway on Vercel: see gateway/README.md.
 
-          Check downloads against \`SHA256SUMS.txt\`. The app never installs updates itself.
+          Check downloads against \`SHA256SUMS.txt\`. The app tells you when a new version is out (Me → App updates); your phone's installer does the install.
           NOTES
           gh release create "$TAG" dist/reparc-android.apk dist/reparc-ios-unsigned.ipa dist/SHA256SUMS.txt \
             --target "$GITHUB_SHA" --title "Reparc $TAG" --notes-file notes.md --latest

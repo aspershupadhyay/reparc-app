@@ -374,9 +374,10 @@ class WorkoutRepository {
     return id;
   });
 
-  /// Starts a session from one roadmap day. Warm-up moves stay on the day
-  /// screen; the session gets the working exercises, with lighter ramp-up
-  /// sets before the first big lift and the day's target as a note.
+  /// Starts a session from one roadmap day. Warm-up moves come first, each
+  /// with one warm-up set to tick off (warm-up sets never count toward
+  /// volume, sets, or records). Then the working exercises, with lighter
+  /// ramp-up sets before the first big lift and the day's target as a note.
   Future<String> startProgramDay({required String programId, required int dayIndex}) => db.transaction(() async {
     final live = await liveSession();
     if (live != null) throw StateError('A workout is already in progress.');
@@ -404,6 +405,28 @@ class WorkoutRepository {
           ),
         );
     var pos = 0;
+    if (plan.showWarmup) {
+      for (final item in day.warmup) {
+        final exId = await ensureCatalogExercise(catalogId: item.exerciseId, name: item.name);
+        final seId = await _insertSessionExercise(id, exId, pos++);
+        await (db.update(db.sessionExercises)..where((s) => s.id.equals(seId))).write(
+          SessionExercisesCompanion(
+            note: Value(
+              [
+                'Warm-up',
+                if (item.seconds == null && item.repsLow != null) '${item.repsLow} reps',
+                if (item.note != null) item.note!,
+              ].join(' · '),
+            ),
+          ),
+        );
+        final setId = await _insertSet(seId, 0, SetType.warmup);
+        if (item.seconds != null) {
+          // A target time to start from, not a completed value.
+          await updateSet(setId, SetEntriesCompanion(durationSec: Value(item.seconds)));
+        }
+      }
+    }
     for (final item in day.work) {
       final exId = await ensureCatalogExercise(catalogId: item.exerciseId, name: item.name);
       final seId = await _insertSessionExercise(id, exId, pos++);

@@ -628,8 +628,9 @@ class RoadmapDayScreen extends ConsumerWidget {
             const StatusLine(
               icon: LucideIcons.flame,
               text:
-                  'Then do 2–3 lighter sets of the first lift (about 50%, 70%, and 85% of your working weight). '
-                  'They are already in your workout as warm-up sets.',
+                  'These moves are in your workout as warm-up sets to tick off. Then do 2–3 lighter sets of '
+                  'the first lift (about 50%, 70%, and 85% of your working weight). Warm-up sets never count '
+                  'toward volume or records.',
             ),
           ],
           section(

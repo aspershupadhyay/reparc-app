@@ -84,7 +84,7 @@ Group settings by purpose:
 - Export and deletion.
 - Privacy policy and support.
 
-Do not hide data controls under a vague label such as “More.” Put update controls under **Me → Settings → App updates**. Show the installed version, latest known version, last check, release notes, and **Check for updates**. Offer an opt-in **Notify me about new versions** control. Explain that installation follows the official store flow.
+Do not hide data controls under a vague label such as “More.” Put update controls under **Me → Settings → App updates**. Show the installed version, latest known version, last check, release notes, and **Check for updates**. Offer a **Check automatically** control (on by default for GitHub test builds, D-029) and show a Home notice when a new version is out. Explain that the phone's installer, or the store, does the install.
 
 ## 3.7 One design system
 

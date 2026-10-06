@@ -25,7 +25,7 @@ Before you change code, data, design, or project rules:
 - Treat **To confirm** items as unresolved.
 - Never present a planned feature as built.
 - Never claim a security, privacy, performance, or policy result without evidence.
-- Never make the app install executable updates directly from GitHub. Use approved App Store or Google Play flows.
+- Never make the app download or install executable updates by itself. Before store release, the app may check GitHub Releases for a newer build and open its download in the browser; the phone's own installer asks the user to confirm (owner decision, D-029). Use App Store or Google Play flows once the app is in a store.
 
 ## Before implementation
 

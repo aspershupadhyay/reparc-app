@@ -1,0 +1,194 @@
+import 'dart:convert';
+import 'dart:io';
+
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_test/flutter_test.dart';
+import 'package:reparc/app/app.dart';
+import 'package:reparc/app/router.dart';
+import 'package:reparc/core/clock.dart';
+import 'package:reparc/data/database.dart';
+import 'package:reparc/data/providers.dart';
+import 'package:reparc/features/exercises/library/library.dart';
+import 'package:reparc/updates/update_check.dart';
+import 'package:reparc/updates/update_controller.dart';
+
+import 'helpers.dart';
+
+/// The shape GitHub returns for /releases/latest (trimmed).
+Map<String, Object?> release(String tag) => {
+  'tag_name': tag,
+  'html_url': 'https://github.com/aspershupadhyay/reparc/releases/tag/$tag',
+  'published_at': '2026-10-06T15:49:38Z',
+  'body': 'Reparc $tag (beta). New logo and colours.\n\n**Android:** download the APK.',
+  'assets': [
+    {
+      'name': 'reparc-android.apk',
+      'browser_download_url': 'https://github.com/aspershupadhyay/reparc/releases/download/$tag/reparc-android.apk',
+    },
+    {
+      'name': 'reparc-ios-unsigned.ipa',
+      'browser_download_url':
+          'https://github.com/aspershupadhyay/reparc/releases/download/$tag/reparc-ios-unsigned.ipa',
+    },
+    {'name': 'SHA256SUMS.txt', 'browser_download_url': 'https://example.invalid/sums'},
+  ],
+};
+
+void main() {
+  test('versions compare by number, not as text', () {
+    expect(parseVersion('v0.3.1'), [0, 3, 1]);
+    expect(parseVersion('0.10.0+12'), [0, 10, 0]);
+    expect(parseVersion('latest'), isNull);
+    expect(isNewer('0.3.2', '0.3.1'), isTrue);
+    expect(isNewer('v0.10.0', '0.9.9'), isTrue);
+    expect(isNewer('1.0.0', '0.99.99'), isTrue);
+    expect(isNewer('0.3.1', '0.3.1'), isFalse);
+    expect(isNewer('0.3.0', '0.3.1'), isFalse);
+    expect(isNewer('nonsense', '0.3.1'), isFalse);
+  });
+
+  test('a GitHub release gives the version, notes, and both downloads', () {
+    final r = ReleaseInfo.fromGitHub(release('v0.4.0'));
+    expect(r.version, '0.4.0');
+    expect(r.apk.toString(), endsWith('/v0.4.0/reparc-android.apk'));
+    expect(r.ipa.toString(), endsWith('/v0.4.0/reparc-ios-unsigned.ipa'));
+    expect(r.summary, 'Reparc v0.4.0 (beta). New logo and colours.');
+    expect(r.publishedAt, DateTime.utc(2026, 10, 6, 15, 49, 38));
+    // Saved and read back the same.
+    final again = ReleaseInfo.fromJson(jsonEncode(r.toJson()))!;
+    expect(again.version, r.version);
+    expect(again.apk, r.apk);
+    expect(() => ReleaseInfo.fromGitHub({'tag_name': 'not-a-version', 'html_url': 'x'}), throwsFormatException);
+  });
+
+  group('controller', () {
+    late AppDatabase db;
+    late FakeClock clock;
+    late int calls;
+    late Map<String, Object?> Function() answer;
+    late ProviderContainer c;
+
+    setUp(() {
+      db = memoryDb();
+      clock = FakeClock(DateTime(2026, 10, 6, 9));
+      calls = 0;
+      answer = () => release('v0.4.0');
+      c = ProviderContainer(
+        overrides: [
+          databaseProvider.overrideWithValue(db),
+          clockProvider.overrideWithValue(clock.call),
+          installedVersionProvider.overrideWith((ref) async => '0.3.2'),
+          fetchJsonProvider.overrideWithValue((url) async {
+            calls++;
+            expect(url, latestReleaseApi);
+            return answer();
+          }),
+        ],
+      );
+      c.listen(currentSettingsProvider, (_, _) {});
+    });
+    tearDown(() async {
+      c.dispose();
+      await db.close();
+    });
+
+    test('a newer release is found, saved, and offered', () async {
+      final r = await c.read(updateControllerProvider).check();
+      expect(r, isA<UpdateFound>());
+      expect((r as UpdateFound).release.version, '0.4.0');
+      await pumpEventQueue();
+      final s = c.read(currentSettingsProvider);
+      expect(s.updatesCheckedAt, isNotNull);
+      expect(c.read(availableUpdateProvider)?.version, '0.4.0');
+    });
+
+    test('the same or an older release means up to date', () async {
+      answer = () => release('v0.3.2');
+      expect(await c.read(updateControllerProvider).check(), isA<UpToDate>());
+      await pumpEventQueue();
+      expect(c.read(availableUpdateProvider), isNull);
+    });
+
+    test('a failed check says why and saves nothing', () async {
+      c.updateOverrides([
+        databaseProvider.overrideWithValue(db),
+        clockProvider.overrideWithValue(clock.call),
+        installedVersionProvider.overrideWith((ref) async => '0.3.2'),
+        fetchJsonProvider.overrideWithValue((url) async => throw const UpdateCheckError('No connection.')),
+      ]);
+      final r = await c.read(updateControllerProvider).check();
+      expect((r as CheckFailed).message, 'No connection.');
+      await pumpEventQueue();
+      expect(c.read(currentSettingsProvider).updatesCheckedAt, isNull);
+    });
+
+    test('the automatic check runs at most once a day and can be turned off', () async {
+      final ctl = c.read(updateControllerProvider);
+      await ctl.autoCheck();
+      expect(calls, 1);
+      clock.advance(const Duration(hours: 3));
+      await ctl.autoCheck();
+      expect(calls, 1, reason: 'Checked recently');
+      clock.advance(const Duration(hours: 21));
+      await ctl.autoCheck();
+      expect(calls, 2);
+      await c.read(settingsRepoProvider).setUpdatesAuto(false);
+      clock.advance(const Duration(days: 2));
+      await ctl.autoCheck();
+      expect(calls, 2, reason: 'Turned off');
+    });
+  });
+
+  testWidgets('Home tells the user about a new version; App updates offers the download', (tester) async {
+    final db = memoryDb();
+    final library = ExerciseLibrary.parse(File('assets/exercises/library.json').readAsStringSync());
+    tester.view.physicalSize = const Size(1170, 2532);
+    tester.view.devicePixelRatio = 3;
+    addTearDown(tester.view.reset);
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          databaseProvider.overrideWithValue(db),
+          clockProvider.overrideWithValue(() => DateTime(2026, 10, 6, 9)),
+          libraryProvider.overrideWith((ref) async => library),
+          installedVersionProvider.overrideWith((ref) async => '0.3.2'),
+          fetchJsonProvider.overrideWithValue((url) async => release('v0.4.0')),
+        ],
+        child: ReparcApp(router: buildRouter(initialLocation: '/home')),
+      ),
+    );
+    await tester.pumpAndSettle();
+    // The daily check ran when the app opened. Its database write is real
+    // I/O, so give it a real moment.
+    await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 200)));
+    await tester.pumpAndSettle();
+    expect(find.text('Update available'), findsOneWidget);
+    expect(find.text('Version 0.4.0 is ready to install.'), findsOneWidget);
+
+    await tester.tap(find.text('Update available'));
+    await tester.pumpAndSettle();
+    expect(find.text('App updates'), findsOneWidget);
+    expect(find.text('Version 0.4.0 is ready'), findsOneWidget);
+    expect(find.text('0.3.2'), findsOneWidget);
+    expect(find.text('Download and install'), findsOneWidget, reason: 'Tests run as Android');
+    expect(find.text('Check automatically'), findsOneWidget);
+
+    await tester.tap(find.text('Check for updates'));
+    await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 200)));
+    await tester.pumpAndSettle();
+    expect(find.text('Version 0.4.0 is ready to install.'), findsOneWidget);
+
+    // Hiding the notice on Home lasts until the next version.
+    await tester.pageBack();
+    await tester.pumpAndSettle();
+    await tester.tap(find.byTooltip('Hide until the next version'));
+    await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 200)));
+    await tester.pumpAndSettle();
+    expect(find.text('Update available'), findsNothing);
+
+    await tester.pumpWidget(const SizedBox());
+    await tester.pump(const Duration(seconds: 1));
+    await tester.runAsync(db.close);
+  });
+}

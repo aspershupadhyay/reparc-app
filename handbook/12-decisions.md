@@ -347,3 +347,14 @@ Keep major choices here. Update the related chapter when a decision changes.
 **Why:** The owner found the lime and teal colours and the gauge logo unappealing. Ember reads as energy, sits apart from the iOS system category colours, and passes the contrast checks in `app/test/palette_test.dart`.
 
 **Supersedes:** The colours in D-023 and the gauge mark in D-022. No purple remains a rule.
+
+## D-029: Update alerts for GitHub test builds
+
+**Status:** Accepted by the user (owner, 2026-10-06).
+**Date:** 2026-10-06.
+
+**Choice:** Until the app is in the App Store and Google Play, Reparc checks the GitHub "latest release" for a newer build: once a day when the app opens (on by default, the user can turn it off) and when the user taps **Check for updates**. Home shows a notice. **Download and install** opens the APK (Android) or the release page (iPhone) in the browser; the phone's own installer asks the user to confirm. The app never downloads or runs code by itself.
+
+**Privacy:** A check sends one HTTPS request to GitHub with no records, account, or device data. GitHub sees the IP address. The App updates screen says so.
+
+**Supersedes:** The AGENTS.md rule that the app must not use GitHub for updates, for the pre-store period only.

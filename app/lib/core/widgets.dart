@@ -252,6 +252,20 @@ class EmptyState extends StatelessWidget {
 }
 
 /// A short line with an icon, so colour is never the only signal.
+/// A label that stays on one line. It shrinks a little instead of wrapping
+/// when space is short, for example with large text in a narrow button.
+class OneLine extends StatelessWidget {
+  const OneLine(this.text, {super.key, this.style});
+  final String text;
+  final TextStyle? style;
+
+  @override
+  Widget build(BuildContext context) => FittedBox(
+    fit: BoxFit.scaleDown,
+    child: Text(text, style: style, maxLines: 1, softWrap: false),
+  );
+}
+
 class StatusLine extends StatelessWidget {
   const StatusLine({super.key, required this.icon, required this.text, this.color});
   final IconData icon;

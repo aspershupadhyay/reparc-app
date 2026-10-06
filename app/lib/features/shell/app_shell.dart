@@ -13,6 +13,7 @@ import '../../core/tokens.dart';
 import '../../data/models.dart';
 import '../../data/providers.dart';
 import '../../health/health_sync.dart';
+import '../../updates/update_controller.dart';
 import '../workout/session_clock.dart';
 
 class _Tab {
@@ -39,6 +40,8 @@ class AppShell extends ConsumerWidget {
     final live = ref.watch(liveSessionProvider).value;
     // Health write-back runs only while a write feature is on (D-020).
     if (ref.watch(currentSettingsProvider).health.any((h) => h.startsWith('write'))) ref.watch(healthSyncProvider);
+    // The once-a-day update check (D-029). It only reads release data.
+    ref.watch(autoUpdateCheckProvider);
     return Scaffold(
       body: shell,
       bottomNavigationBar: Column(

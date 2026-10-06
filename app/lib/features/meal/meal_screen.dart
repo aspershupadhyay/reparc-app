@@ -346,17 +346,19 @@ class _Summary extends StatelessWidget {
             children: [
               Expanded(
                 child: OutlinedButton.icon(
+                  style: _compact,
                   onPressed: () => showPlanDaySheet(context, day: day),
                   icon: const Icon(LucideIcons.wandSparkles, size: 18),
-                  label: const Text('Plan my day'),
+                  label: const OneLine('Plan my day'),
                 ),
               ),
               const SizedBox(width: Space.s),
               Expanded(
                 child: OutlinedButton.icon(
+                  style: _compact,
                   onPressed: () => context.push('/me/body'),
                   icon: Icon(targets.isEmpty ? LucideIcons.target : LucideIcons.slidersHorizontal, size: 18),
-                  label: Text(targets.isEmpty ? 'Set targets' : 'Targets'),
+                  label: OneLine(targets.isEmpty ? 'Set targets' : 'Targets'),
                 ),
               ),
             ],
@@ -605,3 +607,8 @@ class _AddPill extends StatelessWidget {
     );
   }
 }
+
+/// Side-by-side buttons: less side padding so labels stay on one line.
+final _compact = OutlinedButton.styleFrom(
+  padding: const EdgeInsets.symmetric(horizontal: Space.m, vertical: Space.m),
+);

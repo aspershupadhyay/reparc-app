@@ -17,6 +17,7 @@ import '../../data/models.dart';
 import '../../data/providers.dart';
 import '../../domain/nutrition.dart';
 import '../../health/health_service.dart';
+import '../../updates/update_controller.dart';
 import '../me/health_screen.dart';
 import '../meal/meal_entry_sheet.dart';
 import '../workout/session_clock.dart';
@@ -56,6 +57,7 @@ class HomeScreen extends ConsumerWidget {
               const _StorageNote(),
               const SizedBox(height: Space.m),
             ],
+            const _UpdateBanner(),
             const _ProposalBanner(),
             const _Hero(),
             const SizedBox(height: Space.l),
@@ -117,6 +119,50 @@ class HomeScreen extends ConsumerWidget {
 }
 
 /// Plans an AI app sent, waiting for the user's review (D-019).
+/// A newer build is out (D-029). Tapping opens Me → App updates; the x
+/// hides this version until the next one.
+class _UpdateBanner extends ConsumerWidget {
+  const _UpdateBanner();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final update = ref.watch(availableUpdateProvider);
+    if (update == null || ref.watch(currentSettingsProvider).updatesDismissed == update.version) {
+      return const SizedBox.shrink();
+    }
+    final p = context.pal;
+    final t = Theme.of(context).textTheme;
+    return Padding(
+      padding: const EdgeInsets.only(bottom: Space.m),
+      child: AppCard(
+        color: p.brandSoft,
+        onTap: () => context.push('/me/updates'),
+        semanticLabel: 'Reparc ${update.version} is out. Open App updates',
+        child: Row(
+          children: [
+            IconBadge(LucideIcons.download, color: p.brand, size: 40),
+            const SizedBox(width: Space.m),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('Update available', style: t.titleSmall),
+                  Text('Version ${update.version} is ready to install.', style: t.bodySmall),
+                ],
+              ),
+            ),
+            IconButton(
+              tooltip: 'Hide until the next version',
+              onPressed: () => ref.read(settingsRepoProvider).setUpdatesDismissed(update.version),
+              icon: Icon(LucideIcons.x, size: IconSizes.s, color: p.inkSoft),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
 class _ProposalBanner extends ConsumerWidget {
   const _ProposalBanner();
 
@@ -411,7 +457,7 @@ class _TodayFood extends ConsumerWidget {
                       final v = totals.of(n).value;
                       final target = byN[n];
                       final short = switch (n) {
-                        Nutrient.energy => 'kcal',
+                        Nutrient.energy => 'Energy',
                         Nutrient.fiber => 'Fibre',
                         _ => n.label,
                       };
@@ -431,7 +477,9 @@ class _TodayFood extends ConsumerWidget {
                           const SizedBox(height: 4),
                           Text(short, style: t.labelSmall),
                           Text(
-                            target == null ? n.unit : 'of ${fmtNum(target.amount, maxDecimals: 0)}',
+                            target == null ? n.unit : 'of ${fmtNum(target.amount, maxDecimals: 0)} ${n.unit}',
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
                             style: t.labelSmall?.copyWith(fontSize: 11),
                           ),
                         ],
