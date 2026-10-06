@@ -87,6 +87,12 @@ h1 { font-size: clamp(48px, 7.4vw, 104px); line-height: 0.95; letter-spacing: -0
 .btn.primary { background: var(--lime); color: var(--ink); box-shadow: 0 10px 30px -10px rgba(198, 244, 50, 0.6); }
 .btn.ghost { border: 1px solid var(--line); }
 .btn:hover { transform: translateY(-2px); }
+.store { display: inline-flex; align-items: center; gap: 12px; padding: 12px 22px 12px 18px; }
+.store svg { width: 26px; height: 26px; flex: none; }
+.store span { display: grid; line-height: 1.15; font-size: 18px; }
+.store small { font-size: 11px; font-weight: 600; opacity: .8; text-transform: uppercase; letter-spacing: .08em; }
+.install-hint { color: var(--muted); font-size: 14px; margin: -8px 0 22px; }
+.install-hint a { color: var(--text); }
 .facts { list-style: none; display: flex; gap: 22px; flex-wrap: wrap; padding: 0; margin: 0; color: var(--muted); font-size: 14px; }
 .facts b { color: var(--text); font-size: 22px; margin-right: 4px; }
 

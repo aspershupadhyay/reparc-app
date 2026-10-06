@@ -151,4 +151,4 @@ jobs:
           Check downloads against \`SHA256SUMS.txt\`. The app never installs updates itself.
           NOTES
           gh release create "$TAG" dist/reparc-android.apk dist/reparc-ios-unsigned.ipa dist/SHA256SUMS.txt \
-            --target "$GITHUB_SHA" --title "Reparc $TAG" --notes-file notes.md --prerelease
+            --target "$GITHUB_SHA" --title "Reparc $TAG" --notes-file notes.md --latest
