@@ -11,6 +11,10 @@ import '../features/exercises/library_screen.dart';
 import '../features/home/home_screen.dart';
 import '../features/me/ai_connections_screen.dart';
 import '../features/me/app_updates_screen.dart';
+import '../features/me/backup_screen.dart';
+import '../features/me/gateway_setup_screen.dart';
+import '../features/me/health_screen.dart';
+import '../features/me/proposal_screen.dart';
 import '../features/me/data_screen.dart';
 import '../features/me/me_screen.dart';
 import '../features/me/privacy_screen.dart';
@@ -102,7 +106,19 @@ GoRouter buildRouter({String initialLocation = '/home'}) => GoRouter(
               path: '/me',
               builder: (_, _) => const MeScreen(),
               routes: [
-                GoRoute(path: 'ai', builder: (_, _) => const AiConnectionsScreen()),
+                GoRoute(
+                  path: 'ai',
+                  builder: (_, _) => const AiConnectionsScreen(),
+                  routes: [
+                    GoRoute(path: 'setup', builder: (_, _) => const GatewaySetupScreen()),
+                    GoRoute(
+                      path: 'proposal/:id',
+                      builder: (_, s) => ProposalScreen(id: s.pathParameters['id']!),
+                    ),
+                  ],
+                ),
+                GoRoute(path: 'health', builder: (_, _) => const HealthScreen()),
+                GoRoute(path: 'backup', builder: (_, _) => const BackupScreen()),
                 GoRoute(path: 'updates', builder: (_, _) => const AppUpdatesScreen()),
                 GoRoute(path: 'data', builder: (_, _) => const DataScreen()),
                 GoRoute(path: 'privacy', builder: (_, _) => const PrivacyScreen()),

@@ -2,10 +2,12 @@
 title: Accounts and sync
 status: proposed
 owner: product-and-security
-updated: 2026-10-05
+updated: 2026-10-06
 ---
 
 # Section 8: Accounts and sync
+
+**Built (2026-10-06, D-021):** Backup without a Reparc account. The phone's own backup (iCloud Backup, or Android backup to Google Drive) includes the database. Me → Backup and restore makes an encrypted backup file (Argon2id and AES-256-GCM) that the user saves to iCloud Drive, Google Drive, or anywhere, and restores on any phone. Sign-in and live two-way sync are not built.
 
 ## 8.1 Purpose
 
@@ -68,4 +70,5 @@ Official source: [Apple App Review Guidelines, section 4.8](https://developer.ap
 - **Default:** Core logging does not require an account.
 - **Consent:** Sync is a separate choice.
 - **Safety:** Do not promise recovery before testing it.
-- **To confirm:** Identity provider, cloud provider, key recovery, retention, and deletion timing.
+- **Built:** Backup through the user's own Apple or Google account (D-021). A forgotten backup passphrase cannot be recovered; the app says so.
+- **To confirm:** Whether sign-in and live sync are needed, identity provider, and automatic backup files to a cloud drive.

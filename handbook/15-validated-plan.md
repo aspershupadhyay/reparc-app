@@ -235,7 +235,18 @@ Updated 2026-10-05. This records what exists in code. It is not evidence of devi
 
 **Device test fixes (2026-10-06):** First test on a real Android phone (realme RMX3710, Android 15). Fixed: the guide link in a live workout switched tabs instead of opening the guide; nutrition legend names wrapped letter by letter; "Protein" was cut off on the Meal summary; pill tabs and area chips could not be activated by screen readers; muscle labels overflowed at large text. Also: a new exercise in a workout starts with one empty set, the library hides filters while the keyboard is open, and entries without equipment say "No equipment".
 
-**Not built:** Goals, update metadata checks, update alerts, HealthKit, Health Connect, sign-in, sync, AI, MCP, an app icon, crash reporting, and release signing in CI.
+**AI, health, backup, and brand (2026-10-06, owner request):**
+
+- AI connections over MCP (D-018): Wi-Fi server on the phone and the owner's own gateway on Vercel (`gateway/`), 12 tools, separate switches for workouts, meals, health, and plan suggestions, access windows of 15 minutes to 2 hours, sign-in approval with a match code, app keys, revocation, and an activity list without content.
+- AI proposals (D-019): workout and meal plans wait for review in Me → AI connections and on Home.
+- Apple Health and Health Connect (D-020): per-type switches, today's steps and active energy on Home, write-back of finished workouts and eaten meals.
+- Backup and restore (D-021): phone backup rules and encrypted backup files.
+- App icon, splash, and animated intro (D-022). Website in `site/`. Release workflow that publishes an APK and an IPA to GitHub Releases.
+- Database schema v3 with a tested migration. 77 app tests and 14 gateway tests pass on Linux. A release APK builds locally.
+
+**Not yet checked for this work:** Health access, the Wi-Fi server, and the online gateway on real devices; a deployed gateway on Vercel; the iOS build on a GitHub macOS runner; claude.ai, ChatGPT, Codex, and Cursor against a live gateway. See the compatibility note in section 10.2.
+
+**Not built:** Goals, update metadata checks, update alerts, sign-in, live two-way sync, automatic backup files to a cloud drive, crash reporting, App Store and Google Play signing in CI.
 
 ## 16.12 AI context
 

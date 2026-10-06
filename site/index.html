@@ -1,0 +1,188 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Reparc — Train. Eat. Own your data.</title>
+<meta name="description" content="Reparc is a free, open-source gym and meal log for iPhone and Android. Your records stay on your phone. Connect Claude, ChatGPT, or Codex on your terms, through your own gateway.">
+<meta name="theme-color" content="#0A1012">
+<meta property="og:title" content="Reparc — Train. Eat. Own your data.">
+<meta property="og:description" content="Gym and meal log that lives on your phone. Let any MCP AI plan your training and meals — you approve every change.">
+<meta property="og:image" content="https://aspershupadhyay.github.io/reparc/assets/icon-512.png">
+<meta property="og:type" content="website">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; img-src 'self' data:; style-src 'self'; script-src 'self'; font-src 'self'; connect-src 'none'; frame-ancestors 'none'; base-uri 'none'; form-action 'none'">
+<meta name="referrer" content="no-referrer">
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+
+<header class="nav">
+  <a class="brand" href="#top" aria-label="Reparc home">
+    <img src="favicon.svg" alt="" width="28" height="28"> <span>Reparc</span>
+  </a>
+  <nav aria-label="Main">
+    <a href="#ai">AI</a>
+    <a href="#features">Features</a>
+    <a href="#privacy">Privacy</a>
+    <a href="#download" class="pill">Get the app</a>
+  </nav>
+</header>
+
+<main id="main">
+  <!-- HERO -->
+  <section class="hero" id="top">
+    <div class="hero-copy">
+      <p class="kicker"><span class="dot"></span> Open beta · iPhone & Android · AGPL-3.0</p>
+      <h1>Train. Eat.<br><span class="grad">Own your data.</span></h1>
+      <p class="lead">A gym and meal log that lives on your phone — not on our server, because there is no server. When you want an AI coach, plug in Claude, ChatGPT, or Codex on <em>your</em> terms, and approve every plan it sends.</p>
+      <div class="cta">
+        <a class="btn primary" href="#download">Download</a>
+        <a class="btn ghost" href="https://github.com/aspershupadhyay/reparc">Read the code</a>
+      </div>
+      <ul class="facts">
+        <li><b>909</b> exercises with photos</li>
+        <li><b>0</b> accounts needed</li>
+        <li><b>0</b> trackers</li>
+      </ul>
+    </div>
+    <div class="hero-art" aria-hidden="true">
+      <div class="rings"><i></i><i></i><i></i></div>
+      <svg class="gauge" viewBox="0 0 400 400">
+        <defs>
+          <linearGradient id="arcg" x1="0" y1="1" x2="1" y2="0">
+            <stop offset="0" stop-color="#1E5B66"/><stop offset=".35" stop-color="#5CC1CC"/><stop offset=".8" stop-color="#C6F432"/><stop offset="1" stop-color="#E4FF8A"/>
+          </linearGradient>
+          <filter id="glow"><feGaussianBlur stdDeviation="6"/></filter>
+        </defs>
+        <path class="track" d="M106.5 278A108 108 0 1 1 293.5 278"/>
+        <path class="inner" d="M142 257.5A67 67 0 1 1 258 257.5"/>
+        <path class="arc" pathLength="1" d="M106.5 278A108 108 0 1 1 293.5 278"/>
+        <g class="needle"><line x1="200" y1="224" x2="200" y2="131"/></g>
+        <circle class="hubglow" cx="200" cy="224" r="40" filter="url(#glow)"/>
+        <circle class="hub" cx="200" cy="224" r="23"/>
+        <circle class="hubin" cx="200" cy="224" r="9"/>
+      </svg>
+      <div class="burst"></div>
+    </div>
+  </section>
+
+  <!-- MARQUEE -->
+  <div class="marquee" aria-hidden="true"><div>
+    <span>Bench press 3×8</span><span>Oats 60 g · 225 kcal</span><span>Deadlift PR 140 kg</span><span>Steps 9,412</span><span>Greek yogurt · 32 g protein</span><span>Back squat 5×5</span><span>Rest 2:00</span><span>Dinner · planned</span>
+    <span>Bench press 3×8</span><span>Oats 60 g · 225 kcal</span><span>Deadlift PR 140 kg</span><span>Steps 9,412</span><span>Greek yogurt · 32 g protein</span><span>Back squat 5×5</span><span>Rest 2:00</span><span>Dinner · planned</span>
+  </div></div>
+
+  <!-- AI -->
+  <section class="section" id="ai">
+    <p class="eyebrow">Your AI coach, your rules</p>
+    <h2>Any MCP AI can plan your week.<br>Nothing changes until you tap <span class="hl">Approve</span>.</h2>
+    <div class="ai-grid">
+      <div class="chat reveal">
+        <div class="bubble user">Plan me a 3-day push/pull/legs split and high-protein meals for tomorrow. Look at my last month first.</div>
+        <div class="tool"><code>get_overview</code><code>list_workouts</code><code>get_nutrition_totals</code></div>
+        <div class="bubble ai">You trained 11 times; bench stalled at 80 kg × 5. I sent a 3-day split with a lighter volume week, and 4 meals hitting ~160 g protein. <b>Review them in Reparc.</b></div>
+        <div class="tool"><code>propose_workout_plan</code><code>propose_meal_plan</code></div>
+      </div>
+      <div class="phone reveal" role="img" aria-label="Reparc showing an AI plan waiting for review">
+        <div class="screen">
+          <div class="ph-top"><span>9:41</span><span>●●●</span></div>
+          <div class="ph-card brand"><b>Workout plan from Claude</b><small>3-day split with a deload for bench.</small></div>
+          <div class="ph-row"><span>Bench press</span><b>4 × 6</b></div>
+          <div class="ph-row"><span>Incline dumbbell press</span><b>3 × 10</b></div>
+          <div class="ph-row"><span>Overhead press</span><b>3 × 8</b></div>
+          <div class="ph-row"><span>Triceps pushdown</span><b>3 × 12</b></div>
+          <div class="ph-btns"><span class="no">Decline</span><span class="yes">Approve</span></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="modes">
+      <article class="mode reveal">
+        <div class="mode-icon">⌁</div>
+        <h3>On your Wi-Fi</h3>
+        <p>Turn it on for 15 minutes to 2 hours. Your phone becomes an MCP server on your home network. Claude Code, Codex, Cursor, VS Code, or Claude Desktop on your laptop connect with a one-time key. No internet hop at all.</p>
+        <pre><code>claude mcp add --transport http reparc \
+  http://192.168.1.20:8765/mcp \
+  --header "Authorization: Bearer rpl_…"</code></pre>
+        <p class="note">Plain HTTP inside your network: use trusted Wi-Fi only. Cloud apps like claude.ai cannot reach it — use the gateway.</p>
+      </article>
+      <article class="mode reveal">
+        <div class="mode-icon">☁</div>
+        <h3>Anywhere, through <em>your</em> gateway</h3>
+        <p>One click deploys the open-source gateway into <b>your own</b> free Vercel account. claude.ai, ChatGPT, and any remote-MCP app sign in with OAuth; you approve them on your phone by matching a 4-letter code.</p>
+        <a class="deploy" href="https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Faspershupadhyay%2Freparc&root-directory=gateway&project-name=reparc-gateway&repository-name=reparc-gateway&env=REPARC_OWNER_KEY&envDescription=Paste+the+owner+key+from+the+Reparc+app.+It+stays+in+your+Vercel+project+and+on+your+phone.&envLink=https%3A%2F%2Fgithub.com%2Faspershupadhyay%2Freparc%2Fblob%2Fmain%2Fgateway%2FREADME.md&stores=%5B%7B%22type%22%3A%22integration%22%2C%22integrationSlug%22%3A%22upstash%22%2C%22productSlug%22%3A%22upstash-kv%22%2C%22protocol%22%3A%22storage%22%7D%5D">▲ Deploy your gateway</a>
+        <p class="note">Start setup in the app (Me → AI connections) so it can make your owner key first.</p>
+      </article>
+    </div>
+
+    <ol class="flow reveal" aria-label="How the online gateway works">
+      <li><b>Your AI app</b><span>asks a question over HTTPS</span></li>
+      <li><b>Your gateway</b><span>holds it ~seconds, encrypted with your key</span></li>
+      <li><b>Your phone</b><span>checks your switches, answers from local data</span></li>
+    </ol>
+  </section>
+
+  <!-- FEATURES -->
+  <section class="section" id="features">
+    <p class="eyebrow">Everything a lifter and a meal-prepper needs</p>
+    <h2>Fast to log. Honest about the numbers.</h2>
+    <div class="bento">
+      <article class="tile big reveal">
+        <div class="swap" aria-hidden="true"><img src="assets/Barbell_Squat_0.webp" alt="" loading="lazy"><img src="assets/Barbell_Squat_1.webp" alt="" loading="lazy"></div>
+        <h3>909 exercises, with photos</h3>
+        <p>36 coached guides with an animated 3D body model, plus 873 public-domain exercises with start and end photos. Search by muscle, area, or equipment.</p>
+      </article>
+      <article class="tile reveal"><h3>Live workouts</h3><p>Sets, reps, load in kg or lb, rest timer, supersets, warm-ups, drop sets. Pause and resume without losing a second.</p></article>
+      <article class="tile reveal"><h3>Meal planning</h3><p>Plan the day, then tick off what you ate. A missing value stays missing — never a silent zero.</p></article>
+      <article class="tile reveal"><h3>Analytics from your own records</h3><p>Training heatmap, volume, muscles by body area, best lifts, macro donut. Tap any number to see the records behind it.</p></article>
+      <article class="tile health reveal"><h3>Apple Health & Health Connect</h3><p>Steps, active energy, and weight in; workouts and nutrition out. One type at a time, each with its own switch.</p></article>
+      <article class="tile reveal"><h3>Works offline</h3><p>Airplane mode at the gym? Logging never needs a network, an account, or a sign-in.</p></article>
+      <article class="tile reveal"><h3>Backups you hold the key to</h3><p>iCloud or Google backup, plus an Argon2id + AES-256 encrypted file you can restore on any phone.</p></article>
+    </div>
+  </section>
+
+  <!-- PRIVACY -->
+  <section class="section" id="privacy">
+    <p class="eyebrow">Privacy you can check</p>
+    <h2>We built it so we <em>can't</em> see your data.</h2>
+    <div class="checks">
+      <div class="check reveal"><b>No account, no Reparc server.</b> Records live in a database on your phone.</div>
+      <div class="check reveal"><b>AI is off by default.</b> Workouts, meals, health, and plan suggestions are separate switches. Access turns itself off.</div>
+      <div class="check reveal"><b>AI can't write.</b> Plans arrive as proposals. Only your tap saves them.</div>
+      <div class="check reveal"><b>The gateway is yours.</b> Your Vercel, your Upstash, your key. It stores no records; relay messages are sealed with AES-256-GCM and expire in a minute.</div>
+      <div class="check reveal"><b>No analytics, no ads, no crash trackers.</b> Not in the app, not on this site.</div>
+      <div class="check reveal"><b>Open source, AGPL-3.0.</b> Read every line on GitHub.</div>
+    </div>
+  </section>
+
+  <!-- DOWNLOAD -->
+  <section class="section download" id="download">
+    <p class="eyebrow">Get Reparc</p>
+    <h2>Free. Forever. Open source.</h2>
+    <div class="dl">
+      <a class="dl-card reveal" href="https://github.com/aspershupadhyay/reparc/releases/latest/download/reparc-android.apk">
+        <span class="os">Android</span><b>Download APK</b><small>Android 8+ · open the file to install · Health Connect needs Android 9+</small>
+      </a>
+      <a class="dl-card reveal" href="https://github.com/aspershupadhyay/reparc/releases/latest/download/reparc-ios-unsigned.ipa">
+        <span class="os">iPhone</span><b>Download IPA</b><small>iOS 15+ · not yet on the App Store: install with AltStore or Sideloadly using your Apple ID</small>
+      </a>
+      <a class="dl-card reveal" href="https://github.com/aspershupadhyay/reparc/releases">
+        <span class="os">All builds</span><b>Release notes</b><small>Every version, with checksums</small>
+      </a>
+    </div>
+    <p class="fine">Beta: tested by automated checks; real-device testing is ongoing. Reparc records fitness and food information. It is not a medical service and does not give medical or diet treatment advice.</p>
+  </section>
+</main>
+
+<footer class="foot">
+  <span><img src="favicon.svg" alt="" width="20" height="20"> Reparc · AGPL-3.0-only</span>
+  <a href="https://github.com/aspershupadhyay/reparc">GitHub</a>
+  <a href="https://github.com/aspershupadhyay/reparc/tree/main/handbook">Handbook</a>
+  <a href="https://github.com/aspershupadhyay/reparc/issues">Report a problem</a>
+</footer>
+<script src="main.js" defer></script>
+</body>
+</html>

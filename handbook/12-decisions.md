@@ -230,3 +230,62 @@ Keep major choices here. Update the related chapter when a decision changes.
 
 **Trade-off:** About 26 MB of photos in the app. The photos show two positions, not full motion.
 
+
+## D-018: AI access through MCP, on Wi-Fi or through the owner's own gateway
+
+**Status:** Accepted by the user.
+**Date:** 2026-10-06.
+
+**Choice:** Reparc exposes one MCP tool set (`app/assets/mcp/tools.json`) two ways. Both are off by default and turn off by themselves after 15 minutes to 2 hours.
+
+1. **On this Wi-Fi:** the app runs an MCP server (Streamable HTTP, JSON responses) on the phone for AI apps on the same local network. It needs a 256-bit access key, accepts only private network addresses and no browser `Origin`, and blocks an address after 10 wrong keys.
+2. **Online:** a gateway in `gateway/` that each user deploys into their own Vercel account with one click (Upstash Redis for short-lived state). AI apps sign in with OAuth 2.1 and PKCE; the owner approves each one in the app by matching a 4-letter code. The phone long-polls the gateway over HTTPS with the owner key and answers each tool call from local data. The gateway keeps no records. Calls and answers wait in Redis for at most 60 seconds, sealed with AES-256-GCM under a key derived from the owner key.
+
+**Why:** The owner asked for AI access to their own data without a shared server, so each user owns their data and gateway. A phone-local server cannot be reached by cloud AI apps; a relay through the owner's own gateway can, without copying records to a server.
+
+**Trade-off:** Wi-Fi mode is plain HTTP inside the local network; the app says to use it only on trusted Wi-Fi. Online mode needs Reparc open while the AI works, because iPhone apps cannot keep a connection in the background. The AI provider receives the answers it asks for. No independent security audit has been done.
+
+**Proof:** `app/test/ai_tools_test.dart`, `app/test/ai_transport_test.dart`, and `gateway/test/` (OAuth, revocation, sealing, rate limits, origin checks, and an end-to-end test with the official MCP SDK client).
+
+## D-019: AI changes arrive as proposals
+
+**Status:** Accepted by the user.
+**Date:** 2026-10-06.
+
+**Choice:** AI apps may propose workout plans and meal plans (`propose_workout_plan`, `propose_meal_plan`). A proposal is stored apart from records (`ai_proposals`, schema v3) and changes nothing. Only the user's tap on **Approve** saves it. AI meals are saved as planned entries marked as estimates, with the AI app named as the source. At most 20 proposals can wait. There are no AI tools to edit or delete records.
+
+**Why:** The owner wants the AI to craft exercises and plan meals. AGENTS.md and section 10.7 forbid AI changes without approval.
+
+## D-020: Health data types and write-back
+
+**Status:** Accepted by the user.
+**Date:** 2026-10-06.
+
+**Choice:** Use the `health` package (13.3.2) for HealthKit and Health Connect. Each data type is a separate switch in **Me → Health apps**, explained before the system sheet opens: read steps, active energy, and body weight; write finished workouts and eaten meals. Health values are read when needed and not copied into the database. Writes happen once per record (`health_writes`), only for records saved after the switch was turned on. Heart rate, sleep, location, and clinical records are not requested. Android minimum is API 26.
+
+**Why:** The owner asked for Apple Health and Health Connect, used wisely. Workout read from Health Connect was left out because the plugin also needs distance, total calories, and steps permissions for it.
+
+**Trade-off:** Edits after a write are not sent; the user edits the copy in the Health app.
+
+## D-021: Backup through the user's own Apple or Google account
+
+**Status:** Accepted by the user.
+**Date:** 2026-10-06.
+
+**Choice:** No Reparc account or server. Two layers:
+
+1. The phone's own backup: iCloud Backup includes the database; Android backup to Google Drive includes it (secure-storage values are excluded, because their Keystore keys cannot move).
+2. An encrypted backup file (Argon2id, 19 MiB, 2 passes; AES-256-GCM) that the user saves to iCloud Drive, Google Drive, or anywhere, and restores on any iPhone or Android phone. Restore replaces all records in one transaction. AI and health switches are not restored.
+
+**Why:** The owner asked for "save to my drive, like iCloud or WhatsApp". This keeps data in the user's own account with no new identity system.
+
+**Trade-off:** No live two-way sync between devices yet. A forgotten passphrase cannot be recovered. Automatic file backup to Google Drive or iCloud Drive would need the owner's Google Cloud OAuth client and Apple iCloud container; it is not built.
+
+## D-022: App icon and animated start
+
+**Status:** Accepted by the user.
+**Date:** 2026-10-06.
+
+**Choice:** The Reparc mark is a range-of-motion arc read as a progress gauge, with a needle that also draws the leg of an "R" (`lib/core/brand.dart`). The same painter renders the app icons (`tool/icons/`). On start, an animated intro builds the mark (arc, ripples, needle swing, particle burst, wordmark): 2.2 s on the first start, 1 s later, a still frame with reduced motion. A tap skips it.
+
+**Why:** Owner request. It does not delay data entry, and it respects reduced motion (section 3.11).

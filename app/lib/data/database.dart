@@ -147,6 +147,38 @@ class MealEntries extends Table with RecordColumns {
   TextColumn get note => text().nullable()();
 }
 
+/// A change an AI client asked for. Nothing in it is applied until the user
+/// approves it on this phone (handbook 10.4, D-019). Added in v3.
+class AiProposals extends Table with RecordColumns {
+  TextColumn get kind => textEnum<ProposalKind>()();
+
+  /// Name the AI client gave, for example "Claude". Shown, never trusted.
+  TextColumn get client => text()();
+
+  /// How the request arrived: 'wifi' or 'online'.
+  TextColumn get via => text()();
+  TextColumn get summary => text()();
+
+  /// The validated request as JSON. Its shape depends on [kind].
+  TextColumn get payload => text()();
+  TextColumn get status => textEnum<ProposalStatus>()();
+  DateTimeColumn get decidedAt => dateTime().nullable()();
+}
+
+/// Records Reparc wrote to Apple Health or Health Connect, so a record is
+/// never written twice (handbook 9.5). Added in v3.
+class HealthWrites extends Table {
+  /// ID of the Reparc record, for example a workout session ID.
+  TextColumn get recordId => text()();
+
+  /// 'workout' or 'meal'.
+  TextColumn get kind => text()();
+  DateTimeColumn get writtenAt => dateTime()();
+
+  @override
+  Set<Column<Object>> get primaryKey => {recordId, kind};
+}
+
 class Settings extends Table {
   TextColumn get key => text()();
   TextColumn get value => text()();
@@ -174,6 +206,8 @@ const _defaultKinds = [
     MealSlots,
     MealEntries,
     Settings,
+    AiProposals,
+    HealthWrites,
   ],
 )
 class AppDatabase extends _$AppDatabase {
@@ -185,7 +219,7 @@ class AppDatabase extends _$AppDatabase {
   /// Current local data format. Every change needs a migration, a test from
   /// the last supported version, and a recovery plan (handbook 7.5).
   @override
-  int get schemaVersion => 2;
+  int get schemaVersion => 3;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -201,6 +235,11 @@ class AppDatabase extends _$AppDatabase {
         for (final (id, kind) in _defaultKinds) {
           await (update(mealSlots)..where((s) => s.id.equals(id))).write(MealSlotsCompanion(kind: Value(kind)));
         }
+      }
+      // v2 -> v3: AI proposals and the health write-back ledger.
+      if (from < 3) {
+        await m.createTable(aiProposals);
+        await m.createTable(healthWrites);
       }
     },
     beforeOpen: (details) async {

@@ -6858,6 +6858,893 @@ class SettingsCompanion extends UpdateCompanion<Setting> {
   }
 }
 
+class $AiProposalsTable extends AiProposals
+    with TableInfo<$AiProposalsTable, AiProposal> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $AiProposalsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _createdAtMeta = const VerificationMeta(
+    'createdAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> createdAt = GeneratedColumn<DateTime>(
+    'created_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _updatedAtMeta = const VerificationMeta(
+    'updatedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> updatedAt = GeneratedColumn<DateTime>(
+    'updated_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  @override
+  late final GeneratedColumnWithTypeConverter<ProposalKind, String> kind =
+      GeneratedColumn<String>(
+        'kind',
+        aliasedName,
+        false,
+        type: DriftSqlType.string,
+        requiredDuringInsert: true,
+      ).withConverter<ProposalKind>($AiProposalsTable.$converterkind);
+  static const VerificationMeta _clientMeta = const VerificationMeta('client');
+  @override
+  late final GeneratedColumn<String> client = GeneratedColumn<String>(
+    'client',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _viaMeta = const VerificationMeta('via');
+  @override
+  late final GeneratedColumn<String> via = GeneratedColumn<String>(
+    'via',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _summaryMeta = const VerificationMeta(
+    'summary',
+  );
+  @override
+  late final GeneratedColumn<String> summary = GeneratedColumn<String>(
+    'summary',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _payloadMeta = const VerificationMeta(
+    'payload',
+  );
+  @override
+  late final GeneratedColumn<String> payload = GeneratedColumn<String>(
+    'payload',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  @override
+  late final GeneratedColumnWithTypeConverter<ProposalStatus, String> status =
+      GeneratedColumn<String>(
+        'status',
+        aliasedName,
+        false,
+        type: DriftSqlType.string,
+        requiredDuringInsert: true,
+      ).withConverter<ProposalStatus>($AiProposalsTable.$converterstatus);
+  static const VerificationMeta _decidedAtMeta = const VerificationMeta(
+    'decidedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> decidedAt = GeneratedColumn<DateTime>(
+    'decided_at',
+    aliasedName,
+    true,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    createdAt,
+    updatedAt,
+    kind,
+    client,
+    via,
+    summary,
+    payload,
+    status,
+    decidedAt,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'ai_proposals';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<AiProposal> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('created_at')) {
+      context.handle(
+        _createdAtMeta,
+        createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_createdAtMeta);
+    }
+    if (data.containsKey('updated_at')) {
+      context.handle(
+        _updatedAtMeta,
+        updatedAt.isAcceptableOrUnknown(data['updated_at']!, _updatedAtMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_updatedAtMeta);
+    }
+    if (data.containsKey('client')) {
+      context.handle(
+        _clientMeta,
+        client.isAcceptableOrUnknown(data['client']!, _clientMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_clientMeta);
+    }
+    if (data.containsKey('via')) {
+      context.handle(
+        _viaMeta,
+        via.isAcceptableOrUnknown(data['via']!, _viaMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_viaMeta);
+    }
+    if (data.containsKey('summary')) {
+      context.handle(
+        _summaryMeta,
+        summary.isAcceptableOrUnknown(data['summary']!, _summaryMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_summaryMeta);
+    }
+    if (data.containsKey('payload')) {
+      context.handle(
+        _payloadMeta,
+        payload.isAcceptableOrUnknown(data['payload']!, _payloadMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_payloadMeta);
+    }
+    if (data.containsKey('decided_at')) {
+      context.handle(
+        _decidedAtMeta,
+        decidedAt.isAcceptableOrUnknown(data['decided_at']!, _decidedAtMeta),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  AiProposal map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return AiProposal(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}id'],
+      )!,
+      createdAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}created_at'],
+      )!,
+      updatedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}updated_at'],
+      )!,
+      kind: $AiProposalsTable.$converterkind.fromSql(
+        attachedDatabase.typeMapping.read(
+          DriftSqlType.string,
+          data['${effectivePrefix}kind'],
+        )!,
+      ),
+      client: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}client'],
+      )!,
+      via: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}via'],
+      )!,
+      summary: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}summary'],
+      )!,
+      payload: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}payload'],
+      )!,
+      status: $AiProposalsTable.$converterstatus.fromSql(
+        attachedDatabase.typeMapping.read(
+          DriftSqlType.string,
+          data['${effectivePrefix}status'],
+        )!,
+      ),
+      decidedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}decided_at'],
+      ),
+    );
+  }
+
+  @override
+  $AiProposalsTable createAlias(String alias) {
+    return $AiProposalsTable(attachedDatabase, alias);
+  }
+
+  static JsonTypeConverter2<ProposalKind, String, String> $converterkind =
+      const EnumNameConverter<ProposalKind>(ProposalKind.values);
+  static JsonTypeConverter2<ProposalStatus, String, String> $converterstatus =
+      const EnumNameConverter<ProposalStatus>(ProposalStatus.values);
+}
+
+class AiProposal extends DataClass implements Insertable<AiProposal> {
+  final String id;
+  final DateTime createdAt;
+  final DateTime updatedAt;
+  final ProposalKind kind;
+
+  /// Name the AI client gave, for example "Claude". Shown, never trusted.
+  final String client;
+
+  /// How the request arrived: 'wifi' or 'online'.
+  final String via;
+  final String summary;
+
+  /// The validated request as JSON. Its shape depends on [kind].
+  final String payload;
+  final ProposalStatus status;
+  final DateTime? decidedAt;
+  const AiProposal({
+    required this.id,
+    required this.createdAt,
+    required this.updatedAt,
+    required this.kind,
+    required this.client,
+    required this.via,
+    required this.summary,
+    required this.payload,
+    required this.status,
+    this.decidedAt,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['created_at'] = Variable<DateTime>(createdAt);
+    map['updated_at'] = Variable<DateTime>(updatedAt);
+    {
+      map['kind'] = Variable<String>(
+        $AiProposalsTable.$converterkind.toSql(kind),
+      );
+    }
+    map['client'] = Variable<String>(client);
+    map['via'] = Variable<String>(via);
+    map['summary'] = Variable<String>(summary);
+    map['payload'] = Variable<String>(payload);
+    {
+      map['status'] = Variable<String>(
+        $AiProposalsTable.$converterstatus.toSql(status),
+      );
+    }
+    if (!nullToAbsent || decidedAt != null) {
+      map['decided_at'] = Variable<DateTime>(decidedAt);
+    }
+    return map;
+  }
+
+  AiProposalsCompanion toCompanion(bool nullToAbsent) {
+    return AiProposalsCompanion(
+      id: Value(id),
+      createdAt: Value(createdAt),
+      updatedAt: Value(updatedAt),
+      kind: Value(kind),
+      client: Value(client),
+      via: Value(via),
+      summary: Value(summary),
+      payload: Value(payload),
+      status: Value(status),
+      decidedAt: decidedAt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(decidedAt),
+    );
+  }
+
+  factory AiProposal.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return AiProposal(
+      id: serializer.fromJson<String>(json['id']),
+      createdAt: serializer.fromJson<DateTime>(json['createdAt']),
+      updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
+      kind: $AiProposalsTable.$converterkind.fromJson(
+        serializer.fromJson<String>(json['kind']),
+      ),
+      client: serializer.fromJson<String>(json['client']),
+      via: serializer.fromJson<String>(json['via']),
+      summary: serializer.fromJson<String>(json['summary']),
+      payload: serializer.fromJson<String>(json['payload']),
+      status: $AiProposalsTable.$converterstatus.fromJson(
+        serializer.fromJson<String>(json['status']),
+      ),
+      decidedAt: serializer.fromJson<DateTime?>(json['decidedAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'createdAt': serializer.toJson<DateTime>(createdAt),
+      'updatedAt': serializer.toJson<DateTime>(updatedAt),
+      'kind': serializer.toJson<String>(
+        $AiProposalsTable.$converterkind.toJson(kind),
+      ),
+      'client': serializer.toJson<String>(client),
+      'via': serializer.toJson<String>(via),
+      'summary': serializer.toJson<String>(summary),
+      'payload': serializer.toJson<String>(payload),
+      'status': serializer.toJson<String>(
+        $AiProposalsTable.$converterstatus.toJson(status),
+      ),
+      'decidedAt': serializer.toJson<DateTime?>(decidedAt),
+    };
+  }
+
+  AiProposal copyWith({
+    String? id,
+    DateTime? createdAt,
+    DateTime? updatedAt,
+    ProposalKind? kind,
+    String? client,
+    String? via,
+    String? summary,
+    String? payload,
+    ProposalStatus? status,
+    Value<DateTime?> decidedAt = const Value.absent(),
+  }) => AiProposal(
+    id: id ?? this.id,
+    createdAt: createdAt ?? this.createdAt,
+    updatedAt: updatedAt ?? this.updatedAt,
+    kind: kind ?? this.kind,
+    client: client ?? this.client,
+    via: via ?? this.via,
+    summary: summary ?? this.summary,
+    payload: payload ?? this.payload,
+    status: status ?? this.status,
+    decidedAt: decidedAt.present ? decidedAt.value : this.decidedAt,
+  );
+  AiProposal copyWithCompanion(AiProposalsCompanion data) {
+    return AiProposal(
+      id: data.id.present ? data.id.value : this.id,
+      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+      updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
+      kind: data.kind.present ? data.kind.value : this.kind,
+      client: data.client.present ? data.client.value : this.client,
+      via: data.via.present ? data.via.value : this.via,
+      summary: data.summary.present ? data.summary.value : this.summary,
+      payload: data.payload.present ? data.payload.value : this.payload,
+      status: data.status.present ? data.status.value : this.status,
+      decidedAt: data.decidedAt.present ? data.decidedAt.value : this.decidedAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('AiProposal(')
+          ..write('id: $id, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('kind: $kind, ')
+          ..write('client: $client, ')
+          ..write('via: $via, ')
+          ..write('summary: $summary, ')
+          ..write('payload: $payload, ')
+          ..write('status: $status, ')
+          ..write('decidedAt: $decidedAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    id,
+    createdAt,
+    updatedAt,
+    kind,
+    client,
+    via,
+    summary,
+    payload,
+    status,
+    decidedAt,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is AiProposal &&
+          other.id == this.id &&
+          other.createdAt == this.createdAt &&
+          other.updatedAt == this.updatedAt &&
+          other.kind == this.kind &&
+          other.client == this.client &&
+          other.via == this.via &&
+          other.summary == this.summary &&
+          other.payload == this.payload &&
+          other.status == this.status &&
+          other.decidedAt == this.decidedAt);
+}
+
+class AiProposalsCompanion extends UpdateCompanion<AiProposal> {
+  final Value<String> id;
+  final Value<DateTime> createdAt;
+  final Value<DateTime> updatedAt;
+  final Value<ProposalKind> kind;
+  final Value<String> client;
+  final Value<String> via;
+  final Value<String> summary;
+  final Value<String> payload;
+  final Value<ProposalStatus> status;
+  final Value<DateTime?> decidedAt;
+  final Value<int> rowid;
+  const AiProposalsCompanion({
+    this.id = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.updatedAt = const Value.absent(),
+    this.kind = const Value.absent(),
+    this.client = const Value.absent(),
+    this.via = const Value.absent(),
+    this.summary = const Value.absent(),
+    this.payload = const Value.absent(),
+    this.status = const Value.absent(),
+    this.decidedAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  AiProposalsCompanion.insert({
+    required String id,
+    required DateTime createdAt,
+    required DateTime updatedAt,
+    required ProposalKind kind,
+    required String client,
+    required String via,
+    required String summary,
+    required String payload,
+    required ProposalStatus status,
+    this.decidedAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  }) : id = Value(id),
+       createdAt = Value(createdAt),
+       updatedAt = Value(updatedAt),
+       kind = Value(kind),
+       client = Value(client),
+       via = Value(via),
+       summary = Value(summary),
+       payload = Value(payload),
+       status = Value(status);
+  static Insertable<AiProposal> custom({
+    Expression<String>? id,
+    Expression<DateTime>? createdAt,
+    Expression<DateTime>? updatedAt,
+    Expression<String>? kind,
+    Expression<String>? client,
+    Expression<String>? via,
+    Expression<String>? summary,
+    Expression<String>? payload,
+    Expression<String>? status,
+    Expression<DateTime>? decidedAt,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (createdAt != null) 'created_at': createdAt,
+      if (updatedAt != null) 'updated_at': updatedAt,
+      if (kind != null) 'kind': kind,
+      if (client != null) 'client': client,
+      if (via != null) 'via': via,
+      if (summary != null) 'summary': summary,
+      if (payload != null) 'payload': payload,
+      if (status != null) 'status': status,
+      if (decidedAt != null) 'decided_at': decidedAt,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  AiProposalsCompanion copyWith({
+    Value<String>? id,
+    Value<DateTime>? createdAt,
+    Value<DateTime>? updatedAt,
+    Value<ProposalKind>? kind,
+    Value<String>? client,
+    Value<String>? via,
+    Value<String>? summary,
+    Value<String>? payload,
+    Value<ProposalStatus>? status,
+    Value<DateTime?>? decidedAt,
+    Value<int>? rowid,
+  }) {
+    return AiProposalsCompanion(
+      id: id ?? this.id,
+      createdAt: createdAt ?? this.createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
+      kind: kind ?? this.kind,
+      client: client ?? this.client,
+      via: via ?? this.via,
+      summary: summary ?? this.summary,
+      payload: payload ?? this.payload,
+      status: status ?? this.status,
+      decidedAt: decidedAt ?? this.decidedAt,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (createdAt.present) {
+      map['created_at'] = Variable<DateTime>(createdAt.value);
+    }
+    if (updatedAt.present) {
+      map['updated_at'] = Variable<DateTime>(updatedAt.value);
+    }
+    if (kind.present) {
+      map['kind'] = Variable<String>(
+        $AiProposalsTable.$converterkind.toSql(kind.value),
+      );
+    }
+    if (client.present) {
+      map['client'] = Variable<String>(client.value);
+    }
+    if (via.present) {
+      map['via'] = Variable<String>(via.value);
+    }
+    if (summary.present) {
+      map['summary'] = Variable<String>(summary.value);
+    }
+    if (payload.present) {
+      map['payload'] = Variable<String>(payload.value);
+    }
+    if (status.present) {
+      map['status'] = Variable<String>(
+        $AiProposalsTable.$converterstatus.toSql(status.value),
+      );
+    }
+    if (decidedAt.present) {
+      map['decided_at'] = Variable<DateTime>(decidedAt.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('AiProposalsCompanion(')
+          ..write('id: $id, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('kind: $kind, ')
+          ..write('client: $client, ')
+          ..write('via: $via, ')
+          ..write('summary: $summary, ')
+          ..write('payload: $payload, ')
+          ..write('status: $status, ')
+          ..write('decidedAt: $decidedAt, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $HealthWritesTable extends HealthWrites
+    with TableInfo<$HealthWritesTable, HealthWrite> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $HealthWritesTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _recordIdMeta = const VerificationMeta(
+    'recordId',
+  );
+  @override
+  late final GeneratedColumn<String> recordId = GeneratedColumn<String>(
+    'record_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _kindMeta = const VerificationMeta('kind');
+  @override
+  late final GeneratedColumn<String> kind = GeneratedColumn<String>(
+    'kind',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _writtenAtMeta = const VerificationMeta(
+    'writtenAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> writtenAt = GeneratedColumn<DateTime>(
+    'written_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [recordId, kind, writtenAt];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'health_writes';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<HealthWrite> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('record_id')) {
+      context.handle(
+        _recordIdMeta,
+        recordId.isAcceptableOrUnknown(data['record_id']!, _recordIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_recordIdMeta);
+    }
+    if (data.containsKey('kind')) {
+      context.handle(
+        _kindMeta,
+        kind.isAcceptableOrUnknown(data['kind']!, _kindMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_kindMeta);
+    }
+    if (data.containsKey('written_at')) {
+      context.handle(
+        _writtenAtMeta,
+        writtenAt.isAcceptableOrUnknown(data['written_at']!, _writtenAtMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_writtenAtMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {recordId, kind};
+  @override
+  HealthWrite map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return HealthWrite(
+      recordId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}record_id'],
+      )!,
+      kind: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}kind'],
+      )!,
+      writtenAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}written_at'],
+      )!,
+    );
+  }
+
+  @override
+  $HealthWritesTable createAlias(String alias) {
+    return $HealthWritesTable(attachedDatabase, alias);
+  }
+}
+
+class HealthWrite extends DataClass implements Insertable<HealthWrite> {
+  /// ID of the Reparc record, for example a workout session ID.
+  final String recordId;
+
+  /// 'workout' or 'meal'.
+  final String kind;
+  final DateTime writtenAt;
+  const HealthWrite({
+    required this.recordId,
+    required this.kind,
+    required this.writtenAt,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['record_id'] = Variable<String>(recordId);
+    map['kind'] = Variable<String>(kind);
+    map['written_at'] = Variable<DateTime>(writtenAt);
+    return map;
+  }
+
+  HealthWritesCompanion toCompanion(bool nullToAbsent) {
+    return HealthWritesCompanion(
+      recordId: Value(recordId),
+      kind: Value(kind),
+      writtenAt: Value(writtenAt),
+    );
+  }
+
+  factory HealthWrite.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return HealthWrite(
+      recordId: serializer.fromJson<String>(json['recordId']),
+      kind: serializer.fromJson<String>(json['kind']),
+      writtenAt: serializer.fromJson<DateTime>(json['writtenAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'recordId': serializer.toJson<String>(recordId),
+      'kind': serializer.toJson<String>(kind),
+      'writtenAt': serializer.toJson<DateTime>(writtenAt),
+    };
+  }
+
+  HealthWrite copyWith({String? recordId, String? kind, DateTime? writtenAt}) =>
+      HealthWrite(
+        recordId: recordId ?? this.recordId,
+        kind: kind ?? this.kind,
+        writtenAt: writtenAt ?? this.writtenAt,
+      );
+  HealthWrite copyWithCompanion(HealthWritesCompanion data) {
+    return HealthWrite(
+      recordId: data.recordId.present ? data.recordId.value : this.recordId,
+      kind: data.kind.present ? data.kind.value : this.kind,
+      writtenAt: data.writtenAt.present ? data.writtenAt.value : this.writtenAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('HealthWrite(')
+          ..write('recordId: $recordId, ')
+          ..write('kind: $kind, ')
+          ..write('writtenAt: $writtenAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(recordId, kind, writtenAt);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is HealthWrite &&
+          other.recordId == this.recordId &&
+          other.kind == this.kind &&
+          other.writtenAt == this.writtenAt);
+}
+
+class HealthWritesCompanion extends UpdateCompanion<HealthWrite> {
+  final Value<String> recordId;
+  final Value<String> kind;
+  final Value<DateTime> writtenAt;
+  final Value<int> rowid;
+  const HealthWritesCompanion({
+    this.recordId = const Value.absent(),
+    this.kind = const Value.absent(),
+    this.writtenAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  HealthWritesCompanion.insert({
+    required String recordId,
+    required String kind,
+    required DateTime writtenAt,
+    this.rowid = const Value.absent(),
+  }) : recordId = Value(recordId),
+       kind = Value(kind),
+       writtenAt = Value(writtenAt);
+  static Insertable<HealthWrite> custom({
+    Expression<String>? recordId,
+    Expression<String>? kind,
+    Expression<DateTime>? writtenAt,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (recordId != null) 'record_id': recordId,
+      if (kind != null) 'kind': kind,
+      if (writtenAt != null) 'written_at': writtenAt,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  HealthWritesCompanion copyWith({
+    Value<String>? recordId,
+    Value<String>? kind,
+    Value<DateTime>? writtenAt,
+    Value<int>? rowid,
+  }) {
+    return HealthWritesCompanion(
+      recordId: recordId ?? this.recordId,
+      kind: kind ?? this.kind,
+      writtenAt: writtenAt ?? this.writtenAt,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (recordId.present) {
+      map['record_id'] = Variable<String>(recordId.value);
+    }
+    if (kind.present) {
+      map['kind'] = Variable<String>(kind.value);
+    }
+    if (writtenAt.present) {
+      map['written_at'] = Variable<DateTime>(writtenAt.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('HealthWritesCompanion(')
+          ..write('recordId: $recordId, ')
+          ..write('kind: $kind, ')
+          ..write('writtenAt: $writtenAt, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
@@ -6878,6 +7765,8 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final $MealSlotsTable mealSlots = $MealSlotsTable(this);
   late final $MealEntriesTable mealEntries = $MealEntriesTable(this);
   late final $SettingsTable settings = $SettingsTable(this);
+  late final $AiProposalsTable aiProposals = $AiProposalsTable(this);
+  late final $HealthWritesTable healthWrites = $HealthWritesTable(this);
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
@@ -6893,6 +7782,8 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     mealSlots,
     mealEntries,
     settings,
+    aiProposals,
+    healthWrites,
   ];
   @override
   StreamQueryUpdateRules get streamUpdateRules => const StreamQueryUpdateRules([
@@ -11449,6 +12340,483 @@ typedef $$SettingsTableProcessedTableManager =
       Setting,
       PrefetchHooks Function()
     >;
+typedef $$AiProposalsTableCreateCompanionBuilder =
+    AiProposalsCompanion Function({
+      required String id,
+      required DateTime createdAt,
+      required DateTime updatedAt,
+      required ProposalKind kind,
+      required String client,
+      required String via,
+      required String summary,
+      required String payload,
+      required ProposalStatus status,
+      Value<DateTime?> decidedAt,
+      Value<int> rowid,
+    });
+typedef $$AiProposalsTableUpdateCompanionBuilder =
+    AiProposalsCompanion Function({
+      Value<String> id,
+      Value<DateTime> createdAt,
+      Value<DateTime> updatedAt,
+      Value<ProposalKind> kind,
+      Value<String> client,
+      Value<String> via,
+      Value<String> summary,
+      Value<String> payload,
+      Value<ProposalStatus> status,
+      Value<DateTime?> decidedAt,
+      Value<int> rowid,
+    });
+
+class $$AiProposalsTableFilterComposer
+    extends Composer<_$AppDatabase, $AiProposalsTable> {
+  $$AiProposalsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnWithTypeConverterFilters<ProposalKind, ProposalKind, String> get kind =>
+      $composableBuilder(
+        column: $table.kind,
+        builder: (column) => ColumnWithTypeConverterFilters(column),
+      );
+
+  ColumnFilters<String> get client => $composableBuilder(
+    column: $table.client,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get via => $composableBuilder(
+    column: $table.via,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get summary => $composableBuilder(
+    column: $table.summary,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get payload => $composableBuilder(
+    column: $table.payload,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnWithTypeConverterFilters<ProposalStatus, ProposalStatus, String>
+  get status => $composableBuilder(
+    column: $table.status,
+    builder: (column) => ColumnWithTypeConverterFilters(column),
+  );
+
+  ColumnFilters<DateTime> get decidedAt => $composableBuilder(
+    column: $table.decidedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$AiProposalsTableOrderingComposer
+    extends Composer<_$AppDatabase, $AiProposalsTable> {
+  $$AiProposalsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get kind => $composableBuilder(
+    column: $table.kind,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get client => $composableBuilder(
+    column: $table.client,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get via => $composableBuilder(
+    column: $table.via,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get summary => $composableBuilder(
+    column: $table.summary,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get payload => $composableBuilder(
+    column: $table.payload,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get status => $composableBuilder(
+    column: $table.status,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get decidedAt => $composableBuilder(
+    column: $table.decidedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$AiProposalsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $AiProposalsTable> {
+  $$AiProposalsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get updatedAt =>
+      $composableBuilder(column: $table.updatedAt, builder: (column) => column);
+
+  GeneratedColumnWithTypeConverter<ProposalKind, String> get kind =>
+      $composableBuilder(column: $table.kind, builder: (column) => column);
+
+  GeneratedColumn<String> get client =>
+      $composableBuilder(column: $table.client, builder: (column) => column);
+
+  GeneratedColumn<String> get via =>
+      $composableBuilder(column: $table.via, builder: (column) => column);
+
+  GeneratedColumn<String> get summary =>
+      $composableBuilder(column: $table.summary, builder: (column) => column);
+
+  GeneratedColumn<String> get payload =>
+      $composableBuilder(column: $table.payload, builder: (column) => column);
+
+  GeneratedColumnWithTypeConverter<ProposalStatus, String> get status =>
+      $composableBuilder(column: $table.status, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get decidedAt =>
+      $composableBuilder(column: $table.decidedAt, builder: (column) => column);
+}
+
+class $$AiProposalsTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $AiProposalsTable,
+          AiProposal,
+          $$AiProposalsTableFilterComposer,
+          $$AiProposalsTableOrderingComposer,
+          $$AiProposalsTableAnnotationComposer,
+          $$AiProposalsTableCreateCompanionBuilder,
+          $$AiProposalsTableUpdateCompanionBuilder,
+          (
+            AiProposal,
+            BaseReferences<_$AppDatabase, $AiProposalsTable, AiProposal>,
+          ),
+          AiProposal,
+          PrefetchHooks Function()
+        > {
+  $$AiProposalsTableTableManager(_$AppDatabase db, $AiProposalsTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$AiProposalsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$AiProposalsTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$AiProposalsTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<DateTime> createdAt = const Value.absent(),
+                Value<DateTime> updatedAt = const Value.absent(),
+                Value<ProposalKind> kind = const Value.absent(),
+                Value<String> client = const Value.absent(),
+                Value<String> via = const Value.absent(),
+                Value<String> summary = const Value.absent(),
+                Value<String> payload = const Value.absent(),
+                Value<ProposalStatus> status = const Value.absent(),
+                Value<DateTime?> decidedAt = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => AiProposalsCompanion(
+                id: id,
+                createdAt: createdAt,
+                updatedAt: updatedAt,
+                kind: kind,
+                client: client,
+                via: via,
+                summary: summary,
+                payload: payload,
+                status: status,
+                decidedAt: decidedAt,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String id,
+                required DateTime createdAt,
+                required DateTime updatedAt,
+                required ProposalKind kind,
+                required String client,
+                required String via,
+                required String summary,
+                required String payload,
+                required ProposalStatus status,
+                Value<DateTime?> decidedAt = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => AiProposalsCompanion.insert(
+                id: id,
+                createdAt: createdAt,
+                updatedAt: updatedAt,
+                kind: kind,
+                client: client,
+                via: via,
+                summary: summary,
+                payload: payload,
+                status: status,
+                decidedAt: decidedAt,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable<$AiProposalsTable, AiProposal>(table),
+                  BaseReferences<_$AppDatabase, $AiProposalsTable, AiProposal>(
+                    db,
+                    table,
+                    e,
+                  ),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$AiProposalsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $AiProposalsTable,
+      AiProposal,
+      $$AiProposalsTableFilterComposer,
+      $$AiProposalsTableOrderingComposer,
+      $$AiProposalsTableAnnotationComposer,
+      $$AiProposalsTableCreateCompanionBuilder,
+      $$AiProposalsTableUpdateCompanionBuilder,
+      (
+        AiProposal,
+        BaseReferences<_$AppDatabase, $AiProposalsTable, AiProposal>,
+      ),
+      AiProposal,
+      PrefetchHooks Function()
+    >;
+typedef $$HealthWritesTableCreateCompanionBuilder =
+    HealthWritesCompanion Function({
+      required String recordId,
+      required String kind,
+      required DateTime writtenAt,
+      Value<int> rowid,
+    });
+typedef $$HealthWritesTableUpdateCompanionBuilder =
+    HealthWritesCompanion Function({
+      Value<String> recordId,
+      Value<String> kind,
+      Value<DateTime> writtenAt,
+      Value<int> rowid,
+    });
+
+class $$HealthWritesTableFilterComposer
+    extends Composer<_$AppDatabase, $HealthWritesTable> {
+  $$HealthWritesTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get recordId => $composableBuilder(
+    column: $table.recordId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get kind => $composableBuilder(
+    column: $table.kind,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get writtenAt => $composableBuilder(
+    column: $table.writtenAt,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$HealthWritesTableOrderingComposer
+    extends Composer<_$AppDatabase, $HealthWritesTable> {
+  $$HealthWritesTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get recordId => $composableBuilder(
+    column: $table.recordId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get kind => $composableBuilder(
+    column: $table.kind,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get writtenAt => $composableBuilder(
+    column: $table.writtenAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$HealthWritesTableAnnotationComposer
+    extends Composer<_$AppDatabase, $HealthWritesTable> {
+  $$HealthWritesTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get recordId =>
+      $composableBuilder(column: $table.recordId, builder: (column) => column);
+
+  GeneratedColumn<String> get kind =>
+      $composableBuilder(column: $table.kind, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get writtenAt =>
+      $composableBuilder(column: $table.writtenAt, builder: (column) => column);
+}
+
+class $$HealthWritesTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $HealthWritesTable,
+          HealthWrite,
+          $$HealthWritesTableFilterComposer,
+          $$HealthWritesTableOrderingComposer,
+          $$HealthWritesTableAnnotationComposer,
+          $$HealthWritesTableCreateCompanionBuilder,
+          $$HealthWritesTableUpdateCompanionBuilder,
+          (
+            HealthWrite,
+            BaseReferences<_$AppDatabase, $HealthWritesTable, HealthWrite>,
+          ),
+          HealthWrite,
+          PrefetchHooks Function()
+        > {
+  $$HealthWritesTableTableManager(_$AppDatabase db, $HealthWritesTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$HealthWritesTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$HealthWritesTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$HealthWritesTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> recordId = const Value.absent(),
+                Value<String> kind = const Value.absent(),
+                Value<DateTime> writtenAt = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => HealthWritesCompanion(
+                recordId: recordId,
+                kind: kind,
+                writtenAt: writtenAt,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String recordId,
+                required String kind,
+                required DateTime writtenAt,
+                Value<int> rowid = const Value.absent(),
+              }) => HealthWritesCompanion.insert(
+                recordId: recordId,
+                kind: kind,
+                writtenAt: writtenAt,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable<$HealthWritesTable, HealthWrite>(table),
+                  BaseReferences<
+                    _$AppDatabase,
+                    $HealthWritesTable,
+                    HealthWrite
+                  >(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$HealthWritesTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $HealthWritesTable,
+      HealthWrite,
+      $$HealthWritesTableFilterComposer,
+      $$HealthWritesTableOrderingComposer,
+      $$HealthWritesTableAnnotationComposer,
+      $$HealthWritesTableCreateCompanionBuilder,
+      $$HealthWritesTableUpdateCompanionBuilder,
+      (
+        HealthWrite,
+        BaseReferences<_$AppDatabase, $HealthWritesTable, HealthWrite>,
+      ),
+      HealthWrite,
+      PrefetchHooks Function()
+    >;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
@@ -11473,4 +12841,8 @@ class $AppDatabaseManager {
       $$MealEntriesTableTableManager(_db, _db.mealEntries);
   $$SettingsTableTableManager get settings =>
       $$SettingsTableTableManager(_db, _db.settings);
+  $$AiProposalsTableTableManager get aiProposals =>
+      $$AiProposalsTableTableManager(_db, _db.aiProposals);
+  $$HealthWritesTableTableManager get healthWrites =>
+      $$HealthWritesTableTableManager(_db, _db.healthWrites);
 }

@@ -10,6 +10,10 @@ enum SetType { warmup, working, drop, timed }
 
 enum MealStatus { planned, eaten }
 
+enum ProposalKind { workoutPlan, mealPlan }
+
+enum ProposalStatus { pending, approved, declined }
+
 extension SetTypeLabel on SetType {
   String get label => switch (this) {
     SetType.warmup => 'Warm-up',

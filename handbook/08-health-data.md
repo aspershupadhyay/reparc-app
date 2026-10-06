@@ -1,11 +1,13 @@
 ---
 title: HealthKit and Health Connect
-status: proposed
+status: active
 owner: mobile-engineering-and-privacy
-updated: 2026-10-05
+updated: 2026-10-06
 ---
 
 # Section 9: HealthKit and Health Connect
+
+**Built (2026-10-06, D-020):** Me → Health apps, with one switch per type: read steps, active energy, and body weight; write finished workouts and eaten meals. Each switch explains the type, read or write, and the benefit, then opens the system sheet for that type only. Code: `app/lib/health/`. Not yet tested on real devices.
 
 ## 9.1 Purpose
 
@@ -65,4 +67,5 @@ Official guidance:
 - **Minimum access:** Request one justified data type at a time.
 - **Fallback:** Manual logging remains available.
 - **Never:** Infer denial from an empty query.
-- **To confirm:** Exact data types and Flutter plugin after a device prototype.
+- **Chosen:** `health` 13.3.2; types in D-020. Health values are read when needed and never copied to a server.
+- **To confirm:** Behaviour on real devices, and store declarations before submission.

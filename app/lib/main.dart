@@ -21,7 +21,7 @@ void main() {
   runApp(
     ProviderScope(
       overrides: [databaseProvider.overrideWithValue(db)],
-      child: ReparcApp(router: buildRouter()),
+      child: ReparcApp(router: buildRouter(), intro: true),
     ),
   );
 }

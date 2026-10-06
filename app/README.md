@@ -33,14 +33,20 @@ Tests use synthetic records and an in-memory database. Never add real user recor
 | Path | Purpose |
 |---|---|
 | `lib/core/` | Design tokens, theme, motion, formatting, shared widgets |
-| `lib/data/` | Drift database, repositories, export and delete, providers |
+| `lib/data/` | Drift database, repositories, export, delete, encrypted backup and restore, providers |
+| `lib/ai/` | MCP tools, Wi-Fi MCP server, gateway relay client, plan proposals (handbook 10, D-018, D-019) |
+| `lib/health/` | Apple Health and Health Connect access and write-back (handbook 9, D-020) |
 | `lib/domain/` | Pure calculations: nutrition totals, session time, progress, records |
-| `lib/features/` | The five tabs: `home`, `workout`, `meal`, `analytics`, `me` |
+| `lib/features/` | The five tabs: `home`, `workout`, `meal`, `analytics`, `me`, plus the animated `intro` |
+| `assets/mcp/tools.json` | The MCP tool contract, shared with `gateway/` |
+| `tool/icons/` | Renders app icons and splash images from `lib/core/brand.dart` |
 | `lib/app/` | App widget and routes |
 
 ## Data rules in code
 
-- Every write goes to the local database first. There is no network code.
+- Every write goes to the local database first. Network code exists only for AI connections, which the user turns on (`lib/ai/`).
+- AI tools never change records. They create proposals that the user approves.
+- Secrets (Wi-Fi key, owner key) live in secure storage, never in the database or exports.
 - A missing value is stored as `null`. It is never stored or shown as zero.
 - Units, timestamps, UTC offsets, and sources are stored with each record.
 - The database schema version is in `lib/data/database.dart`. A schema change needs a migration and a migration test.
