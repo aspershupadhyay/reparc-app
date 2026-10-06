@@ -44,7 +44,7 @@ class MoveScreen extends ConsumerWidget {
               ref,
               catalogId: e.catalogId,
               name: e.name,
-              equipment: e.equipment == 'None' ? null : e.equipment,
+              equipment: e.equipment == 'No equipment' ? null : e.equipment,
               muscles: e.primary.join(', '),
               liveId: live?.id,
             ),
@@ -115,7 +115,7 @@ class _MuscleRow extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           SizedBox(
-            width: 72,
+            width: 84,
             child: Padding(
               padding: const EdgeInsets.only(top: 6),
               child: Row(
@@ -126,7 +126,8 @@ class _MuscleRow extends StatelessWidget {
                     decoration: BoxDecoration(color: dot, shape: BoxShape.circle),
                   ),
                   const SizedBox(width: 6),
-                  Text(label, style: t.labelSmall),
+                  // Flexible so large text wraps instead of overflowing.
+                  Flexible(child: Text(label, style: t.labelSmall)),
                 ],
               ),
             ),

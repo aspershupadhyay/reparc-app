@@ -302,6 +302,7 @@ class PillTabs<T> extends StatelessWidget {
                 selected: v == selected,
                 button: true,
                 label: label(v),
+                onTap: () => onChanged(v),
                 excludeSemantics: true,
                 child: GestureDetector(
                   behavior: HitTestBehavior.opaque,

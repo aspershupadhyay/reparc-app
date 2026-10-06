@@ -59,7 +59,11 @@ class SessionExerciseList extends ConsumerWidget {
             if (exId == null || !context.mounted) return;
             await guardedWrite(
               context,
-              () => ref.read(workoutRepoProvider).addSessionExercise(detail.session.id, exId),
+              () async {
+                // Start with one empty set, as a new workout does.
+                final repo = ref.read(workoutRepoProvider);
+                await repo.addSet(await repo.addSessionExercise(detail.session.id, exId));
+              },
             );
           },
           icon: const Icon(LucideIcons.plus, size: IconSizes.s),

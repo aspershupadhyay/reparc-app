@@ -214,15 +214,23 @@ class _Summary extends StatelessWidget {
                   Icon(icon, size: 16, color: color),
                   const SizedBox(width: 4),
                   Flexible(
-                    child: Text(label, style: t.labelSmall?.copyWith(color: p.ink), maxLines: 1),
+                    child: FittedBox(
+                      fit: BoxFit.scaleDown,
+                      alignment: Alignment.centerLeft,
+                      child: Text(label, style: t.labelSmall?.copyWith(color: p.ink), maxLines: 1),
+                    ),
                   ),
                 ],
               ),
               const SizedBox(height: 4),
-              Text(
-                n.value == null ? missingText : '${fmtNum(n.value, maxDecimals: 0)} g',
-                style: t.titleMedium?.tabular,
-                maxLines: 1,
+              FittedBox(
+                fit: BoxFit.scaleDown,
+                alignment: Alignment.centerLeft,
+                child: Text(
+                  n.value == null ? missingText : '${fmtNum(n.value, maxDecimals: 0)} g',
+                  style: t.titleMedium?.tabular,
+                  maxLines: 1,
+                ),
               ),
             ],
           ),

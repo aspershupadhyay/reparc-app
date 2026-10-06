@@ -95,8 +95,7 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('Squat'), findsOneWidget);
 
-    await tester.tap(find.widgetWithText(TextButton, 'Add set'));
-    await tester.pumpAndSettle();
+    // A new exercise starts with one empty set.
     final fields = find.byType(TextField);
     await tester.enterText(fields.at(0), '100');
     await tester.enterText(fields.at(1), '5');
@@ -158,6 +157,32 @@ void main() {
     final ex = (await db.select(db.exercises).get()).single;
     expect(ex.catalogId, 'lib:Air_Bike');
     expect(ex.name, 'Air Bike');
+    await unmount(tester);
+  });
+
+  testWidgets('guide link in a live workout opens the guide above it', (tester) async {
+    tester.platformDispatcher.accessibilityFeaturesTestValue = const FakeAccessibilityFeatures(disableAnimations: true);
+    addTearDown(tester.platformDispatcher.clearAccessibilityFeaturesTestValue);
+    await pumpApp(tester, at: '/workout');
+
+    await tester.tap(find.widgetWithText(FilledButton, 'Start'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.widgetWithText(OutlinedButton, 'Add exercise'));
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byType(TextField), 'back squat');
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Back squat'));
+    await tester.pumpAndSettle();
+    expect(find.bySemanticsLabel('Set 1 complete'), findsOneWidget);
+
+    await tester.tap(find.byTooltip('How to do Back squat'));
+    await tester.pumpAndSettle();
+    expect(find.textContaining('king of leg strength'), findsOneWidget);
+    expect(find.text('Add to workout'), findsOneWidget);
+
+    await tester.tap(find.byTooltip('Back'));
+    await tester.pumpAndSettle();
+    expect(find.text('Elapsed'), findsOneWidget);
     await unmount(tester);
   });
 

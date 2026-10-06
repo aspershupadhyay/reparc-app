@@ -121,5 +121,17 @@ GoRouter buildRouter({String initialLocation = '/home'}) => GoRouter(
         child: LiveSessionScreen(id: s.pathParameters['id']!),
       ),
     ),
+    // Guides opened from a workout. They sit above the live screen; pushing
+    // a tab route from there would switch tabs and hide the guide.
+    GoRoute(
+      path: '/learn/guide/:id',
+      parentNavigatorKey: rootNavigatorKey,
+      builder: (_, s) => GuideScreen(id: s.pathParameters['id']!),
+    ),
+    GoRoute(
+      path: '/learn/move/:id',
+      parentNavigatorKey: rootNavigatorKey,
+      builder: (_, s) => MoveScreen(id: s.pathParameters['id']!),
+    ),
   ],
 );

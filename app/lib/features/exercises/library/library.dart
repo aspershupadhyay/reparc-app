@@ -83,7 +83,7 @@ BodyArea areaForMuscle(String m) => switch (m.toLowerCase()) {
 String _cap(String s) => s.isEmpty ? s : s[0].toUpperCase() + s.substring(1);
 
 String _equipmentLabel(String? e) => switch (e) {
-  null => 'None',
+  null => 'No equipment',
   'body only' => 'Bodyweight',
   'e-z curl bar' => 'EZ bar',
   'kettlebells' => 'Kettlebell',
@@ -213,9 +213,10 @@ final libraryProvider = FutureProvider<ExerciseLibrary>(
 BodyArea? areaForCatalogId(String? catalogId, ExerciseLibrary? lib) =>
     catalogById[catalogId]?.area ?? lib?.forCatalogId(catalogId)?.area;
 
-/// Screen that explains a saved exercise's `catalogId`, or null.
+/// Screen that explains a saved exercise's `catalogId`, or null. Uses the
+/// top-level routes so it also opens above the live workout.
 String? guideRouteFor(String? catalogId) {
   if (catalogId == null) return null;
-  if (catalogId.startsWith(libraryPrefix)) return '/workout/move/${catalogId.substring(libraryPrefix.length)}';
-  return catalogById.containsKey(catalogId) ? '/workout/guide/$catalogId' : null;
+  if (catalogId.startsWith(libraryPrefix)) return '/learn/move/${catalogId.substring(libraryPrefix.length)}';
+  return catalogById.containsKey(catalogId) ? '/learn/guide/$catalogId' : null;
 }

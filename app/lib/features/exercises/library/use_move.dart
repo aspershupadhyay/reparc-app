@@ -25,8 +25,14 @@ Future<void> useMove(
   );
   if (exId == null || !context.mounted) return;
   if (liveId != null) {
-    final ok = await guardedWrite(context, () => repo.addSessionExercise(liveId, exId));
-    if (ok != null && context.mounted) await context.push('/live/$liveId');
+    final ok = await guardedWrite(context, () async => repo.addSet(await repo.addSessionExercise(liveId, exId)));
+    if (ok == null || !context.mounted) return;
+    // Opened from the live workout: go back to it instead of stacking a copy.
+    if (GoRouterState.of(context).uri.path.startsWith('/learn/')) {
+      context.pop();
+    } else {
+      await context.push('/live/$liveId');
+    }
     return;
   }
   await startWorkout(context, ref, firstExerciseId: exId);

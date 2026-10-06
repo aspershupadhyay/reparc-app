@@ -30,6 +30,7 @@ class AreaChips extends StatelessWidget {
         selected: sel,
         button: true,
         label: label,
+        onTap: onTap,
         excludeSemantics: true,
         child: Material(
           color: sel ? p.ink : p.surface,

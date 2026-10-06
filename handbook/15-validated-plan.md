@@ -233,6 +233,8 @@ Updated 2026-10-05. This records what exists in code. It is not evidence of devi
 
 **Exercise library (2026-10-05, owner request):** Bundled 873 public-domain exercises from Free Exercise DB with start and end photos (D-017). Workout → Exercises now has search, body-area tiles, and a full list filtered by area and equipment. Library detail pages show the photos as a cross-fade loop, muscles, and steps. Coached guides use library photos in place of the body model. The add-exercise sheet searches the same list. CI uploads the release-mode APK as a plain file.
 
+**Device test fixes (2026-10-06):** First test on a real Android phone (realme RMX3710, Android 15). Fixed: the guide link in a live workout switched tabs instead of opening the guide; nutrition legend names wrapped letter by letter; "Protein" was cut off on the Meal summary; pill tabs and area chips could not be activated by screen readers; muscle labels overflowed at large text. Also: a new exercise in a workout starts with one empty set, the library hides filters while the keyboard is open, and entries without equipment say "No equipment".
+
 **Not built:** Goals, update metadata checks, update alerts, HealthKit, Health Connect, sign-in, sync, AI, MCP, an app icon, crash reporting, and release signing in CI.
 
 ## 16.12 AI context

@@ -174,7 +174,7 @@ class _Muscles extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           SizedBox(
-            width: 72,
+            width: 84,
             child: Padding(
               padding: const EdgeInsets.only(top: 6),
               child: Row(
@@ -185,7 +185,8 @@ class _Muscles extends StatelessWidget {
                     decoration: BoxDecoration(color: dot, shape: BoxShape.circle),
                   ),
                   const SizedBox(width: 6),
-                  Text(label, style: t.labelSmall),
+                  // Flexible so large text wraps instead of overflowing.
+                  Flexible(child: Text(label, style: t.labelSmall)),
                 ],
               ),
             ),

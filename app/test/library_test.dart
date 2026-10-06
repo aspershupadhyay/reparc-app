@@ -40,8 +40,8 @@ void main() {
   });
 
   test('saved catalog IDs route to the right screen', () {
-    expect(guideRouteFor('back-squat'), '/workout/guide/back-squat');
-    expect(guideRouteFor('lib:Air_Bike'), '/workout/move/Air_Bike');
+    expect(guideRouteFor('back-squat'), '/learn/guide/back-squat');
+    expect(guideRouteFor('lib:Air_Bike'), '/learn/move/Air_Bike');
     expect(guideRouteFor(null), isNull);
     expect(guideRouteFor('unknown'), isNull);
     expect(areaForCatalogId('lib:Barbell_Squat', lib), BodyArea.legs);

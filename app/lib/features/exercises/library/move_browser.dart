@@ -71,6 +71,7 @@ class _MoveBrowserState extends ConsumerState<MoveBrowser> {
                 words.every(m.searchText.contains))
               m,
         ];
+        final typing = MediaQuery.viewInsetsOf(context).bottom > 0;
         final extra = [...widget.leading, ...?widget.leadingWhen?.call(_q.text.trim(), _area)];
         return Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -84,7 +85,7 @@ class _MoveBrowserState extends ConsumerState<MoveBrowser> {
                 textInputAction: TextInputAction.search,
                 decoration: InputDecoration(
                   prefixIcon: const Icon(LucideIcons.search, size: IconSizes.s),
-                  hintText: 'Search ${lib.moves.length} exercises or muscles',
+                  hintText: 'Search exercises or muscles',
                   fillColor: p.surface,
                   suffixIcon: q.isEmpty
                       ? null
@@ -96,20 +97,23 @@ class _MoveBrowserState extends ConsumerState<MoveBrowser> {
                 ),
               ),
             ),
-            const SizedBox(height: Space.m),
-            Padding(
-              padding: EdgeInsets.only(left: widget.padding.left),
-              child: AreaChips(selected: _area, onChanged: (a) => setState(() => _area = a)),
-            ),
-            const SizedBox(height: Space.s),
-            Padding(
-              padding: EdgeInsets.only(left: widget.padding.left),
-              child: _EquipmentChips(
-                options: lib.equipment,
-                selected: _equipment,
-                onChanged: (e) => setState(() => _equipment = e),
+            // While the keyboard is open, hide the filters so results have room.
+            if (!typing) ...[
+              const SizedBox(height: Space.m),
+              Padding(
+                padding: EdgeInsets.only(left: widget.padding.left),
+                child: AreaChips(selected: _area, onChanged: (a) => setState(() => _area = a)),
               ),
-            ),
+              const SizedBox(height: Space.s),
+              Padding(
+                padding: EdgeInsets.only(left: widget.padding.left),
+                child: _EquipmentChips(
+                  options: lib.equipment,
+                  selected: _equipment,
+                  onChanged: (e) => setState(() => _equipment = e),
+                ),
+              ),
+            ],
             Padding(
               padding: EdgeInsets.fromLTRB(widget.padding.left, Space.m, widget.padding.right, Space.xs),
               child: Semantics(

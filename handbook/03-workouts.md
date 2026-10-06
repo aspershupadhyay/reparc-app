@@ -54,7 +54,7 @@ The app also bundles 873 exercises from Free Exercise DB (public domain, D-017).
 
 - **Browse:** Workout → Exercises shows a search field, body-area tiles with counts, the coached guides, and the user's own exercises. The full list filters by text, body area, and equipment. Each movement shows once; a coached guide replaces its library twin.
 - **Detail:** Start and end photos as a cross-fade loop, muscles, level, equipment, and steps. Tap to pause. With reduced motion the loop does not run; the user switches between the start and end photo.
-- **Logging:** A library exercise links by `catalogId` = `lib:<source id>`. The add-exercise sheet in a workout searches the same list.
+- **Logging:** A library exercise links by `catalogId` = `lib:<source id>`. The add-exercise sheet in a workout searches the same list. A new exercise in a workout starts with one empty set. Guide links in a workout open above the live screen (`/learn/guide/:id`, `/learn/move/:id`).
 - **Offline:** Everything is in the app bundle. The library makes no network requests.
 
 ## 4.4 Set details

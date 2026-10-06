@@ -512,8 +512,20 @@ class _Legend extends StatelessWidget {
             decoration: BoxDecoration(color: color, shape: BoxShape.circle),
           ),
           const SizedBox(width: Space.s),
-          Expanded(child: Text(label, style: t.labelMedium)),
-          Text(n.value == null ? '—' : '${fmtNum(n.value, maxDecimals: 0)} g', style: t.labelMedium?.tabular),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(label, style: t.labelSmall, maxLines: 1, overflow: TextOverflow.ellipsis),
+                Text(
+                  n.value == null ? '—' : '${fmtNum(n.value, maxDecimals: 0)} g',
+                  style: t.labelMedium?.tabular,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ],
+            ),
+          ),
           SizedBox(
             width: 44,
             child: Text(share, textAlign: TextAlign.end, style: t.labelSmall),
