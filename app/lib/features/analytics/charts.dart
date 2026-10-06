@@ -125,7 +125,11 @@ class Bars extends StatelessWidget {
     required this.color,
     required this.semanticLabel,
     this.height = 140,
+    this.goal,
   });
+
+  /// Optional target drawn as a line across the bars.
+  final double? goal;
 
   final List<double?> values;
   final List<String> labels;
@@ -137,7 +141,7 @@ class Bars extends StatelessWidget {
   Widget build(BuildContext context) {
     final p = context.pal;
     final t = Theme.of(context).textTheme;
-    final maxV = values.whereType<double>().fold<double>(0, math.max);
+    final maxV = math.max(values.whereType<double>().fold<double>(0, math.max), goal ?? 0);
     return Semantics(
       label: semanticLabel,
       excludeSemantics: true,
@@ -145,37 +149,17 @@ class Bars extends StatelessWidget {
         children: [
           SizedBox(
             height: height,
-            child: TweenAnimationBuilder<double>(
-              key: ValueKey(Object.hashAll(values)),
-              tween: Tween(begin: 0, end: 1),
-              duration: motionOf(context, Motion.chart),
-              curve: Motion.enter,
-              builder: (context, k, _) => Row(
-                crossAxisAlignment: CrossAxisAlignment.end,
-                children: [
-                  for (final v in values)
-                    Expanded(
-                      child: Padding(
-                        padding: EdgeInsets.symmetric(horizontal: values.length > 14 ? 1 : 3),
-                        child: v == null || maxV == 0
-                            ? Align(
-                                alignment: Alignment.bottomCenter,
-                                child: Container(
-                                  height: 4,
-                                  decoration: BoxDecoration(color: p.line, borderRadius: BorderRadius.circular(2)),
-                                ),
-                              )
-                            : FractionallySizedBox(
-                                heightFactor: math.max(0.04, v / maxV * k),
-                                alignment: Alignment.bottomCenter,
-                                child: Container(
-                                  decoration: BoxDecoration(color: color, borderRadius: BorderRadius.circular(6)),
-                                ),
-                              ),
-                      ),
-                    ),
-                ],
-              ),
+            child: Stack(
+              children: [
+                Positioned.fill(child: _barsBody(context, maxV, p)),
+                if (goal != null && maxV > 0)
+                  Positioned(
+                    left: 0,
+                    right: 0,
+                    bottom: height * goal! / maxV - 1,
+                    child: Container(height: 2, color: p.ink.withValues(alpha: 0.5)),
+                  ),
+              ],
             ),
           ),
           const SizedBox(height: Space.s),
@@ -191,6 +175,41 @@ class Bars extends StatelessWidget {
                 ),
             ],
           ),
+        ],
+      ),
+    );
+  }
+
+  Widget _barsBody(BuildContext context, double maxV, Palette p) {
+    return TweenAnimationBuilder<double>(
+      key: ValueKey(Object.hashAll(values)),
+      tween: Tween(begin: 0, end: 1),
+      duration: motionOf(context, Motion.chart),
+      curve: Motion.enter,
+      builder: (context, k, _) => Row(
+        crossAxisAlignment: CrossAxisAlignment.end,
+        children: [
+          for (final v in values)
+            Expanded(
+              child: Padding(
+                padding: EdgeInsets.symmetric(horizontal: values.length > 14 ? 1 : 3),
+                child: v == null || maxV == 0
+                    ? Align(
+                        alignment: Alignment.bottomCenter,
+                        child: Container(
+                          height: 4,
+                          decoration: BoxDecoration(color: p.line, borderRadius: BorderRadius.circular(2)),
+                        ),
+                      )
+                    : FractionallySizedBox(
+                        heightFactor: math.max(0.04, v / maxV * k),
+                        alignment: Alignment.bottomCenter,
+                        child: Container(
+                          decoration: BoxDecoration(color: color, borderRadius: BorderRadius.circular(6)),
+                        ),
+                      ),
+              ),
+            ),
         ],
       ),
     );
@@ -318,3 +337,86 @@ String deltaText(num now, num before) {
 }
 
 String fmtCompact(double v) => v >= 10000 ? '${fmtNum(v / 1000, maxDecimals: 1)}k' : fmtNum(v, maxDecimals: 0);
+
+/// Points over time joined by a line. A gap of more than [maxGapDays]
+/// breaks the line, so missing weeks are not drawn as data.
+class LineChart extends StatelessWidget {
+  const LineChart({
+    super.key,
+    required this.points,
+    required this.color,
+    required this.semanticLabel,
+    this.height = 140,
+    this.maxGapDays = 21,
+  });
+
+  final List<(DateTime, double)> points;
+  final Color color;
+  final String semanticLabel;
+  final double height;
+  final int maxGapDays;
+
+  @override
+  Widget build(BuildContext context) {
+    final p = context.pal;
+    return Semantics(
+      label: semanticLabel,
+      excludeSemantics: true,
+      child: SizedBox(
+        height: height,
+        width: double.infinity,
+        child: CustomPaint(painter: _LinePainter(points, color, p.line, maxGapDays)),
+      ),
+    );
+  }
+}
+
+class _LinePainter extends CustomPainter {
+  _LinePainter(this.points, this.color, this.grid, this.maxGapDays);
+  final List<(DateTime, double)> points;
+  final Color color;
+  final Color grid;
+  final int maxGapDays;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final g = Paint()
+      ..color = grid
+      ..strokeWidth = 1;
+    for (var i = 0; i <= 3; i++) {
+      final y = size.height * i / 3;
+      canvas.drawLine(Offset(0, y), Offset(size.width, y), g);
+    }
+    if (points.isEmpty) return;
+    final t0 = points.first.$1, t1 = points.last.$1;
+    final span = math.max(1, t1.difference(t0).inDays);
+    var lo = points.map((e) => e.$2).reduce(math.min), hi = points.map((e) => e.$2).reduce(math.max);
+    if (hi - lo < 1e-9) {
+      lo -= 1;
+      hi += 1;
+    }
+    final pad = (hi - lo) * 0.1;
+    lo -= pad;
+    hi += pad;
+    Offset at((DateTime, double) e) => Offset(
+      points.length == 1 ? size.width / 2 : size.width * e.$1.difference(t0).inDays / span,
+      size.height * (1 - (e.$2 - lo) / (hi - lo)),
+    );
+    final line = Paint()
+      ..color = color
+      ..strokeWidth = 2.5
+      ..style = PaintingStyle.stroke
+      ..strokeCap = StrokeCap.round;
+    for (var i = 1; i < points.length; i++) {
+      if (points[i].$1.difference(points[i - 1].$1).inDays > maxGapDays) continue;
+      canvas.drawLine(at(points[i - 1]), at(points[i]), line);
+    }
+    final dot = Paint()..color = color;
+    for (final e in points) {
+      canvas.drawCircle(at(e), 3.5, dot);
+    }
+  }
+
+  @override
+  bool shouldRepaint(_LinePainter o) => o.points != points || o.color != color;
+}

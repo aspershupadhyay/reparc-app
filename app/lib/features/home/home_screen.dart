@@ -11,32 +11,35 @@ import '../../core/theme.dart';
 import '../../core/tokens.dart';
 import '../../core/widgets.dart';
 import '../../data/meal_repository.dart';
-import '../../data/models.dart';
 import '../../data/providers.dart';
 import '../../domain/nutrition.dart';
-import '../exercises/catalog/catalog.dart';
-import '../exercises/library/library.dart';
 import '../meal/meal_entry_sheet.dart';
 import '../workout/session_clock.dart';
 import '../workout/start_workout.dart';
 
-/// Home: one main action, then four tiles that each open one part of the
-/// app. Short words, big numbers (handbook 3.2).
+/// Home answers three questions, in this order (handbook 3.2):
+/// 1. What do I do now? One main action: continue, today's roadmap day,
+///    or start a workout.
+/// 2. How is today's eating going? Protein, fibre, carbs, and energy.
+/// 3. How is my week going? Training days, and the roadmap count.
+/// Trends live in Analytics, not here.
 class HomeScreen extends ConsumerWidget {
   const HomeScreen({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final p = context.pal;
+    final t = Theme.of(context).textTheme;
     final now = ref.watch(clockProvider)();
     final today = dayOf(now);
     final weekStart = addDays(today, -(today.weekday - 1));
     final settings = ref.watch(currentSettingsProvider);
     final week = ref.watch(progressProvider((weekStart, addDays(weekStart, 6)))).value;
-    final meals = ref.watch(mealDayProvider(dayKey(today))).value ?? const [];
-    final totals = totalsOf(meals.map((e) => e.input));
-    final eaten = meals.where((m) => m.status == MealStatus.eaten).length;
+    final program = ref.watch(activeProgramProvider).value;
     final greeting = now.hour < 12 ? 'Good morning' : (now.hour < 18 ? 'Good afternoon' : 'Good evening');
+    final roadmapDone = program == null
+        ? null
+        : (week?.sessions.where((s) => s.session.programId == program.id).length ?? 0);
 
     return Scaffold(
       body: SafeArea(
@@ -49,83 +52,45 @@ class HomeScreen extends ConsumerWidget {
               const SizedBox(height: Space.m),
             ],
             const _Hero(),
-            const SizedBox(height: Space.m),
-            Row(
-              children: [
-                Expanded(
-                  child: _Tile(
-                    icon: LucideIcons.utensils,
-                    color: p.orange,
-                    soft: p.orangeSoft,
-                    label: 'Meals',
-                    value: meals.isEmpty ? '0' : '$eaten/${meals.length}',
-                    caption: meals.isEmpty ? 'Nothing yet' : 'eaten',
-                    onTap: () => context.go('/meal'),
-                    trailing: Ring(
-                      value: meals.isEmpty ? 0 : eaten / meals.length,
-                      color: p.orange,
-                      size: 40,
-                      stroke: 5,
-                      semanticLabel: '$eaten of ${meals.length} foods eaten',
-                    ),
-                  ),
-                ),
-                const SizedBox(width: Space.m),
-                Expanded(
-                  child: settings.showEnergy
-                      ? _Tile(
-                          icon: LucideIcons.flame,
-                          color: p.coral,
-                          soft: p.coralSoft,
-                          label: 'Energy',
-                          value: fmtNum(totals.energyKcal.value, maxDecimals: 0),
-                          caption: totals.energyKcal.value == null ? 'Not logged' : 'kcal eaten',
-                          onTap: () => context.go('/meal'),
-                        )
-                      : _Tile(
-                          icon: LucideIcons.clipboardList,
-                          color: p.brand,
-                          soft: p.brandSoft,
-                          label: 'Plans',
-                          value: '${ref.watch(templatesProvider).value?.length ?? 0}',
-                          caption: 'saved',
-                          onTap: () => context.go('/workout'),
-                        ),
-                ),
-              ],
-            ),
-            const SizedBox(height: Space.m),
+            const SizedBox(height: Space.l),
+            const _TodayFood(),
+            const SizedBox(height: Space.l),
             _WeekCard(
               weekStart: weekStart,
               today: today,
               trained: week?.trainingDays ?? const {},
               count: week?.sessions.length ?? 0,
+              roadmapDone: roadmapDone,
+              roadmapPlanned: program?.plan.days.length,
             ),
-            const SizedBox(height: Space.m),
+            const SizedBox(height: Space.l),
+            Text('Shortcuts', style: t.titleMedium),
+            const SizedBox(height: Space.s),
             Row(
               children: [
-                Expanded(
-                  child: _Tile(
-                    icon: LucideIcons.bookOpen,
-                    color: p.blue,
-                    soft: p.blueSoft,
-                    label: 'Learn',
-                    value: '${ref.watch(libraryProvider).value?.moves.length ?? catalog.length}',
-                    caption: 'exercises',
-                    onTap: () => context.go('/workout/library'),
-                  ),
+                _Shortcut(
+                  icon: LucideIcons.plus,
+                  label: 'Log food',
+                  color: p.green,
+                  onTap: () => showMealEntrySheet(context, day: dayKey(today)),
                 ),
-                const SizedBox(width: Space.m),
-                Expanded(
-                  child: _Tile(
-                    icon: LucideIcons.plus,
-                    color: p.green,
-                    soft: p.greenSoft,
-                    label: 'Food',
-                    value: 'Add',
-                    caption: 'log a meal',
-                    onTap: () => showMealEntrySheet(context, day: dayKey(today)),
-                  ),
+                _Shortcut(
+                  icon: LucideIcons.bookOpen,
+                  label: 'Exercises',
+                  color: p.blue,
+                  onTap: () => context.go('/workout/library'),
+                ),
+                _Shortcut(
+                  icon: LucideIcons.calculator,
+                  label: 'Weight calc',
+                  color: p.orange,
+                  onTap: () => context.go('/workout/calculator'),
+                ),
+                _Shortcut(
+                  icon: LucideIcons.scale,
+                  label: 'Body',
+                  color: p.coral,
+                  onTap: () => context.go('/me/body'),
                 ),
               ],
             ),
@@ -136,50 +101,41 @@ class HomeScreen extends ConsumerWidget {
   }
 }
 
-/// The one main action: start or continue a workout.
-class _Hero extends ConsumerWidget {
-  const _Hero();
+class _Shortcut extends StatelessWidget {
+  const _Shortcut({required this.icon, required this.label, required this.color, required this.onTap});
+  final IconData icon;
+  final String label;
+  final Color color;
+  final VoidCallback onTap;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
     final p = context.pal;
     final t = Theme.of(context).textTheme;
-    final live = ref.watch(liveSessionProvider).value;
-    return Semantics(
-      button: true,
-      label: live == null ? 'Start workout' : 'Continue workout',
-      excludeSemantics: true,
-      child: Material(
-        color: p.panel,
-        borderRadius: Radii.large,
-        clipBehavior: Clip.antiAlias,
+    return Expanded(
+      child: Semantics(
+        button: true,
+        label: label,
+        excludeSemantics: true,
         child: InkWell(
-          onTap: live == null ? () => startWorkout(context, ref) : () => context.push('/live/${live.id}'),
+          borderRadius: Radii.medium,
+          onTap: onTap,
           child: Padding(
-            padding: const EdgeInsets.all(Space.xl),
-            child: Row(
+            padding: const EdgeInsets.symmetric(vertical: Space.s),
+            child: Column(
               children: [
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(live == null ? 'Train' : 'Training now', style: t.bodySmall?.copyWith(color: p.onPanelSoft)),
-                      const SizedBox(height: Space.xs),
-                      if (live == null)
-                        Text('Start workout', style: t.headlineSmall?.copyWith(color: p.onPanel))
-                      else
-                        SessionClock(
-                          sessionId: live.id,
-                          style: t.displaySmall!.tabular.copyWith(color: p.energy),
-                        ),
-                    ],
-                  ),
-                ),
                 Container(
-                  width: 64,
-                  height: 64,
-                  decoration: BoxDecoration(color: p.energy, shape: BoxShape.circle),
-                  child: Icon(live == null ? LucideIcons.play : LucideIcons.arrowRight, color: p.onEnergy, size: 28),
+                  width: 52,
+                  height: 52,
+                  decoration: BoxDecoration(color: p.surface, borderRadius: Radii.medium),
+                  child: Icon(icon, color: color),
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  label,
+                  style: t.labelSmall?.copyWith(color: p.ink),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                 ),
               ],
             ),
@@ -190,52 +146,166 @@ class _Hero extends ConsumerWidget {
   }
 }
 
-class _Tile extends StatelessWidget {
-  const _Tile({
-    required this.icon,
-    required this.color,
-    required this.soft,
-    required this.label,
-    required this.value,
-    required this.caption,
-    required this.onTap,
-    this.trailing,
-  });
-
-  final IconData icon;
-  final Color color;
-  final Color soft;
-  final String label;
-  final String value;
-  final String caption;
-  final VoidCallback onTap;
-  final Widget? trailing;
+/// The one main action: continue, today's roadmap day, or start.
+class _Hero extends ConsumerWidget {
+  const _Hero();
 
   @override
-  Widget build(BuildContext context) {
-    final t = Theme.of(context).textTheme;
+  Widget build(BuildContext context, WidgetRef ref) {
     final p = context.pal;
-    return AppCard(
-      color: soft,
-      onTap: onTap,
-      semanticLabel: '$label: $value $caption',
-      child: ExcludeSemantics(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
+    final t = Theme.of(context).textTheme;
+    final live = ref.watch(liveSessionProvider).value;
+    final program = ref.watch(activeProgramProvider).value;
+    final next = program == null || program.plan.days.isEmpty ? null : program.plan.days[program.nextDay];
+
+    final (String eyebrow, String title, String? sub, String label, VoidCallback onTap) = switch ((live, next)) {
+      (final l?, _) => ('Training now', '', null, 'Continue workout', () => context.push('/live/${l.id}')),
+      (null, final d?) => (
+        'Today on your roadmap',
+        d.name,
+        '${d.focus} · ${d.work.length} exercises · about ${d.minutes} min',
+        'Warm up and start',
+        () => context.push('/workout/roadmap/${program!.id}/day/${program.nextDay}'),
+      ),
+      _ => ('Train', 'Start workout', 'Add exercises as you go', 'Start workout', () => startWorkout(context, ref)),
+    };
+
+    return Semantics(
+      button: true,
+      label: live == null ? '$label. $title' : 'Continue workout',
+      excludeSemantics: true,
+      child: Material(
+        color: p.panel,
+        borderRadius: Radii.large,
+        clipBehavior: Clip.antiAlias,
+        child: InkWell(
+          onTap: onTap,
+          child: Padding(
+            padding: const EdgeInsets.all(Space.xl),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                IconBadge(icon, color: color, size: 40),
-                const Spacer(),
-                ?trailing,
+                Text(eyebrow.toUpperCase(), style: t.labelSmall?.copyWith(color: p.energy, letterSpacing: 0.6)),
+                const SizedBox(height: Space.xs),
+                if (live != null)
+                  SessionClock(
+                    sessionId: live.id,
+                    style: t.displaySmall!.tabular.copyWith(color: p.onPanel),
+                  )
+                else
+                  Text(title, style: t.headlineSmall?.copyWith(color: p.onPanel)),
+                if (sub != null) Text(sub, style: t.bodySmall?.copyWith(color: p.onPanelSoft)),
+                const SizedBox(height: Space.l),
+                Wrap(
+                  spacing: Space.s,
+                  runSpacing: Space.s,
+                  crossAxisAlignment: WrapCrossAlignment.center,
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: Space.l, vertical: Space.m),
+                      decoration: BoxDecoration(color: p.energy, borderRadius: BorderRadius.circular(999)),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(live == null ? LucideIcons.play : LucideIcons.arrowRight, color: p.onEnergy, size: 18),
+                          const SizedBox(width: 6),
+                          Flexible(
+                            child: Text(label, style: t.labelLarge?.copyWith(color: p.onEnergy)),
+                          ),
+                        ],
+                      ),
+                    ),
+                    if (live == null && program == null)
+                      TextButton(
+                        onPressed: () => context.go('/workout'),
+                        style: TextButton.styleFrom(foregroundColor: p.onPanelSoft),
+                        child: const Text('Pick a roadmap'),
+                      ),
+                  ],
+                ),
               ],
             ),
-            const SizedBox(height: Space.l),
-            Text(label, style: t.labelMedium?.copyWith(color: p.ink)),
-            Text(value, style: t.headlineSmall?.tabular, maxLines: 1, overflow: TextOverflow.ellipsis),
-            Text(caption, style: t.bodySmall, maxLines: 1, overflow: TextOverflow.ellipsis),
-          ],
+          ),
         ),
+      ),
+    );
+  }
+}
+
+/// Today's food: four rings that fill toward the user's own targets.
+class _TodayFood extends ConsumerWidget {
+  const _TodayFood();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final p = context.pal;
+    final t = Theme.of(context).textTheme;
+    final settings = ref.watch(currentSettingsProvider);
+    final today = dayOf(ref.watch(clockProvider)());
+    final meals = ref.watch(mealDayProvider(dayKey(today))).value ?? const [];
+    final totals = totalsOf(meals.map((e) => e.input));
+    final byN = {for (final x in settings.targets) x.nutrient: x};
+    final shown = [
+      (Nutrient.protein, p.coral),
+      (Nutrient.fiber, p.green),
+      (Nutrient.carbs, p.orange),
+      if (settings.showEnergy) (Nutrient.energy, p.brand) else (Nutrient.fat, p.blue),
+    ];
+    return AppCard(
+      onTap: () => context.go('/meal'),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Row(
+            children: [
+              Expanded(child: Text('Today\'s food', style: t.titleMedium)),
+              if (byN.isEmpty)
+                TextButton(onPressed: () => context.go('/me/body'), child: const Text('Set targets'))
+              else
+                Icon(LucideIcons.chevronRight, size: IconSizes.s, color: p.inkSoft),
+            ],
+          ),
+          const SizedBox(height: Space.s),
+          Row(
+            children: [
+              for (final (n, color) in shown)
+                Expanded(
+                  child: Builder(
+                    builder: (context) {
+                      final v = totals.of(n).value;
+                      final target = byN[n];
+                      final short = switch (n) {
+                        Nutrient.energy => 'kcal',
+                        Nutrient.fiber => 'Fibre',
+                        _ => n.label,
+                      };
+                      return Column(
+                        children: [
+                          Ring(
+                            value: target?.progress(v) ?? (v == null ? 0 : 1),
+                            color: color,
+                            track: color.withValues(alpha: 0.15),
+                            size: 64,
+                            stroke: 7,
+                            semanticLabel:
+                                '${n.label}: ${v == null ? missingLabel : '${fmtNum(v, maxDecimals: 0)} ${n.unit}'}'
+                                '${target == null ? '' : ' of ${fmtNum(target.amount, maxDecimals: 0)}'}',
+                            child: Text(fmtNum(v, maxDecimals: 0), style: t.labelMedium?.tabular),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(short, style: t.labelSmall),
+                          Text(
+                            target == null ? n.unit : 'of ${fmtNum(target.amount, maxDecimals: 0)}',
+                            style: t.labelSmall?.copyWith(fontSize: 11),
+                          ),
+                        ],
+                      );
+                    },
+                  ),
+                ),
+            ],
+          ),
+        ],
       ),
     );
   }
@@ -243,7 +313,16 @@ class _Tile extends StatelessWidget {
 
 /// Seven days. A filled day means you trained.
 class _WeekCard extends StatelessWidget {
-  const _WeekCard({required this.weekStart, required this.today, required this.trained, required this.count});
+  const _WeekCard({
+    required this.weekStart,
+    required this.today,
+    required this.trained,
+    required this.count,
+    this.roadmapDone,
+    this.roadmapPlanned,
+  });
+  final int? roadmapDone;
+  final int? roadmapPlanned;
   final DateTime weekStart;
   final DateTime today;
   final Set<String> trained;
@@ -265,9 +344,15 @@ class _WeekCard extends StatelessWidget {
                 IconBadge(LucideIcons.calendarCheck, color: p.green, size: 40),
                 const SizedBox(width: Space.m),
                 Expanded(child: Text('This week', style: t.titleMedium)),
-                Text('$count', style: t.headlineSmall?.tabular),
-                const SizedBox(width: 4),
-                Text(count == 1 ? 'workout' : 'workouts', style: t.bodySmall),
+                if (roadmapPlanned != null) ...[
+                  Text('${roadmapDone ?? 0}/$roadmapPlanned', style: t.headlineSmall?.tabular),
+                  const SizedBox(width: 4),
+                  Text('roadmap', style: t.bodySmall),
+                ] else ...[
+                  Text('$count', style: t.headlineSmall?.tabular),
+                  const SizedBox(width: 4),
+                  Text(count == 1 ? 'workout' : 'workouts', style: t.bodySmall),
+                ],
               ],
             ),
             const SizedBox(height: Space.l),
