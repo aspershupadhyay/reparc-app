@@ -190,7 +190,7 @@ class _MealCard extends StatelessWidget {
     final (color, soft) = switch (meal.kind) {
       MealKind.breakfast => (p.blue, p.blueSoft),
       MealKind.lunch => (p.green, p.greenSoft),
-      MealKind.snack => (p.orange, p.orangeSoft),
+      MealKind.snack => (p.amber, p.amberSoft),
       MealKind.dinner => (p.coral, p.coralSoft),
     };
     final kcal = meal.total(Nutrient.energy);

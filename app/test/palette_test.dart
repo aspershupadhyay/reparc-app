@@ -14,13 +14,13 @@ void main() {
       expect(contrast(p.onEnergy, p.energy), greaterThanOrEqualTo(4.5));
       expect(contrast(p.onPanel, p.panel), greaterThanOrEqualTo(4.5));
       expect(contrast(p.onPanelSoft, p.panel), greaterThanOrEqualTo(4.5));
-      for (final soft in [p.greenSoft, p.blueSoft, p.orangeSoft, p.coralSoft, p.brandSoft]) {
+      for (final soft in [p.greenSoft, p.blueSoft, p.amberSoft, p.coralSoft, p.brandSoft]) {
         expect(contrast(p.ink, soft), greaterThanOrEqualTo(4.5));
       }
     });
 
     test('$name icon glyphs on category colours meet 3:1', () {
-      for (final c in [p.green, p.blue, p.orange, p.coral, p.brand, p.energy]) {
+      for (final c in [p.green, p.blue, p.amber, p.coral, p.brand, p.energy]) {
         expect(contrast(p.on(c), c), greaterThanOrEqualTo(3));
       }
     });

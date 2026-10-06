@@ -31,7 +31,7 @@ See [Product and data diagrams](13-diagrams.md) for the navigation and record fl
 
 Use five equal, labeled destinations. Use the Lucide icons `house`, `dumbbell`, `utensils`, `chart-no-axes-column`, and `user-round` for Home, Workout, Meal, Analytics, and Me.
 
-Use the iOS tab bar: a translucent bar with a thin top line. The selected tab's icon and label take the teal tint. There is no pill (D-023). Keep inactive labels readable. Do not hide labels to fit the bar. Keep every item within the minimum touch target. Preserve each tab state when the user changes tabs. Check safe-area insets on iPhone and Android.
+Use the iOS tab bar: a translucent bar with a thin top line. The selected tab's icon and label take the ember tint. There is no pill (D-023). Keep inactive labels readable. Do not hide labels to fit the bar. Keep every item within the minimum touch target. Preserve each tab state when the user changes tabs. Check safe-area insets on iPhone and Android.
 
 **Motion:** Move or fade the active indicator once. Do not bounce the whole bar. A reduced-motion setting must show the selection change immediately or with a simple color change.
 
@@ -90,7 +90,7 @@ Do not hide data controls under a vague label such as “More.” Put update con
 
 The two references use different palettes. Use their screen layouts as references. Use one shared theme.
 
-**Accepted style (owner, 2026-10-05):** One design system with a light and a dark mode. No purple. A soft mint-grey canvas, white cards, deep-teal selection, lime for training energy, and four warm category colours (green, blue, orange, coral) for meals, muscles, and charts. A dark ink panel holds the live workout and the exercise body model in both modes. The Meal tab follows the meal reference closely: day pills with a progress ring, a summary card, and a timeline of tinted meal pills with check circles.
+**Accepted style (owner, 2026-10-05):** One design system with a light and a dark mode. No purple. iOS grouped-grey canvas, white cards, one ember accent for selection and training energy (D-028), and four category colours (green, blue, amber, coral) for meals, muscles, and charts. A dark ink panel holds the live workout and the exercise body model in both modes. The Meal tab follows the meal reference closely: day pills with a progress ring, a summary card, and a timeline of tinted meal pills with check circles.
 
 Use one type style: **SF Pro** on iPhone (the system font) and **Inter** on Android and other platforms (D-023). Use the iOS text sizes: Large Title 34, Title 22, Headline 17, Body 17, Subheadline 15, Footnote 13, Caption 12. Inter uses the SIL Open Font License. Keep its license notice. Source: https://github.com/rsms/inter
 
@@ -116,12 +116,12 @@ Colours live in `app/lib/core/palette.dart`. Screens read colours only from ther
 | Surface | #FFFFFF | #1C1C1E | Cards and grouped lists |
 | Ink | #000000 | #FFFFFF | Main text |
 | Ink soft | #636366 | #98989F | Supporting text |
-| Brand teal | #00727E | #40C8E0 | Tint: selection, links, main buttons (light) |
-| Energy lime | #C6F432 | #C6F432 | Training actions, main buttons (dark) |
+| Brand ember | #C2410C | #FF7A3D | Tint: selection, links, main buttons (light) |
+| Energy ember | #FF5A1F | #FF5A1F | Training actions, main buttons (dark), black text |
 | Panel | #1C1C1E | #1C1C1E | Workout hero |
 | Green / soft | #34C759 / #E3F6E7 | #30D158 / #0F2A17 | Fibre, legs, lunch |
 | Blue / soft | #007AFF / #E0EEFF | #0A84FF / #0A2340 | Fat, back, breakfast |
-| Orange / soft | #FF9500 / #FFF0DB | #FF9F0A / #2E1F06 | Carbs, shoulders, snacks |
+| Amber / soft | #F5B400 / #FFF4D1 | #FFD60A / #2E2604 | Carbs, shoulders, snacks, helper muscles |
 | Coral / soft | #FF3B30 / #FFE5E3 | #FF453A / #33110F | Protein, chest, dinner |
 
 The category colours are the iOS system colours (D-023).
@@ -246,7 +246,7 @@ Each body area and muscle has a drawn body icon that colours only that part. Exe
 
 ### Coached body model
 
-Each built-in exercise has an animated 3D body model. It is a drawn mannequin, not a video. The user can drag to turn it to any angle, pick Front, Side, 3/4, or Back, pause, play at half speed, and show live joint-angle labels. Main muscles glow lime. Helper muscles glow orange. The model starts paused when the system asks to reduce motion.
+Each built-in exercise has an animated 3D body model. It is a drawn mannequin, not a video. The user can drag to turn it to any angle, pick Front, Side, 3/4, or Back, pause, play at half speed, and show live joint-angle labels. Main muscles glow ember. Helper muscles glow amber. The model starts paused when the system asks to reduce motion.
 
 ## 3.15 Visual quality gate
 

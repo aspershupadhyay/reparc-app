@@ -67,7 +67,11 @@ class HomeScreen extends ConsumerWidget {
               trained: week?.trainingDays ?? const {},
               count: week?.sessions.length ?? 0,
               roadmapDone: roadmapDone,
-              roadmapPlanned: program?.plan.days.length,
+              // The weekdays the user chose. Without any, one per roadmap day.
+              roadmapPlanned: program == null
+                  ? null
+                  : (program.plan.weekdays.isEmpty ? program.plan.days.length : program.plan.weekdays.length),
+              plannedWeekdays: program?.plan.weekdays.toSet() ?? const {},
             ),
             if (settings.health.contains(HealthFeature.steps.name) ||
                 settings.health.contains(HealthFeature.activeEnergy.name)) ...[
@@ -94,7 +98,7 @@ class HomeScreen extends ConsumerWidget {
                 _Shortcut(
                   icon: LucideIcons.calculator,
                   label: 'Weight calc',
-                  color: p.orange,
+                  color: p.amber,
                   onTap: () => context.go('/workout/calculator'),
                 ),
                 _Shortcut(
@@ -177,8 +181,8 @@ class _HealthRow extends ConsumerWidget {
           Expanded(
             child: _Tile(
               icon: LucideIcons.zap,
-              color: p.orange,
-              soft: p.orangeSoft,
+              color: p.amber,
+              soft: p.amberSoft,
               label: 'Active',
               value: v?.energy == null ? '–' : '${v!.energy!.round()}',
               caption: v?.energy == null ? 'No data' : 'kcal burned',
@@ -380,7 +384,7 @@ class _TodayFood extends ConsumerWidget {
     final shown = [
       (Nutrient.protein, p.coral),
       (Nutrient.fiber, p.green),
-      (Nutrient.carbs, p.orange),
+      (Nutrient.carbs, p.amber),
       if (settings.showEnergy) (Nutrient.energy, p.brand) else (Nutrient.fat, p.blue),
     ];
     return AppCard(
@@ -452,7 +456,11 @@ class _WeekCard extends StatelessWidget {
     required this.count,
     this.roadmapDone,
     this.roadmapPlanned,
+    this.plannedWeekdays = const {},
   });
+
+  /// Roadmap training weekdays, 1 = Monday. Shown as tinted days.
+  final Set<int> plannedWeekdays;
   final int? roadmapDone;
   final int? roadmapPlanned;
   final DateTime weekStart;
@@ -466,7 +474,9 @@ class _WeekCard extends StatelessWidget {
     final t = Theme.of(context).textTheme;
     return AppCard(
       onTap: () => context.go('/analytics'),
-      semanticLabel: 'This week: $count workouts on ${trained.length} days. Open Analytics',
+      semanticLabel:
+          'This week: $count workouts on ${trained.length} days'
+          '${roadmapPlanned == null ? '' : ', ${roadmapDone ?? 0} of $roadmapPlanned roadmap days'}. Open Analytics',
       child: ExcludeSemantics(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -497,6 +507,7 @@ class _WeekCard extends StatelessWidget {
                       final d = addDays(weekStart, i);
                       final done = trained.contains(dayKey(d));
                       final isToday = d == today;
+                      final planned = plannedWeekdays.contains(d.weekday);
                       return Column(
                         children: [
                           Text('MTWTFSS'[i], style: t.labelSmall?.copyWith(color: isToday ? p.ink : p.inkSoft)),
@@ -505,7 +516,7 @@ class _WeekCard extends StatelessWidget {
                             width: 36,
                             height: 36,
                             decoration: BoxDecoration(
-                              color: done ? p.energy : p.surfaceAlt,
+                              color: done ? p.energy : (planned ? p.brandSoft : p.surfaceAlt),
                               shape: BoxShape.circle,
                               border: isToday ? Border.all(color: p.ink, width: 2) : null,
                             ),

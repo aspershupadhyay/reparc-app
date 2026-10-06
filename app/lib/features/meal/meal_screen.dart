@@ -312,7 +312,7 @@ class _Summary extends StatelessWidget {
           ),
           const SizedBox(height: Space.l),
           bar(Nutrient.protein, p.coral),
-          bar(Nutrient.carbs, p.orange),
+          bar(Nutrient.carbs, p.amber),
           bar(Nutrient.fiber, p.green),
           bar(Nutrient.fat, p.blue),
           Row(

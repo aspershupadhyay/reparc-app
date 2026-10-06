@@ -134,7 +134,7 @@ class GuideScreen extends ConsumerWidget {
               ),
               const SizedBox(width: Space.m),
               Expanded(
-                child: _InfoTile(icon: LucideIcons.arrowUp, label: 'Harder', text: e.harder, color: p.orangeSoft),
+                child: _InfoTile(icon: LucideIcons.arrowUp, label: 'Harder', text: e.harder, color: p.amberSoft),
               ),
             ],
           ),
@@ -202,10 +202,10 @@ class _Muscles extends StatelessWidget {
       color: p.surface,
       child: Column(
         children: [
-          BodyMap(primary: e.primary, secondary: e.secondary, hot: p.coral, warm: p.orange, body: p.line, height: 170),
+          BodyMap(primary: e.primary, secondary: e.secondary, hot: p.coral, warm: p.amber, body: p.line, height: 170),
           const SizedBox(height: Space.m),
           row('Main', p.coral, e.primary.map((m) => m.label)),
-          if (e.secondary.isNotEmpty) row('Helpers', p.orange, e.secondary.map((m) => m.label)),
+          if (e.secondary.isNotEmpty) row('Helpers', p.amber, e.secondary.map((m) => m.label)),
         ],
       ),
     );

@@ -128,10 +128,10 @@ class _IntroFrame extends StatelessWidget {
     // The short version runs the mark faster and skips the wordmark.
     final k = full ? 1.0 : 1.6;
     double at(double v) => (v * k).clamp(0.0, 1.0);
-    final arc = _iv(at(t), 0.0, 0.30, Curves.easeOutCubic);
-    final inner = _iv(at(t), 0.12, 0.42, Curves.easeOutCubic);
-    final needle = _iv(at(t), 0.24, 0.55, Curves.elasticOut);
-    final hub = _iv(at(t), 0.26, 0.50, Curves.elasticOut);
+    final letter = _iv(at(t), 0.0, 0.30, Curves.easeOutCubic);
+    final dots = _iv(at(t), 0.30, 0.50, Curves.easeOut);
+    final leg = _iv(at(t), 0.22, 0.55, Curves.elasticOut);
+    final joint = _iv(at(t), 0.20, 0.44, Curves.elasticOut);
     final burst = _iv(at(t), 0.42, 0.80);
     final glow = math.sin(_iv(at(t), 0.25, 0.75) * math.pi);
     final letters = full ? _iv(t, 0.45, 0.70) : 0.0;
@@ -161,7 +161,7 @@ class _IntroFrame extends StatelessWidget {
                   SizedBox.square(
                     dimension: size,
                     child: CustomPaint(
-                      painter: ReparcMark(arc: arc, inner: inner, needle: needle, hub: hub, glow: glow),
+                      painter: ReparcMark(letter: letter, dots: dots, leg: leg, joint: joint, glow: glow),
                     ),
                   ),
                   if (full) _Wordmark(letters: letters, tagline: tagline),
@@ -217,11 +217,14 @@ class _Wordmark extends StatelessWidget {
           ],
         ),
         const SizedBox(height: 10),
-        // Lime underline sweeps under the word.
+        // Ember underline sweeps under the word.
         Container(
           width: 150 * tagline,
           height: 3,
-          decoration: BoxDecoration(color: BrandColors.lime, borderRadius: BorderRadius.circular(2)),
+          decoration: BoxDecoration(
+            gradient: BrandColors.emberGradient,
+            borderRadius: BorderRadius.circular(2),
+          ),
         ),
         const SizedBox(height: 12),
         Opacity(
@@ -236,7 +239,7 @@ class _Wordmark extends StatelessWidget {
   }
 }
 
-/// Expanding rings and a burst of "rep" particles when the needle lands.
+/// Expanding rings and a burst of "rep" particles when the leg lands.
 class _Ripples extends CustomPainter {
   _Ripples({required this.t, required this.burst, required this.size, required this.lift});
   final double t;
@@ -250,8 +253,10 @@ class _Ripples extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size canvasSize) {
-    // The hub sits 6% below the centre of the mark's box.
-    final c = canvasSize.center(Offset(0, size * 0.06 - lift));
+    // Rings start at the joint of the mark.
+    final c = canvasSize.center(
+      Offset((ReparcMark.jointAt.dx - 0.5) * size, (ReparcMark.jointAt.dy - 0.5) * size - lift),
+    );
     for (var i = 0; i < 3; i++) {
       final v = _iv(t, 0.06 + i * 0.07, 0.62 + i * 0.07, Curves.easeOutCubic);
       if (v <= 0 || v >= 1) continue;
@@ -261,7 +266,7 @@ class _Ripples extends CustomPainter {
         Paint()
           ..style = PaintingStyle.stroke
           ..strokeWidth = 2 + 6 * (1 - v)
-          ..color = (i.isEven ? BrandColors.teal : BrandColors.lime).withValues(alpha: 0.28 * (1 - v)),
+          ..color = (i.isEven ? BrandColors.emberLight : BrandColors.ember).withValues(alpha: 0.28 * (1 - v)),
       );
     }
     if (burst > 0 && burst < 1) {
@@ -272,7 +277,7 @@ class _Ripples extends CustomPainter {
         canvas.drawCircle(
           p,
           (2.5 + (i % 3)) * (1 - burst * 0.6),
-          Paint()..color = (i % 3 == 0 ? BrandColors.teal : BrandColors.lime).withValues(alpha: 1 - burst),
+          Paint()..color = (i % 3 == 0 ? BrandColors.white : BrandColors.ember).withValues(alpha: 1 - burst),
         );
       }
     }

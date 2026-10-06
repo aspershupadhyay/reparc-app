@@ -1,11 +1,11 @@
-// Reparc site: particle burst for the hero gauge and scroll reveals.
+// Reparc site: particle burst for the hero mark and scroll reveals.
 // No trackers, no network calls. Everything respects reduced motion.
 (() => {
   const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
   if (reduce) return;
   document.documentElement.classList.add("js-motion");
 
-  // Burst of "rep" particles when the needle lands (CSS times the start).
+  // Burst of "rep" particles when the leg lands (CSS times the start).
   const burst = document.querySelector(".burst");
   if (burst) {
     const size = burst.parentElement.getBoundingClientRect().width;

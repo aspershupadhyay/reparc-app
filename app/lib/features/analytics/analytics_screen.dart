@@ -291,8 +291,8 @@ class _LoadRow extends StatelessWidget {
         const SizedBox(width: Space.s),
         tile(
           LucideIcons.timer,
-          p.orange,
-          p.orangeSoft,
+          p.amber,
+          p.amberSoft,
           'Avg session',
           avg == null ? missingText : '${avg.inMinutes}',
           avg == null ? null : 'min',
@@ -625,7 +625,7 @@ class _MealTab extends StatelessWidget {
     final rows = [
       if (showEnergy) (Nutrient.energy, p.brand),
       (Nutrient.protein, p.coral),
-      (Nutrient.carbs, p.orange),
+      (Nutrient.carbs, p.amber),
       (Nutrient.fiber, p.green),
       (Nutrient.fat, p.blue),
       (Nutrient.sugar, p.inkSoft),
@@ -797,7 +797,7 @@ class _Nutrition extends StatelessWidget {
             children: [
               Donut(
                 size: 120,
-                parts: [(ck, p.orange), (pk, p.coral), (fk, p.blue)],
+                parts: [(ck, p.amber), (pk, p.coral), (fk, p.blue)],
                 semanticLabel: 'Macro split by energy. Carbs ${pct(ck)}, protein ${pct(pk)}, fat ${pct(fk)}.',
                 child: showEnergy
                     ? Column(
@@ -813,7 +813,7 @@ class _Nutrition extends StatelessWidget {
               Expanded(
                 child: Column(
                   children: [
-                    _Legend('Carbs', p.orange, n.carbsG, pct(ck)),
+                    _Legend('Carbs', p.amber, n.carbsG, pct(ck)),
                     _Legend('Protein', p.coral, n.proteinG, pct(pk)),
                     _Legend('Fat', p.blue, n.fatG, pct(fk)),
                   ],
@@ -861,7 +861,7 @@ class _Records extends StatelessWidget {
         children: [
           Row(
             children: [
-              IconBadge(LucideIcons.trophy, color: p.orange, size: 36),
+              IconBadge(LucideIcons.trophy, color: p.amber, size: 36),
               const SizedBox(width: Space.m),
               Expanded(child: Text('Best lifts', style: t.titleMedium)),
             ],

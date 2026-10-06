@@ -286,7 +286,7 @@ Keep major choices here. Update the related chapter when a decision changes.
 **Status:** Accepted by the user.
 **Date:** 2026-10-06.
 
-**Choice:** The Reparc mark is a range-of-motion arc read as a progress gauge, with a needle that also draws the leg of an "R" (`lib/core/brand.dart`). The same painter renders the app icons (`tool/icons/`). On start, an animated intro builds the mark (arc, ripples, needle swing, particle burst, wordmark): 2.2 s on the first start, 1 s later, a still frame with reduced motion. A tap skips it.
+**Choice:** The Reparc mark is drawn by one painter (`lib/core/brand.dart`); D-028 replaced the first gauge design with the joint "R". The same painter renders the app icons (`tool/icons/`). On start, an animated intro builds the mark (letter, ripples, leg swing, particle burst, wordmark): 2.2 s on the first start, 1 s later, a still frame with reduced motion. A tap skips it.
 
 **Why:** Owner request. It does not delay data entry, and it respects reduced motion (section 3.11).
 
@@ -336,3 +336,14 @@ Keep major choices here. Update the related chapter when a decision changes.
 **Choice:** Provide read-only MCP tools over a Reparc export file, and a small local MCP server (`app/tool/mcp/server.dart`, stdio only). The user picks Workouts, Meals, and Body data separately before export. AI-written roadmaps and meal plans come back through Me → AI connections → Share a file or import a plan, with a preview and approval. Imported foods are marked as estimates.
 
 **Boundary:** The phone opens no port and sends nothing in the background. A remote MCP service and live sync stay **To confirm** (D-006, D-009).
+
+## D-028: Ember accent and the joint "R" mark
+
+**Status:** Accepted by the user.
+**Date:** 2026-10-06.
+
+**Choice:** Replace the teal tint and the lime energy colour with one ember accent: #FF5A1F for training energy (black text on it), #C2410C for the light-mode tint and buttons (white text), and #FF7A3D for the dark-mode tint. The orange category colour becomes amber (#F5B400 light, #FFD60A dark) so it does not clash with ember. The new mark is a white "R" whose leg swings from an ember joint through a dotted arc, the range of motion of one rep (`lib/core/brand.dart`). App icons, splash, website, and gateway pages use the same mark and colours.
+
+**Why:** The owner found the lime and teal colours and the gauge logo unappealing. Ember reads as energy, sits apart from the iOS system category colours, and passes the contrast checks in `app/test/palette_test.dart`.
+
+**Supersedes:** The colours in D-023 and the gauge mark in D-022. No purple remains a rule.
