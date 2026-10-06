@@ -1,0 +1,159 @@
+# Builds the Android APK and the iPhone IPA and publishes them as a GitHub
+# Release (handbook 17). Run it by pushing a tag such as v0.2.0, or from the
+# Actions tab. The tag must match the version in app/pubspec.yaml.
+#
+# Signing, honestly:
+# - Android: signed with the upload key when the ANDROID_KEYSTORE_* secrets
+#   exist; otherwise with a debug key. Either way it installs from the file.
+# - iPhone: not signed by Apple. It is ad-hoc signed with its entitlements so
+#   AltStore or Sideloadly can re-sign it with the user's own Apple ID.
+#   App Store and TestFlight delivery need the owner's Apple developer account.
+# The app never downloads or installs these files itself (AGENTS.md).
+name: Release
+
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Tag to create and publish, for example v0.2.0
+        required: true
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  FLUTTER_VERSION: 3.47.6
+  TAG: ${{ github.event.inputs.tag || github.ref_name }}
+
+jobs:
+  version:
+    name: Check version
+    runs-on: ubuntu-latest
+    outputs:
+      name: ${{ steps.v.outputs.name }}
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+      - id: v
+        run: |
+          name=$(grep -E '^version: ' app/pubspec.yaml | sed -E 's/version: ([0-9.]+)\+.*/\1/')
+          if [ "v$name" != "$TAG" ]; then
+            echo "::error::Tag $TAG does not match app/pubspec.yaml version $name"
+            exit 1
+          fi
+          echo "name=$name" >> "$GITHUB_OUTPUT"
+
+  android:
+    name: Android APK
+    needs: version
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    defaults:
+      run:
+        working-directory: app
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+      - uses: actions/setup-java@b6effb05e454b25005698d916606bdc6ffcbf961 # v5
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2
+        with:
+          channel: stable
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          cache: true
+      - run: flutter pub get --enforce-lockfile
+      - name: Release key (only when the secrets exist)
+        env:
+          KEYSTORE: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          STORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: |
+          if [ -n "$KEYSTORE" ]; then
+            echo "$KEYSTORE" | base64 -d > android/upload.jks
+            printf 'storeFile=../upload.jks\nstorePassword=%s\nkeyAlias=%s\nkeyPassword=%s\n' "$STORE_PASSWORD" "$KEY_ALIAS" "$KEY_PASSWORD" > android/key.properties
+          else
+            echo "::notice::No release key secrets: the APK is signed with a debug key."
+          fi
+      - run: flutter build apk --release
+      - run: mv build/app/outputs/flutter-apk/app-release.apk build/reparc-android.apk
+      - name: Show the signing certificate
+        run: |
+          # Every release must carry the same certificate, or Android refuses the update.
+          apksigner=$(ls -d "$ANDROID_HOME"/build-tools/* | sort -V | tail -1)/apksigner
+          "$apksigner" verify --print-certs build/reparc-android.apk | grep -E 'certificate DN|SHA-256'
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: android
+          path: app/build/reparc-android.apk
+          if-no-files-found: error
+          retention-days: 7
+
+  ios:
+    name: iPhone IPA
+    needs: version
+    runs-on: macos-latest
+    timeout-minutes: 60
+    defaults:
+      run:
+        working-directory: app
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+      - uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2
+        with:
+          channel: stable
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          cache: true
+      - run: flutter pub get --enforce-lockfile
+      - run: flutter build ios --release --no-codesign
+      - name: Ad-hoc sign with entitlements and package the IPA
+        run: |
+          app=build/ios/iphoneos/Runner.app
+          codesign --force --deep --sign - --entitlements ios/Runner/Runner.entitlements "$app"
+          rm -rf build/ipa && mkdir -p build/ipa/Payload
+          cp -R "$app" build/ipa/Payload/
+          (cd build/ipa && zip -qry ../reparc-ios-unsigned.ipa Payload)
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: ios
+          path: app/build/reparc-ios-unsigned.ipa
+          if-no-files-found: error
+          retention-days: 7
+
+  publish:
+    name: Publish GitHub Release
+    needs: [version, android, ios]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+      - uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7
+        with:
+          path: dist
+          merge-multiple: true
+      - name: Checksums
+        run: cd dist && sha256sum reparc-android.apk reparc-ios-unsigned.ipa > SHA256SUMS.txt && cat SHA256SUMS.txt
+      - name: Create the release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          cat > notes.md <<NOTES
+          Reparc ${TAG} (beta). Tested by automated checks; real-device testing is ongoing.
+
+          **Android:** download \`reparc-android.apk\` on the phone and open it (Android 8+; Health Connect needs Android 9+).
+
+          **iPhone:** \`reparc-ios-unsigned.ipa\` is not from the App Store. Install it with AltStore or Sideloadly using your own Apple ID (iOS 15+). A free Apple ID must refresh it every 7 days.
+
+          **AI connections:** Me → AI connections. Wi-Fi mode for AI apps on your computer, or deploy your own gateway on Vercel: see gateway/README.md.
+
+          Check downloads against \`SHA256SUMS.txt\`. The app never installs updates itself.
+          NOTES
+          gh release create "$TAG" dist/reparc-android.apk dist/reparc-ios-unsigned.ipa dist/SHA256SUMS.txt \
+            --target "$GITHUB_SHA" --title "Reparc $TAG" --notes-file notes.md --latest

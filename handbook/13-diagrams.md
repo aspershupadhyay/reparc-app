@@ -68,29 +68,58 @@ flowchart LR
 
 A local save must finish before sync starts. An offline or failed sync must not block workout or meal entry.
 
-## 4. Optional remote MCP data path
+## 4. MCP data paths (D-018, D-019)
+
+Online, through the owner's own gateway:
 
 ```mermaid
 sequenceDiagram
     actor User
-    participant Client as Compatible AI client
-    participant Auth as OAuth authorization
-    participant MCP as Remote MCP service
-    participant Store as User data service
-    User->>Client: Ask about selected data
-    Client->>MCP: Request protected resource
-    MCP-->>Client: Authorization required
-    Client->>Auth: Ask user to grant narrow scopes
-    Auth-->>Client: Short-lived token
-    Client->>MCP: Call read-only tool with token
-    MCP->>MCP: Check token, user, scope, and date range
-    MCP->>Store: Read only approved records
-    Store-->>MCP: Matching records
-    MCP-->>Client: Result with source and date range
-    Client-->>User: Explain result and missing data
+    participant Client as AI app
+    participant GW as Owner's gateway (Vercel)
+    participant Redis as Upstash Redis
+    participant Phone as Reparc on the phone
+    Note over Phone,GW: User turns on online access (15 min to 2 h). Phone long-polls with the owner key.
+    Client->>GW: POST /mcp (no token)
+    GW-->>Client: 401 with resource metadata
+    Client->>GW: Register, then open /oauth/authorize (PKCE S256)
+    GW-->>User: Consent page shows a 4-letter code
+    Phone->>GW: Owner lists sign-in requests
+    User->>Phone: Approve when the code matches
+    GW-->>Client: Code, then access and refresh tokens
+    Client->>GW: tools/call with token
+    GW->>Redis: Sealed call (AES-256-GCM, expires in 60 s)
+    Phone->>GW: Poll
+    GW->>Redis: Take sealed call
+    GW-->>Phone: Call
+    Phone->>Phone: Check arguments and the user's data switches
+    Phone->>GW: Answer from local data
+    GW->>Redis: Sealed answer (expires in 60 s)
+    GW-->>Client: Tool result
 ```
 
-The AI client receives the records needed for the answer. The app must explain this before the user connects. Revoking the token must stop later requests. The Me tab owns connection setup, access scopes, connection status, and revocation.
+On the same Wi-Fi:
+
+```mermaid
+sequenceDiagram
+    participant Client as AI app on a computer
+    participant Phone as Reparc MCP server on the phone
+    Client->>Phone: POST http://<phone>:8765/mcp with Bearer key
+    Phone->>Phone: Private address? No Origin? Key matches? Body small?
+    Phone-->>Client: Tool result from local data
+```
+
+Plan proposals:
+
+```mermaid
+flowchart LR
+    AI[AI app] -->|propose_workout_plan or propose_meal_plan| P[(ai_proposals: pending)]
+    P --> Review[Review screen in Me and on Home]
+    Review -->|Approve| Save[Plans or planned meals saved]
+    Review -->|Decline| Drop[Nothing saved]
+```
+
+The AI app receives the answers it asks for. The app explains this before the user connects. Removing an app in Reparc stops its later requests at once. The gateway keeps no records.
 
 ## 5. Product lifecycle
 

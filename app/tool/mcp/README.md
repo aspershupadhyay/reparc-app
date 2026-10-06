@@ -1,6 +1,6 @@
 # Reparc MCP server
 
-A small Model Context Protocol server that lets an AI app read one Reparc export file. It is read-only, uses stdio, and opens no network port. See handbook section 10.10 and decision D-022.
+A small Model Context Protocol server that lets an AI app read one Reparc export file. It is read-only, uses stdio, and opens no network port. See handbook section 10.10 and decision D-027.
 
 ## 1. Export your data
 

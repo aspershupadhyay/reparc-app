@@ -13,7 +13,7 @@ import 'package:reparc/data/providers.dart';
 import 'package:reparc/domain/meal_plan.dart';
 import 'package:reparc/domain/targets.dart';
 import 'package:reparc/features/exercises/library/library.dart';
-import 'package:reparc/features/me/ai_connections_screen.dart';
+import 'package:reparc/features/me/ai_file_screen.dart';
 import 'package:reparc/mcp/reparc_tools.dart';
 import 'package:reparc/features/workout/roadmap_screens.dart';
 
@@ -143,8 +143,8 @@ void main() {
   });
 
   testWidgets('import an AI roadmap only after preview and approval', (tester) async {
-    await pumpApp(tester, at: '/me/ai');
-    final list = find.descendant(of: find.byType(AiConnectionsScreen), matching: find.byType(Scrollable)).first;
+    await pumpApp(tester, at: '/me/ai/file');
+    final list = find.descendant(of: find.byType(AiFileScreen), matching: find.byType(Scrollable)).first;
     await tester.scrollUntilVisible(find.text('Import a plan'), 300, scrollable: list);
     await tester.pumpAndSettle();
     await tester.tap(find.text('Import a plan', skipOffstage: false));

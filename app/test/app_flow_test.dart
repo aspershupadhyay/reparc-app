@@ -11,6 +11,7 @@ import 'package:reparc/data/models.dart';
 import 'package:reparc/data/providers.dart';
 import 'package:reparc/features/analytics/analytics_screen.dart';
 import 'package:reparc/features/exercises/library/library.dart';
+import 'package:reparc/features/me/ai_connections_screen.dart';
 import 'package:reparc/features/me/me_screen.dart';
 import 'package:reparc/features/workout/session_detail_screen.dart';
 
@@ -70,7 +71,7 @@ void main() {
     await tester.tap(find.bySemanticsLabel('Me, tab 5 of 5'));
     await tester.pumpAndSettle();
     await tester.scrollUntilVisible(
-      find.text('Off. You share a file only when you choose.'),
+      find.text('Off. Nothing is shared.'),
       300,
       scrollable: _scrollableIn(find.byType(MeScreen)),
     );
@@ -230,21 +231,30 @@ void main() {
   testWidgets('Me shows honest connection states', (tester) async {
     await pumpApp(tester, at: '/me');
     await tester.scrollUntilVisible(
-      find.text('Account and sync'),
+      find.text('Backup and restore'),
       300,
       scrollable: _scrollableIn(find.byType(MeScreen)),
     );
-    expect(find.text('Off. Records stay on this phone.'), findsOneWidget);
+    expect(find.text('Apple Health, Health Connect. Off.'), findsOneWidget);
     await tester.scrollUntilVisible(
-      find.text('Off. You share a file only when you choose.'),
+      find.text('Off. Nothing is shared.'),
       300,
       scrollable: _scrollableIn(find.byType(MeScreen)),
     );
     await tester.drag(_scrollableIn(find.byType(MeScreen)), const Offset(0, -250));
     await tester.pumpAndSettle();
-    await tester.tap(find.text('Off. You share a file only when you choose.'));
+    await tester.tap(find.text('Off. Nothing is shared.'));
     await tester.pumpAndSettle();
-    expect(find.textContaining('No live connection.'), findsOneWidget);
+    // Every data category starts off, and both ways in are off.
+    final switches = tester.widgetList<SwitchListTile>(find.byType(SwitchListTile));
+    expect(switches, hasLength(4));
+    expect(switches.every((s) => !s.value), isTrue);
+    await tester.scrollUntilVisible(
+      find.text('Set up my gateway (about 5 minutes)'),
+      300,
+      scrollable: _scrollableIn(find.byType(AiConnectionsScreen)),
+    );
+    expect(find.text('Turn on'), findsOneWidget);
     await unmount(tester);
   });
 }

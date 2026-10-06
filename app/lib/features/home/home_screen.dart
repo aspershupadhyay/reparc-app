@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:intl/intl.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
+import '../../ai/ai_controller.dart';
 import '../../core/clock.dart';
 import '../../core/dates.dart';
 import '../../core/format.dart';
@@ -11,8 +13,11 @@ import '../../core/theme.dart';
 import '../../core/tokens.dart';
 import '../../core/widgets.dart';
 import '../../data/meal_repository.dart';
+import '../../data/models.dart';
 import '../../data/providers.dart';
 import '../../domain/nutrition.dart';
+import '../../health/health_service.dart';
+import '../me/health_screen.dart';
 import '../meal/meal_entry_sheet.dart';
 import '../workout/session_clock.dart';
 import '../workout/start_workout.dart';
@@ -51,6 +56,7 @@ class HomeScreen extends ConsumerWidget {
               const _StorageNote(),
               const SizedBox(height: Space.m),
             ],
+            const _ProposalBanner(),
             const _Hero(),
             const SizedBox(height: Space.l),
             const _TodayFood(),
@@ -63,6 +69,11 @@ class HomeScreen extends ConsumerWidget {
               roadmapDone: roadmapDone,
               roadmapPlanned: program?.plan.days.length,
             ),
+            if (settings.health.contains(HealthFeature.steps.name) ||
+                settings.health.contains(HealthFeature.activeEnergy.name)) ...[
+              const SizedBox(height: Space.m),
+              const _HealthRow(),
+            ],
             const SizedBox(height: Space.l),
             Text('Shortcuts', style: t.titleMedium),
             const SizedBox(height: Space.s),
@@ -94,6 +105,127 @@ class HomeScreen extends ConsumerWidget {
                 ),
               ],
             ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// Plans an AI app sent, waiting for the user's review (D-019).
+class _ProposalBanner extends ConsumerWidget {
+  const _ProposalBanner();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final pending = ref.watch(pendingProposalsProvider).value ?? const [];
+    if (pending.isEmpty) return const SizedBox.shrink();
+    final p = context.pal;
+    final first = pending.first;
+    return Padding(
+      padding: const EdgeInsets.only(bottom: Space.m),
+      child: AppCard(
+        color: p.brandSoft,
+        onTap: () => context.push(pending.length == 1 ? '/me/ai/proposal/${first.id}' : '/me/ai'),
+        child: Row(
+          children: [
+            IconBadge(LucideIcons.sparkles, color: p.surface, glyph: p.brand, size: 40),
+            const SizedBox(width: Space.m),
+            Expanded(
+              child: Text(
+                pending.length == 1
+                    ? '${first.client} sent a ${first.kind == ProposalKind.workoutPlan ? 'workout' : 'meal'} plan. Review it.'
+                    : '${pending.length} AI plans are waiting for your review.',
+                style: Theme.of(context).textTheme.titleSmall,
+              ),
+            ),
+            Icon(LucideIcons.chevronRight, size: IconSizes.s, color: p.inkSoft),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// Steps and active energy from Apple Health or Health Connect, when the
+/// user connected them. Missing data shows a dash, never zero.
+class _HealthRow extends ConsumerWidget {
+  const _HealthRow();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final p = context.pal;
+    final s = ref.watch(currentSettingsProvider);
+    final v = ref.watch(healthTodayProvider).value;
+    return Row(
+      children: [
+        if (s.health.contains(HealthFeature.steps.name))
+          Expanded(
+            child: _Tile(
+              icon: LucideIcons.footprints,
+              color: p.green,
+              soft: p.greenSoft,
+              label: 'Steps',
+              value: v?.steps == null ? '–' : NumberFormat.decimalPattern().format(v!.steps),
+              caption: v?.steps == null ? 'No data' : 'today',
+              onTap: () => context.push('/me/health'),
+            ),
+          ),
+        if (s.health.contains(HealthFeature.steps.name) && s.health.contains(HealthFeature.activeEnergy.name))
+          const SizedBox(width: Space.m),
+        if (s.health.contains(HealthFeature.activeEnergy.name))
+          Expanded(
+            child: _Tile(
+              icon: LucideIcons.zap,
+              color: p.orange,
+              soft: p.orangeSoft,
+              label: 'Active',
+              value: v?.energy == null ? '–' : '${v!.energy!.round()}',
+              caption: v?.energy == null ? 'No data' : 'kcal burned',
+              onTap: () => context.push('/me/health'),
+            ),
+          ),
+      ],
+    );
+  }
+}
+
+class _Tile extends StatelessWidget {
+  const _Tile({
+    required this.icon,
+    required this.color,
+    required this.soft,
+    required this.label,
+    required this.value,
+    required this.caption,
+    required this.onTap,
+  });
+
+  final IconData icon;
+  final Color color;
+  final Color soft;
+  final String label;
+  final String value;
+  final String caption;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final t = Theme.of(context).textTheme;
+    final p = context.pal;
+    return AppCard(
+      color: soft,
+      onTap: onTap,
+      semanticLabel: '$label: $value $caption',
+      child: ExcludeSemantics(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            IconBadge(icon, color: color, size: 40),
+            const SizedBox(height: Space.l),
+            Text(label, style: t.labelMedium?.copyWith(color: p.ink)),
+            Text(value, style: t.headlineSmall?.tabular, maxLines: 1, overflow: TextOverflow.ellipsis),
+            Text(caption, style: t.bodySmall, maxLines: 1, overflow: TextOverflow.ellipsis),
           ],
         ),
       ),

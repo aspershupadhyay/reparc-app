@@ -14,6 +14,10 @@ class AppSettings {
     this.profile = const Profile(),
     this.targetsOn = false,
     this.mealHidden = const {},
+    this.aiScopes = const {},
+    this.health = const {},
+    this.lastBackupAt,
+    this.introSeen = false,
   });
 
   final String loadUnit;
@@ -43,6 +47,22 @@ class AppSettings {
   /// Targets for today, or empty when the user has not turned them on.
   List<Target> get targets => targetsOn ? dailyTargets(profile) : const [];
 
+  /// Data categories an AI client may use: gym, meal, health, plans.
+  /// Each is a separate choice and all start off (handbook 10.5).
+  final Set<String> aiScopes;
+
+  /// Health types the user switched on in Reparc, by [HealthFeature] name.
+  /// The operating system keeps its own permission state as well.
+  final Set<String> health;
+
+  /// When the user last saved an encrypted backup file.
+  final DateTime? lastBackupAt;
+
+  /// The user has seen the animated intro once.
+  final bool introSeen;
+
+  bool aiAllows(String? scope) => scope == null || aiScopes.contains(scope);
+
   static AppSettings fromMap(Map<String, String> m) => AppSettings(
     loadUnit: Units.loadUnits.contains(m['loadUnit']) ? m['loadUnit']! : Units.kg,
     distanceUnit: Units.distanceUnits.contains(m['distanceUnit']) ? m['distanceUnit']! : Units.km,
@@ -56,8 +76,21 @@ class AppSettings {
     }),
     targetsOn: m['targetsOn'] == 'true',
     mealHidden: {...?m['mealHidden']?.split(',').where((x) => x.isNotEmpty)},
+    aiScopes: {
+      for (final k in aiScopeNames)
+        if (m['ai.scope.$k'] == 'true') k,
+    },
+    health: {
+      for (final e in m.entries)
+        if (e.key.startsWith('health.') && e.value == 'true') e.key.substring('health.'.length),
+    },
+    lastBackupAt: DateTime.tryParse(m['backup.lastAt'] ?? ''),
+    introSeen: m['introSeen'] == 'true',
   );
 }
+
+/// AI data scopes, in display order. Names match assets/mcp/tools.json.
+const aiScopeNames = ['gym', 'meal', 'health', 'plans'];
 
 class SettingsRepository {
   SettingsRepository(this.db);
@@ -92,4 +125,20 @@ class SettingsRepository {
       await set('profile.${e.key}', e.value);
     }
   });
+  Future<void> setAiScope(String scope, bool on) => set('ai.scope.$scope', on ? 'true' : null);
+
+  /// Switches a health feature. Write features remember when they were
+  /// switched on, so only records saved after that are written.
+  Future<void> setHealth(String feature, bool on, {DateTime? now}) async {
+    await set('health.$feature', on ? 'true' : null);
+    await set('healthSince.$feature', on ? (now ?? DateTime.now()).toUtc().toIso8601String() : null);
+  }
+
+  Future<DateTime?> healthSince(String feature) async {
+    final row = await (db.select(db.settings)..where((s) => s.key.equals('healthSince.$feature'))).getSingleOrNull();
+    return row == null ? null : DateTime.tryParse(row.value);
+  }
+
+  Future<void> setLastBackupAt(DateTime at) => set('backup.lastAt', at.toUtc().toIso8601String());
+  Future<void> setIntroSeen() => set('introSeen', 'true');
 }

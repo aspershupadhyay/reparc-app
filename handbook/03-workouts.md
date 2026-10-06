@@ -119,12 +119,12 @@ Do not infer exercise form, injury, or medical status. Do not estimate calories 
 - **Safety:** Do not infer form, injury, or calories from set data.
 - **Done when:** A session survives offline use, app closure, and restart without losing a set.
 - **Catalog:** Built-in, original, 36 exercises (D-016). Coach review is **To confirm**.
-- **Roadmaps:** Generated, then owned and edited by the user (D-020). Warm-up first, every day.
+- **Roadmaps:** Generated, then owned and edited by the user (D-025). Warm-up first, every day.
 - **To confirm:** Effort scale and further personal-record rules.
 
 ## 4.11 Browse, roadmaps, and the weight calculator
 
-Built 2026-10-06 (D-019, D-020).
+Built 2026-10-06 (D-024, D-025).
 
 **Browse.** Workout → Exercises shows search, then seven body areas. An area opens its muscles: Chest (upper chest, mid and lower chest), Back (lats, upper back, lower back), Shoulders (front, side, rear), Arms (biceps, triceps, forearms), Legs (quads, hamstrings, calves, inner thighs), Glutes, and Core (abs, obliques). Each muscle shows "Start here" picks first, then more options. Filters: Strength, Stretch, or Power & cardio, and one equipment type. The target muscle of a library exercise comes from its main muscle; delt heads, upper chest, and obliques come from the exercise name. Picks live in `app/lib/features/exercises/library/library.dart` (`essentials`).
 

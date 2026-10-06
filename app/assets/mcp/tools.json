@@ -1,0 +1,233 @@
+{
+  "contract": "reparc-mcp",
+  "version": 1,
+  "server": {
+    "name": "reparc",
+    "title": "Reparc fitness log",
+    "version": "1.0.0"
+  },
+  "supported_versions": ["2025-11-25", "2025-06-18", "2025-03-26", "2024-11-05"],
+  "instructions": "Reparc is the owner's private gym and meal log. The data lives on the owner's phone. Every answer comes from the phone while the owner allows it.\n\nRules:\n- Start with get_overview. It says which data the owner shares, the units, the date, and the time zone.\n- null means a value was not recorded. It never means zero. Say when a value is missing or an estimate.\n- Dates are local days in the owner's time zone, written YYYY-MM-DD.\n- Read tools return only data categories the owner switched on. If a tool says a category is off, ask the owner to switch it on in Reparc → Me → AI connections. Do not guess the data.\n- propose_workout_plan and propose_meal_plan do not change anything. They send a proposal to the phone. Nothing is saved until the owner approves it in Reparc. Tell the owner to open Reparc to review it. Use get_proposal_status to see the answer.\n- Prefer exercises from search_exercise_library and give their library_id, so the owner gets photos and steps.\n- Do not give medical, injury, or eating-disorder treatment advice. Suggest a qualified professional for those questions.\n- If a tool says the phone is not connected, ask the owner to open Reparc and switch on AI access.",
+  "scopes": {
+    "gym": "Workouts, sets, exercise history, personal records, and plans",
+    "meal": "Meals, foods, and nutrition totals",
+    "health": "Steps, active energy, and body weight that the owner allowed from Apple Health or Health Connect",
+    "plans": "Send workout and meal plan proposals for the owner to approve"
+  },
+  "tools": [
+    {
+      "name": "get_overview",
+      "scope": null,
+      "title": "Overview",
+      "description": "Start here. Returns today's date and time zone, the owner's units, which data categories are shared, record counts, the latest workout, and today's meal totals when meal data is shared.",
+      "annotations": { "readOnlyHint": true, "openWorldHint": false },
+      "inputSchema": { "type": "object", "properties": {}, "additionalProperties": false }
+    },
+    {
+      "name": "list_workouts",
+      "scope": "gym",
+      "title": "List workouts",
+      "description": "Saved workouts in a date range, newest first, with every exercise and set (reps, load with unit, duration, distance, effort). Ranges are capped at 92 days.",
+      "annotations": { "readOnlyHint": true, "openWorldHint": false },
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "from": { "type": "string", "pattern": "^\\d{4}-\\d{2}-\\d{2}$", "description": "First local day, YYYY-MM-DD. Default: 28 days ago." },
+          "to": { "type": "string", "pattern": "^\\d{4}-\\d{2}-\\d{2}$", "description": "Last local day, YYYY-MM-DD. Default: today." },
+          "limit": { "type": "integer", "minimum": 1, "maximum": 50, "description": "Most workouts to return. Default 10." }
+        },
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "get_exercise_history",
+      "scope": "gym",
+      "title": "Exercise history",
+      "description": "Completed sets for one exercise, newest first, matched by name (case-insensitive, partial match allowed).",
+      "annotations": { "readOnlyHint": true, "openWorldHint": false },
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "exercise": { "type": "string", "minLength": 1, "maxLength": 120, "description": "Exercise name, for example 'Bench press'." },
+          "limit": { "type": "integer", "minimum": 1, "maximum": 200, "description": "Most sets to return. Default 40." }
+        },
+        "required": ["exercise"],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "get_personal_records",
+      "scope": "gym",
+      "title": "Personal records",
+      "description": "Heaviest completed load for each exercise, with reps, unit, and date. Rule: the heaviest load in a completed working, drop, or timed set.",
+      "annotations": { "readOnlyHint": true, "openWorldHint": false },
+      "inputSchema": { "type": "object", "properties": {}, "additionalProperties": false }
+    },
+    {
+      "name": "list_workout_plans",
+      "scope": "gym",
+      "title": "List workout plans",
+      "description": "The owner's saved workout plans with their exercises and targets.",
+      "annotations": { "readOnlyHint": true, "openWorldHint": false },
+      "inputSchema": { "type": "object", "properties": {}, "additionalProperties": false }
+    },
+    {
+      "name": "search_exercise_library",
+      "scope": null,
+      "title": "Search exercise library",
+      "description": "Searches Reparc's built-in exercise library (36 coached guides and 873 public-domain exercises with photos). Use the returned library_id in propose_workout_plan.",
+      "annotations": { "readOnlyHint": true, "openWorldHint": false },
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "query": { "type": "string", "maxLength": 80, "description": "Words in the name, muscle, or equipment." },
+          "body_area": { "type": "string", "enum": ["chest", "back", "shoulders", "arms", "legs", "glutes", "core"] },
+          "equipment": { "type": "string", "maxLength": 40, "description": "For example Barbell, Dumbbell, Cable, Machine, Bodyweight, Kettlebell." },
+          "limit": { "type": "integer", "minimum": 1, "maximum": 40, "description": "Most results. Default 15." }
+        },
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "list_meals",
+      "scope": "meal",
+      "title": "List meals",
+      "description": "Planned and eaten meal entries in a date range, grouped by day and meal slot. Nutrient values are per source serving; amount is what the owner ate or plans to eat. Ranges are capped at 31 days.",
+      "annotations": { "readOnlyHint": true, "openWorldHint": false },
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "from": { "type": "string", "pattern": "^\\d{4}-\\d{2}-\\d{2}$", "description": "First local day. Default: today." },
+          "to": { "type": "string", "pattern": "^\\d{4}-\\d{2}-\\d{2}$", "description": "Last local day. Default: same as from." }
+        },
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "get_nutrition_totals",
+      "scope": "meal",
+      "title": "Nutrition totals",
+      "description": "Daily energy (kcal), protein, carbohydrate, and fat totals for eaten and planned entries. Each total says how many entries had no value, so a total is never silently low. Ranges are capped at 92 days.",
+      "annotations": { "readOnlyHint": true, "openWorldHint": false },
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "from": { "type": "string", "pattern": "^\\d{4}-\\d{2}-\\d{2}$", "description": "First local day. Default: 6 days ago." },
+          "to": { "type": "string", "pattern": "^\\d{4}-\\d{2}-\\d{2}$", "description": "Last local day. Default: today." }
+        },
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "get_health_summary",
+      "scope": "health",
+      "title": "Health summary",
+      "description": "Daily steps, active energy (kcal), and the latest body weight from Apple Health or Health Connect, only for the types the owner allowed. Ranges are capped at 31 days.",
+      "annotations": { "readOnlyHint": true, "openWorldHint": false },
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "from": { "type": "string", "pattern": "^\\d{4}-\\d{2}-\\d{2}$", "description": "First local day. Default: 6 days ago." },
+          "to": { "type": "string", "pattern": "^\\d{4}-\\d{2}-\\d{2}$", "description": "Last local day. Default: today." }
+        },
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "propose_workout_plan",
+      "scope": "plans",
+      "title": "Propose workout plans",
+      "description": "Sends one to seven workout plans (for example a weekly split) to the owner's phone for review. Nothing is saved until the owner approves. Returns a proposal_id.",
+      "annotations": { "readOnlyHint": false, "destructiveHint": false, "idempotentHint": false, "openWorldHint": false },
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "summary": { "type": "string", "minLength": 1, "maxLength": 400, "description": "One or two sentences for the owner: the goal and why this plan fits." },
+          "plans": {
+            "type": "array",
+            "minItems": 1,
+            "maxItems": 7,
+            "items": {
+              "type": "object",
+              "properties": {
+                "name": { "type": "string", "minLength": 1, "maxLength": 60, "description": "For example 'Push A' or 'Monday: legs'." },
+                "note": { "type": "string", "maxLength": 300 },
+                "exercises": {
+                  "type": "array",
+                  "minItems": 1,
+                  "maxItems": 20,
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "name": { "type": "string", "minLength": 1, "maxLength": 120 },
+                      "library_id": { "type": "string", "maxLength": 120, "description": "From search_exercise_library. Optional but preferred." },
+                      "sets": { "type": "integer", "minimum": 1, "maximum": 20 },
+                      "reps": { "type": "integer", "minimum": 1, "maximum": 100 },
+                      "note": { "type": "string", "maxLength": 200, "description": "Load, tempo, or rest advice." }
+                    },
+                    "required": ["name"],
+                    "additionalProperties": false
+                  }
+                }
+              },
+              "required": ["name", "exercises"],
+              "additionalProperties": false
+            }
+          }
+        },
+        "required": ["summary", "plans"],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "propose_meal_plan",
+      "scope": "plans",
+      "title": "Propose a meal plan",
+      "description": "Sends planned meals (up to 14 days ahead, 60 entries) to the owner's phone for review. Energy and macro values are for the whole stated amount (default: 1 serving). Approved entries are saved as planned meals marked as estimates. Nothing is saved until the owner approves. Returns a proposal_id.",
+      "annotations": { "readOnlyHint": false, "destructiveHint": false, "idempotentHint": false, "openWorldHint": false },
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "summary": { "type": "string", "minLength": 1, "maxLength": 400, "description": "One or two sentences for the owner: the goal and the daily targets." },
+          "meals": {
+            "type": "array",
+            "minItems": 1,
+            "maxItems": 60,
+            "items": {
+              "type": "object",
+              "properties": {
+                "date": { "type": "string", "pattern": "^\\d{4}-\\d{2}-\\d{2}$" },
+                "slot": { "type": "string", "enum": ["breakfast", "lunch", "snacks", "dinner"] },
+                "name": { "type": "string", "minLength": 1, "maxLength": 160 },
+                "amount": { "type": "number", "exclusiveMinimum": 0, "maximum": 10000 },
+                "unit": { "type": "string", "enum": ["g", "ml", "oz", "serving", "piece", "cup", "tbsp", "tsp"] },
+                "energy_kcal": { "type": "number", "minimum": 0, "maximum": 10000 },
+                "protein_g": { "type": "number", "minimum": 0, "maximum": 1000 },
+                "carbs_g": { "type": "number", "minimum": 0, "maximum": 1000 },
+                "fat_g": { "type": "number", "minimum": 0, "maximum": 1000 },
+                "note": { "type": "string", "maxLength": 200 }
+              },
+              "required": ["date", "slot", "name"],
+              "additionalProperties": false
+            }
+          }
+        },
+        "required": ["summary", "meals"],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "get_proposal_status",
+      "scope": "plans",
+      "title": "Proposal status",
+      "description": "Whether the owner approved, declined, or has not yet reviewed a proposal.",
+      "annotations": { "readOnlyHint": true, "openWorldHint": false },
+      "inputSchema": {
+        "type": "object",
+        "properties": { "proposal_id": { "type": "string", "minLength": 1, "maxLength": 64 } },
+        "required": ["proposal_id"],
+        "additionalProperties": false
+      }
+    }
+  ]
+}

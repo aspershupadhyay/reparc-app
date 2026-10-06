@@ -1,0 +1,26 @@
+{
+  "name": "reparc-gateway",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Your own Reparc gateway on Vercel: MCP for AI apps, relayed to the Reparc app on your phone. It stores no fitness records.",
+  "license": "AGPL-3.0-only",
+  "type": "module",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "test": "tsx --test test/*.test.ts",
+    "dev": "tsx src/local.ts",
+    "sync-contract": "node scripts/sync-contract.mjs"
+  },
+  "dependencies": {
+    "@upstash/redis": "1.39.0"
+  },
+  "devDependencies": {
+    "@modelcontextprotocol/sdk": "1.32.1",
+    "@types/node": "26.6.4",
+    "tsx": "4.23.15",
+    "typescript": "7.0.2"
+  }
+}

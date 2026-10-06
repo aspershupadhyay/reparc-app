@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:intl/intl.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
+import '../../ai/ai_controller.dart';
 import '../../core/palette.dart';
 import '../../core/tokens.dart';
 import '../../core/widgets.dart';
@@ -19,6 +21,7 @@ class MeScreen extends ConsumerWidget {
     final p = context.pal;
     final s = ref.watch(currentSettingsProvider);
     final repo = ref.read(settingsRepoProvider);
+    final ai = ref.watch(aiControllerProvider);
 
     Widget group(String title, List<Widget> tiles) => Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -127,21 +130,30 @@ class MeScreen extends ConsumerWidget {
               ),
             ]),
             group('Connections', [
-              info(
-                lead(LucideIcons.cloudOff, p.brand, p.brandSoft),
-                'Account and sync',
-                'Off. Records stay on this phone.',
+              link(
+                lead(LucideIcons.cloudUpload, p.brand, p.brandSoft),
+                'Backup and restore',
+                s.lastBackupAt == null
+                    ? 'Phone backup and encrypted backup files'
+                    : 'Last backup file ${DateFormat.MMMd().format(s.lastBackupAt!.toLocal())}',
+                '/me/backup',
               ),
-              info(
+              link(
                 lead(LucideIcons.heartPulse, p.coral, p.coralSoft),
                 'Health apps',
-                'Apple Health, Health Connect',
-                tag: 'Soon',
+                s.health.isEmpty
+                    ? 'Apple Health, Health Connect. Off.'
+                    : '${s.health.length} type${s.health.length == 1 ? '' : 's'} connected',
+                '/me/health',
               ),
               link(
                 lead(LucideIcons.sparkles, p.orange, p.orangeSoft),
                 'AI connections',
-                'Off. You share a file only when you choose.',
+                ai.anyOn
+                    ? 'On${ai.wifiOn ? ' · Wi-Fi' : ''}${ai.onlineOn ? ' · online' : ''}'
+                    : s.aiScopes.isEmpty
+                    ? 'Off. Nothing is shared.'
+                    : 'Off. ${s.aiScopes.length} data type${s.aiScopes.length == 1 ? '' : 's'} chosen.',
                 '/me/ai',
               ),
             ]),

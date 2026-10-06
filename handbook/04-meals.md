@@ -83,7 +83,7 @@ The app is not a dietitian or medical service. It must not give treatment advice
 
 ## 5.10 Nutrients, targets, food list, and day plans
 
-Built 2026-10-06 (D-021).
+Built 2026-10-06 (D-026).
 
 **Nutrients.** Each food can record energy (kcal), protein, carbs, fibre, fat, sugar (g), and sodium (mg). Empty is not zero. Old entries have no fibre, sugar, or sodium value.
 

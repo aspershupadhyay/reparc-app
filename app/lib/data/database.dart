@@ -65,7 +65,7 @@ class WorkoutSessions extends Table with RecordColumns {
   TextColumn get timeZoneName => text()();
   TextColumn get note => text().nullable()();
 
-  /// Roadmap day this session came from, if any. Added in v3.
+  /// Roadmap day this session came from, if any. Added in v4.
   TextColumn get programId => text().nullable()();
   IntColumn get programDay => integer().nullable()();
 }
@@ -107,7 +107,7 @@ class Foods extends Table with RecordColumns {
   RealColumn get carbsG => real().nullable()();
   RealColumn get fatG => real().nullable()();
 
-  /// Added in v3. Null means not recorded.
+  /// Added in v4. Null means not recorded.
   RealColumn get fiberG => real().nullable()();
   RealColumn get sugarG => real().nullable()();
   RealColumn get sodiumMg => real().nullable()();
@@ -146,7 +146,7 @@ class MealEntries extends Table with RecordColumns {
   RealColumn get carbsG => real().nullable()();
   RealColumn get fatG => real().nullable()();
 
-  /// Added in v3. Per source serving, like the values above.
+  /// Added in v4. Per source serving, like the values above.
   RealColumn get fiberG => real().nullable()();
   RealColumn get sugarG => real().nullable()();
   RealColumn get sodiumMg => real().nullable()();
@@ -161,7 +161,7 @@ class MealEntries extends Table with RecordColumns {
   TextColumn get note => text().nullable()();
 }
 
-/// A training roadmap the user chose and may have edited. Added in v3.
+/// A training roadmap the user chose and may have edited. Added in v4.
 ///
 /// [plan] is a JSON document (see domain/roadmap.dart, `ProgramPlan`). The
 /// user owns it: every day, exercise, set, and rep target can change.
@@ -178,12 +178,44 @@ class Programs extends Table with RecordColumns {
   TextColumn get plan => text()();
 }
 
-/// Body weight check-ins. The original unit is kept. Added in v3.
+/// Body weight check-ins. The original unit is kept. Added in v4.
 class BodyWeights extends Table with RecordColumns {
   TextColumn get day => text()();
   RealColumn get value => real()();
   TextColumn get unit => text()();
   DateTimeColumn get measuredAt => dateTime()();
+}
+
+/// A change an AI client asked for. Nothing in it is applied until the user
+/// approves it on this phone (handbook 10.4, D-019). Added in v3.
+class AiProposals extends Table with RecordColumns {
+  TextColumn get kind => textEnum<ProposalKind>()();
+
+  /// Name the AI client gave, for example "Claude". Shown, never trusted.
+  TextColumn get client => text()();
+
+  /// How the request arrived: 'wifi' or 'online'.
+  TextColumn get via => text()();
+  TextColumn get summary => text()();
+
+  /// The validated request as JSON. Its shape depends on [kind].
+  TextColumn get payload => text()();
+  TextColumn get status => textEnum<ProposalStatus>()();
+  DateTimeColumn get decidedAt => dateTime().nullable()();
+}
+
+/// Records Reparc wrote to Apple Health or Health Connect, so a record is
+/// never written twice (handbook 9.5). Added in v3.
+class HealthWrites extends Table {
+  /// ID of the Reparc record, for example a workout session ID.
+  TextColumn get recordId => text()();
+
+  /// 'workout' or 'meal'.
+  TextColumn get kind => text()();
+  DateTimeColumn get writtenAt => dateTime()();
+
+  @override
+  Set<Column<Object>> get primaryKey => {recordId, kind};
 }
 
 class Settings extends Table {
@@ -215,6 +247,8 @@ const _defaultKinds = [
     Programs,
     BodyWeights,
     Settings,
+    AiProposals,
+    HealthWrites,
   ],
 )
 class AppDatabase extends _$AppDatabase {
@@ -226,7 +260,7 @@ class AppDatabase extends _$AppDatabase {
   /// Current local data format. Every change needs a migration, a test from
   /// the last supported version, and a recovery plan (handbook 7.5).
   @override
-  int get schemaVersion => 3;
+  int get schemaVersion => 4;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -243,8 +277,13 @@ class AppDatabase extends _$AppDatabase {
           await (update(mealSlots)..where((s) => s.id.equals(id))).write(MealSlotsCompanion(kind: Value(kind)));
         }
       }
-      // v2 -> v3: fiber, sugar, sodium; roadmaps; body weight.
+      // v2 -> v3: AI proposals and the health write-back ledger.
       if (from < 3) {
+        await m.createTable(aiProposals);
+        await m.createTable(healthWrites);
+      }
+      // v3 -> v4: fiber, sugar, sodium; roadmaps; body weight.
+      if (from < 4) {
         await m.addColumn(foods, foods.fiberG);
         await m.addColumn(foods, foods.sugarG);
         await m.addColumn(foods, foods.sodiumMg);

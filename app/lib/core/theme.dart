@@ -8,7 +8,7 @@ import 'tokens.dart';
 
 /// iPhone uses the system font (SF Pro). Other platforms use Inter, an
 /// open font drawn for screens with the same proportions, so Android looks
-/// and reads like the iPhone app (decision D-018).
+/// and reads like the iPhone app (decision D-023).
 String? get appFontFamily => defaultTargetPlatform == TargetPlatform.iOS ? null : 'Inter';
 
 /// Inter ships as one variable font. Set the `wght` axis together with

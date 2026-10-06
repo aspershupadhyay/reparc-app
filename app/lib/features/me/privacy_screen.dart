@@ -15,12 +15,35 @@ class PrivacyScreen extends StatelessWidget {
     final t = Theme.of(context).textTheme;
     const facts = [
       (LucideIcons.smartphone, 'Your workouts, meals, foods, and settings are saved in a database on this phone.'),
-      (LucideIcons.cloudOff, 'Reparc has no account, no server, and no sync in this version.'),
+      (LucideIcons.cloudOff, 'Reparc has no account and no Reparc server. Nothing is sent to the Reparc project.'),
       (LucideIcons.eyeOff, 'Reparc does not send product-use analytics or crash reports.'),
-      (LucideIcons.heartPulse, 'Reparc does not request Apple Health or Health Connect access.'),
-      (LucideIcons.sparkles, 'Reparc does not send records to an AI provider.'),
-      (LucideIcons.download, 'Records leave the phone only when you export and share a file yourself.'),
-      (LucideIcons.lock, 'Reparc does not add its own encryption to the database. Protect your phone with a passcode.'),
+      (
+        LucideIcons.heartPulse,
+        'Apple Health or Health Connect: Reparc asks for one data type at a time, only when you switch it on in '
+            'Me → Health apps. It reads steps, active energy, or weight, and writes finished workouts and eaten meals. '
+            'Health values are not copied to any server and are never used for ads.',
+      ),
+      (
+        LucideIcons.sparkles,
+        'AI connections are off until you turn one on, for a time you choose. An AI app then gets answers only from '
+            'the data types you switched on. The AI provider receives those answers. AI plans are saved only if you '
+            'approve them.',
+      ),
+      (
+        LucideIcons.cloud,
+        'The online gateway runs in your own Vercel account. It holds no records; questions and answers pass through '
+            'it encrypted with your key and expire within a minute.',
+      ),
+      (
+        LucideIcons.cloudUpload,
+        'Backups go to your own iCloud or Google account: through the phone\'s backup, or as a file encrypted with '
+            'your passphrase. AI and health switches are not restored on a new phone.',
+      ),
+      (LucideIcons.download, 'Records leave the phone only through the choices above or a file you export yourself.'),
+      (
+        LucideIcons.lock,
+        'The database on the phone uses the phone\'s own storage protection. Protect your phone with a passcode.',
+      ),
     ];
     return Scaffold(
       appBar: AppBar(title: const Text('Privacy')),

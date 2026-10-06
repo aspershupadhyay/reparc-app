@@ -130,7 +130,7 @@ For early experiments, use a user-selected export or share action. Do not send r
 
 ## 16.8 Visual and motion plan
 
-Keep one theme across all five tabs. Use SF Pro on iPhone and Inter elsewhere (D-018), one reviewed Lucide icon family, and shared color, spacing, type, and radius tokens. The Meal and Workout references guide composition, not separate themes.
+Keep one theme across all five tabs. Use SF Pro on iPhone and Inter elsewhere (D-023), one reviewed Lucide icon family, and shared color, spacing, type, and radius tokens. The Meal and Workout references guide composition, not separate themes.
 
 Build these states for every important screen: first use, loading, saved, save failure, offline, empty, disabled, and permission unavailable. State must be clear without color or animation.
 
@@ -235,11 +235,22 @@ Updated 2026-10-06. This records what exists in code. It is not evidence of devi
 
 **Device test fixes (2026-10-06):** First test on a real Android phone (realme RMX3710, Android 15). Fixed: the guide link in a live workout switched tabs instead of opening the guide; nutrition legend names wrapped letter by letter; "Protein" was cut off on the Meal summary; pill tabs and area chips could not be activated by screen readers; muscle labels overflowed at large text. Also: a new exercise in a workout starts with one empty set, the library hides filters while the keyboard is open, and entries without equipment say "No equipment".
 
-**Owner request (2026-10-06):** iOS-native look on both platforms (D-018). Exercises browse by body area, then muscle, with drawn body icons and "Start here" picks (D-019). Slow, tempo-timed exercise demos with half speed and a slider. Weight calculator. Five roadmaps × three levels with warm-ups, equipment swaps, and full editing (D-020). Fibre, sugar, and sodium; opt-in daily targets; USDA food list; Plan my day by diet (D-021). Home rebuilt around one action, today's food, and the week. Analytics split into Workout and Meal tabs with more metrics. Read-only MCP tools, a local stdio MCP server, scoped export, and AI plan import with approval (D-022). Database schema v3 with a tested migration. 285 unit and widget tests pass on Linux with Flutter 3.47.6.
+**AI, health, backup, and brand (2026-10-06, owner request):**
+
+- AI connections over MCP (D-018): Wi-Fi server on the phone and the owner's own gateway on Vercel (`gateway/`), 12 tools, separate switches for workouts, meals, health, and plan suggestions, access windows of 15 minutes to 2 hours, sign-in approval with a match code, app keys, revocation, and an activity list without content.
+- AI proposals (D-019): workout and meal plans wait for review in Me → AI connections and on Home.
+- Apple Health and Health Connect (D-020): per-type switches, today's steps and active energy on Home, write-back of finished workouts and eaten meals.
+- Backup and restore (D-021): phone backup rules and encrypted backup files.
+- App icon, splash, and animated intro (D-022). Website in `site/`. Release workflow that publishes an APK and an IPA to GitHub Releases.
+- Database schema v3 with a tested migration. 77 app tests and 14 gateway tests pass on Linux. A release APK builds locally.
+
+**Not yet checked for this work:** Health access, the Wi-Fi server, and the online gateway on real devices; a deployed gateway on Vercel; the iOS build on a GitHub macOS runner; claude.ai, ChatGPT, Codex, and Cursor against a live gateway. See the compatibility note in section 10.2.
+
+**Not built:** update metadata checks, update alerts, sign-in, live two-way sync, automatic backup files to a cloud drive, crash reporting, App Store and Google Play signing in CI.
+
+**Owner request (2026-10-06):** iOS-native look on both platforms (D-023). Exercises browse by body area, then muscle, with drawn body icons and "Start here" picks (D-024). Slow, tempo-timed exercise demos with half speed and a slider. Weight calculator. Five roadmaps × three levels with warm-ups, equipment swaps, and full editing (D-025). Fibre, sugar, and sodium; opt-in daily targets; USDA food list; Plan my day by diet (D-026). Home rebuilt around one action, today's food, and the week. Analytics split into Workout and Meal tabs with more metrics. Read-only MCP tools, a local stdio MCP server, scoped export, and AI plan import with approval (D-027). Database schema v4 with a tested migration from v3. 285 unit and widget tests pass on Linux with Flutter 3.47.6.
 
 **Not checked for this round:** Real devices, VoiceOver and TalkBack on the new screens, large text on devices, and coach or dietitian review of the content.
-
-**Not built:** Update metadata checks, update alerts, HealthKit, Health Connect, sign-in, sync, remote MCP, an app icon, crash reporting, and release signing in CI.
 
 ## 16.12 AI context
 

@@ -1,7 +1,7 @@
 ---
 title: Reparc Handbook
 status: active-plan
-updated: 2026-10-05
+updated: 2026-10-06
 ---
 
 # Reparc Fitness App Handbook
@@ -54,7 +54,7 @@ Use short sentences for steps, rules, and checklists. Use common words and activ
 
 ## Current status
 
-The first app foundation is in `app/`. It covers the local-first core of Stage C and Stage D. It has passed unit and widget tests in CI-equivalent runs only. It has not run on a real device. The release pipeline, store setup, backend, health access, and MCP service are not implemented. See [build progress](15-validated-plan.md#1613-build-progress). Technology and product choices marked **Proposed** or **To confirm** still need validation.
+The app is in `app/`. It covers the local-first core, AI connections over MCP (D-018, D-019), Apple Health and Health Connect (D-020), and backup and restore (D-021). The owner's own MCP gateway is in `gateway/`. The website is in `site/`. The core was tested on one real Android phone; the newer features have passed automated tests only. App Store and Google Play delivery are not set up. There is no Reparc server. See [build progress](15-validated-plan.md#1613-build-progress). Technology and product choices marked **Proposed** or **To confirm** still need validation.
 
 
 ## AI context

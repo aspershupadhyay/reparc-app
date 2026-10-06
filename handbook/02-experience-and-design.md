@@ -31,7 +31,7 @@ See [Product and data diagrams](13-diagrams.md) for the navigation and record fl
 
 Use five equal, labeled destinations. Use the Lucide icons `house`, `dumbbell`, `utensils`, `chart-no-axes-column`, and `user-round` for Home, Workout, Meal, Analytics, and Me.
 
-Use the iOS tab bar: a translucent bar with a thin top line. The selected tab's icon and label take the teal tint. There is no pill (D-018). Keep inactive labels readable. Do not hide labels to fit the bar. Keep every item within the minimum touch target. Preserve each tab state when the user changes tabs. Check safe-area insets on iPhone and Android.
+Use the iOS tab bar: a translucent bar with a thin top line. The selected tab's icon and label take the teal tint. There is no pill (D-023). Keep inactive labels readable. Do not hide labels to fit the bar. Keep every item within the minimum touch target. Preserve each tab state when the user changes tabs. Check safe-area insets on iPhone and Android.
 
 **Motion:** Move or fade the active indicator once. Do not bounce the whole bar. A reduced-motion setting must show the selection change immediately or with a simple color change.
 
@@ -92,7 +92,7 @@ The two references use different palettes. Use their screen layouts as reference
 
 **Accepted style (owner, 2026-10-05):** One design system with a light and a dark mode. No purple. A soft mint-grey canvas, white cards, deep-teal selection, lime for training energy, and four warm category colours (green, blue, orange, coral) for meals, muscles, and charts. A dark ink panel holds the live workout and the exercise body model in both modes. The Meal tab follows the meal reference closely: day pills with a progress ring, a summary card, and a timeline of tinted meal pills with check circles.
 
-Use one type style: **SF Pro** on iPhone (the system font) and **Inter** on Android and other platforms (D-018). Use the iOS text sizes: Large Title 34, Title 22, Headline 17, Body 17, Subheadline 15, Footnote 13, Caption 12. Inter uses the SIL Open Font License. Keep its license notice. Source: https://github.com/rsms/inter
+Use one type style: **SF Pro** on iPhone (the system font) and **Inter** on Android and other platforms (D-023). Use the iOS text sizes: Large Title 34, Title 22, Headline 17, Body 17, Subheadline 15, Footnote 13, Caption 12. Inter uses the SIL Open Font License. Keep its license notice. Source: https://github.com/rsms/inter
 
 Use one icon family: **Lucide**. Use a reviewed subset with one stroke and size scale. Lucide uses the ISC license. Source: https://lucide.dev/license
 
@@ -124,7 +124,7 @@ Colours live in `app/lib/core/palette.dart`. Screens read colours only from ther
 | Orange / soft | #FF9500 / #FFF0DB | #FF9F0A / #2E1F06 | Carbs, shoulders, snacks |
 | Coral / soft | #FF3B30 / #FFE5E3 | #FF453A / #33110F | Protein, chest, dinner |
 
-The category colours are the iOS system colours (D-018).
+The category colours are the iOS system colours (D-023).
 
 `app/test/palette_test.dart` checks that every main text pair is at least 4.5:1 and every icon glyph on a category colour is at least 3:1. This is a calculated check. A rendered review on devices is still required.
 
@@ -281,7 +281,7 @@ Send push update alerts only to users who turn them on and grant system notifica
 - **Me tab:** Account, sync, health, AI and MCP connections, privacy, export, and deletion.
 - **Reference mapping:** Image 1 informs Meal layout. Image 2 informs Gym layout.
 - **Theme:** One shared design system and one token set.
-- **Font:** SF Pro on iPhone, Inter elsewhere (D-018). **Icons:** Reviewed Lucide set.
+- **Font:** SF Pro on iPhone, Inter elsewhere (D-023). **Icons:** Reviewed Lucide set.
 - **Motion:** Explain changes. Never block logging. Respect reduced motion.
 - **Do not:** Treat image sample values as records or add motion only for decoration.
 - **To confirm:** Exact tokens, durations, target devices, and minimum operating-system versions.

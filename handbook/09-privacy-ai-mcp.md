@@ -1,11 +1,13 @@
 ---
 title: Privacy, AI, MCP, and BYOK
-status: proposed
+status: active
 owner: product-and-security
 updated: 2026-10-06
 ---
 
 # Section 10: Privacy, AI, MCP, and BYOK
+
+**Built (2026-10-06):** AI access through MCP, on the same Wi-Fi or through the owner's own gateway on Vercel (D-018), and plan proposals that need approval (D-019). Data flow: [diagram 4](13-diagrams.md#4-mcp-data-paths-d-018-d-019). Tools: `app/assets/mcp/tools.json`. Gateway security model: `gateway/README.md`. BYOK is not built.
 
 ## 10.1 Privacy rule
 See [Product and data diagrams](13-diagrams.md) for the optional remote MCP data path.
@@ -30,7 +32,7 @@ A provider key does not grant access to app records. A local key can let an app 
 
 A remote MCP server cannot read records that exist only in the phone's local database. It needs a server-side copy, an online relay, or a direct local connection supported by the AI client and phone operating system. Do not assume that a desktop or cloud AI can reach a phone-local MCP server.
 
-For the first release, keep AI as a later feature. If a user asks to use an external AI, offer a clear, user-initiated export or share of a selected summary. Do not send records in the background. Add remote MCP only after a separate architecture and privacy decision.
+The owner approved MCP access on 2026-10-06 (D-018). There is no Reparc server. The gateway runs in the user's own Vercel account, keeps no records, and forwards each tool call to the phone while the user keeps online access on. Records are never sent in the background or on a schedule.
 
 ## 10.4 First MCP tools
 
@@ -41,7 +43,7 @@ Start with read-only tools:
 - Get meal totals for a date range.
 - List personal records with their rules.
 
-Do not allow an AI tool to change records in the first release. If write tools are added later, show a preview and ask the user to approve each change.
+Built tools also include library search, plans, health summary, and two proposal tools. A proposal is a preview: the user approves or declines each one on the phone (D-019). No tool edits or deletes a record.
 
 ## 10.5 MCP access controls
 
@@ -93,19 +95,19 @@ If BYOK is added:
 - **Purpose:** Give an AI client narrow access to data the user selects.
 - **Location:** Me → AI connections.
 - **Status display:** Show provider, data scopes, connection status, and revoke action.
-- **First release:** No background AI access. User-initiated export or share only.
-- **First remote MCP release:** Read-only tools, after a separate approval.
+- **Built:** Wi-Fi MCP server and the owner's own gateway (D-018). Access windows of 15 minutes to 2 hours. No background access.
+- **Writes:** Proposals only; the user approves each one (D-019).
 - **Consent:** Separate access for Meal, Gym, and health data.
 - **Security:** OAuth, narrow scopes, expiry, revocation, per-user checks.
 - **Truth:** Keep source, date range, missing values, and estimates visible.
 - **Never:** Claim every AI app is compatible or that remote data stays on-device.
-- **To confirm:** MCP release timing, server placement, identity provider, and supported clients.
+- **To confirm:** Tested client list (claude.ai, ChatGPT, Codex, Cursor, VS Code, Claude Desktop) against a live gateway, and an independent security review.
 
-## 10.10 What is built (2026-10-06)
+## 10.11 File export and import (2026-10-06)
 
-D-022. No background AI access and no network code.
+D-027. A route that needs no connection, next to the Wi-Fi and gateway routes (D-018).
 
-1. Me → AI connections: the user turns Workouts, Meals, and Body data on or off, then taps **Export for AI**. Only the chosen data is in the file. Units and app settings that are not personal stay in.
+1. Me → AI connections → Share a file or import a plan: the user turns Workouts, Meals, and Body data on or off, then taps **Export for AI**. Only the chosen data is in the file. Units and app settings that are not personal stay in.
 2. The user gives the file to an AI app. With MCP: build `app/tool/mcp/server.dart` once (`dart compile exe`) and add it to the AI app's MCP settings with the file path. The server uses stdio only and opens no port. Without MCP: attach the file to a chat.
 3. Tools (all read-only): `get_profile_and_targets`, `get_workout_summary`, `get_exercise_history`, `list_personal_records`, `get_roadmap`, `get_meal_totals`, `get_meal_log`, `get_body_weight`, `get_import_formats`, `check_roadmap_proposal`, `check_meal_plan_proposal`. A tool for data the user did not share is not offered.
 4. Plans come back through **Import a plan**: paste, check, preview, approve. Imported foods are marked as estimates and added as planned.

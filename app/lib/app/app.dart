@@ -5,13 +5,17 @@ import 'package:go_router/go_router.dart';
 import '../core/palette.dart';
 import '../core/theme.dart';
 import '../data/providers.dart';
+import '../features/intro/intro.dart';
 
 final _light = buildTheme(Palette.light);
 final _dark = buildTheme(Palette.dark);
 
 class ReparcApp extends ConsumerWidget {
-  const ReparcApp({super.key, required this.router});
+  const ReparcApp({super.key, required this.router, this.intro = false});
   final GoRouter router;
+
+  /// Show the animated logo on start. Off in tests.
+  final bool intro;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -28,6 +32,7 @@ class ReparcApp extends ConsumerWidget {
       themeMode: mode,
       routerConfig: router,
       scrollBehavior: const _IosScroll(),
+      builder: intro ? (context, child) => IntroGate(child: child ?? const SizedBox.shrink()) : null,
     );
   }
 }
