@@ -1,17 +1,21 @@
-import 'package:flutter/cupertino.dart' show CupertinoPageTransitionsBuilder;
+import 'package:flutter/cupertino.dart' show CupertinoPageTransitionsBuilder, NoDefaultCupertinoThemeData;
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import 'palette.dart';
 import 'tokens.dart';
 
-const _family = 'Manrope';
+/// iPhone uses the system font (SF Pro). Other platforms use Inter, an
+/// open font drawn for screens with the same proportions, so Android looks
+/// and reads like the iPhone app (decision D-018).
+String? get appFontFamily => defaultTargetPlatform == TargetPlatform.iOS ? null : 'Inter';
 
-/// Manrope ships as one variable font. Set the `wght` axis together with
+/// Inter ships as one variable font. Set the `wght` axis together with
 /// [FontWeight] so every platform renders the requested weight.
-TextStyle manrope(double size, FontWeight weight, {double? height, Color? color, double? spacing}) {
+TextStyle appText(double size, FontWeight weight, {double? height, Color? color, double? spacing}) {
   return TextStyle(
-    fontFamily: _family,
+    fontFamily: appFontFamily,
     fontSize: size,
     fontWeight: weight,
     fontVariations: [FontVariation.weight(weight.value.toDouble())],
@@ -31,19 +35,21 @@ extension WeightStyle on TextStyle {
 
 ThemeData buildTheme(Palette p) {
   final dark = p.brightness == Brightness.dark;
+  // iOS text styles: Large Title 34, Title 2 22, Headline 17, Body 17,
+  // Subheadline 15, Footnote 13, Caption 12.
   final t = TextTheme(
-    displayLarge: manrope(48, FontWeight.w800, height: 1.05, color: p.ink, spacing: -1),
-    displaySmall: manrope(34, FontWeight.w800, height: 1.1, color: p.ink, spacing: -0.5),
-    headlineSmall: manrope(26, FontWeight.w800, height: 1.2, color: p.ink, spacing: -0.3),
-    titleLarge: manrope(20, FontWeight.w700, height: 1.3, color: p.ink),
-    titleMedium: manrope(16, FontWeight.w700, height: 1.4, color: p.ink),
-    titleSmall: manrope(14, FontWeight.w700, height: 1.4, color: p.ink),
-    bodyLarge: manrope(16, FontWeight.w500, height: 1.5, color: p.ink),
-    bodyMedium: manrope(14, FontWeight.w500, height: 1.45, color: p.ink),
-    bodySmall: manrope(12, FontWeight.w600, height: 1.4, color: p.inkSoft),
-    labelLarge: manrope(16, FontWeight.w700, height: 1.25, color: p.ink),
-    labelMedium: manrope(14, FontWeight.w700, height: 1.3, color: p.ink),
-    labelSmall: manrope(12, FontWeight.w700, height: 1.3, color: p.inkSoft),
+    displayLarge: appText(48, FontWeight.w700, height: 1.05, color: p.ink, spacing: -1.2),
+    displaySmall: appText(34, FontWeight.w700, height: 1.12, color: p.ink, spacing: -0.8),
+    headlineSmall: appText(28, FontWeight.w700, height: 1.15, color: p.ink, spacing: -0.6),
+    titleLarge: appText(22, FontWeight.w700, height: 1.25, color: p.ink, spacing: -0.4),
+    titleMedium: appText(17, FontWeight.w600, height: 1.3, color: p.ink, spacing: -0.4),
+    titleSmall: appText(15, FontWeight.w600, height: 1.35, color: p.ink, spacing: -0.2),
+    bodyLarge: appText(17, FontWeight.w400, height: 1.35, color: p.ink, spacing: -0.4),
+    bodyMedium: appText(15, FontWeight.w400, height: 1.4, color: p.ink, spacing: -0.2),
+    bodySmall: appText(13, FontWeight.w400, height: 1.35, color: p.inkSoft, spacing: -0.1),
+    labelLarge: appText(17, FontWeight.w600, height: 1.25, color: p.ink, spacing: -0.4),
+    labelMedium: appText(15, FontWeight.w600, height: 1.3, color: p.ink, spacing: -0.2),
+    labelSmall: appText(12, FontWeight.w500, height: 1.3, color: p.inkSoft),
   );
 
   final scheme = ColorScheme(
@@ -84,12 +90,16 @@ ThemeData buildTheme(Palette p) {
     brightness: p.brightness,
     colorScheme: scheme,
     extensions: [p],
-    fontFamily: _family,
+    fontFamily: appFontFamily,
     textTheme: t,
     scaffoldBackgroundColor: p.bg,
     canvasColor: p.bg,
     materialTapTargetSize: MaterialTapTargetSize.padded,
-    splashFactory: InkSparkle.constantTurbulenceSeedSplashFactory,
+    // iOS controls dim when pressed; they do not ripple.
+    splashFactory: NoSplash.splashFactory,
+    highlightColor: p.ink.withValues(alpha: 0.06),
+    hoverColor: Colors.transparent,
+    cupertinoOverrideTheme: NoDefaultCupertinoThemeData(primaryColor: p.brand, brightness: p.brightness),
     appBarTheme: AppBarTheme(
       backgroundColor: p.bg,
       surfaceTintColor: Colors.transparent,
@@ -192,10 +202,12 @@ ThemeData buildTheme(Palette p) {
     dividerTheme: DividerThemeData(color: p.line, space: 1, thickness: 1),
     bottomSheetTheme: BottomSheetThemeData(
       backgroundColor: p.bg,
+      modalBarrierColor: Colors.black.withValues(alpha: 0.35),
       surfaceTintColor: Colors.transparent,
       showDragHandle: true,
-      dragHandleColor: p.line,
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(Radii.l))),
+      dragHandleColor: p.inkSoft.withValues(alpha: 0.4),
+      dragHandleSize: const Size(36, 5),
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(Radii.m))),
     ),
     dialogTheme: DialogThemeData(
       backgroundColor: p.surface,
@@ -218,8 +230,8 @@ ThemeData buildTheme(Palette p) {
       iconColor: p.ink,
     ),
     switchTheme: SwitchThemeData(
-      trackColor: WidgetStateProperty.resolveWith((s) => s.contains(WidgetState.selected) ? p.brand : p.line),
-      thumbColor: WidgetStateProperty.resolveWith((s) => s.contains(WidgetState.selected) ? p.onBrand : p.surface),
+      trackColor: WidgetStateProperty.resolveWith((s) => s.contains(WidgetState.selected) ? p.green : p.line),
+      thumbColor: WidgetStateProperty.all(const Color(0xFFFFFFFF)),
       trackOutlineColor: WidgetStateProperty.all(Colors.transparent),
     ),
     progressIndicatorTheme: ProgressIndicatorThemeData(color: p.brand),
@@ -233,7 +245,7 @@ ThemeData buildTheme(Palette p) {
     ),
     pageTransitionsTheme: const PageTransitionsTheme(
       builders: {
-        TargetPlatform.android: _ReducedMotionAware(FadeForwardsPageTransitionsBuilder()),
+        TargetPlatform.android: _ReducedMotionAware(CupertinoPageTransitionsBuilder()),
         TargetPlatform.iOS: _ReducedMotionAware(CupertinoPageTransitionsBuilder()),
       },
     ),

@@ -1,4 +1,7 @@
+import 'dart:ui' show ImageFilter;
+
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
@@ -105,6 +108,8 @@ class _LiveBar extends StatelessWidget {
   }
 }
 
+/// iOS-style tab bar: a thin top line, tinted icon and label for the
+/// selected tab, no pill and no ripple. Labels always show.
 class _TabBar extends StatelessWidget {
   const _TabBar({required this.index, required this.onSelect});
   final int index;
@@ -112,67 +117,67 @@ class _TabBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final duration = motionOf(context, Motion.standard);
+    final duration = motionOf(context, Motion.quick);
     final t = Theme.of(context).textTheme;
     final p = context.pal;
-    return Container(
-      decoration: BoxDecoration(
-        color: p.surface,
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(Radii.l)),
-        boxShadow: [
-          BoxShadow(color: Colors.black.withValues(alpha: 0.06), blurRadius: 20, offset: const Offset(0, -4)),
-        ],
-      ),
-      child: SafeArea(
-        top: false,
-        child: MediaQuery.withClampedTextScaling(
-          maxScaleFactor: 1.4,
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(Space.s, Space.s, Space.s, Space.xs),
-            child: Row(
-              children: [
-                for (final (i, tab) in _tabs.indexed)
-                  Expanded(
-                    child: Semantics(
-                      selected: i == index,
-                      button: true,
-                      label: '${tab.label}, tab ${i + 1} of ${_tabs.length}',
-                      excludeSemantics: true,
-                      child: InkResponse(
-                        onTap: () => onSelect(i),
-                        containedInkWell: true,
-                        highlightShape: BoxShape.rectangle,
-                        borderRadius: Radii.medium,
-                        child: ConstrainedBox(
-                          constraints: const BoxConstraints(minHeight: 58),
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              AnimatedContainer(
-                                duration: duration,
-                                curve: Motion.change,
-                                width: 54,
-                                height: 32,
-                                decoration: BoxDecoration(
-                                  color: i == index ? p.energy : p.energy.withValues(alpha: 0),
-                                  borderRadius: BorderRadius.circular(16),
-                                ),
-                                child: Icon(tab.icon, size: 22, color: i == index ? p.onEnergy : p.inkSoft),
+    return ClipRect(
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
+        child: DecoratedBox(
+          decoration: BoxDecoration(
+            color: p.surface.withValues(alpha: p.brightness == Brightness.dark ? 0.85 : 0.92),
+            border: Border(top: BorderSide(color: p.line, width: 0.5)),
+          ),
+          child: SafeArea(
+            top: false,
+            child: MediaQuery.withClampedTextScaling(
+              maxScaleFactor: 1.3,
+              child: Padding(
+                padding: const EdgeInsets.only(top: 6),
+                child: Row(
+                  children: [
+                    for (final (i, tab) in _tabs.indexed)
+                      Expanded(
+                        child: Semantics(
+                          selected: i == index,
+                          button: true,
+                          label: '${tab.label}, tab ${i + 1} of ${_tabs.length}',
+                          excludeSemantics: true,
+                          child: GestureDetector(
+                            behavior: HitTestBehavior.opaque,
+                            onTap: () {
+                              if (i != index) HapticFeedback.selectionClick();
+                              onSelect(i);
+                            },
+                            child: ConstrainedBox(
+                              constraints: const BoxConstraints(minHeight: 50),
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  TweenAnimationBuilder<Color?>(
+                                    duration: duration,
+                                    tween: ColorTween(end: i == index ? p.brand : p.inkSoft),
+                                    builder: (_, c, _) => Icon(tab.icon, size: 25, color: c),
+                                  ),
+                                  const SizedBox(height: 3),
+                                  Text(
+                                    tab.label,
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: t.labelSmall?.copyWith(
+                                      fontSize: 11,
+                                      color: i == index ? p.brand : p.inkSoft,
+                                    ),
+                                  ),
+                                ],
                               ),
-                              const SizedBox(height: 4),
-                              Text(
-                                tab.label,
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                                style: t.labelSmall?.copyWith(color: i == index ? p.ink : p.inkSoft),
-                              ),
-                            ],
+                            ),
                           ),
                         ),
                       ),
-                    ),
-                  ),
-              ],
+                  ],
+                ),
+              ),
             ),
           ),
         ),

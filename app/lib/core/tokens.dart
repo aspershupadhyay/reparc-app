@@ -13,9 +13,10 @@ abstract final class Space {
 }
 
 abstract final class Radii {
-  static const s = 12.0;
-  static const m = 20.0;
-  static const l = 28.0;
+  // iOS-like corners: grouped lists 10, controls 14, cards 18.
+  static const s = 10.0;
+  static const m = 14.0;
+  static const l = 18.0;
 
   static const small = BorderRadius.all(Radius.circular(s));
   static const medium = BorderRadius.all(Radius.circular(m));

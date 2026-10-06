@@ -24,7 +24,7 @@ RigStyle rigStyle(Palette p) => RigStyle(
   labelText: p.onEnergy,
 );
 
-const _labelStyle = TextStyle(fontFamily: 'Manrope', fontSize: 11, fontWeight: FontWeight.w800);
+const _labelStyle = TextStyle(fontFamily: 'Inter', fontSize: 11, fontWeight: FontWeight.w800);
 
 /// Position in an exercise loop: the pose and the current phase name.
 class LoopFrame {

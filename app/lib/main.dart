@@ -11,8 +11,8 @@ import 'data/providers.dart';
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
   LicenseRegistry.addLicense(() async* {
-    final ofl = await rootBundle.loadString('assets/fonts/OFL.txt');
-    yield LicenseEntryWithLineBreaks(['Manrope'], ofl);
+    final ofl = await rootBundle.loadString('assets/fonts/Inter-OFL.txt');
+    yield LicenseEntryWithLineBreaks(['Inter'], ofl);
     final lucide = await rootBundle.loadString('assets/licenses/lucide-ISC.txt');
     yield LicenseEntryWithLineBreaks(['Lucide icons'], lucide);
   });

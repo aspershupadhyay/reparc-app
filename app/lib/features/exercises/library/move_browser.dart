@@ -198,7 +198,7 @@ class MoveTile extends StatelessWidget {
         padding: const EdgeInsets.all(Space.s),
         onTap: onTap,
         semanticLabel:
-            '${m.name}. ${m.area.label}. ${m.equipment}. ${m.level.label}${m.coached != null ? '. Coached guide' : ''}',
+            '${m.name}. ${m.target.label}. ${m.equipment}. ${m.level.label}${m.coached != null ? '. Coached guide' : ''}',
         child: ExcludeSemantics(
           child: Row(
             children: [
@@ -225,7 +225,7 @@ class MoveTile extends StatelessWidget {
                         const SizedBox(width: 6),
                         Expanded(
                           child: Text(
-                            '${m.area.short} · ${m.equipment} · ${m.level.label}',
+                            '${m.target.label} · ${m.equipment} · ${m.level.label}',
                             style: t.bodySmall,
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,

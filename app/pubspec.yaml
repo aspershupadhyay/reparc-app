@@ -31,12 +31,12 @@ dev_dependencies:
 flutter:
   uses-material-design: true
   assets:
-    - assets/fonts/OFL.txt
+    - assets/fonts/Inter-OFL.txt
     - assets/licenses/lucide-ISC.txt
     - assets/licenses/free-exercise-db-Unlicense.txt
     - assets/exercises/
     - assets/exercises/img/
   fonts:
-    - family: Manrope
+    - family: Inter
       fonts:
-        - asset: assets/fonts/Manrope-Variable.ttf
+        - asset: assets/fonts/Inter-Variable.ttf

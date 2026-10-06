@@ -140,7 +140,22 @@ void main() {
 
     await tester.tap(find.text('Exercises'));
     await tester.pumpAndSettle();
-    expect(find.text('Browse by body area'), findsOneWidget);
+    expect(find.text('Pick a body part'), findsOneWidget);
+
+    // Arms splits into biceps, triceps, and forearms, with picks to start.
+    await tester.tap(find.bySemanticsLabel(RegExp('^Arms: Biceps, Triceps, Forearms')));
+    await tester.pumpAndSettle();
+    expect(find.bySemanticsLabel('Biceps'), findsOneWidget);
+    expect(find.bySemanticsLabel('Triceps'), findsOneWidget);
+    expect(find.bySemanticsLabel('Forearms'), findsOneWidget);
+    expect(find.text('Start here'), findsOneWidget);
+    expect(find.textContaining('Barbell curl'), findsWidgets);
+    await tester.tap(find.bySemanticsLabel('Triceps'));
+    await tester.pumpAndSettle();
+    expect(find.textContaining('Triceps pushdown'), findsWidgets);
+    await tester.tap(find.byTooltip('Back'));
+    await tester.pumpAndSettle();
+
     await tester.tap(find.textContaining('Search ${library.moves.length} exercises'));
     await tester.pumpAndSettle();
 
@@ -149,8 +164,9 @@ void main() {
     expect(find.text('1 exercise'), findsOneWidget);
     await tester.tap(find.text('Air Bike'));
     await tester.pumpAndSettle();
-    expect(find.text('How to do it'), findsOneWidget);
     expect(find.text('End'), findsOneWidget);
+    await tester.scrollUntilVisible(find.text('How to do it'), 300, scrollable: find.byType(Scrollable).last);
+    expect(find.text('How to do it'), findsOneWidget);
 
     await tester.tap(find.widgetWithText(FilledButton, 'Start workout with this'));
     await tester.pumpAndSettle();

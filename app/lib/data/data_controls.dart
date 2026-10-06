@@ -12,7 +12,7 @@ class DataControls {
   final Clock clock;
 
   /// Version of the export file layout. Change it when fields change.
-  static const exportFormatVersion = 1;
+  static const exportFormatVersion = 2;
 
   /// Builds a JSON export of every local record.
   ///
@@ -34,6 +34,8 @@ class DataControls {
         'Timestamps are ISO 8601. Values ending in Z are UTC.',
         'Meal entry nutrient values are per source serving. amount and amountUnit are the amount eaten.',
         'null means the value was not recorded. It does not mean zero.',
+        'sodiumMg is milligrams. fiberG and sugarG are grams.',
+        'programs.plan is a JSON document: the roadmap days, warm-ups, and exercise targets.',
       ],
       'tables': {
         'exercises': await rows(db.exercises),
@@ -45,6 +47,8 @@ class DataControls {
         'foods': await rows(db.foods),
         'mealSlots': await rows(db.mealSlots),
         'mealEntries': await rows(db.mealEntries),
+        'programs': await rows(db.programs),
+        'bodyWeights': await rows(db.bodyWeights),
         'settings': await rows(db.settings),
       },
     };
@@ -61,6 +65,8 @@ class DataControls {
       db.templateExercises,
       db.workoutTemplates,
       db.mealEntries,
+      db.programs,
+      db.bodyWeights,
       db.foods,
       db.mealSlots,
       db.exercises,

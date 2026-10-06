@@ -10,6 +10,6 @@ import 'catalog/model.dart';
   BodyArea.shoulders => (p.orange, p.orangeSoft),
   BodyArea.arms => (p.brand, p.brandSoft),
   BodyArea.legs => (p.green, p.greenSoft),
-  BodyArea.glutes => (p.coral, p.coralSoft),
+  BodyArea.glutes => (p.green, p.greenSoft),
   BodyArea.core => (p.orange, p.orangeSoft),
 };

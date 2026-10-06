@@ -16,6 +16,7 @@ import '../features/me/me_screen.dart';
 import '../features/me/privacy_screen.dart';
 import '../features/meal/meal_screen.dart';
 import '../features/shell/app_shell.dart';
+import '../features/workout/calculator_screen.dart';
 import '../features/workout/exercise_detail_screen.dart';
 import '../features/workout/live_session_screen.dart';
 import '../features/workout/plan_screen.dart';
@@ -50,6 +51,11 @@ GoRouter buildRouter({String initialLocation = '/home'}) => GoRouter(
                   builder: (_, s) => SessionDetailScreen(id: s.pathParameters['id']!),
                 ),
                 GoRoute(path: 'library', builder: (_, _) => const LibraryScreen()),
+                GoRoute(path: 'calculator', builder: (_, _) => const CalculatorScreen()),
+                GoRoute(
+                  path: 'area/:area',
+                  builder: (_, s) => AreaScreen(area: BodyArea.values.byName(s.pathParameters['area']!)),
+                ),
                 GoRoute(
                   path: 'browse',
                   builder: (_, s) => BrowseScreen(area: BodyArea.values.asNameMap()[s.uri.queryParameters['area']]),

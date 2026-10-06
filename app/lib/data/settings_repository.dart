@@ -1,3 +1,4 @@
+import '../domain/targets.dart';
 import 'database.dart';
 import 'models.dart';
 
@@ -10,6 +11,9 @@ class AppSettings {
     this.showEnergy = true,
     this.storageNoticeSeen = false,
     this.themeMode = 'system',
+    this.profile = const Profile(),
+    this.targetsOn = false,
+    this.mealHidden = const {},
   });
 
   final String loadUnit;
@@ -27,6 +31,18 @@ class AppSettings {
   /// 'system', 'light', or 'dark'.
   final String themeMode;
 
+  /// What the user told the app about themselves (Me → Body and goals).
+  final Profile profile;
+
+  /// The user chose to see daily targets (handbook 5.5: never by default).
+  final bool targetsOn;
+
+  /// Nutrients the user hid from the Meal summary. Empty shows all.
+  final Set<String> mealHidden;
+
+  /// Targets for today, or empty when the user has not turned them on.
+  List<Target> get targets => targetsOn ? dailyTargets(profile) : const [];
+
   static AppSettings fromMap(Map<String, String> m) => AppSettings(
     loadUnit: Units.loadUnits.contains(m['loadUnit']) ? m['loadUnit']! : Units.kg,
     distanceUnit: Units.distanceUnits.contains(m['distanceUnit']) ? m['distanceUnit']! : Units.km,
@@ -34,6 +50,12 @@ class AppSettings {
     showEnergy: m['showEnergy'] != 'false',
     storageNoticeSeen: m['storageNoticeSeen'] == 'true',
     themeMode: const ['light', 'dark'].contains(m['themeMode']) ? m['themeMode']! : 'system',
+    profile: Profile.fromMap({
+      for (final e in m.entries)
+        if (e.key.startsWith('profile.')) e.key.substring(8): e.value,
+    }),
+    targetsOn: m['targetsOn'] == 'true',
+    mealHidden: {...?m['mealHidden']?.split(',').where((x) => x.isNotEmpty)},
   );
 }
 
@@ -62,4 +84,12 @@ class SettingsRepository {
   Future<void> setShowEnergy(bool v) => set('showEnergy', v.toString());
   Future<void> setStorageNoticeSeen() => set('storageNoticeSeen', 'true');
   Future<void> setThemeMode(String m) => set('themeMode', m);
+  Future<void> setTargetsOn(bool v) => set('targetsOn', v.toString());
+  Future<void> setMealHidden(Set<String> hidden) => set('mealHidden', hidden.isEmpty ? null : hidden.join(','));
+
+  Future<void> setProfile(Profile p) => db.transaction(() async {
+    for (final e in p.toMap().entries) {
+      await set('profile.${e.key}', e.value);
+    }
+  });
 }

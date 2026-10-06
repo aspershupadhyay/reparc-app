@@ -50,7 +50,7 @@ class Palette extends ThemeExtension<Palette> {
   final Color energy;
   final Color onEnergy;
 
-  /// Dark panel for the workout hero and the body model, in both modes.
+  /// Dark panel for the workout hero, in both modes.
   final Color panel;
   final Color panelRaised;
   final Color onPanel;
@@ -76,66 +76,68 @@ class Palette extends ThemeExtension<Palette> {
 
   Brightness get brightness => bg.computeLuminance() > 0.5 ? Brightness.light : Brightness.dark;
 
+  // iOS system colours (Human Interface Guidelines, "Color"), with a teal
+  // tint for identity and lime kept for training energy.
   static const light = Palette(
-    bg: Color(0xFFEEF4F4),
-    surface: Color(0xFFFFFFFF),
-    surfaceAlt: Color(0xFFF5F9F9),
-    line: Color(0xFFDCE6E6),
-    ink: Color(0xFF0F1B1D),
-    inkSoft: Color(0xFF56686B),
-    brand: Color(0xFF1E5B66),
+    bg: Color(0xFFF2F2F7), // systemGroupedBackground
+    surface: Color(0xFFFFFFFF), // secondarySystemGroupedBackground
+    surfaceAlt: Color(0xFFF2F2F7),
+    line: Color(0xFFE5E5EA), // separator, opaque
+    ink: Color(0xFF000000), // label
+    inkSoft: Color(0xFF636366), // secondaryLabel, opaque for 4.5:1
+    brand: Color(0xFF00727E),
     onBrand: Color(0xFFFFFFFF),
-    brandSoft: Color(0xFFDCEDEF),
+    brandSoft: Color(0xFFDDF0F2),
     energy: Color(0xFFC6F432),
-    onEnergy: Color(0xFF0F1B1D),
-    panel: Color(0xFF0F1B1D),
-    panelRaised: Color(0xFF1A282B),
-    onPanel: Color(0xFFF2F7F7),
-    onPanelSoft: Color(0xFF9FB1B4),
-    success: Color(0xFF2E8A57),
-    warning: Color(0xFFA35F00),
-    error: Color(0xFFC2362B),
-    green: Color(0xFF6FA83A),
-    greenSoft: Color(0xFFE8F3DC),
-    blue: Color(0xFF2F4FD9),
-    blueSoft: Color(0xFFE5E9FB),
-    orange: Color(0xFFF29F1F),
-    orangeSoft: Color(0xFFFFF0DA),
-    coral: Color(0xFFE85A43),
-    coralSoft: Color(0xFFFCE7E2),
+    onEnergy: Color(0xFF000000),
+    panel: Color(0xFF1C1C1E),
+    panelRaised: Color(0xFF2C2C2E),
+    onPanel: Color(0xFFFFFFFF),
+    onPanelSoft: Color(0xFF98989F),
+    success: Color(0xFF248A3D),
+    warning: Color(0xFFC93400),
+    error: Color(0xFFD70015),
+    green: Color(0xFF34C759), // systemGreen
+    greenSoft: Color(0xFFE3F6E7),
+    blue: Color(0xFF007AFF), // systemBlue
+    blueSoft: Color(0xFFE0EEFF),
+    orange: Color(0xFFFF9500), // systemOrange
+    orangeSoft: Color(0xFFFFF0DB),
+    coral: Color(0xFFFF3B30), // systemRed
+    coralSoft: Color(0xFFFFE5E3),
   );
 
   static const dark = Palette(
-    bg: Color(0xFF0A1012),
-    surface: Color(0xFF121A1D),
-    surfaceAlt: Color(0xFF182226),
-    line: Color(0xFF243136),
-    ink: Color(0xFFEAF1F1),
-    inkSoft: Color(0xFF93A5A9),
-    brand: Color(0xFF5CC1CC),
-    onBrand: Color(0xFF0A1012),
-    brandSoft: Color(0xFF15343A),
+    bg: Color(0xFF000000), // systemGroupedBackground (dark)
+    surface: Color(0xFF1C1C1E), // secondarySystemGroupedBackground (dark)
+    surfaceAlt: Color(0xFF2C2C2E),
+    line: Color(0xFF38383A),
+    ink: Color(0xFFFFFFFF),
+    inkSoft: Color(0xFF98989F),
+    brand: Color(0xFF40C8E0),
+    onBrand: Color(0xFF000000),
+    brandSoft: Color(0xFF0D2E33),
     energy: Color(0xFFC6F432),
-    onEnergy: Color(0xFF0A1012),
-    panel: Color(0xFF141E21),
-    panelRaised: Color(0xFF1D2A2E),
-    onPanel: Color(0xFFEAF1F1),
-    onPanelSoft: Color(0xFF93A5A9),
-    success: Color(0xFF5CC48A),
-    warning: Color(0xFFF0A847),
-    error: Color(0xFFFF7B6B),
-    green: Color(0xFF8CC657),
-    greenSoft: Color(0xFF1A2914),
-    blue: Color(0xFF5B86FF),
-    blueSoft: Color(0xFF142140),
-    orange: Color(0xFFFFB547),
-    orangeSoft: Color(0xFF2C2010),
-    coral: Color(0xFFFF7B63),
-    coralSoft: Color(0xFF331A17),
+    onEnergy: Color(0xFF000000),
+    panel: Color(0xFF1C1C1E),
+    panelRaised: Color(0xFF2C2C2E),
+    onPanel: Color(0xFFFFFFFF),
+    onPanelSoft: Color(0xFF98989F),
+    success: Color(0xFF30D158),
+    warning: Color(0xFFFF9F0A),
+    error: Color(0xFFFF453A),
+    green: Color(0xFF30D158),
+    greenSoft: Color(0xFF0F2A17),
+    blue: Color(0xFF0A84FF),
+    blueSoft: Color(0xFF0A2340),
+    orange: Color(0xFFFF9F0A),
+    orangeSoft: Color(0xFF2E1F06),
+    coral: Color(0xFFFF453A),
+    coralSoft: Color(0xFF33110F),
   );
 
   /// Readable glyph colour on [c]: white or ink, whichever has more contrast.
-  Color on(Color c) => contrast(c, const Color(0xFFFFFFFF)) >= 3 ? const Color(0xFFFFFFFF) : const Color(0xFF0F1B1D);
+  Color on(Color c) => contrast(c, const Color(0xFFFFFFFF)) >= 3 ? const Color(0xFFFFFFFF) : const Color(0xFF000000);
 
   @override
   Palette copyWith() => this;

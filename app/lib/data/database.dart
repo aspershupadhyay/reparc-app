@@ -64,6 +64,10 @@ class WorkoutSessions extends Table with RecordColumns {
   IntColumn get utcOffsetMinutes => integer()();
   TextColumn get timeZoneName => text()();
   TextColumn get note => text().nullable()();
+
+  /// Roadmap day this session came from, if any. Added in v3.
+  TextColumn get programId => text().nullable()();
+  IntColumn get programDay => integer().nullable()();
 }
 
 class SessionExercises extends Table with RecordColumns {
@@ -102,6 +106,11 @@ class Foods extends Table with RecordColumns {
   RealColumn get proteinG => real().nullable()();
   RealColumn get carbsG => real().nullable()();
   RealColumn get fatG => real().nullable()();
+
+  /// Added in v3. Null means not recorded.
+  RealColumn get fiberG => real().nullable()();
+  RealColumn get sugarG => real().nullable()();
+  RealColumn get sodiumMg => real().nullable()();
   BoolColumn get isEstimate => boolean().withDefault(const Constant(false))();
   TextColumn get source => text()();
   DateTimeColumn get sourceCheckedAt => dateTime().nullable()();
@@ -136,6 +145,11 @@ class MealEntries extends Table with RecordColumns {
   RealColumn get proteinG => real().nullable()();
   RealColumn get carbsG => real().nullable()();
   RealColumn get fatG => real().nullable()();
+
+  /// Added in v3. Per source serving, like the values above.
+  RealColumn get fiberG => real().nullable()();
+  RealColumn get sugarG => real().nullable()();
+  RealColumn get sodiumMg => real().nullable()();
   RealColumn get amount => real().nullable()();
   TextColumn get amountUnit => text().nullable()();
   BoolColumn get isEstimate => boolean().withDefault(const Constant(false))();
@@ -145,6 +159,31 @@ class MealEntries extends Table with RecordColumns {
   DateTimeColumn get eatenAt => dateTime().nullable()();
   TextColumn get timeZoneName => text()();
   TextColumn get note => text().nullable()();
+}
+
+/// A training roadmap the user chose and may have edited. Added in v3.
+///
+/// [plan] is a JSON document (see domain/roadmap.dart, `ProgramPlan`). The
+/// user owns it: every day, exercise, set, and rep target can change.
+class Programs extends Table with RecordColumns {
+  TextColumn get name => text().withLength(min: 1, max: 120)();
+  TextColumn get goal => text()();
+  TextColumn get level => text()();
+  TextColumn get equipment => text()();
+  IntColumn get daysPerWeek => integer()();
+  BoolColumn get active => boolean().withDefault(const Constant(false))();
+
+  /// Index of the next day to train in [plan].
+  IntColumn get nextDay => integer().withDefault(const Constant(0))();
+  TextColumn get plan => text()();
+}
+
+/// Body weight check-ins. The original unit is kept. Added in v3.
+class BodyWeights extends Table with RecordColumns {
+  TextColumn get day => text()();
+  RealColumn get value => real()();
+  TextColumn get unit => text()();
+  DateTimeColumn get measuredAt => dateTime()();
 }
 
 class Settings extends Table {
@@ -173,6 +212,8 @@ const _defaultKinds = [
     Foods,
     MealSlots,
     MealEntries,
+    Programs,
+    BodyWeights,
     Settings,
   ],
 )
@@ -185,7 +226,7 @@ class AppDatabase extends _$AppDatabase {
   /// Current local data format. Every change needs a migration, a test from
   /// the last supported version, and a recovery plan (handbook 7.5).
   @override
-  int get schemaVersion => 2;
+  int get schemaVersion => 3;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -201,6 +242,19 @@ class AppDatabase extends _$AppDatabase {
         for (final (id, kind) in _defaultKinds) {
           await (update(mealSlots)..where((s) => s.id.equals(id))).write(MealSlotsCompanion(kind: Value(kind)));
         }
+      }
+      // v2 -> v3: fiber, sugar, sodium; roadmaps; body weight.
+      if (from < 3) {
+        await m.addColumn(foods, foods.fiberG);
+        await m.addColumn(foods, foods.sugarG);
+        await m.addColumn(foods, foods.sodiumMg);
+        await m.addColumn(mealEntries, mealEntries.fiberG);
+        await m.addColumn(mealEntries, mealEntries.sugarG);
+        await m.addColumn(mealEntries, mealEntries.sodiumMg);
+        await m.addColumn(workoutSessions, workoutSessions.programId);
+        await m.addColumn(workoutSessions, workoutSessions.programDay);
+        await m.createTable(programs);
+        await m.createTable(bodyWeights);
       }
     },
     beforeOpen: (details) async {

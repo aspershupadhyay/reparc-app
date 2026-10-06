@@ -1,5 +1,3 @@
-import 'dart:async';
-
 import 'package:flutter/material.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
@@ -7,11 +5,35 @@ import '../../../core/motion.dart';
 import '../../../core/palette.dart';
 import '../../../core/tokens.dart';
 
-/// Start and end photos of a movement, shown as a slow loop.
+/// One phase of a demo rep.
+class _Phase {
+  const _Phase(this.label, this.hint, this.seconds, this.from, this.to);
+  final String label;
+  final String hint;
+  final double seconds;
+
+  /// Blend between the start (0) and end (1) photo.
+  final double from;
+  final double to;
+}
+
+/// A rep at a teaching pace: pause, move up in 1.5 s, pause, lower in
+/// 2.5 s. Slow enough to follow; the slow lowering matches common coaching.
+const _rep = [
+  _Phase('Start position', 'Set up and brace', 1.2, 0, 0),
+  _Phase('Move', 'Smooth and controlled. Breathe out', 1.5, 0, 1),
+  _Phase('End position', 'Pause and squeeze', 1.0, 1, 1),
+  _Phase('Return', 'Slowly, about 2–3 seconds. Breathe in', 2.5, 1, 0),
+];
+
+final double _repSeconds = _rep.fold(0.0, (a, p) => a + p.seconds);
+
+/// Start and end photos of a movement, played as a slow, steady rep.
 ///
-/// The photos cross-fade so the change between positions is easy to see.
-/// With reduced motion it does not loop; the user switches between the
-/// start and end photo instead. Tap to pause or play.
+/// The photos blend through the movement at a teaching tempo, with a label
+/// for each phase. The user can pause, play at half speed, or drag the
+/// slider to move between the two positions by hand. With reduced motion
+/// it does not play; the slider and Start/End buttons still work.
 class PhotoMotion extends StatefulWidget {
   const PhotoMotion({super.key, required this.photos, required this.name, this.height = 280});
   final (String, String) photos;
@@ -22,39 +44,58 @@ class PhotoMotion extends StatefulWidget {
   State<PhotoMotion> createState() => _PhotoMotionState();
 }
 
-class _PhotoMotionState extends State<PhotoMotion> {
-  static const _hold = Duration(milliseconds: 1100);
-  static const _fade = Duration(milliseconds: 450);
-
-  Timer? _timer;
-  bool _end = false;
-  bool _playing = false;
+class _PhotoMotionState extends State<PhotoMotion> with SingleTickerProviderStateMixin {
+  late final AnimationController _c = AnimationController(vsync: this, duration: _duration(1));
+  double _speed = 1;
+  double? _manual;
   bool _started = false;
+
+  static Duration _duration(double speed) => Duration(milliseconds: (_repSeconds * 1000 / speed).round());
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
     if (!_started) {
       _started = true;
-      if (!reduceMotion(context)) _play();
+      if (!reduceMotion(context)) _c.repeat();
     }
-  }
-
-  void _play() {
-    _timer?.cancel();
-    _timer = Timer.periodic(_hold + _fade, (_) => setState(() => _end = !_end));
-    setState(() => _playing = true);
-  }
-
-  void _pause() {
-    _timer?.cancel();
-    setState(() => _playing = false);
   }
 
   @override
   void dispose() {
-    _timer?.cancel();
+    _c.dispose();
     super.dispose();
+  }
+
+  /// Phase and blend for a point in the rep (0–1).
+  (_Phase, double) _at(double v) {
+    var t = v * _repSeconds;
+    for (final p in _rep) {
+      if (t <= p.seconds) {
+        final f = p.seconds == 0 ? 1.0 : t / p.seconds;
+        return (p, p.from + (p.to - p.from) * Curves.easeInOut.transform(f));
+      }
+      t -= p.seconds;
+    }
+    return (_rep.last, 0);
+  }
+
+  void _toggle() {
+    setState(() {
+      if (_c.isAnimating) {
+        _c.stop();
+      } else {
+        _manual = null;
+        _c.repeat();
+      }
+    });
+  }
+
+  void _setSpeed(double s) {
+    setState(() => _speed = s);
+    final running = _c.isAnimating;
+    _c.duration = _duration(s);
+    if (running) _c.repeat();
   }
 
   @override
@@ -64,85 +105,144 @@ class _PhotoMotionState extends State<PhotoMotion> {
     final reduced = reduceMotion(context);
     Widget photo(String path) => Image.asset(
       path,
-      key: ValueKey(path),
       fit: BoxFit.cover,
       width: double.infinity,
       height: widget.height,
+      gaplessPlayback: true,
       errorBuilder: (_, _, _) => Container(color: p.surfaceAlt),
     );
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        Semantics(
-          image: true,
-          label: '${widget.name}, ${_end ? 'end' : 'start'} position photo',
-          child: ClipRRect(
-            borderRadius: Radii.large,
-            child: GestureDetector(
-              onTap: reduced ? () => setState(() => _end = !_end) : (_playing ? _pause : _play),
-              child: Stack(
-                children: [
-                  AnimatedSwitcher(
-                    duration: reduced ? Duration.zero : _fade,
-                    switchInCurve: Motion.change,
-                    switchOutCurve: Motion.change,
-                    layoutBuilder: (current, previous) => Stack(children: [...previous, ?current]),
-                    child: photo(_end ? widget.photos.$2 : widget.photos.$1),
+    return AnimatedBuilder(
+      animation: _c,
+      builder: (context, _) {
+        final playing = _c.isAnimating;
+        final (phase, auto) = _at(_c.value);
+        final blend = _manual ?? (reduced && !playing ? 0.0 : auto);
+        final label = _manual != null || (!playing && reduced)
+            ? (blend < 0.5 ? 'Start position' : 'End position')
+            : phase.label;
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Semantics(
+              image: true,
+              label: '${widget.name}. $label photo',
+              child: ClipRRect(
+                borderRadius: Radii.large,
+                child: GestureDetector(
+                  onTap: reduced ? null : _toggle,
+                  child: Stack(
+                    children: [
+                      photo(widget.photos.$1),
+                      Opacity(opacity: blend.clamp(0.0, 1.0), child: photo(widget.photos.$2)),
+                      Positioned(
+                        left: Space.m,
+                        right: Space.m,
+                        bottom: Space.m,
+                        child: Row(
+                          children: [
+                            Flexible(child: _Badge(label, sub: _manual == null && playing ? phase.hint : null)),
+                            const Spacer(),
+                            if (!reduced)
+                              _Badge(playing ? 'Pause' : 'Play', icon: playing ? LucideIcons.pause : LucideIcons.play),
+                          ],
+                        ),
+                      ),
+                      // Rep progress, so the user sees where the rep is.
+                      if (playing)
+                        Positioned(
+                          left: 0,
+                          right: 0,
+                          top: 0,
+                          child: LinearProgressIndicator(
+                            value: _c.value,
+                            minHeight: 3,
+                            color: p.energy,
+                            backgroundColor: Colors.black26,
+                          ),
+                        ),
+                    ],
                   ),
-                  Positioned(
-                    left: Space.m,
-                    bottom: Space.m,
-                    child: _Badge(_end ? 'End' : 'Start'),
-                  ),
-                  if (!reduced)
-                    Positioned(
-                      right: Space.m,
-                      bottom: Space.m,
-                      child: _Badge(_playing ? 'Pause' : 'Play', icon: _playing ? LucideIcons.pause : LucideIcons.play),
-                    ),
-                ],
+                ),
               ),
             ),
-          ),
-        ),
-        if (reduced) ...[
-          const SizedBox(height: Space.s),
-          SegmentedButton<bool>(
-            segments: const [
-              ButtonSegment(value: false, label: Text('Start')),
-              ButtonSegment(value: true, label: Text('End')),
-            ],
-            selected: {_end},
-            onSelectionChanged: (s) => setState(() => _end = s.first),
-          ),
-        ] else ...[
-          const SizedBox(height: Space.xs),
-          Text('Tap the photo to pause.', style: t.bodySmall, textAlign: TextAlign.center),
-        ],
-      ],
+            const SizedBox(height: Space.s),
+            Row(
+              children: [
+                Text('Start', style: t.labelSmall),
+                Expanded(
+                  child: Slider(
+                    value: blend.clamp(0.0, 1.0),
+                    semanticFormatterCallback: (v) => v < 0.5 ? 'Near start position' : 'Near end position',
+                    onChangeStart: (_) => _c.stop(),
+                    onChanged: (v) => setState(() => _manual = v),
+                  ),
+                ),
+                Text('End', style: t.labelSmall),
+              ],
+            ),
+            if (!reduced)
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  for (final s in const [0.5, 1.0])
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 4),
+                      child: ChoiceChip(
+                        label: Text(s == 1 ? 'Normal speed' : 'Half speed'),
+                        selected: _speed == s,
+                        onSelected: (_) => _setSpeed(s),
+                      ),
+                    ),
+                ],
+              )
+            else
+              Text('Drag the slider to see the movement.', style: t.bodySmall, textAlign: TextAlign.center),
+          ],
+        );
+      },
     );
   }
 }
 
 class _Badge extends StatelessWidget {
-  const _Badge(this.text, {this.icon});
+  const _Badge(this.text, {this.icon, this.sub});
   final String text;
+  final String? sub;
   final IconData? icon;
 
   @override
   Widget build(BuildContext context) {
+    final t = Theme.of(context).textTheme;
     return ExcludeSemantics(
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
         decoration: BoxDecoration(
-          color: Colors.black.withValues(alpha: 0.55),
-          borderRadius: BorderRadius.circular(999),
+          color: Colors.black.withValues(alpha: 0.6),
+          borderRadius: BorderRadius.circular(12),
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
             if (icon != null) ...[Icon(icon, size: 14, color: Colors.white), const SizedBox(width: 4)],
-            Text(text, style: Theme.of(context).textTheme.labelSmall?.copyWith(color: Colors.white)),
+            Flexible(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    text,
+                    style: t.labelSmall?.copyWith(color: Colors.white, fontWeight: FontWeight.w700),
+                  ),
+                  if (sub != null)
+                    Text(
+                      sub!,
+                      style: t.labelSmall?.copyWith(color: Colors.white70, fontSize: 11),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                ],
+              ),
+            ),
           ],
         ),
       ),

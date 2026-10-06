@@ -1,6 +1,8 @@
 import 'dart:math' as math;
 
+import 'package:flutter/cupertino.dart' show CupertinoAlertDialog, CupertinoDialogAction;
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'motion.dart';
@@ -81,8 +83,12 @@ class ScreenTitle extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                if (subtitle != null) Text(subtitle!, style: t.bodySmall),
-                Semantics(header: true, child: Text(title, style: t.headlineSmall)),
+                if (subtitle != null)
+                  Text(
+                    subtitle!.toUpperCase(),
+                    style: t.bodySmall?.copyWith(fontWeight: FontWeight.w600, letterSpacing: 0.2),
+                  ),
+                Semantics(header: true, child: Text(title, style: t.displaySmall)),
               ],
             ),
           ),
@@ -271,7 +277,7 @@ class StatusLine extends StatelessWidget {
   }
 }
 
-/// Pill-shaped segmented control.
+/// iOS-style segmented control: a grey track with a raised thumb.
 class PillTabs<T> extends StatelessWidget {
   const PillTabs({
     super.key,
@@ -291,9 +297,13 @@ class PillTabs<T> extends StatelessWidget {
   Widget build(BuildContext context) {
     final p = context.pal;
     final t = Theme.of(context).textTheme;
+    final dark = p.brightness == Brightness.dark;
     return Container(
-      padding: const EdgeInsets.all(4),
-      decoration: BoxDecoration(color: p.surface, borderRadius: BorderRadius.circular(999)),
+      padding: const EdgeInsets.all(2),
+      decoration: BoxDecoration(
+        color: p.ink.withValues(alpha: dark ? 0.16 : 0.07),
+        borderRadius: BorderRadius.circular(10),
+      ),
       child: Row(
         children: [
           for (final v in values)
@@ -306,22 +316,34 @@ class PillTabs<T> extends StatelessWidget {
                 excludeSemantics: true,
                 child: GestureDetector(
                   behavior: HitTestBehavior.opaque,
-                  onTap: () => onChanged(v),
+                  onTap: () {
+                    if (v != selected) HapticFeedback.selectionClick();
+                    onChanged(v);
+                  },
                   child: AnimatedContainer(
                     duration: motionOf(context, Motion.standard),
                     curve: Motion.change,
-                    constraints: const BoxConstraints(minHeight: 44),
+                    constraints: const BoxConstraints(minHeight: 40),
                     alignment: Alignment.center,
                     padding: const EdgeInsets.symmetric(horizontal: Space.s),
                     decoration: BoxDecoration(
-                      color: v == selected ? p.ink : p.surface,
-                      borderRadius: BorderRadius.circular(999),
+                      color: v == selected ? (dark ? const Color(0xFF636366) : p.surface) : Colors.transparent,
+                      borderRadius: BorderRadius.circular(8),
+                      boxShadow: v == selected && !dark
+                          ? [
+                              BoxShadow(
+                                color: Colors.black.withValues(alpha: 0.10),
+                                blurRadius: 6,
+                                offset: const Offset(0, 2),
+                              ),
+                            ]
+                          : null,
                     ),
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         if (icon != null) ...[
-                          Icon(icon!(v), size: 16, color: v == selected ? p.surface : p.inkSoft),
+                          Icon(icon!(v), size: 16, color: p.ink),
                           const SizedBox(width: 6),
                         ],
                         Flexible(
@@ -329,7 +351,7 @@ class PillTabs<T> extends StatelessWidget {
                             label(v),
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
-                            style: t.labelMedium?.copyWith(color: v == selected ? p.surface : p.inkSoft),
+                            style: (v == selected ? t.labelMedium : t.bodyMedium)?.copyWith(color: p.ink, fontSize: 14),
                           ),
                         ),
                       ],
@@ -487,14 +509,15 @@ Future<bool> confirmAction(
 }) async {
   final ok = await showDialog<bool>(
     context: context,
-    builder: (context) => AlertDialog(
+    builder: (context) => CupertinoAlertDialog(
       title: Text(title),
       content: Text(body),
       actions: [
-        TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Cancel')),
-        TextButton(
+        CupertinoDialogAction(onPressed: () => Navigator.pop(context, false), child: const Text('Cancel')),
+        CupertinoDialogAction(
           onPressed: () => Navigator.pop(context, true),
-          style: destructive ? TextButton.styleFrom(foregroundColor: context.pal.error) : null,
+          isDestructiveAction: destructive,
+          isDefaultAction: !destructive,
           child: Text(confirmLabel),
         ),
       ],

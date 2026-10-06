@@ -18,6 +18,9 @@ extension MealEntryNutrition on MealEntry {
     proteinG: proteinG,
     carbsG: carbsG,
     fatG: fatG,
+    fiberG: fiberG,
+    sugarG: sugarG,
+    sodiumMg: sodiumMg,
     isEstimate: isEstimate,
     status: status,
   );
@@ -34,6 +37,9 @@ class FoodValues {
     this.proteinG,
     this.carbsG,
     this.fatG,
+    this.fiberG,
+    this.sugarG,
+    this.sodiumMg,
     this.isEstimate = false,
     this.source = sourceManual,
     this.note,
@@ -47,6 +53,9 @@ class FoodValues {
   final double? proteinG;
   final double? carbsG;
   final double? fatG;
+  final double? fiberG;
+  final double? sugarG;
+  final double? sodiumMg;
   final bool isEstimate;
   final String source;
   final String? note;
@@ -60,6 +69,9 @@ class FoodValues {
     proteinG: f.proteinG,
     carbsG: f.carbsG,
     fatG: f.fatG,
+    fiberG: f.fiberG,
+    sugarG: f.sugarG,
+    sodiumMg: f.sodiumMg,
     isEstimate: f.isEstimate,
     source: f.source,
     note: f.note,
@@ -74,6 +86,9 @@ class FoodValues {
     proteinG: e.proteinG,
     carbsG: e.carbsG,
     fatG: e.fatG,
+    fiberG: e.fiberG,
+    sugarG: e.sugarG,
+    sodiumMg: e.sodiumMg,
     isEstimate: e.isEstimate,
     source: e.source,
     note: e.note,
@@ -175,6 +190,9 @@ class MealRepository {
             proteinG: Value(food.proteinG),
             carbsG: Value(food.carbsG),
             fatG: Value(food.fatG),
+            fiberG: Value(food.fiberG),
+            sugarG: Value(food.sugarG),
+            sodiumMg: Value(food.sodiumMg),
             amount: Value(amount),
             amountUnit: Value(amountUnit),
             isEstimate: Value(food.isEstimate),
@@ -208,6 +226,9 @@ class MealRepository {
       proteinG: Value(food.proteinG),
       carbsG: Value(food.carbsG),
       fatG: Value(food.fatG),
+      fiberG: Value(food.fiberG),
+      sugarG: Value(food.sugarG),
+      sodiumMg: Value(food.sodiumMg),
       amount: Value(amount),
       amountUnit: Value(amountUnit),
       isEstimate: Value(food.isEstimate),
@@ -255,6 +276,9 @@ class MealRepository {
             proteinG: Value(v.proteinG),
             carbsG: Value(v.carbsG),
             fatG: Value(v.fatG),
+            fiberG: Value(v.fiberG),
+            sugarG: Value(v.sugarG),
+            sodiumMg: Value(v.sodiumMg),
             isEstimate: Value(v.isEstimate),
             source: v.source,
             sourceCheckedAt: Value(now),

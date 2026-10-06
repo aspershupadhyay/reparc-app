@@ -8,6 +8,7 @@ import '../../../core/widgets.dart';
 import '../../../data/providers.dart';
 import '../area_style.dart';
 import '../guide_screen.dart';
+import '../muscle_map.dart';
 import 'library.dart';
 import 'photo_motion.dart';
 import 'use_move.dart';
@@ -34,7 +35,7 @@ class MoveScreen extends ConsumerWidget {
     final t = Theme.of(context).textTheme;
     final (_, areaSoft) = areaColors(p, e.area);
     return Scaffold(
-      appBar: AppBar(title: Text(e.area.label)),
+      appBar: AppBar(title: Text(e.target.label)),
       bottomNavigationBar: SafeArea(
         child: Padding(
           padding: const EdgeInsets.fromLTRB(Space.l, Space.s, Space.l, Space.s),
@@ -64,7 +65,7 @@ class MoveScreen extends ConsumerWidget {
             spacing: Space.s,
             runSpacing: Space.s,
             children: [
-              Tag(e.area.label, color: areaSoft, icon: e.area.icon),
+              Tag(e.target.label, color: areaSoft),
               Tag(e.equipment, icon: LucideIcons.dumbbell),
               Tag(e.level.label, icon: LucideIcons.gauge),
               Tag(e.categoryLabel, icon: LucideIcons.layers),
@@ -73,11 +74,20 @@ class MoveScreen extends ConsumerWidget {
           ),
           const SizedBox(height: Space.l),
           AppCard(
-            color: p.surfaceAlt,
+            color: p.surface,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                _MuscleRow(label: 'Main', dot: p.energy, names: e.primary),
+                BodyMap(
+                  primary: {for (final m in e.primary) targetMuscle(m, e.name)},
+                  secondary: {for (final m in e.secondary) targetMuscle(m, e.name)},
+                  hot: p.coral,
+                  warm: p.orange,
+                  body: p.line,
+                  height: 170,
+                ),
+                const SizedBox(height: Space.m),
+                _MuscleRow(label: 'Main', dot: p.coral, names: e.primary),
                 if (e.secondary.isNotEmpty) _MuscleRow(label: 'Helpers', dot: p.orange, names: e.secondary),
               ],
             ),

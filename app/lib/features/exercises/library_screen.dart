@@ -9,13 +9,13 @@ import '../../core/widgets.dart';
 import '../../data/providers.dart';
 import '../workout/exercise_form.dart';
 import 'area_style.dart';
-import 'catalog/catalog.dart';
 import 'catalog/model.dart';
 import 'library/library.dart';
-import 'library/photo_motion.dart';
-import 'viewer.dart';
+import 'library/move_browser.dart';
+import 'muscle_map.dart';
+import 'rig/anatomy.dart';
 
-/// Area filter chips. Null means all areas.
+/// Area filter chips with each area's own body icon. Null means all areas.
 class AreaChips extends StatelessWidget {
   const AreaChips({super.key, required this.selected, required this.onChanged});
   final BodyArea? selected;
@@ -24,7 +24,7 @@ class AreaChips extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final p = context.pal;
-    Widget chip(String label, IconData? icon, bool sel, VoidCallback onTap) => Padding(
+    Widget chip(String label, Widget? icon, bool sel, VoidCallback onTap) => Padding(
       padding: const EdgeInsets.only(right: Space.s),
       child: Semantics(
         selected: sel,
@@ -40,14 +40,11 @@ class AreaChips extends StatelessWidget {
             onTap: onTap,
             child: Container(
               constraints: const BoxConstraints(minHeight: 44),
-              padding: const EdgeInsets.symmetric(horizontal: Space.l),
+              padding: EdgeInsets.only(left: icon == null ? Space.l : 6, right: Space.l),
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  if (icon != null) ...[
-                    Icon(icon, size: 16, color: sel ? p.surface : p.inkSoft),
-                    const SizedBox(width: 6),
-                  ],
+                  if (icon != null) ...[icon, const SizedBox(width: 6)],
                   Text(label, style: Theme.of(context).textTheme.labelMedium?.copyWith(color: sel ? p.surface : p.ink)),
                 ],
               ),
@@ -60,114 +57,23 @@ class AreaChips extends StatelessWidget {
       scrollDirection: Axis.horizontal,
       child: Row(
         children: [
-          chip('All', LucideIcons.layers, selected == null, () => onChanged(null)),
-          for (final a in BodyArea.values) chip(a.short, a.icon, selected == a, () => onChanged(a)),
+          chip('All', null, selected == null, () => onChanged(null)),
+          for (final a in BodyArea.values)
+            chip(
+              a.short,
+              MuscleIcon.area(a, size: 32, color: areaColors(p, a).$1),
+              selected == a,
+              () => onChanged(a),
+            ),
         ],
       ),
     );
   }
 }
 
-/// A card with a still body-model picture.
-class ExerciseCard extends StatelessWidget {
-  const ExerciseCard(this.e, {super.key, required this.onTap, this.trailing});
-  final ExerciseDef e;
-  final VoidCallback onTap;
-  final Widget? trailing;
-
-  @override
-  Widget build(BuildContext context) {
-    final p = context.pal;
-    final t = Theme.of(context).textTheme;
-    final (c, soft) = areaColors(p, e.area);
-    return Semantics(
-      button: true,
-      label: '${e.name}. ${e.area.label}. ${e.equipment}. ${e.level.label}',
-      excludeSemantics: true,
-      child: Material(
-        color: p.surface,
-        borderRadius: Radii.large,
-        clipBehavior: Clip.antiAlias,
-        child: InkWell(
-          onTap: onTap,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Stack(
-                children: [
-                  if (coachedPhotoPaths(e.id) case final photos?)
-                    PhotoThumb(photos.$1, height: 130)
-                  else
-                    ExerciseThumb(e, height: 130),
-                  Positioned(
-                    left: Space.s,
-                    top: Space.s,
-                    child: Tag(e.area.short, color: soft, textColor: p.ink),
-                  ),
-                  if (trailing != null) Positioned(right: 4, top: 4, child: trailing!),
-                ],
-              ),
-              Padding(
-                padding: const EdgeInsets.fromLTRB(Space.m, Space.m, Space.m, Space.m),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(e.name, style: t.titleSmall, maxLines: 2, overflow: TextOverflow.ellipsis),
-                    const SizedBox(height: 2),
-                    Row(
-                      children: [
-                        Container(
-                          width: 8,
-                          height: 8,
-                          decoration: BoxDecoration(color: c, shape: BoxShape.circle),
-                        ),
-                        const SizedBox(width: 6),
-                        Expanded(
-                          child: Text(e.level.label, style: t.bodySmall, maxLines: 1, overflow: TextOverflow.ellipsis),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-/// Grid of built-in exercises for one area, or all of them.
-class CatalogGrid extends StatelessWidget {
-  const CatalogGrid({super.key, required this.items, required this.onTap});
-  final List<ExerciseDef> items;
-  final void Function(ExerciseDef) onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return LayoutBuilder(
-      builder: (context, c) {
-        final cols = c.maxWidth > 600 ? 3 : 2;
-        final w = (c.maxWidth - Space.m * (cols - 1)) / cols;
-        return Wrap(
-          spacing: Space.m,
-          runSpacing: Space.m,
-          children: [
-            for (final e in items)
-              SizedBox(
-                width: w,
-                child: ExerciseCard(e, onTap: () => onTap(e)),
-              ),
-          ],
-        );
-      },
-    );
-  }
-}
-
-/// Exercise library: search and browse every movement, coached guides,
-/// and the user's own exercises.
+/// Exercises section of the Workout tab. Three steps, never a wall of
+/// exercises: pick a body area, pick a muscle, then start with a few
+/// hand-picked moves. The full list stays one tap away.
 class LibraryBody extends ConsumerWidget {
   const LibraryBody({super.key});
 
@@ -184,12 +90,13 @@ class LibraryBody extends ConsumerWidget {
         AppCard(
           onTap: () => context.push('/workout/browse'),
           semanticLabel: 'Search ${total ?? ''} exercises',
-          padding: const EdgeInsets.symmetric(horizontal: Space.l, vertical: Space.m),
+          padding: const EdgeInsets.symmetric(horizontal: Space.m, vertical: Space.m),
+          radius: Radii.small,
           child: ExcludeSemantics(
             child: Row(
               children: [
                 Icon(LucideIcons.search, size: IconSizes.s, color: p.inkSoft),
-                const SizedBox(width: Space.m),
+                const SizedBox(width: Space.s),
                 Expanded(
                   child: Text(
                     total == null ? 'Search exercises' : 'Search $total exercises or muscles',
@@ -200,18 +107,41 @@ class LibraryBody extends ConsumerWidget {
             ),
           ),
         ),
-        const SectionHeader('Browse by body area'),
-        _AreaGrid(counts: {for (final a in BodyArea.values) a: lib?.moves.where((m) => m.area == a).length}),
-        SectionHeader(
-          'Coached guides',
-          action: Text('${catalog.length}', style: t.bodySmall),
+        const SectionHeader('Pick a body part'),
+        AppCard(
+          padding: EdgeInsets.zero,
+          child: Column(
+            children: [
+              for (final (i, a) in BodyArea.values.indexed) ...[
+                if (i > 0) const Divider(indent: 72),
+                _AreaRow(area: a, count: lib?.moves.where((m) => m.area == a && m.kind == MoveKind.strength).length),
+              ],
+            ],
+          ),
         ),
-        Text(
-          'Step-by-step coaching with cues, breathing, and common mistakes.',
-          style: t.bodyMedium?.copyWith(color: p.inkSoft),
+        const SectionHeader('Tools'),
+        AppCard(
+          onTap: () => context.push('/workout/calculator'),
+          semanticLabel: 'Weight calculator. Find your working weight',
+          child: ExcludeSemantics(
+            child: Row(
+              children: [
+                IconBadge(LucideIcons.calculator, color: p.brandSoft, glyph: p.brand, size: 44),
+                const SizedBox(width: Space.m),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text('Weight calculator', style: t.titleMedium),
+                      Text('How much to lift, from your last set or your experience', style: t.bodySmall),
+                    ],
+                  ),
+                ),
+                Icon(LucideIcons.chevronRight, size: IconSizes.s, color: p.inkSoft),
+              ],
+            ),
+          ),
         ),
-        const SizedBox(height: Space.m),
-        CatalogGrid(items: catalog, onTap: (e) => context.push('/workout/guide/${e.id}')),
         SectionHeader(
           'Your exercises',
           action: TextButton.icon(
@@ -244,74 +174,245 @@ class LibraryBody extends ConsumerWidget {
   }
 }
 
-class _AreaGrid extends StatelessWidget {
-  const _AreaGrid({required this.counts});
-  final Map<BodyArea, int?> counts;
+class _AreaRow extends StatelessWidget {
+  const _AreaRow({required this.area, required this.count});
+  final BodyArea area;
+  final int? count;
 
   @override
   Widget build(BuildContext context) {
     final p = context.pal;
     final t = Theme.of(context).textTheme;
-    return LayoutBuilder(
-      builder: (context, c) {
-        final cols = c.maxWidth > 600 ? 4 : 2;
-        final w = (c.maxWidth - Space.m * (cols - 1)) / cols;
-        Widget tile(String label, IconData icon, Color color, Color soft, int? n, String route) => SizedBox(
-          width: w,
-          child: AppCard(
-            color: soft,
-            padding: const EdgeInsets.all(Space.m),
-            onTap: () => context.push(route),
-            semanticLabel: n == null ? label : '$label, $n exercises',
-            child: ExcludeSemantics(
-              child: Row(
-                children: [
-                  Icon(icon, color: color, size: IconSizes.m),
-                  const SizedBox(width: Space.s),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(label, style: t.titleSmall, maxLines: 1, overflow: TextOverflow.ellipsis),
-                        if (n != null) Text('$n', style: t.bodySmall),
-                      ],
+    final muscles = areaMuscles[area]!;
+    return Semantics(
+      button: true,
+      label: '${area.label}: ${muscles.map((m) => m.label).join(', ')}',
+      excludeSemantics: true,
+      child: InkWell(
+        onTap: () => context.push('/workout/area/${area.name}'),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: Space.l, vertical: Space.m),
+          child: Row(
+            children: [
+              MuscleIcon.area(area, size: 48, color: areaColors(p, area).$1),
+              const SizedBox(width: Space.m),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(area.short, style: t.titleMedium),
+                    Text(
+                      muscles.length == 1 ? muscles.first.hint : muscles.map((m) => m.label).join(' · '),
+                      style: t.bodySmall,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
-            ),
+              if (count != null) Text('$count', style: t.bodySmall),
+              const SizedBox(width: Space.xs),
+              Icon(LucideIcons.chevronRight, size: IconSizes.s, color: p.inkSoft),
+            ],
           ),
-        );
-        final all = counts.values.every((n) => n != null) ? counts.values.fold<int>(0, (a, n) => a + n!) : null;
-        return Wrap(
-          spacing: Space.m,
-          runSpacing: Space.m,
-          children: [
-            for (final a in BodyArea.values)
-              tile(
-                a.short,
-                a.icon,
-                areaColors(p, a).$1,
-                areaColors(p, a).$2,
-                counts[a],
-                '/workout/browse?area=${a.name}',
-              ),
-            tile('All', LucideIcons.layers, p.ink, p.surface, all, '/workout/browse'),
-          ],
-        );
-      },
+        ),
+      ),
     );
   }
 }
 
-/// Full-page library, opened from Home.
+/// One body area: choose a muscle, see where to start, then the rest.
+class AreaScreen extends ConsumerStatefulWidget {
+  const AreaScreen({super.key, required this.area, this.onPick, this.pickIcon});
+  final BodyArea area;
+
+  /// When set, tapping a move picks it (for example, to add to a workout).
+  final void Function(Move)? onPick;
+  final IconData? pickIcon;
+
+  @override
+  ConsumerState<AreaScreen> createState() => _AreaScreenState();
+}
+
+class _AreaScreenState extends ConsumerState<AreaScreen> {
+  late Muscle _muscle = areaMuscles[widget.area]!.first;
+  EquipKind? _equip;
+  MoveKind _kind = MoveKind.strength;
+
+  @override
+  Widget build(BuildContext context) {
+    final p = context.pal;
+    final t = Theme.of(context).textTheme;
+    final lib = ref.watch(libraryProvider);
+    final muscles = areaMuscles[widget.area]!;
+    final color = areaColors(p, widget.area).$1;
+    void open(Move m) => widget.onPick != null ? widget.onPick!(m) : context.push(m.route);
+    return Scaffold(
+      appBar: AppBar(title: Text(widget.area.short)),
+      body: AsyncBody(
+        value: lib,
+        builder: (lib) {
+          final all = lib.moves.where((m) => m.target == _muscle && m.kind == _kind).toList();
+          final equips = {for (final m in all) m.equipKind}.toList()..sort((a, b) => a.index.compareTo(b.index));
+          final shown = _equip == null ? all : all.where((m) => m.equipKind == _equip).toList();
+          final starts = _kind == MoveKind.strength
+              ? lib.essentialsFor(_muscle).where((m) => _equip == null || m.equipKind == _equip).toList()
+              : const <Move>[];
+          final startIds = {for (final m in starts) m.catalogId};
+          final rest = shown.where((m) => !startIds.contains(m.catalogId)).toList();
+          return CustomScrollView(
+            slivers: [
+              SliverPadding(
+                padding: const EdgeInsets.fromLTRB(Space.l, Space.s, Space.l, 0),
+                sliver: SliverList.list(
+                  children: [
+                    if (muscles.length > 1)
+                      Row(
+                        children: [
+                          for (final m in muscles)
+                            Expanded(
+                              child: Padding(
+                                padding: const EdgeInsets.symmetric(horizontal: 3),
+                                child: _MuscleChoice(
+                                  muscle: m,
+                                  color: color,
+                                  selected: m == _muscle,
+                                  onTap: () => setState(() {
+                                    _muscle = m;
+                                    _equip = null;
+                                  }),
+                                ),
+                              ),
+                            ),
+                        ],
+                      )
+                    else
+                      Center(child: MuscleIcon.muscle(_muscle, size: 96, color: color)),
+                    const SizedBox(height: Space.m),
+                    Text(
+                      _muscle.hint,
+                      style: t.bodyMedium?.copyWith(color: p.inkSoft),
+                      textAlign: TextAlign.center,
+                    ),
+                    const SizedBox(height: Space.m),
+                    PillTabs<MoveKind>(
+                      values: MoveKind.values,
+                      selected: _kind,
+                      label: (k) => k.label,
+                      onChanged: (k) => setState(() {
+                        _kind = k;
+                        _equip = null;
+                      }),
+                    ),
+                    const SizedBox(height: Space.s),
+                    SingleChildScrollView(
+                      scrollDirection: Axis.horizontal,
+                      child: Row(
+                        children: [
+                          for (final e in [null, ...equips])
+                            Padding(
+                              padding: const EdgeInsets.only(right: Space.s),
+                              child: ChoiceChip(
+                                label: Text(e?.label ?? 'Any equipment'),
+                                selected: _equip == e,
+                                onSelected: (_) => setState(() => _equip = e),
+                              ),
+                            ),
+                        ],
+                      ),
+                    ),
+                    if (starts.isNotEmpty) ...[
+                      SectionHeader('Start here', top: Space.l),
+                      Text(
+                        'The best moves for ${_muscle.label.toLowerCase()}. Pick one or two that fit your gym.',
+                        style: t.bodySmall,
+                      ),
+                      const SizedBox(height: Space.s),
+                      for (final m in starts)
+                        MoveTile(m, onTap: () => open(m), icon: widget.pickIcon ?? LucideIcons.chevronRight),
+                    ],
+                    SectionHeader(
+                      starts.isEmpty ? 'All ${_kind.label.toLowerCase()} moves' : 'More options',
+                      top: Space.l,
+                      action: Text('${rest.length}', style: t.bodySmall),
+                    ),
+                    if (rest.isEmpty)
+                      Text('Nothing else here. Try "Any equipment".', style: t.bodyMedium?.copyWith(color: p.inkSoft)),
+                  ],
+                ),
+              ),
+              SliverPadding(
+                padding: const EdgeInsets.fromLTRB(Space.l, 0, Space.l, Space.xxl),
+                sliver: SliverList.builder(
+                  itemCount: rest.length,
+                  itemBuilder: (_, i) =>
+                      MoveTile(rest[i], onTap: () => open(rest[i]), icon: widget.pickIcon ?? LucideIcons.chevronRight),
+                ),
+              ),
+            ],
+          );
+        },
+      ),
+    );
+  }
+}
+
+class _MuscleChoice extends StatelessWidget {
+  const _MuscleChoice({required this.muscle, required this.color, required this.selected, required this.onTap});
+  final Muscle muscle;
+  final Color color;
+  final bool selected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final p = context.pal;
+    final t = Theme.of(context).textTheme;
+    return Semantics(
+      selected: selected,
+      button: true,
+      label: muscle.label,
+      excludeSemantics: true,
+      child: Material(
+        color: p.surface,
+        borderRadius: Radii.medium,
+        child: InkWell(
+          borderRadius: Radii.medium,
+          onTap: onTap,
+          child: AnimatedContainer(
+            duration: Motion.quick,
+            padding: const EdgeInsets.symmetric(vertical: Space.s, horizontal: 4),
+            decoration: BoxDecoration(
+              borderRadius: Radii.medium,
+              border: Border.all(color: selected ? color : Colors.transparent, width: 2),
+            ),
+            child: Column(
+              children: [
+                MuscleIcon.muscle(muscle, size: 56, color: selected ? color : p.inkSoft),
+                const SizedBox(height: 6),
+                Text(
+                  muscle.label,
+                  style: t.labelSmall?.copyWith(color: selected ? p.ink : p.inkSoft),
+                  textAlign: TextAlign.center,
+                  maxLines: 2,
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Full-page body-area list, opened from Home.
 class LibraryScreen extends StatelessWidget {
   const LibraryScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Exercise library')),
+      appBar: AppBar(title: const Text('Exercises')),
       body: ListView(
         padding: const EdgeInsets.fromLTRB(Space.l, Space.s, Space.l, Space.xxl),
         children: const [LibraryBody()],

@@ -17,6 +17,7 @@ import 'catalog/model.dart';
 import 'library/library.dart';
 import 'library/photo_motion.dart';
 import 'library/use_move.dart';
+import 'muscle_map.dart';
 import 'viewer.dart';
 
 /// Coached guide for one built-in exercise.
@@ -63,7 +64,7 @@ class GuideScreen extends ConsumerWidget {
             spacing: Space.s,
             runSpacing: Space.s,
             children: [
-              Tag(e.area.label, color: areaSoft, icon: e.area.icon),
+              Tag(e.primary.first.label, color: areaSoft),
               Tag(e.equipment, icon: LucideIcons.dumbbell),
               Tag(e.level.label, icon: LucideIcons.gauge),
             ],
@@ -198,10 +199,12 @@ class _Muscles extends StatelessWidget {
       ),
     );
     return AppCard(
-      color: p.surfaceAlt,
+      color: p.surface,
       child: Column(
         children: [
-          row('Main', p.energy, e.primary.map((m) => m.label)),
+          BodyMap(primary: e.primary, secondary: e.secondary, hot: p.coral, warm: p.orange, body: p.line, height: 170),
+          const SizedBox(height: Space.m),
+          row('Main', p.coral, e.primary.map((m) => m.label)),
           if (e.secondary.isNotEmpty) row('Helpers', p.orange, e.secondary.map((m) => m.label)),
         ],
       ),

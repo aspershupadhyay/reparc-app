@@ -27,6 +27,19 @@ class ReparcApp extends ConsumerWidget {
       darkTheme: _dark,
       themeMode: mode,
       routerConfig: router,
+      scrollBehavior: const _IosScroll(),
     );
   }
+}
+
+/// iOS scrolling on every platform: bounce at the edges, no glow.
+class _IosScroll extends MaterialScrollBehavior {
+  const _IosScroll();
+
+  @override
+  ScrollPhysics getScrollPhysics(BuildContext context) =>
+      const BouncingScrollPhysics(parent: AlwaysScrollableScrollPhysics());
+
+  @override
+  Widget buildOverscrollIndicator(BuildContext context, Widget child, ScrollableDetails details) => child;
 }

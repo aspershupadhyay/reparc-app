@@ -5,6 +5,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../catalog/catalog.dart';
 import '../catalog/model.dart';
+import '../muscle_map.dart';
+import '../rig/anatomy.dart';
 
 /// Prefix for library exercise IDs saved in `exercises.catalogId`.
 const libraryPrefix = 'lib:';
@@ -64,20 +66,192 @@ class LibraryExercise {
   String get startPhoto => 'assets/exercises/img/${id}_0.webp';
   String get endPhoto => 'assets/exercises/img/${id}_1.webp';
 
-  BodyArea get area => areaForMuscle(primary.isEmpty ? '' : primary.first);
+  /// The one muscle this exercise mainly trains. Picks the delt head,
+  /// upper chest, or obliques from the name when the source groups them.
+  Muscle get target => targetMuscle(primary.isEmpty ? '' : primary.first, name);
+
+  BodyArea get area => target.area;
+
+  MoveKind get kind => switch (category) {
+    'stretching' => MoveKind.stretch,
+    'strength' || 'powerlifting' => MoveKind.strength,
+    _ => MoveKind.power,
+  };
 
   String get categoryLabel => _cap(category);
 }
 
-/// Groups a library muscle name into one of the app's body areas.
-BodyArea areaForMuscle(String m) => switch (m.toLowerCase()) {
-  'chest' => BodyArea.chest,
-  'lats' || 'middle back' || 'lower back' || 'traps' => BodyArea.back,
-  'shoulders' || 'neck' => BodyArea.shoulders,
-  'biceps' || 'triceps' || 'forearms' => BodyArea.arms,
-  'quadriceps' || 'calves' || 'adductors' || 'abductors' => BodyArea.legs,
-  'glutes' || 'hamstrings' => BodyArea.glutes,
-  _ => BodyArea.core,
+/// Kind of movement, so stretches and jumps do not crowd strength lists.
+enum MoveKind {
+  strength('Strength'),
+  stretch('Stretch'),
+  power('Power & cardio');
+
+  const MoveKind(this.label);
+  final String label;
+}
+
+/// Equipment groups for the filter. Fewer, clearer choices than the raw
+/// source labels.
+enum EquipKind {
+  bodyweight('Bodyweight'),
+  dumbbell('Dumbbell'),
+  barbell('Barbell'),
+  machine('Machine'),
+  cable('Cable'),
+  kettlebell('Kettlebell'),
+  band('Band'),
+  other('Other');
+
+  const EquipKind(this.label);
+  final String label;
+
+  static EquipKind of(String equipment) {
+    final e = equipment.toLowerCase();
+    if (e.startsWith('bodyweight') ||
+        e.startsWith('no equipment') ||
+        e.startsWith('pull-up') ||
+        e.startsWith('parallel')) {
+      return EquipKind.bodyweight;
+    }
+    if (e.startsWith('dumbbell') || e.startsWith('one dumbbell') || e.startsWith('plate or dumbbell'))
+      return EquipKind.dumbbell;
+    if (e.startsWith('barbell') || e.startsWith('ez bar')) return EquipKind.barbell;
+    if (e.startsWith('machine')) return EquipKind.machine;
+    if (e.startsWith('cable')) return EquipKind.cable;
+    if (e.startsWith('kettlebell')) return EquipKind.kettlebell;
+    if (e.startsWith('band')) return EquipKind.band;
+    return EquipKind.other;
+  }
+}
+
+/// Maps a library muscle name and exercise name to one target muscle.
+Muscle targetMuscle(String primary, String name) {
+  final n = name.toLowerCase();
+  bool has(List<String> words) => words.any(n.contains);
+  return switch (primary.toLowerCase()) {
+    'chest' => has(['incline']) && !has(['decline']) ? Muscle.upperChest : Muscle.chest,
+    'lats' => Muscle.lats,
+    'middle back' || 'traps' || 'neck' => Muscle.upperBack,
+    'lower back' => Muscle.lowerBack,
+    'shoulders' =>
+      has([
+            'rear',
+            'reverse fl',
+            'face pull',
+            'pull apart',
+            'back fly',
+            'bent over',
+            'bent-over',
+            'external rotation',
+            'internal rotation',
+          ])
+          ? Muscle.rearDelts
+          : has(['lateral', 'side', 'upright', 'deltoid raise', 'scaption', 'iron cross', 'cuban'])
+          ? Muscle.sideDelts
+          : Muscle.frontDelts,
+    'biceps' => Muscle.biceps,
+    'triceps' => Muscle.triceps,
+    'forearms' => Muscle.forearms,
+    'quadriceps' => Muscle.quads,
+    'hamstrings' => Muscle.hamstrings,
+    'calves' => Muscle.calves,
+    'adductors' => Muscle.adductors,
+    'glutes' || 'abductors' => Muscle.glutes,
+    _ =>
+      has([
+            'oblique',
+            'twist',
+            'side bend',
+            'side bridge',
+            'russian',
+            'wood',
+            'windmill',
+            'side plank',
+            'side jackknife',
+            'pallof',
+          ])
+          ? Muscle.obliques
+          : Muscle.abs,
+  };
+}
+
+/// Hand-picked "start here" exercises for each muscle, best first. They
+/// mix equipment so every gym has at least one. Coached guides lead.
+const essentials = <Muscle, List<String>>{
+  Muscle.upperChest: [
+    'incline-db-press',
+    'lib:Barbell_Incline_Bench_Press_-_Medium_Grip',
+    'lib:Incline_Cable_Flye',
+    'lib:Push-Ups_With_Feet_Elevated',
+  ],
+  Muscle.chest: ['bench-press', 'push-up', 'lib:Dumbbell_Bench_Press', 'dip-chest', 'cable-crossover', 'db-fly'],
+  Muscle.lats: ['pull-up', 'lat-pulldown', 'lib:Chin-Up', 'lib:Straight-Arm_Pulldown', 'lib:Band_Assisted_Pull-Up'],
+  Muscle.upperBack: [
+    'barbell-row',
+    'seated-cable-row',
+    'lib:One-Arm_Dumbbell_Row',
+    'lib:Inverted_Row',
+    'lib:Dumbbell_Shrug',
+  ],
+  Muscle.lowerBack: [
+    'lib:Hyperextensions_Back_Extensions',
+    'lib:Hyperextensions_With_No_Hyperextension_Bench',
+    'lib:Rack_Pulls',
+  ],
+  Muscle.frontDelts: ['overhead-press', 'seated-db-press', 'lib:Arnold_Dumbbell_Press', 'lib:Front_Dumbbell_Raise'],
+  Muscle.sideDelts: [
+    'lateral-raise',
+    'lib:Cable_Seated_Lateral_Raise',
+    'lib:Lateral_Raise_-_With_Bands',
+    'lib:One-Arm_Incline_Lateral_Raise',
+  ],
+  Muscle.rearDelts: ['face-pull', 'rear-delt-fly', 'lib:Reverse_Machine_Flyes', 'lib:Band_Pull_Apart'],
+  Muscle.biceps: [
+    'barbell-curl',
+    'hammer-curl',
+    'lib:Dumbbell_Bicep_Curl',
+    'lib:Incline_Dumbbell_Curl',
+    'lib:Preacher_Curl',
+  ],
+  Muscle.triceps: [
+    'triceps-pushdown',
+    'overhead-triceps',
+    'skull-crusher',
+    'lib:Close-Grip_Barbell_Bench_Press',
+    'lib:Push-Ups_-_Close_Triceps_Position',
+  ],
+  Muscle.forearms: [
+    'lib:Farmers_Walk',
+    'lib:Palms-Up_Dumbbell_Wrist_Curl_Over_A_Bench',
+    'lib:Palms-Down_Dumbbell_Wrist_Curl_Over_A_Bench',
+    'lib:Reverse_Barbell_Curl',
+  ],
+  Muscle.quads: ['back-squat', 'goblet-squat', 'split-squat', 'lib:Leg_Press', 'leg-extension', 'lib:Bodyweight_Squat'],
+  Muscle.hamstrings: [
+    'romanian-deadlift',
+    'lying-leg-curl',
+    'lib:Seated_Leg_Curl',
+    'lib:Stiff-Legged_Dumbbell_Deadlift',
+  ],
+  Muscle.calves: ['calf-raise', 'lib:Seated_Calf_Raise', 'lib:Standing_Dumbbell_Calf_Raise'],
+  Muscle.adductors: ['lib:Thigh_Adductor', 'lib:Band_Hip_Adductions'],
+  Muscle.glutes: [
+    'hip-thrust',
+    'glute-bridge',
+    'kettlebell-swing',
+    'lib:Single_Leg_Glute_Bridge',
+    'lib:Thigh_Abductor',
+  ],
+  Muscle.abs: [
+    'plank',
+    'dead-bug',
+    'hanging-knee-raise',
+    'lib:Cable_Crunch',
+    'lib:Barbell_Ab_Rollout_-_On_Knees',
+    'lib:Reverse_Crunch',
+  ],
+  Muscle.obliques: ['pallof-press', 'russian-twist', 'lib:Side_Bridge', 'lib:Oblique_Crunches_-_On_The_Floor'],
 };
 
 String _cap(String s) => s.isEmpty ? s : s[0].toUpperCase() + s.substring(1);
@@ -149,7 +323,21 @@ class Move {
   final LibraryExercise? library;
 
   String get name => coached?.name ?? library!.name;
-  BodyArea get area => coached?.area ?? library!.area;
+
+  /// The muscle this movement mainly trains. Browse groups by it.
+  Muscle get target => coached?.primary.first ?? library!.target;
+  BodyArea get area => target.area;
+  MoveKind get kind => library?.kind ?? MoveKind.strength;
+  EquipKind get equipKind => EquipKind.of(equipment);
+  Set<Muscle> get helpers {
+    if (coached != null) return coached!.secondary;
+    final t = target;
+    return {
+      for (final m in library!.secondary)
+        if (targetMuscle(m, name) != t) targetMuscle(m, name),
+    };
+  }
+
   String get equipment => coached?.equipment ?? library!.equipment;
   Level get level => coached?.level ?? library!.level;
   String get catalogId => coached?.id ?? library!.catalogId;
@@ -175,6 +363,7 @@ class ExerciseLibrary {
         if (!covered.contains(e.id)) Move.library(e),
     ]..sort((a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()));
     moves = List.unmodifiable(all);
+    byCatalogId = {for (final m in all) m.catalogId: m};
   }
 
   factory ExerciseLibrary.parse(String json) {
@@ -189,6 +378,14 @@ class ExerciseLibrary {
 
   /// Every movement once, sorted by name.
   late final List<Move> moves;
+
+  /// Every movement by the ID a plan or a saved exercise uses.
+  late final Map<String, Move> byCatalogId;
+
+  /// Hand-picked starting exercises for [m] that exist in this build.
+  List<Move> essentialsFor(Muscle m) => [
+    for (final id in essentials[m] ?? const <String>[]) ?byCatalogId[id],
+  ];
 
   /// Equipment labels in use, most common first.
   late final List<String> equipment = () {
@@ -210,8 +407,11 @@ final libraryProvider = FutureProvider<ExerciseLibrary>(
 );
 
 /// Body area for any saved exercise row's `catalogId`.
-BodyArea? areaForCatalogId(String? catalogId, ExerciseLibrary? lib) =>
-    catalogById[catalogId]?.area ?? lib?.forCatalogId(catalogId)?.area;
+BodyArea? areaForCatalogId(String? catalogId, ExerciseLibrary? lib) => targetForCatalogId(catalogId, lib)?.area;
+
+/// Target muscle for any saved exercise row's `catalogId`.
+Muscle? targetForCatalogId(String? catalogId, ExerciseLibrary? lib) =>
+    catalogById[catalogId]?.primary.first ?? lib?.forCatalogId(catalogId)?.target;
 
 /// Screen that explains a saved exercise's `catalogId`, or null. Uses the
 /// top-level routes so it also opens above the live workout.
