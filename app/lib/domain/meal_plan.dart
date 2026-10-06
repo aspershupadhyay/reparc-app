@@ -365,5 +365,11 @@ DayPlan planDay({
     final left = protein - (_sum(meals.map((m) => m.total(Nutrient.protein))) ?? 0);
     if (left > protein * 0.05) notes.add('Still ${left.round()} g short of your protein target.');
   }
+  final noFiber = {
+    for (final m in meals)
+      for (final part in m.parts)
+        if (part.value(Nutrient.fiber) == null) part.food.name.toLowerCase(),
+  };
+  if (noFiber.isNotEmpty) notes.add('Fibre is not known for ${noFiber.join(', ')}. The fibre total leaves it out.');
   return DayPlan(meals, notes);
 }

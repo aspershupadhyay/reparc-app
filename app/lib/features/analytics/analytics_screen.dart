@@ -777,7 +777,11 @@ class _Nutrition extends StatelessWidget {
     final n = s.nutrition;
     final byDay = s.nutritionByDay;
     final avg = dailyAverage(byDay, Nutrient.energy).value;
-    final pk = (n.proteinG.value ?? 0) * 4, ck = (n.carbsG.value ?? 0) * 4, fk = (n.fatG.value ?? 0) * 9;
+    // A split needs all three macros. One that was never logged is missing, not zero.
+    final allKnown = n.proteinG.value != null && n.carbsG.value != null && n.fatG.value != null;
+    final pk = allKnown ? n.proteinG.value! * 4 : 0.0;
+    final ck = allKnown ? n.carbsG.value! * 4 : 0.0;
+    final fk = allKnown ? n.fatG.value! * 9 : 0.0;
     final total = pk + ck + fk;
     String pct(double v) => total == 0 ? missingText : '${(v / total * 100).round()}%';
     final daily = [for (final d in s.days) byDay[dayKey(d)]?.energyKcal.value];

@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:drift/drift.dart' show Value;
 
+import 'package:flutter/services.dart' show rootBundle;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:reparc/ai/contract.dart';
 import 'package:reparc/ai/proposals.dart';
@@ -67,6 +68,13 @@ void main() {
   late AiFixture f;
   setUp(() => f = AiFixture());
   tearDown(() => f.db.close());
+
+  test('the contract ships in the app bundle', () async {
+    // The phone reads it through rootBundle, so pubspec.yaml must list it.
+    TestWidgetsFlutterBinding.ensureInitialized();
+    final bundled = ToolContract.parse(await rootBundle.loadString('assets/mcp/tools.json'));
+    expect(bundled.tools.length, AiFixture.contract.tools.length);
+  });
 
   test('the contract lists twelve tools with known scopes', () {
     expect(AiFixture.contract.tools, hasLength(12));

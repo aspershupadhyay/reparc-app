@@ -16,6 +16,14 @@ void main() {
     expect(lib.byId['shrimp']!.valueFor(Nutrient.fiber, 100), isNull);
   });
 
+  test('a plan says when fibre is unknown for a food', () {
+    for (var seed = 0; seed < 14; seed++) {
+      final plan = planDay(lib: lib, diet: Diet.vegan, energy: null, protein: null, seed: seed);
+      final unknown = plan.meals.expand((m) => m.parts).any((p) => p.value(Nutrient.fiber) == null);
+      expect(plan.notes.any((n) => n.startsWith('Fibre is not known')), unknown);
+    }
+  });
+
   test('every meal idea uses known foods', () {
     for (final m in mealIdeas) {
       for (final (id, g) in m.parts) {

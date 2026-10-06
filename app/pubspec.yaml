@@ -1,7 +1,7 @@
 name: reparc
 description: "Reparc: local-first gym and meal logging for iPhone and Android."
 publish_to: 'none'
-version: 0.2.2+4
+version: 0.3.0+5
 
 environment:
   sdk: ^3.13.5
@@ -42,6 +42,7 @@ flutter:
     - assets/licenses/free-exercise-db-Unlicense.txt
     - assets/exercises/
     - assets/foods/
+    - assets/mcp/
     - assets/exercises/img/
   fonts:
     - family: Inter
