@@ -114,8 +114,9 @@ enum EquipKind {
         e.startsWith('parallel')) {
       return EquipKind.bodyweight;
     }
-    if (e.startsWith('dumbbell') || e.startsWith('one dumbbell') || e.startsWith('plate or dumbbell'))
+    if (e.startsWith('dumbbell') || e.startsWith('one dumbbell') || e.startsWith('plate or dumbbell')) {
       return EquipKind.dumbbell;
+    }
     if (e.startsWith('barbell') || e.startsWith('ez bar')) return EquipKind.barbell;
     if (e.startsWith('machine')) return EquipKind.machine;
     if (e.startsWith('cable')) return EquipKind.cable;

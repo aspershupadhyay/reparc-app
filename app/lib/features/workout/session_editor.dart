@@ -153,6 +153,11 @@ class _ExerciseCard extends ConsumerWidget {
                       ].join(' · '),
                       style: t.bodySmall,
                     ),
+                    if (view.item.note case final note?)
+                      Padding(
+                        padding: const EdgeInsets.only(top: 2),
+                        child: Text(note, style: t.bodySmall?.copyWith(color: context.pal.brand)),
+                      ),
                   ],
                 ),
               ),

@@ -35,6 +35,7 @@ flutter:
     - assets/licenses/lucide-ISC.txt
     - assets/licenses/free-exercise-db-Unlicense.txt
     - assets/exercises/
+    - assets/foods/
     - assets/exercises/img/
   fonts:
     - family: Inter

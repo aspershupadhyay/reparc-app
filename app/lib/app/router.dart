@@ -11,6 +11,7 @@ import '../features/exercises/library_screen.dart';
 import '../features/home/home_screen.dart';
 import '../features/me/ai_connections_screen.dart';
 import '../features/me/app_updates_screen.dart';
+import '../features/me/body_screen.dart';
 import '../features/me/data_screen.dart';
 import '../features/me/me_screen.dart';
 import '../features/me/privacy_screen.dart';
@@ -20,6 +21,8 @@ import '../features/workout/calculator_screen.dart';
 import '../features/workout/exercise_detail_screen.dart';
 import '../features/workout/live_session_screen.dart';
 import '../features/workout/plan_screen.dart';
+import '../features/workout/roadmap_screens.dart';
+import '../domain/roadmap.dart';
 import '../features/workout/session_detail_screen.dart';
 import '../features/workout/workout_screen.dart';
 
@@ -52,6 +55,18 @@ GoRouter buildRouter({String initialLocation = '/home'}) => GoRouter(
                 ),
                 GoRoute(path: 'library', builder: (_, _) => const LibraryScreen()),
                 GoRoute(path: 'calculator', builder: (_, _) => const CalculatorScreen()),
+                GoRoute(
+                  path: 'roadmap/new',
+                  builder: (_, s) =>
+                      RoadmapBuilderScreen(goal: RoadmapGoal.values.asNameMap()[s.uri.queryParameters['goal']]),
+                ),
+                GoRoute(
+                  path: 'roadmap/:id/day/:day',
+                  builder: (_, s) => RoadmapDayScreen(
+                    programId: s.pathParameters['id']!,
+                    day: int.tryParse(s.pathParameters['day']!) ?? 0,
+                  ),
+                ),
                 GoRoute(
                   path: 'area/:area',
                   builder: (_, s) => AreaScreen(area: BodyArea.values.byName(s.pathParameters['area']!)),
@@ -109,6 +124,7 @@ GoRouter buildRouter({String initialLocation = '/home'}) => GoRouter(
               builder: (_, _) => const MeScreen(),
               routes: [
                 GoRoute(path: 'ai', builder: (_, _) => const AiConnectionsScreen()),
+                GoRoute(path: 'body', builder: (_, _) => const BodyScreen()),
                 GoRoute(path: 'updates', builder: (_, _) => const AppUpdatesScreen()),
                 GoRoute(path: 'data', builder: (_, _) => const DataScreen()),
                 GoRoute(path: 'privacy', builder: (_, _) => const PrivacyScreen()),

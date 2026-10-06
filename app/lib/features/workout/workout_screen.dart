@@ -12,10 +12,11 @@ import '../../core/widgets.dart';
 import '../../data/models.dart';
 import '../../data/providers.dart';
 import '../exercises/library_screen.dart';
+import 'roadmap_screens.dart';
 import 'session_clock.dart';
 import 'start_workout.dart';
 
-enum _Section { plans, exercises, history }
+enum _Section { roadmap, plans, exercises, history }
 
 /// Workout tab: plans, the exercise library, history, and the way into
 /// live logging (decision D-008). Layout follows the second reference.
@@ -27,7 +28,7 @@ class WorkoutScreen extends ConsumerStatefulWidget {
 }
 
 class _WorkoutScreenState extends ConsumerState<WorkoutScreen> {
-  _Section _section = _Section.plans;
+  _Section _section = _Section.roadmap;
 
   @override
   Widget build(BuildContext context) {
@@ -44,6 +45,7 @@ class _WorkoutScreenState extends ConsumerState<WorkoutScreen> {
               values: _Section.values,
               selected: _section,
               label: (s) => switch (s) {
+                _Section.roadmap => 'Roadmap',
                 _Section.plans => 'Plans',
                 _Section.exercises => 'Exercises',
                 _Section.history => 'History',
@@ -52,6 +54,7 @@ class _WorkoutScreenState extends ConsumerState<WorkoutScreen> {
             ),
             const SizedBox(height: Space.l),
             switch (_section) {
+              _Section.roadmap => const RoadmapSection(),
               _Section.plans => const _Plans(),
               _Section.exercises => const LibraryBody(),
               _Section.history => const _History(),

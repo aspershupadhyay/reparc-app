@@ -12,6 +12,7 @@ import '../../data/database.dart';
 import '../../data/meal_repository.dart';
 import '../../data/models.dart';
 import '../../data/providers.dart';
+import '../../domain/meal_plan.dart';
 import '../../domain/nutrition.dart';
 
 /// Adds or edits a food in a meal slot (handbook 5.2).
@@ -43,6 +44,9 @@ class _EntrySheetState extends ConsumerState<_EntrySheet> {
   late final _protein = TextEditingController(text: _n(_e?.proteinG));
   late final _carbs = TextEditingController(text: _n(_e?.carbsG));
   late final _fat = TextEditingController(text: _n(_e?.fatG));
+  late final _fiber = TextEditingController(text: _n(_e?.fiberG));
+  late final _sugar = TextEditingController(text: _n(_e?.sugarG));
+  late final _sodium = TextEditingController(text: _n(_e?.sodiumMg));
   late final _amount = TextEditingController(text: _e == null ? '' : _n(_e.amount));
   late String _amountUnit = _e?.amountUnit ?? 'serving';
   late bool _estimate = _e?.isEstimate ?? false;
@@ -62,7 +66,20 @@ class _EntrySheetState extends ConsumerState<_EntrySheet> {
 
   @override
   void dispose() {
-    for (final c in [_name, _brand, _serving, _kcal, _protein, _carbs, _fat, _amount, _search]) {
+    for (final c in [
+      _name,
+      _brand,
+      _serving,
+      _kcal,
+      _protein,
+      _carbs,
+      _fat,
+      _fiber,
+      _sugar,
+      _sodium,
+      _amount,
+      _search,
+    ]) {
       c.dispose();
     }
     super.dispose();
@@ -79,8 +96,37 @@ class _EntrySheetState extends ConsumerState<_EntrySheet> {
       _protein.text = _n(f.proteinG);
       _carbs.text = _n(f.carbsG);
       _fat.text = _n(f.fatG);
+      _fiber.text = _n(f.fiberG);
+      _sugar.text = _n(f.sugarG);
+      _sodium.text = _n(f.sodiumMg);
       _estimate = f.isEstimate;
       _source = f.source;
+      _search.clear();
+      _saveFood = false;
+    });
+  }
+
+  /// Fills the form from the bundled USDA list: values per 100 g, and the
+  /// usual portion as the amount.
+  void _useUsda(FoodItem f) {
+    String v(String k) => _n(f.per100g[k]);
+    setState(() {
+      _foodId = null;
+      _name.text = f.name;
+      _brand.text = '';
+      _serving.text = '100';
+      _servingUnit = 'g';
+      _kcal.text = v('kcal');
+      _protein.text = v('protein');
+      _carbs.text = v('carbs');
+      _fat.text = v('fat');
+      _fiber.text = v('fiber');
+      _sugar.text = v('sugar');
+      _sodium.text = v('sodium');
+      _estimate = false;
+      _source = f.source;
+      _amount.text = _n(f.portionG);
+      _amountUnit = 'g';
       _search.clear();
       _saveFood = false;
     });
@@ -102,6 +148,9 @@ class _EntrySheetState extends ConsumerState<_EntrySheet> {
     proteinG: _opt(_protein, 'Protein'),
     carbsG: _opt(_carbs, 'Carbs'),
     fatG: _opt(_fat, 'Fat'),
+    fiberG: _opt(_fiber, 'Fibre'),
+    sugarG: _opt(_sugar, 'Sugar'),
+    sodiumMg: _opt(_sodium, 'Salt (sodium)'),
     isEstimate: _estimate,
     source: _source,
   );
@@ -181,11 +230,14 @@ class _EntrySheetState extends ConsumerState<_EntrySheet> {
         proteinG: v.proteinG,
         carbsG: v.carbsG,
         fatG: v.fatG,
+        fiberG: v.fiberG,
+        sugarG: v.sugarG,
+        sodiumMg: v.sodiumMg,
         isEstimate: v.isEstimate,
         status: _status,
       );
       if (input.amount == null) return 'Enter the amount to see the values for what you ate.';
-      final hasAny = [v.energyKcal, v.proteinG, v.carbsG, v.fatG].any((x) => x != null);
+      final hasAny = [v.energyKcal, v.proteinG, v.carbsG, v.fatG, v.fiberG, v.sugarG, v.sodiumMg].any((x) => x != null);
       if (!hasAny) return 'No nutrition values entered. The food is still saved.';
       final f = servingFactor(
         servingAmount: v.servingAmount,
@@ -202,7 +254,10 @@ class _EntrySheetState extends ConsumerState<_EntrySheet> {
         if (n.energyKcal != null) '${fmtNum(n.energyKcal, maxDecimals: 0)} kcal',
         if (n.proteinG != null) 'protein ${fmtNum(n.proteinG)} g',
         if (n.carbsG != null) 'carbs ${fmtNum(n.carbsG)} g',
+        if (n.fiberG != null) 'fibre ${fmtNum(n.fiberG)} g',
         if (n.fatG != null) 'fat ${fmtNum(n.fatG)} g',
+        if (n.sugarG != null) 'sugar ${fmtNum(n.sugarG)} g',
+        if (n.sodiumMg != null) 'sodium ${fmtNum(n.sodiumMg, maxDecimals: 0)} mg',
       ];
       return 'For this amount: ${parts.join(', ')}${v.isEstimate ? ' (estimate)' : ''}.';
     } on FormatException catch (e) {
@@ -227,6 +282,13 @@ class _EntrySheetState extends ConsumerState<_EntrySheet> {
     final matches = q.isEmpty
         ? const <Food>[]
         : foods.where((f) => '${f.name} ${f.brand ?? ''}'.toLowerCase().contains(q)).take(6).toList();
+    final diet = ref.watch(currentSettingsProvider).profile.diet;
+    final usda = q.isEmpty
+        ? const <FoodItem>[]
+        : (ref.watch(foodLibraryProvider).value?.foods ?? const <FoodItem>[])
+              .where((f) => (diet == null || diet.allows(f.diet)) && f.name.toLowerCase().contains(q))
+              .take(8)
+              .toList();
     final adding = _e == null;
     final settings = ref.watch(currentSettingsProvider);
 
@@ -264,16 +326,31 @@ class _EntrySheetState extends ConsumerState<_EntrySheet> {
             selected: {_status},
             onSelectionChanged: (s) => setState(() => _status = s.first),
           ),
-          if (adding && foods.isNotEmpty) ...[
+          if (adding) ...[
             const SizedBox(height: Space.l),
             TextField(
               controller: _search,
               onChanged: (_) => setState(() {}),
               decoration: const InputDecoration(
                 prefixIcon: Icon(LucideIcons.search, size: IconSizes.s),
-                labelText: 'Find a saved food',
+                labelText: 'Find a food',
+                helperText: 'Your foods and a USDA list of common foods',
               ),
             ),
+            for (final f in usda)
+              ListTile(
+                title: Text(f.name),
+                subtitle: Text(
+                  [
+                    '${f.portion} (${fmtNum(f.portionG)} g)',
+                    if (settings.showEnergy && f.per100g['kcal'] != null)
+                      '${fmtNum(f.per100g['kcal']! * f.portionG / 100, maxDecimals: 0)} kcal',
+                    if (f.per100g['protein'] != null) '${fmtNum(f.per100g['protein']! * f.portionG / 100)} g protein',
+                  ].join(' · '),
+                ),
+                trailing: const Tag('USDA'),
+                onTap: () => _useUsda(f),
+              ),
             for (final f in matches)
               ListTile(
                 title: Text(f.name),
@@ -367,6 +444,35 @@ class _EntrySheetState extends ConsumerState<_EntrySheet> {
                 ),
               ),
             ],
+          ),
+          const SizedBox(height: Space.m),
+          Row(
+            children: [
+              Expanded(
+                child: TextField(
+                  controller: _fiber,
+                  onChanged: (_) => setState(() {}),
+                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                  decoration: num('Fibre', 'g'),
+                ),
+              ),
+              const SizedBox(width: Space.s),
+              Expanded(
+                child: TextField(
+                  controller: _sugar,
+                  onChanged: (_) => setState(() {}),
+                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                  decoration: num('Sugar', 'g'),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: Space.m),
+          TextField(
+            controller: _sodium,
+            onChanged: (_) => setState(() {}),
+            keyboardType: const TextInputType.numberWithOptions(decimal: true),
+            decoration: num('Salt (sodium)', 'mg'),
           ),
           SwitchListTile(
             contentPadding: EdgeInsets.zero,

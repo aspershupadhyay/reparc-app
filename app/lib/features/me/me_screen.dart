@@ -84,6 +84,14 @@ class MeScreen extends ConsumerWidget {
               },
               onChanged: repo.setThemeMode,
             ),
+            group('You', [
+              link(
+                lead(LucideIcons.personStanding, p.coral, p.coralSoft),
+                'Body and goals',
+                s.targetsOn ? 'Targets on' : 'Weight, goal, diet, and daily targets',
+                '/me/body',
+              ),
+            ]),
             group('Units', [
               ListTile(
                 leading: lead(LucideIcons.weight, p.blue, p.blueSoft),

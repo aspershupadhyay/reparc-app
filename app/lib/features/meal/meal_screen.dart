@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../core/clock.dart';
@@ -15,7 +16,9 @@ import '../../data/meal_repository.dart';
 import '../../data/models.dart';
 import '../../data/providers.dart';
 import '../../domain/nutrition.dart';
+import '../../domain/targets.dart';
 import 'meal_entry_sheet.dart';
+import 'plan_day_sheet.dart';
 import 'meal_style.dart';
 import 'slots_sheet.dart';
 
@@ -88,7 +91,8 @@ class _MealScreenState extends ConsumerState<MealScreen> {
             const SizedBox(height: Space.l),
             AsyncBody(
               value: entries,
-              builder: (list) => _Summary(entries: list, showEnergy: settings.showEnergy),
+              builder: (list) =>
+                  _Summary(entries: list, showEnergy: settings.showEnergy, targets: settings.targets, day: key),
             ),
             const SizedBox(height: Space.l),
             AsyncBody(
@@ -186,69 +190,99 @@ class _DayStrip extends ConsumerWidget {
   }
 }
 
+/// Today's eating against the user's own targets. Protein, carbs, fibre,
+/// and fat always show; sugar and salt show as limits. Without targets it
+/// shows totals and a way to set targets (handbook 5.5: never by default).
 class _Summary extends StatelessWidget {
-  const _Summary({required this.entries, required this.showEnergy});
+  const _Summary({required this.entries, required this.showEnergy, required this.targets, required this.day});
   final List<MealEntry> entries;
   final bool showEnergy;
+  final List<Target> targets;
+  final String day;
 
   @override
   Widget build(BuildContext context) {
     final t = Theme.of(context).textTheme;
     final p = context.pal;
     final totals = totalsOf(entries.map((e) => e.input));
+    final planned = plannedTotalsOf(entries.map((e) => e.input));
     final eaten = entries.where((e) => e.status == MealStatus.eaten).length;
+    final byN = {for (final x in targets) x.nutrient: x};
     final e = totals.energyKcal;
+    final eTarget = byN[Nutrient.energy];
 
-    Widget macro(String label, NutrientTotal n, IconData icon, Color color, Color soft) => Expanded(
-      child: Semantics(
-        label: '$label ${n.value == null ? missingLabel : '${fmtNum(n.value)} grams'}',
+    Widget bar(Nutrient n, Color color) {
+      final v = totals.of(n);
+      final target = byN[n];
+      final frac = target?.progress(v.value);
+      final valueText = v.value == null ? missingText : fmtNum(v.value, maxDecimals: 0);
+      final text = target == null
+          ? '$valueText ${n.unit}'
+          : '$valueText / ${fmtNum(target.amount, maxDecimals: 0)} ${n.unit}';
+      return Semantics(
+        label:
+            '${n.label}: ${v.value == null ? missingLabel : '${fmtNum(v.value)} ${n.unit}'}'
+            '${target == null ? '' : ' of ${fmtNum(target.amount)} target'}'
+            '${v.missing > 0 && v.counted > 0 ? '. ${v.missing} foods have no value' : ''}',
         excludeSemantics: true,
-        child: Container(
-          padding: const EdgeInsets.all(Space.m),
-          decoration: BoxDecoration(color: soft, borderRadius: Radii.medium),
+        child: Padding(
+          padding: const EdgeInsets.only(bottom: Space.m),
           child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               Row(
                 children: [
-                  Icon(icon, size: 16, color: color),
-                  const SizedBox(width: 4),
-                  Flexible(
-                    child: FittedBox(
-                      fit: BoxFit.scaleDown,
-                      alignment: Alignment.centerLeft,
-                      child: Text(label, style: t.labelSmall?.copyWith(color: p.ink), maxLines: 1),
-                    ),
+                  Container(
+                    width: 10,
+                    height: 10,
+                    decoration: BoxDecoration(color: color, shape: BoxShape.circle),
                   ),
+                  const SizedBox(width: 6),
+                  Expanded(child: Text(n.label, style: t.labelMedium)),
+                  Text(text, style: t.labelMedium?.tabular),
                 ],
               ),
-              const SizedBox(height: 4),
-              FittedBox(
-                fit: BoxFit.scaleDown,
-                alignment: Alignment.centerLeft,
-                child: Text(
-                  n.value == null ? missingText : '${fmtNum(n.value, maxDecimals: 0)} g',
-                  style: t.titleMedium?.tabular,
-                  maxLines: 1,
+              const SizedBox(height: 6),
+              ClipRRect(
+                borderRadius: BorderRadius.circular(4),
+                child: LinearProgressIndicator(
+                  value: frac == null ? 0 : frac.clamp(0.0, 1.0),
+                  minHeight: 8,
+                  color: color,
+                  backgroundColor: color.withValues(alpha: 0.15),
                 ),
               ),
+              if (v.missing > 0 && v.counted > 0)
+                Padding(
+                  padding: const EdgeInsets.only(top: 2),
+                  child: Text('${v.missing} food${v.missing == 1 ? '' : 's'} without a value', style: t.labelSmall),
+                ),
             ],
           ),
         ),
-      ),
-    );
+      );
+    }
 
+    String limitText(Nutrient n) {
+      final v = totals.of(n).value;
+      final target = byN[n];
+      final unit = n.unit;
+      final value = v == null ? missingText : '${fmtNum(v, maxDecimals: 0)} $unit';
+      return target == null ? value : '$value (under ${fmtNum(target.amount, maxDecimals: 0)})';
+    }
+
+    final plannedProtein = planned.proteinG.value;
     return AppCard(
-      padding: const EdgeInsets.all(Space.xl),
+      padding: const EdgeInsets.all(Space.l),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Row(
             children: [
               Expanded(
                 child: showEnergy
                     ? Metric(
-                        label: 'Eaten',
+                        label: eTarget == null ? 'Eaten' : 'Eaten of ${fmtNum(eTarget.amount, maxDecimals: 0)} kcal',
                         value: fmtNum(e.value, maxDecimals: 0),
                         unit: e.value == null ? null : 'kcal',
                         semanticValue: e.value == null ? missingLabel : null,
@@ -258,38 +292,75 @@ class _Summary extends StatelessWidget {
                     : Metric(label: 'Eaten', value: '$eaten', unit: eaten == 1 ? 'food' : 'foods', large: true),
               ),
               Ring(
-                value: entries.isEmpty ? 0 : eaten / entries.length,
+                value: showEnergy && eTarget != null
+                    ? (eTarget.progress(e.value) ?? 0)
+                    : (entries.isEmpty ? 0 : eaten / entries.length),
                 color: p.brand,
-                size: 84,
-                stroke: 9,
-                semanticLabel: '$eaten of ${entries.length} foods eaten',
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text('$eaten/${entries.length}', style: t.titleMedium?.tabular),
-                    Text('done', style: t.labelSmall),
-                  ],
+                size: 76,
+                stroke: 8,
+                semanticLabel: showEnergy && eTarget != null
+                    ? 'Energy: ${((eTarget.progress(e.value) ?? 0) * 100).round()}% of target'
+                    : '$eaten of ${entries.length} foods eaten',
+                child: Text(
+                  showEnergy && eTarget != null
+                      ? '${((eTarget.progress(e.value) ?? 0) * 100).round()}%'
+                      : '$eaten/${entries.length}',
+                  style: t.titleSmall?.tabular,
                 ),
               ),
             ],
           ),
           const SizedBox(height: Space.l),
+          bar(Nutrient.protein, p.coral),
+          bar(Nutrient.carbs, p.orange),
+          bar(Nutrient.fiber, p.green),
+          bar(Nutrient.fat, p.blue),
           Row(
             children: [
-              macro('Carbs', totals.carbsG, LucideIcons.wheat, p.orange, p.orangeSoft),
-              const SizedBox(width: Space.s),
-              macro('Protein', totals.proteinG, LucideIcons.beef, p.coral, p.coralSoft),
-              const SizedBox(width: Space.s),
-              macro('Fat', totals.fatG, LucideIcons.droplet, p.blue, p.blueSoft),
+              Expanded(
+                child: Text('Sugar: ${limitText(Nutrient.sugar)}', style: t.bodySmall),
+              ),
+              Expanded(
+                child: Text('Salt: ${limitText(Nutrient.sodium)}', style: t.bodySmall, textAlign: TextAlign.end),
+              ),
             ],
           ),
+          if (plannedProtein != null && plannedProtein > 0) ...[
+            const SizedBox(height: Space.s),
+            StatusLine(
+              icon: LucideIcons.clock,
+              text:
+                  'Planned, not eaten yet: ${fmtNum(plannedProtein, maxDecimals: 0)} g protein'
+                  '${planned.energyKcal.value != null && showEnergy ? ', ${fmtNum(planned.energyKcal.value, maxDecimals: 0)} kcal' : ''}.',
+            ),
+          ],
           if (totals.estimates > 0) ...[
-            const SizedBox(height: Space.m),
+            const SizedBox(height: Space.s),
             StatusLine(
               icon: LucideIcons.info,
               text: 'Includes ${totals.estimates} estimate${totals.estimates == 1 ? '' : 's'}',
             ),
           ],
+          const SizedBox(height: Space.m),
+          Row(
+            children: [
+              Expanded(
+                child: OutlinedButton.icon(
+                  onPressed: () => showPlanDaySheet(context, day: day),
+                  icon: const Icon(LucideIcons.wandSparkles, size: 18),
+                  label: const Text('Plan my day'),
+                ),
+              ),
+              const SizedBox(width: Space.s),
+              Expanded(
+                child: OutlinedButton.icon(
+                  onPressed: () => context.push('/me/body'),
+                  icon: Icon(targets.isEmpty ? LucideIcons.target : LucideIcons.slidersHorizontal, size: 18),
+                  label: Text(targets.isEmpty ? 'Set targets' : 'Targets'),
+                ),
+              ),
+            ],
+          ),
         ],
       ),
     );
@@ -416,11 +487,12 @@ class _EntryPill extends ConsumerWidget {
     final t = Theme.of(context).textTheme;
     final eaten = entry.status == MealStatus.eaten;
     final n = entry.input.eaten;
-    final sub = showEnergy
-        ? (n.energyKcal == null
-              ? fmtWithUnit(entry.amount, entry.amountUnit)
-              : '${fmtNum(n.energyKcal, maxDecimals: 0)} kcal')
-        : fmtWithUnit(entry.amount, entry.amountUnit);
+    final sub = [
+      showEnergy && n.energyKcal != null
+          ? '${fmtNum(n.energyKcal, maxDecimals: 0)} kcal'
+          : fmtWithUnit(entry.amount, entry.amountUnit),
+      if (n.proteinG != null) '${fmtNum(n.proteinG, maxDecimals: 0)} g protein',
+    ].join(' · ');
     return Padding(
       padding: const EdgeInsets.only(bottom: Space.s),
       child: Material(

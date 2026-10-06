@@ -3,6 +3,7 @@ import 'package:uuid/uuid.dart';
 
 import '../core/clock.dart';
 import 'database.dart';
+import '../domain/roadmap.dart';
 import 'models.dart';
 import 'watch.dart';
 
@@ -373,6 +374,70 @@ class WorkoutRepository {
     return id;
   });
 
+  /// Starts a session from one roadmap day. Warm-up moves stay on the day
+  /// screen; the session gets the working exercises, with lighter ramp-up
+  /// sets before the first big lift and the day's target as a note.
+  Future<String> startProgramDay({required String programId, required int dayIndex}) => db.transaction(() async {
+    final live = await liveSession();
+    if (live != null) throw StateError('A workout is already in progress.');
+    final row = await (db.select(db.programs)..where((p) => p.id.equals(programId))).getSingle();
+    final plan = ProgramPlan.decode(row.plan);
+    if (dayIndex < 0 || dayIndex >= plan.days.length) throw StateError('That day is not in the roadmap.');
+    final day = plan.days[dayIndex];
+    final local = clock();
+    final now = local.toUtc();
+    final id = _uuid.v4();
+    await db
+        .into(db.workoutSessions)
+        .insert(
+          WorkoutSessionsCompanion.insert(
+            id: id,
+            name: day.name,
+            status: SessionStatus.active,
+            startedAt: now,
+            utcOffsetMinutes: local.timeZoneOffset.inMinutes,
+            timeZoneName: local.timeZoneName,
+            programId: Value(programId),
+            programDay: Value(dayIndex),
+            createdAt: now,
+            updatedAt: now,
+          ),
+        );
+    var pos = 0;
+    for (final item in day.work) {
+      final exId = await ensureCatalogExercise(catalogId: item.exerciseId, name: item.name);
+      final seId = await _insertSessionExercise(id, exId, pos++);
+      final target = [
+        if (item.target.isNotEmpty) item.target,
+        if (item.restSec != null) 'rest ${_restText(item.restSec!)}',
+        if (item.rir != null) item.rir == 0 ? 'to failure' : '${item.rir} reps left',
+      ].join(' · ');
+      await (db.update(db.sessionExercises)..where((s) => s.id.equals(seId))).write(
+        SessionExercisesCompanion(note: Value('Target: $target')),
+      );
+      var setPos = 0;
+      if (item.rampUp) {
+        for (final _ in rampUpSets(plan.level)) {
+          await _insertSet(seId, setPos++, SetType.warmup);
+        }
+      }
+      for (var i = 0; i < item.sets; i++) {
+        final setId = await _insertSet(seId, setPos++, item.seconds != null ? SetType.timed : SetType.working);
+        if (item.seconds != null) {
+          // A target time to start from, not a completed value.
+          await updateSet(setId, SetEntriesCompanion(durationSec: Value(item.seconds)));
+        }
+      }
+    }
+    return id;
+  });
+
+  static String _restText(int s) => s >= 60 && s % 60 == 0
+      ? '${s ~/ 60} min'
+      : s > 60
+      ? '${s ~/ 60} min ${s % 60} s'
+      : '$s s';
+
   Stream<SessionDetail?> watchSession(String id) => watchTables(
     db,
     [db.workoutSessions, db.sessionExercises, db.setEntries, db.exercises],
@@ -477,6 +542,16 @@ class WorkoutRepository {
         restTargetSec: const Value(null),
       ),
     );
+    // A roadmap moves on to the next day once its session is saved.
+    if (s.programId != null && s.programDay != null) {
+      final prog = await (db.select(db.programs)..where((p) => p.id.equals(s.programId!))).getSingleOrNull();
+      if (prog != null) {
+        final days = ProgramPlan.decode(prog.plan).days.length;
+        await (db.update(db.programs)..where((p) => p.id.equals(prog.id))).write(
+          ProgramsCompanion(nextDay: Value(days == 0 ? 0 : (s.programDay! + 1) % days), updatedAt: Value(now)),
+        );
+      }
+    }
   }
 
   Future<void> renameSession(String id, String name) =>
