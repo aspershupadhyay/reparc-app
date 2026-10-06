@@ -141,7 +141,7 @@ class MeScreen extends ConsumerWidget {
               link(
                 lead(LucideIcons.sparkles, p.orange, p.orangeSoft),
                 'AI connections',
-                'None. Nothing is shared.',
+                'Off. You share a file only when you choose.',
                 '/me/ai',
               ),
             ]),

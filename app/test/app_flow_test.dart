@@ -70,7 +70,7 @@ void main() {
     await tester.tap(find.bySemanticsLabel('Me, tab 5 of 5'));
     await tester.pumpAndSettle();
     await tester.scrollUntilVisible(
-      find.text('None. Nothing is shared.'),
+      find.text('Off. You share a file only when you choose.'),
       300,
       scrollable: _scrollableIn(find.byType(MeScreen)),
     );
@@ -236,15 +236,15 @@ void main() {
     );
     expect(find.text('Off. Records stay on this phone.'), findsOneWidget);
     await tester.scrollUntilVisible(
-      find.text('None. Nothing is shared.'),
+      find.text('Off. You share a file only when you choose.'),
       300,
       scrollable: _scrollableIn(find.byType(MeScreen)),
     );
     await tester.drag(_scrollableIn(find.byType(MeScreen)), const Offset(0, -250));
     await tester.pumpAndSettle();
-    await tester.tap(find.text('None. Nothing is shared.'));
+    await tester.tap(find.text('Off. You share a file only when you choose.'));
     await tester.pumpAndSettle();
-    expect(find.text('No AI connections'), findsOneWidget);
+    expect(find.textContaining('No live connection.'), findsOneWidget);
     await unmount(tester);
   });
 }

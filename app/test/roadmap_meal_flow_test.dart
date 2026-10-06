@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
@@ -12,6 +13,8 @@ import 'package:reparc/data/providers.dart';
 import 'package:reparc/domain/meal_plan.dart';
 import 'package:reparc/domain/targets.dart';
 import 'package:reparc/features/exercises/library/library.dart';
+import 'package:reparc/features/me/ai_connections_screen.dart';
+import 'package:reparc/mcp/reparc_tools.dart';
 import 'package:reparc/features/workout/roadmap_screens.dart';
 
 import 'app_flow_test.dart' show unmount;
@@ -136,6 +139,27 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('Daily average'), findsOneWidget);
     expect(find.text('Sets per muscle'), findsNothing);
+    await unmount(tester);
+  });
+
+  testWidgets('import an AI roadmap only after preview and approval', (tester) async {
+    await pumpApp(tester, at: '/me/ai');
+    final list = find.descendant(of: find.byType(AiConnectionsScreen), matching: find.byType(Scrollable)).first;
+    await tester.scrollUntilVisible(find.text('Import a plan'), 300, scrollable: list);
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Import a plan', skipOffstage: false));
+    await tester.pumpAndSettle();
+    final example = jsonEncode((importFormats['roadmap']! as Map)['example']);
+    await tester.enterText(find.widgetWithText(TextField, 'Plan JSON'), '```json\n$example\n```');
+    await tester.tap(find.widgetWithText(OutlinedButton, 'Check'));
+    await tester.pumpAndSettle();
+    expect(find.text('Preview'), findsOneWidget);
+    expect(await db.select(db.programs).get(), isEmpty, reason: 'Nothing is saved before approval');
+    await tester.ensureVisible(find.text('Approve and use this roadmap'));
+    await tester.tap(find.text('Approve and use this roadmap'));
+    await tester.pumpAndSettle();
+    final rows = await db.select(db.programs).get();
+    expect(rows.single.active, isTrue);
     await unmount(tester);
   });
 }

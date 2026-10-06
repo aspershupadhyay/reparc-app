@@ -11,6 +11,9 @@ class DataControls {
   final AppDatabase db;
   final Clock clock;
 
+  /// Every data scope. An export for a backup uses all of them.
+  static const allScopes = {'workout', 'meal', 'body'};
+
   /// Version of the export file layout. Change it when fields change.
   static const exportFormatVersion = 2;
 
@@ -18,12 +21,22 @@ class DataControls {
   ///
   /// The export keeps field names, units, timestamps, sources, and missing
   /// values. A missing value is written as null, never as zero.
-  Future<String> exportJson({required String appVersion}) async {
+  ///
+  /// [scopes] limits the export to the data the user chose: `workout`,
+  /// `meal`, and `body` (profile, targets, weight). Settings that are not
+  /// personal data, such as units, are always kept.
+  Future<String> exportJson({required String appVersion, Set<String> scopes = DataControls.allScopes}) async {
     Future<List<Map<String, Object?>>> rows(TableInfo<Table, DataClass> t) async {
       final data = await db.select(t).get();
       return [for (final r in data) _jsonSafe(r.toJson(serializer: _IsoSerializer()))];
     }
 
+    final workout = scopes.contains('workout'), meal = scopes.contains('meal'), body = scopes.contains('body');
+    final settings = [
+      for (final r in await rows(db.settings))
+        if (body || !(r['key'] as String).startsWith('profile.') && r['key'] != 'targetsOn') r,
+    ];
+    final none = <Map<String, Object?>>[];
     final out = <String, Object?>{
       'format': 'reparc-export',
       'formatVersion': exportFormatVersion,
@@ -37,19 +50,23 @@ class DataControls {
         'sodiumMg is milligrams. fiberG and sugarG are grams.',
         'programs.plan is a JSON document: the roadmap days, warm-ups, and exercise targets.',
       ],
+      'scopes': [
+        for (final s in DataControls.allScopes)
+          if (scopes.contains(s)) s,
+      ],
       'tables': {
-        'exercises': await rows(db.exercises),
-        'workoutTemplates': await rows(db.workoutTemplates),
-        'templateExercises': await rows(db.templateExercises),
-        'workoutSessions': await rows(db.workoutSessions),
-        'sessionExercises': await rows(db.sessionExercises),
-        'setEntries': await rows(db.setEntries),
-        'foods': await rows(db.foods),
-        'mealSlots': await rows(db.mealSlots),
-        'mealEntries': await rows(db.mealEntries),
-        'programs': await rows(db.programs),
-        'bodyWeights': await rows(db.bodyWeights),
-        'settings': await rows(db.settings),
+        'exercises': workout ? await rows(db.exercises) : none,
+        'workoutTemplates': workout ? await rows(db.workoutTemplates) : none,
+        'templateExercises': workout ? await rows(db.templateExercises) : none,
+        'workoutSessions': workout ? await rows(db.workoutSessions) : none,
+        'sessionExercises': workout ? await rows(db.sessionExercises) : none,
+        'setEntries': workout ? await rows(db.setEntries) : none,
+        'foods': meal ? await rows(db.foods) : none,
+        'mealSlots': meal ? await rows(db.mealSlots) : none,
+        'mealEntries': meal ? await rows(db.mealEntries) : none,
+        'programs': workout ? await rows(db.programs) : none,
+        'bodyWeights': body ? await rows(db.bodyWeights) : none,
+        'settings': settings,
       },
     };
     return const JsonEncoder.withIndent('  ').convert(out);
