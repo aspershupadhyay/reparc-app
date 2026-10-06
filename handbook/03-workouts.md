@@ -153,3 +153,79 @@ Built 2026-10-06 (D-024, D-025).
 - First time: a cautious first weight for about 10 reps from experience level and body weight, lower for women, then a reps-left test that adjusts it by −5%, 0, +5%, or +10%. These ratios are starting guesses, not strength standards.
 
 **To confirm:** Coach review of the picks, roadmaps, warm-ups, and first-weight ratios.
+
+## 4.12 Proposed: one plan for roadmaps and plans
+
+**Status:** Proposed (D-030). Not built. Owner choices are listed at the end.
+
+### Purpose
+
+The app has two ways to plan training. A **plan** (`workout_templates`) is one workout. A **roadmap** (`programs`) is a training week. They use different tables, screens, and AI tools. An AI suggestion becomes plans, but an imported AI file becomes a roadmap. Users must learn both. This change makes one thing: a **plan** with one or more days.
+
+### The model
+
+- A plan has 1–7 days. Each day is the same `PlanDay` that roadmaps use now: warm-up, exercises with targets, cool-down.
+- A roadmap is a plan made by the builder. It also keeps its goal, level, and equipment.
+- A plan the user makes, an old plan, and an AI plan have no goal. They usually have no warm-up.
+- The user can **follow** one plan at a time. The followed plan sets Home's main card and the "next day". Finishing a day of the followed plan moves it on, as today.
+- The user can start any day of any plan at any time. That does not change the followed plan.
+- All plans stay in one table, `programs`. The JSON in `programs.plan` stays the source of the days.
+
+### User flow
+
+1. Workout has three sections: **Plan**, **Exercises**, **History** (was Roadmap, Plans, Exercises, History).
+2. **Plan** shows the followed plan's week first, then **Other plans**. With no plans, it shows the goal cards, as Roadmap does now.
+3. **New plan** asks: **Build for my goal** (the roadmap builder) or **Make my own** (an empty plan with one day).
+4. A plan page lists its days. The user can add, rename, reorder, and remove days, and **Follow this plan**, **Copy**, or **Delete**.
+5. A day page is today's roadmap day page. **Add exercise** also offers the user's own exercises.
+6. The start card at the top of Workout does not change.
+
+### Data and migration (schema v5)
+
+- `PlanItem.exerciseId` gets a third form: `user:<exercise id>` for an exercise the user made. Built-in guides (`bench-press`) and library moves (`lib:…`) do not change. Starting a day uses that row directly.
+- `ProgramPlan.goal`, `level`, and `setup` become optional. The plan's name comes from `programs.name`, so the user can rename it. For a plan without a goal, the `goal`, `level`, and `equipment` columns hold `custom`.
+- The v4 → v5 migration copies each old plan into `programs` with the same ID, one day, and `active = false`. Each exercise becomes one item: sets from `target_sets`, reps from `target_reps`. A missing target stays missing: the item gets one set and no reps, which starts exactly as today. A custom exercise gets a `user:` reference, and a built-in one keeps its `catalog_id`.
+- Sessions that came from an old plan get `program_id` (the same ID) and `program_day = 0`. `template_id` stays as it is.
+- The old tables stay in v5, but the app stops reading or writing them. If the copy fails, the migration stops, and nothing is lost. A later version removes the tables after the copy is proven on real phones.
+- Export v5 has no template tables. Import of a v4 or older file copies its plans with the same function the migration uses.
+- Encrypted backups restore through the normal migration.
+
+### AI
+
+- `propose_workout_plan` keeps its name and input. Approving a proposal makes **one** plan with one day for each proposed workout, not up to seven separate plans. It is saved, not followed. The user taps **Follow** if they want it.
+- `list_workout_plans` returns every plan with its days. `get_roadmap` stays and returns the followed plan.
+- The tool text in `app/lib/ai/contract.dart` and `gateway/src/contract.ts` changes, so the owner must redeploy the gateway.
+- Proposals that are already waiting still approve, because their stored format does not change.
+
+### States and failure paths
+
+- **Migration failure:** The app shows the database error screen. The v4 data stays as it was. A test must prove this.
+- **A plan whose exercise was archived:** The day still starts. The archived exercise is logged, as saved workouts do now.
+- **Deleting the followed plan:** Ask first. Afterwards nothing is followed, and Home shows **Start workout**.
+- **Deleting a plan:** Saved workouts keep their exercises and sets. `program_id` stays as a plain value.
+
+### Build order
+
+1. **Domain:** optional goal; `user:` references; one function that turns an old plan into a plan. Unit tests.
+2. **Migration v5:** the copy, a `schema_v4.sql` fixture, and a migration test that checks every plan, item, target, and session link.
+3. **Repository:** list, create, copy, rename, delete, follow, and day editing in `ProgramRepository`. Remove the template methods from `WorkoutRepository`. Export and import.
+4. **AI:** proposal approval, `list_workout_plans`, tool text, gateway contract, and their tests.
+5. **Screens:** the Plan section, the plan page, the new-plan choice, and the shared day page. Remove `plan_screen.dart` and the Plans section.
+6. **Handbook:** 4.6, 4.11, data model (7.2, 7.5 schema history), AI (section 10), diagrams, build progress, and release notes.
+
+Run format, analysis, generated-code checks, and all tests after each step. Test the migration on a real phone with real v4 data before release.
+
+### Acceptance checks
+
+- Every old plan, exercise, target, and session link survives the migration (test).
+- A plan with no targets starts with one empty set for each exercise, as today.
+- An AI proposal with three workouts makes one plan with three days, and nothing is followed until the user chooses.
+- The Workout tab has three sections, and the user can reach every plan in two taps.
+- Screen readers name each plan, day, and Follow button. Large text does not cut off day names.
+
+### Owner choices (To confirm)
+
+1. **Name.** Call the one thing a **plan** ("Build a plan for my goal"), or call everything a **roadmap**. Recommended: plan.
+2. **Old tables.** Keep `workout_templates` and `template_exercises` for one release, then remove them (recommended). Or remove them in v5.
+3. **AI proposals.** Several proposed workouts become one plan with days (recommended). Or each workout becomes its own one-day plan.
+4. **Following.** An approved AI plan or a new own plan is not followed until the user taps Follow (recommended). Or it is followed at once, as an imported roadmap is now.

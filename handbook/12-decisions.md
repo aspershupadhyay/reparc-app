@@ -2,7 +2,7 @@
 title: Decision record
 status: active-plan
 owner: maintainers
-updated: 2026-10-05
+updated: 2026-10-06
 ---
 
 # Decision record
@@ -356,3 +356,15 @@ Keep major choices here. Update the related chapter when a decision changes.
 **Privacy:** A check sends one HTTPS request to GitHub with no records, account, or device data. GitHub sees the IP address. The App updates screen says so.
 
 **Supersedes:** The AGENTS.md rule that the app must not use GitHub for updates, for the pre-store period only.
+
+## D-030: One plan model for roadmaps and plans
+
+**Status:** Proposed. Not approved.
+**Date:** 2026-10-06.
+
+**Choice:** Merge workout plans (`workout_templates`) into roadmaps (`programs`). A plan has 1–7 days. The user follows one plan; any day of any plan can start at any time. Schema v5 copies old plans and keeps the old tables for one release. See [section 4.12](03-workouts.md#412-proposed-one-plan-for-roadmaps-and-plans).
+
+**Why:** Two planning systems confused users. AI suggestions and AI imports landed in different places.
+
+**To confirm:** The name, when to remove the old tables, how AI proposals map to days, and whether new plans are followed at once (section 4.12, owner choices).
+
