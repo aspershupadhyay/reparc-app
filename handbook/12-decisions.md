@@ -333,6 +333,6 @@ Keep major choices here. Update the related chapter when a decision changes.
 **Status:** Accepted by the user for the local, file-based route.
 **Date:** 2026-10-06.
 
-**Choice:** Provide read-only MCP tools over a Reparc export file, and a small local MCP server (`app/tool/mcp/server.dart`, stdio only). The user picks Workouts, Meals, and Body data separately before export. AI-written roadmaps and meal plans come back through Me → AI connections → Import a plan, with a preview and approval. Imported foods are marked as estimates.
+**Choice:** Provide read-only MCP tools over a Reparc export file, and a small local MCP server (`app/tool/mcp/server.dart`, stdio only). The user picks Workouts, Meals, and Body data separately before export. AI-written roadmaps and meal plans come back through Me → AI connections → Share a file or import a plan, with a preview and approval. Imported foods are marked as estimates.
 
 **Boundary:** The phone opens no port and sends nothing in the background. A remote MCP service and live sync stay **To confirm** (D-006, D-009).

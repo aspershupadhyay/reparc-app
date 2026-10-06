@@ -4,7 +4,7 @@ A small Model Context Protocol server that lets an AI app read one Reparc export
 
 ## 1. Export your data
 
-In the app: **Me → AI connections**. Turn on the data you want to share (Workouts, Meals, Body and goals), then tap **Export for AI**. Save the file on your computer.
+In the app: **Me → AI connections → Share a file or import a plan**. Turn on the data you want to share (Workouts, Meals, Body and goals), then tap **Export for AI**. Save the file on your computer.
 
 The AI app and its provider receive what is in the file.
 
@@ -55,7 +55,7 @@ Tools for data you did not share are not offered. `null` means not recorded; it 
 
 ## Bring a plan back
 
-Ask the AI to write a roadmap or meal plan in the format from `get_import_formats`. In the app, open **Me → AI connections → Import a plan**, paste it, check the preview, and approve. Nothing changes until you approve.
+Ask the AI to write a roadmap or meal plan in the format from `get_import_formats`. In the app, open **Me → AI connections → Share a file or import a plan → Import a plan**, paste it, check the preview, and approve. Nothing changes until you approve.
 
 ## Update the data
 
