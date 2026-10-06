@@ -2,7 +2,7 @@
 title: Analytics and progress
 status: proposed
 owner: product-and-engineering
-updated: 2026-10-05
+updated: 2026-10-06
 ---
 
 # Section 6: Analytics and progress
@@ -61,3 +61,13 @@ If added, collect the smallest set of events needed. Do not include exercise nam
 - **Never:** Fill missing dates or claim a trend proves cause.
 - **Done when:** Every summary can be traced to saved source records.
 - **To confirm:** First-release metrics, optional product analytics, and goal types.
+
+## 6.7 Workout and Meal tabs
+
+Built 2026-10-06. Analytics has two tabs so each reads on its own. Both use the same range (7, 30, or 90 days).
+
+**Workout:** workouts and training days with change against the previous period; volume (load × reps of working sets, warm-ups excluded, pounds converted with the exact factor 0.45359237, sets without load or reps counted apart); working sets and reps; average session time without pauses; roadmap workouts done against planned weekdays; working sets per muscle per week against the common 10–20 range; estimated one-rep max over time for a chosen exercise (sets of 1–10 reps only; days without a usable set are not drawn); best lifts; weekly volume; and body weight.
+
+**Meal:** days with eaten food; daily averages for each nutrient over days that have a value (an empty day is not a zero day); days on target when targets are on; protein and fibre per day with the target line; and the energy split (4 kcal/g protein and carbs, 9 kcal/g fat).
+
+Calculations live in `app/lib/domain/analytics.dart` and have unit tests.

@@ -2,7 +2,7 @@
 title: Screens, design system, and motion
 status: proposed
 owner: product-design
-updated: 2026-10-05
+updated: 2026-10-06
 ---
 
 # Section 3: Screens, design system, and motion
@@ -29,21 +29,21 @@ See [Product and data diagrams](13-diagrams.md) for the navigation and record fl
 
 ### Five-tab bar
 
-Use five equal, labeled destinations. Use the Lucide icons `house`, `dumbbell`, `utensils`, `chart-no-axes-column`, and `user-round` for Home, Workout, Meal, Analytics, and Me. Confirm exact icon exports when the assets are added.
+Use five equal, labeled destinations. Use the Lucide icons `house`, `dumbbell`, `utensils`, `chart-no-axes-column`, and `user-round` for Home, Workout, Meal, Analytics, and Me.
 
-Use one active-state treatment. A lime pill can move to the selected item in 180-240 ms. Keep inactive labels readable. Do not hide labels to fit the bar. Keep every item within the minimum touch target. Preserve each tab state when the user changes tabs. Check safe-area insets on iPhone and Android.
+Use the iOS tab bar: a translucent bar with a thin top line. The selected tab's icon and label take the teal tint. There is no pill (D-018). Keep inactive labels readable. Do not hide labels to fit the bar. Keep every item within the minimum touch target. Preserve each tab state when the user changes tabs. Check safe-area insets on iPhone and Android.
 
 **Motion:** Move or fade the active indicator once. Do not bounce the whole bar. A reduced-motion setting must show the selection change immediately or with a simple color change.
 
 ## 3.2 Home screen
 
-Show one main action:
+Home answers three questions, in order:
 
-- **Start workout** when no workout is active.
-- **Continue workout** when a session is active.
-- **Log a meal** when the user has no meal action planned.
+1. **What do I do now?** One main action: **Continue workout** when a session is active, today's roadmap day when the user follows a roadmap, or **Start workout**.
+2. **How is today's eating going?** Rings for protein, fibre, carbs, and energy (or fat when calories are hidden), against the user's targets when they are on.
+3. **How is my week going?** Training days, and roadmap workouts done this week.
 
-Show a short daily summary. Do not put detailed charts here. Link to Analytics for trends.
+Then four shortcuts: Log food, Exercises, Weight calculator, and Body. Do not put detailed charts here. Link to Analytics for trends.
 
 ## 3.3 Meal tab
 
@@ -92,7 +92,7 @@ The two references use different palettes. Use their screen layouts as reference
 
 **Accepted style (owner, 2026-10-05):** One design system with a light and a dark mode. No purple. A soft mint-grey canvas, white cards, deep-teal selection, lime for training energy, and four warm category colours (green, blue, orange, coral) for meals, muscles, and charts. A dark ink panel holds the live workout and the exercise body model in both modes. The Meal tab follows the meal reference closely: day pills with a progress ring, a summary card, and a timeline of tinted meal pills with check circles.
 
-Use one font family: **Manrope**. Use font weight, size, and spacing to create hierarchy. Manrope uses the SIL Open Font License. Keep its license notice. Source: https://github.com/google/fonts/blob/main/ofl/manrope/OFL.txt
+Use one type style: **SF Pro** on iPhone (the system font) and **Inter** on Android and other platforms (D-018). Use the iOS text sizes: Large Title 34, Title 22, Headline 17, Body 17, Subheadline 15, Footnote 13, Caption 12. Inter uses the SIL Open Font License. Keep its license notice. Source: https://github.com/rsms/inter
 
 Use one icon family: **Lucide**. Use a reviewed subset with one stroke and size scale. Lucide uses the ISC license. Source: https://lucide.dev/license
 
@@ -112,17 +112,19 @@ Colours live in `app/lib/core/palette.dart`. Screens read colours only from ther
 
 | Role | Light | Dark | Use |
 |---|---|---|---|
-| Canvas | #EEF4F4 | #0A1012 | Screen background |
-| Surface | #FFFFFF | #121A1D | Cards |
-| Ink | #0F1B1D | #EAF1F1 | Main text |
-| Ink soft | #56686B | #93A5A9 | Supporting text |
-| Brand teal | #1E5B66 | #5CC1CC | Selection, links, main buttons (light) |
-| Energy lime | #C6F432 | #C6F432 | Training actions, active tab, main buttons (dark) |
-| Panel | #0F1B1D | #141E21 | Workout hero and body model |
-| Green / soft | #6FA83A / #E8F3DC | #8CC657 / #1A2914 | Lunch, legs, nutrition |
-| Blue / soft | #2F4FD9 / #E5E9FB | #5B86FF / #142140 | Breakfast, back, volume |
-| Orange / soft | #F29F1F / #FFF0DA | #FFB547 / #2C2010 | Snacks, shoulders, helper muscles |
-| Coral / soft | #E85A43 / #FCE7E2 | #FF7B63 / #331A17 | Dinner, chest, warnings of effort |
+| Canvas | #F2F2F7 | #000000 | Screen background (iOS grouped background) |
+| Surface | #FFFFFF | #1C1C1E | Cards and grouped lists |
+| Ink | #000000 | #FFFFFF | Main text |
+| Ink soft | #636366 | #98989F | Supporting text |
+| Brand teal | #00727E | #40C8E0 | Tint: selection, links, main buttons (light) |
+| Energy lime | #C6F432 | #C6F432 | Training actions, main buttons (dark) |
+| Panel | #1C1C1E | #1C1C1E | Workout hero |
+| Green / soft | #34C759 / #E3F6E7 | #30D158 / #0F2A17 | Fibre, legs, lunch |
+| Blue / soft | #007AFF / #E0EEFF | #0A84FF / #0A2340 | Fat, back, breakfast |
+| Orange / soft | #FF9500 / #FFF0DB | #FF9F0A / #2E1F06 | Carbs, shoulders, snacks |
+| Coral / soft | #FF3B30 / #FFE5E3 | #FF453A / #33110F | Protein, chest, dinner |
+
+The category colours are the iOS system colours (D-018).
 
 `app/test/palette_test.dart` checks that every main text pair is at least 4.5:1 and every icon glyph on a category colour is at least 3:1. This is a calculated check. A rendered review on devices is still required.
 
@@ -137,7 +139,7 @@ Colours live in `app/lib/core/palette.dart`. Screens read colours only from ther
 - Body text: 16 logical pixels with about 24 logical pixels line height.
 - Data values: use tabular figures when available.
 
-Use Manrope for every text role. Use weight and size for hierarchy. Do not add a display font for the workout screen.
+Use SF Pro (iPhone) or Inter (Android) for every text role. Use weight and size for hierarchy. Do not add a display font for the workout screen.
 
 These are proposed starting values. Check text scaling, translated labels, and real device layouts before treating them as final.
 
@@ -236,7 +238,13 @@ Avoid rebuilding a large screen for each animation tick. Do not animate large im
 - Test with VoiceOver and TalkBack.
 - Test motion and focus on a real phone, not only a simulator.
 
-## 3.14.1 Exercise body model
+## 3.14.1 Exercise demos and body icons
+
+Library photos play as one slow rep: a pause at the start, 1.5 s to the end position, a pause, and 2.5 s back. A label names each phase. The user can pause, play at half speed, or drag a slider between the start and end photos. With reduced motion the rep does not play; the slider still works.
+
+Each body area and muscle has a drawn body icon that colours only that part. Exercise pages show a front and back body map with main and helper muscles.
+
+### Coached body model
 
 Each built-in exercise has an animated 3D body model. It is a drawn mannequin, not a video. The user can drag to turn it to any angle, pick Front, Side, 3/4, or Back, pause, play at half speed, and show live joint-angle labels. Main muscles glow lime. Helper muscles glow orange. The model starts paused when the system asks to reduce motion.
 
@@ -273,7 +281,7 @@ Send push update alerts only to users who turn them on and grant system notifica
 - **Me tab:** Account, sync, health, AI and MCP connections, privacy, export, and deletion.
 - **Reference mapping:** Image 1 informs Meal layout. Image 2 informs Gym layout.
 - **Theme:** One shared design system and one token set.
-- **Font:** Manrope only. **Icons:** Reviewed Lucide set.
+- **Font:** SF Pro on iPhone, Inter elsewhere (D-018). **Icons:** Reviewed Lucide set.
 - **Motion:** Explain changes. Never block logging. Respect reduced motion.
 - **Do not:** Treat image sample values as records or add motion only for decoration.
 - **To confirm:** Exact tokens, durations, target devices, and minimum operating-system versions.

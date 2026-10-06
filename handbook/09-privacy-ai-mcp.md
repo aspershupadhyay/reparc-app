@@ -2,7 +2,7 @@
 title: Privacy, AI, MCP, and BYOK
 status: proposed
 owner: product-and-security
-updated: 2026-10-05
+updated: 2026-10-06
 ---
 
 # Section 10: Privacy, AI, MCP, and BYOK
@@ -100,3 +100,14 @@ If BYOK is added:
 - **Truth:** Keep source, date range, missing values, and estimates visible.
 - **Never:** Claim every AI app is compatible or that remote data stays on-device.
 - **To confirm:** MCP release timing, server placement, identity provider, and supported clients.
+
+## 10.10 What is built (2026-10-06)
+
+D-022. No background AI access and no network code.
+
+1. Me → AI connections: the user turns Workouts, Meals, and Body data on or off, then taps **Export for AI**. Only the chosen data is in the file. Units and app settings that are not personal stay in.
+2. The user gives the file to an AI app. With MCP: build `app/tool/mcp/server.dart` once (`dart compile exe`) and add it to the AI app's MCP settings with the file path. The server uses stdio only and opens no port. Without MCP: attach the file to a chat.
+3. Tools (all read-only): `get_profile_and_targets`, `get_workout_summary`, `get_exercise_history`, `list_personal_records`, `get_roadmap`, `get_meal_totals`, `get_meal_log`, `get_body_weight`, `get_import_formats`, `check_roadmap_proposal`, `check_meal_plan_proposal`. A tool for data the user did not share is not offered.
+4. Plans come back through **Import a plan**: paste, check, preview, approve. Imported foods are marked as estimates and added as planned.
+
+Code: `app/lib/mcp/`. The AI provider receives what is in the file. Tell the user this before export (the screen does).

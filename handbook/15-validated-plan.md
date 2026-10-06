@@ -2,7 +2,7 @@
 title: Validated plan and prototype decisions
 status: proposed
 owner: product-and-engineering
-updated: 2026-10-05
+updated: 2026-10-06
 ---
 
 # Section 16: Validated plan and prototype decisions
@@ -130,7 +130,7 @@ For early experiments, use a user-selected export or share action. Do not send r
 
 ## 16.8 Visual and motion plan
 
-Keep one theme across all five tabs. Use one Manrope font family, one reviewed Lucide icon family, and shared color, spacing, type, and radius tokens. The Meal and Workout references guide composition, not separate themes.
+Keep one theme across all five tabs. Use SF Pro on iPhone and Inter elsewhere (D-018), one reviewed Lucide icon family, and shared color, spacing, type, and radius tokens. The Meal and Workout references guide composition, not separate themes.
 
 Build these states for every important screen: first use, loading, saved, save failure, offline, empty, disabled, and permission unavailable. State must be clear without color or animation.
 
@@ -214,7 +214,7 @@ A current package page does not prove compatibility, security, accessibility, or
 
 ## 16.13 Build progress
 
-Updated 2026-10-05. This records what exists in code. It is not evidence of device quality.
+Updated 2026-10-06. This records what exists in code. It is not evidence of device quality.
 
 **Built in `app/` (local-first, no network code):**
 
@@ -235,7 +235,11 @@ Updated 2026-10-05. This records what exists in code. It is not evidence of devi
 
 **Device test fixes (2026-10-06):** First test on a real Android phone (realme RMX3710, Android 15). Fixed: the guide link in a live workout switched tabs instead of opening the guide; nutrition legend names wrapped letter by letter; "Protein" was cut off on the Meal summary; pill tabs and area chips could not be activated by screen readers; muscle labels overflowed at large text. Also: a new exercise in a workout starts with one empty set, the library hides filters while the keyboard is open, and entries without equipment say "No equipment".
 
-**Not built:** Goals, update metadata checks, update alerts, HealthKit, Health Connect, sign-in, sync, AI, MCP, an app icon, crash reporting, and release signing in CI.
+**Owner request (2026-10-06):** iOS-native look on both platforms (D-018). Exercises browse by body area, then muscle, with drawn body icons and "Start here" picks (D-019). Slow, tempo-timed exercise demos with half speed and a slider. Weight calculator. Five roadmaps × three levels with warm-ups, equipment swaps, and full editing (D-020). Fibre, sugar, and sodium; opt-in daily targets; USDA food list; Plan my day by diet (D-021). Home rebuilt around one action, today's food, and the week. Analytics split into Workout and Meal tabs with more metrics. Read-only MCP tools, a local stdio MCP server, scoped export, and AI plan import with approval (D-022). Database schema v3 with a tested migration. 285 unit and widget tests pass on Linux with Flutter 3.47.6.
+
+**Not checked for this round:** Real devices, VoiceOver and TalkBack on the new screens, large text on devices, and coach or dietitian review of the content.
+
+**Not built:** Update metadata checks, update alerts, HealthKit, Health Connect, sign-in, sync, remote MCP, an app icon, crash reporting, and release signing in CI.
 
 ## 16.12 AI context
 

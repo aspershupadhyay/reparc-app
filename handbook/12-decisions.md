@@ -2,7 +2,7 @@
 title: Decision record
 status: active-plan
 owner: maintainers
-updated: 2026-10-05
+updated: 2026-10-06
 ---
 
 # Decision record
@@ -230,3 +230,49 @@ Keep major choices here. Update the related chapter when a decision changes.
 
 **Trade-off:** About 26 MB of photos in the app. The photos show two positions, not full motion.
 
+## D-018: iOS-native look on iPhone and Android
+
+**Status:** Accepted by the user.
+**Date:** 2026-10-06.
+
+**Choice:** Make the app look and feel like a native iPhone app on both platforms. Use iOS system colours (grouped grey background, white cards, black in dark mode, system green, blue, orange, and red), a teal tint, and lime for training energy. Use SF Pro on iPhone and Inter on Android (Inter is an open font with the same proportions). Use an iOS tab bar, iOS segmented controls, iOS switches, iOS alerts for confirmations, swipe-back page transitions, bounce scrolling, and no ripple effects.
+
+**Supersedes:** The palette in D-015, the Manrope font in D-002, and the lime pill on the tab bar. One design system and one token set remain. No purple.
+
+**License:** Inter uses the SIL Open Font License 1.1. The bundled file is a Latin subset. The license is in `app/assets/fonts/Inter-OFL.txt`. SF Pro is not bundled; iPhone supplies it.
+
+## D-019: Browse exercises by body area, then muscle
+
+**Status:** Accepted by the user.
+**Date:** 2026-10-06.
+
+**Choice:** Workout → Exercises shows seven body areas. Each area splits into muscles (for example, Arms → Biceps, Triceps, Forearms). Each muscle shows a short "Start here" list of hand-picked moves that cover different equipment, then the rest. Stretches and power moves are in their own tabs. Each area and muscle has a drawn body icon that colours only that part.
+
+**Reason:** The full list of about 870 exercises was too much to choose from.
+
+## D-020: Training roadmaps
+
+**Status:** Accepted by the user.
+**Date:** 2026-10-06.
+
+**Choice:** Offer five roadmaps (Aesthetic, Bodybuilding, Strength, Calisthenics, Lean & fit) at three levels, for 2–6 days a week, in a full gym, with dumbbells, or at home. Every day starts with a warm-up and ramp-up sets. The user owns the plan and can change any day, exercise, set, rep, rest, or reps-in-reserve value, and hide warm-up, cool-down, or tips.
+
+**To confirm:** Review of the roadmaps by a qualified strength coach before public release.
+
+## D-021: Nutrition targets, fibre, and a USDA food list
+
+**Status:** Accepted by the user.
+**Date:** 2026-10-06.
+
+**Choice:** Record fibre, sugar, and sodium with each food. Offer daily targets from the user's profile, off by default: energy (Mifflin-St Jeor × activity), protein by goal (1.6–2.0 g/kg, +0.2 g/kg for vegans, user can set 1.2–2.4), fibre (14 g per 1,000 kcal), fat (about 25% of energy), carbs (the rest), and limits for sugar (10% of energy) and sodium (2,000 mg). Bundle 84 common foods from USDA FoodData Central SR Legacy (public domain, CC0) and a day planner for mixed, vegetarian + egg, vegetarian, and vegan diets.
+
+**Closes:** The open decision "Food data source and license" for the bundled list. A barcode or online food search is still **To confirm**.
+
+## D-022: MCP-ready data through a user-made file
+
+**Status:** Accepted by the user for the local, file-based route.
+**Date:** 2026-10-06.
+
+**Choice:** Provide read-only MCP tools over a Reparc export file, and a small local MCP server (`app/tool/mcp/server.dart`, stdio only). The user picks Workouts, Meals, and Body data separately before export. AI-written roadmaps and meal plans come back through Me → AI connections → Import a plan, with a preview and approval. Imported foods are marked as estimates.
+
+**Boundary:** The phone opens no port and sends nothing in the background. A remote MCP service and live sync stay **To confirm** (D-006, D-009).

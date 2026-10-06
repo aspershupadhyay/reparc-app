@@ -2,7 +2,7 @@
 title: Meal planning and logging
 status: proposed
 owner: product-and-engineering
-updated: 2026-10-05
+updated: 2026-10-06
 ---
 
 # Section 5: Meal planning and logging
@@ -80,3 +80,29 @@ The app is not a dietitian or medical service. It must not give treatment advice
 - **Safety:** Unknown is not zero. An estimate is not a fact.
 - **Done when:** A custom meal can be logged offline and edited later.
 - **To confirm:** Food database, barcode provider, supported nutrients, and target options.
+
+## 5.10 Nutrients, targets, food list, and day plans
+
+Built 2026-10-06 (D-021).
+
+**Nutrients.** Each food can record energy (kcal), protein, carbs, fibre, fat, sugar (g), and sodium (mg). Empty is not zero. Old entries have no fibre, sugar, or sodium value.
+
+**Targets.** Me → Body and goals. The user enters sex, age, height, weight, activity, goal, and diet. Targets show only when the user turns them on. Code: `app/lib/domain/targets.dart`.
+
+| Target | Rule | Source |
+|---|---|---|
+| Energy | Mifflin-St Jeor resting energy × activity factor (1.2–1.9); −20% to lose fat, +10% to build muscle | Mifflin et al. 1990 |
+| Protein | 1.6 g/kg to stay the same, 1.8 to build, 2.0 to lose fat; +0.2 g/kg vegan; user can set 1.2–2.4 | Morton et al. 2018; ISSN 2017 |
+| Fibre | 14 g per 1,000 kcal | Dietary Guidelines for Americans 2020–2025 |
+| Fat | About 25% of energy, at least 0.6 g/kg | Dietary Reference Intakes (AMDR 20–35%) |
+| Carbs | The energy left after protein and fat | AMDR 45–65% |
+| Sugar | Stay under 10% of energy (labels include fruit and milk sugar, so this is a loose guide) | WHO 2015 |
+| Sodium | Stay under 2,000 mg | WHO 2023 |
+
+Protein needs only body weight. The rest needs the full profile.
+
+**Food list.** "Find a food" searches the user's foods and 84 common foods from USDA FoodData Central SR Legacy, per 100 g, with each FDC ID as the source. The list respects the user's diet. Build: `app/tool/food_library/build.py`.
+
+**Plan my day.** Meal → Plan my day picks a breakfast, lunch, snack, and dinner the diet allows (mixed, vegetarian + eggs, vegetarian, or vegan), scales portions toward the energy target (60–160%), and adds a lean protein top-up when protein is more than 5% short. The user can shuffle. Nothing is saved until the user taps Add; then the foods go in as **planned**, not eaten. Code: `app/lib/domain/meal_plan.dart`.
+
+**To confirm:** Dietitian review of meal ideas and target rules; a barcode or online food database.

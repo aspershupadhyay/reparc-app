@@ -34,7 +34,10 @@ Tests use synthetic records and an in-memory database. Never add real user recor
 |---|---|
 | `lib/core/` | Design tokens, theme, motion, formatting, shared widgets |
 | `lib/data/` | Drift database, repositories, export and delete, providers |
-| `lib/domain/` | Pure calculations: nutrition totals, session time, progress, records |
+| `lib/domain/` | Pure calculations: nutrition totals and targets, strength, roadmaps, meal plans, progress, records |
+| `lib/mcp/` | Read-only AI tools over an export file, and the MCP protocol handler |
+| `tool/mcp/server.dart` | Local MCP server (stdio). See [tool/mcp/README.md](tool/mcp/README.md) |
+| `tool/food_library/` | Builds the bundled USDA food list |
 | `lib/features/` | The five tabs: `home`, `workout`, `meal`, `analytics`, `me` |
 | `lib/app/` | App widget and routes |
 

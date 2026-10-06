@@ -25,7 +25,7 @@ Use Flutter because the supplied screens need custom layouts and motion. Flutter
 | Local records | Drift 2.35.1 over SQLite | Typed relational data and schema migrations | To confirm encryption and platform fit |
 | Secure keys | flutter_secure_storage 11.2.0 | Store tokens and keys in platform secure storage | To confirm upgrade and recovery behavior |
 | Health APIs | health_connector 3.11.1 or health 13.3.2 | Candidate packages for HealthKit and Health Connect | To confirm with required data types on real devices |
-| Font | Manrope | One open font family across screens | Proposed |
+| Font | SF Pro (iPhone), Inter (Android) | Native iOS feel on both platforms (D-018) | Accepted |
 | Icons | Lucide assets | One consistent line-icon set | Proposed |
 
 Package pages checked on 2026-10-05 list these candidates: flutter_riverpod 3.4.3, go_router 18.0.2, drift 2.35.1, flutter_secure_storage 11.2.0, health_connector 3.11.1, and health 13.3.2. These are registry versions, not an endorsement or a dependency lock. Re-check the supported SDK range, transitive dependencies, license, security notices, and maintenance when the prototype is built. Select only one health package if health access is approved. Commit the resolved package lock file.

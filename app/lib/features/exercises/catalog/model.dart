@@ -1,6 +1,3 @@
-import 'package:flutter/widgets.dart';
-import 'package:lucide_icons_flutter/lucide_icons.dart';
-
 import '../rig/anatomy.dart';
 import '../rig/equipment.dart';
 import '../rig/pose.dart';
@@ -13,7 +10,7 @@ enum BodyArea {
   shoulders('Shoulders'),
   arms('Arms'),
   legs('Legs'),
-  glutes('Glutes & hamstrings'),
+  glutes('Glutes'),
   core('Core');
 
   const BodyArea(this.label);
@@ -22,16 +19,6 @@ enum BodyArea {
   String get short => switch (this) {
     BodyArea.glutes => 'Glutes',
     _ => label,
-  };
-
-  IconData get icon => switch (this) {
-    BodyArea.chest => LucideIcons.shieldHalf,
-    BodyArea.back => LucideIcons.panelsTopLeft,
-    BodyArea.shoulders => LucideIcons.chevronsUp,
-    BodyArea.arms => LucideIcons.bicepsFlexed,
-    BodyArea.legs => LucideIcons.footprints,
-    BodyArea.glutes => LucideIcons.activity,
-    BodyArea.core => LucideIcons.target,
   };
 }
 

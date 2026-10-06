@@ -2,7 +2,7 @@
 title: Gym workout logging
 status: proposed
 owner: product-and-engineering
-updated: 2026-10-05
+updated: 2026-10-06
 ---
 
 # Section 4: Gym workout logging
@@ -119,4 +119,29 @@ Do not infer exercise form, injury, or medical status. Do not estimate calories 
 - **Safety:** Do not infer form, injury, or calories from set data.
 - **Done when:** A session survives offline use, app closure, and restart without losing a set.
 - **Catalog:** Built-in, original, 36 exercises (D-016). Coach review is **To confirm**.
+- **Roadmaps:** Generated, then owned and edited by the user (D-020). Warm-up first, every day.
 - **To confirm:** Effort scale and further personal-record rules.
+
+## 4.11 Browse, roadmaps, and the weight calculator
+
+Built 2026-10-06 (D-019, D-020).
+
+**Browse.** Workout → Exercises shows search, then seven body areas. An area opens its muscles: Chest (upper chest, mid and lower chest), Back (lats, upper back, lower back), Shoulders (front, side, rear), Arms (biceps, triceps, forearms), Legs (quads, hamstrings, calves, inner thighs), Glutes, and Core (abs, obliques). Each muscle shows "Start here" picks first, then more options. Filters: Strength, Stretch, or Power & cardio, and one equipment type. The target muscle of a library exercise comes from its main muscle; delt heads, upper chest, and obliques come from the exercise name. Picks live in `app/lib/features/exercises/library/library.dart` (`essentials`).
+
+**Roadmaps.** Workout → Roadmap. The user picks a goal, level, days a week, and where they train. The generator is `app/lib/domain/roadmap.dart`. Rules it follows:
+
+- Each muscle about twice a week.
+- Sets per exercise rise with level (beginner 2–3, intermediate 3–4, advanced 4–5). Reps in reserve fall with level (3, 2, 1).
+- Rep ranges by goal: strength 3–5 on main lifts; muscle and look 6–10 main, 10–15 extras; lean & fit 8–15 with short rest and a cardio finisher; calisthenics 5–10 with a level-based progression for each movement.
+- Every day starts with 5 minutes of easy cardio and 4 joint moves for the day's focus. The first main lift gets ramp-up sets (about 50%, 70%, and 85% of the working weight; beginners do two).
+- Every exercise has a version for a full gym, dumbbells, and home. The user can swap to any of them or to any library exercise.
+- Each plan has a progression rule and an easy-week (deload) rule by level.
+
+Starting a roadmap day creates a session with warm-up sets and the day's target as a note. Targets are never saved as done values. Finishing the session moves the roadmap to the next day. The plan is JSON in `programs.plan`; the user can change any part.
+
+**Weight calculator.** Workout → Exercises → Weight calculator (`app/lib/domain/strength.dart`).
+
+- From a set: estimated one-rep max is the mean of the Epley and Brzycki formulas. Reps in reserve add to the reps. Above 10 reps the app warns that the estimate is less reliable. Weights for 1–15 reps and for each goal are rounded down to the next 2.5 kg or 5 lb.
+- First time: a cautious first weight for about 10 reps from experience level and body weight, lower for women, then a reps-left test that adjusts it by −5%, 0, +5%, or +10%. These ratios are starting guesses, not strength standards.
+
+**To confirm:** Coach review of the picks, roadmaps, warm-ups, and first-weight ratios.
