@@ -83,6 +83,10 @@ jobs:
           fi
       - run: flutter build apk --release
       - run: mv build/app/outputs/flutter-apk/app-release.apk build/reparc-android.apk
+      - name: Show the signing certificate
+        run: |
+          # Every release must carry the same certificate, or Android refuses the update.
+          keytool -printcert -jarfile build/reparc-android.apk | grep -E 'Owner|SHA256:'
       - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
           name: android
