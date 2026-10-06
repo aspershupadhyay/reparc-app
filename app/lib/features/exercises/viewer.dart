@@ -12,14 +12,14 @@ import 'rig/render.dart';
 import 'rig/skeleton.dart';
 
 RigStyle rigStyle(Palette p) => RigStyle(
-  body: const Color(0xFF9A9AA0),
+  body: const Color(0xFF8FA3A8),
   primary: p.energy,
-  secondary: p.amber,
-  steel: const Color(0xFFC7C7CC),
-  plate: const Color(0xFF2C2C2E),
-  pad: const Color(0xFF48484A),
+  secondary: p.orange,
+  steel: const Color(0xFFB8C4C7),
+  plate: const Color(0xFF2B373B),
+  pad: const Color(0xFF1E5B66),
   floor: p.panelRaised,
-  floorLine: const Color(0xFF3A3A3C),
+  floorLine: const Color(0xFF2A3A3F),
   label: p.energy,
   labelText: p.onEnergy,
 );

@@ -115,7 +115,7 @@ class MeScreen extends ConsumerWidget {
             ]),
             group('Training', [
               ListTile(
-                leading: lead(LucideIcons.timer, p.amber, p.amberSoft),
+                leading: lead(LucideIcons.timer, p.orange, p.orangeSoft),
                 title: const Text('Auto rest timer'),
                 subtitle: const Text('Starts when a set is done'),
                 trailing: dropdown<int?>(s.restAfterSetSec, const [
@@ -151,7 +151,7 @@ class MeScreen extends ConsumerWidget {
                 '/me/health',
               ),
               link(
-                lead(LucideIcons.sparkles, p.amber, p.amberSoft),
+                lead(LucideIcons.sparkles, p.orange, p.orangeSoft),
                 'AI connections',
                 ai.anyOn
                     ? 'On${ai.wifiOn ? ' · Wi-Fi' : ''}${ai.onlineOn ? ' · online' : ''}'

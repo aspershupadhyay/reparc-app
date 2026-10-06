@@ -104,7 +104,7 @@ class HealthScreen extends ConsumerWidget {
             data: (a) => switch (a) {
               HealthAvailability.available => const SizedBox.shrink(),
               HealthAvailability.needsInstall => AppCard(
-                color: p.amberSoft,
+                color: p.orangeSoft,
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [

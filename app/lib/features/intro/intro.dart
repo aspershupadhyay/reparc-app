@@ -217,12 +217,12 @@ class _Wordmark extends StatelessWidget {
           ],
         ),
         const SizedBox(height: 10),
-        // Ember underline sweeps under the word.
+        // Teal-to-lime underline sweeps under the word.
         Container(
           width: 150 * tagline,
           height: 3,
           decoration: BoxDecoration(
-            gradient: BrandColors.emberGradient,
+            gradient: BrandColors.markGradient,
             borderRadius: BorderRadius.circular(2),
           ),
         ),
@@ -266,7 +266,7 @@ class _Ripples extends CustomPainter {
         Paint()
           ..style = PaintingStyle.stroke
           ..strokeWidth = 2 + 6 * (1 - v)
-          ..color = (i.isEven ? BrandColors.emberLight : BrandColors.ember).withValues(alpha: 0.28 * (1 - v)),
+          ..color = (i.isEven ? BrandColors.teal : BrandColors.lime).withValues(alpha: 0.28 * (1 - v)),
       );
     }
     if (burst > 0 && burst < 1) {
@@ -277,7 +277,7 @@ class _Ripples extends CustomPainter {
         canvas.drawCircle(
           p,
           (2.5 + (i % 3)) * (1 - burst * 0.6),
-          Paint()..color = (i % 3 == 0 ? BrandColors.white : BrandColors.ember).withValues(alpha: 1 - burst),
+          Paint()..color = (i % 3 == 0 ? BrandColors.teal : BrandColors.lime).withValues(alpha: 1 - burst),
         );
       }
     }

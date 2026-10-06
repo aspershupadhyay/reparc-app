@@ -457,8 +457,8 @@ async function readParams(request: Request): Promise<URLSearchParams> {
 const esc = (s: string) => s.replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]!);
 
 const STYLE = `
-:root{color-scheme:dark light;--bg:#0b0b0c;--card:#1c1c1e;--line:#2c2c2e;--text:#f5f5f7;--muted:#a1a1a6;--accent:#ff5a1f;--danger:#ff7b6b}
-@media (prefers-color-scheme:light){:root{--bg:#f2f2f7;--card:#fff;--line:#e5e5ea;--text:#000;--muted:#636366;--accent:#c2410c;--danger:#c2362b}}
+:root{color-scheme:dark light;--bg:#0a1012;--card:#121a1d;--line:#243136;--text:#eaf1f1;--muted:#93a5a9;--accent:#c6f432;--danger:#ff7b6b}
+@media (prefers-color-scheme:light){:root{--bg:#eef4f4;--card:#fff;--line:#dce6e6;--text:#0f1b1d;--muted:#56686b;--accent:#1e5b66;--danger:#c2362b}}
 *{box-sizing:border-box}body{margin:0;min-height:100vh;display:grid;place-items:center;background:var(--bg);color:var(--text);font:16px/1.5 system-ui,-apple-system,Segoe UI,Roboto,sans-serif;padding:16px}
 main{width:100%;max-width:420px;background:var(--card);border:1px solid var(--line);border-radius:28px;padding:28px}
 .mark{width:44px;height:44px;border-radius:14px;display:grid;place-items:center;background:color-mix(in srgb,var(--accent) 18%,transparent);color:var(--accent);margin-bottom:16px}

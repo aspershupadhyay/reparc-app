@@ -494,7 +494,7 @@ class _OnlineCard extends ConsumerWidget {
             Padding(
               padding: const EdgeInsets.only(bottom: Space.s),
               child: AppCard(
-                color: p.amberSoft,
+                color: p.orangeSoft,
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [

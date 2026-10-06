@@ -124,7 +124,7 @@ class _Plans extends ConsumerWidget {
     final colors = [
       (p.energy, p.onEnergy),
       (p.brandSoft, p.ink),
-      (p.amberSoft, p.ink),
+      (p.orangeSoft, p.ink),
       (p.greenSoft, p.ink),
       (p.blueSoft, p.ink),
     ];
@@ -258,7 +258,7 @@ class _History extends ConsumerWidget {
                                   children: [
                                     Tag('${h.exerciseCount} moves'),
                                     Tag('${h.completedSets} sets'),
-                                    if (incomplete) Tag('Incomplete', color: p.amberSoft),
+                                    if (incomplete) Tag('Incomplete', color: p.orangeSoft),
                                   ],
                                 ),
                               ],

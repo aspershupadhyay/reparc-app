@@ -4,23 +4,25 @@ import 'package:flutter/widgets.dart';
 
 /// Brand colours. They match the shared palette (handbook 3.8).
 abstract final class BrandColors {
-  static const ink = Color(0xFF0B0B0C);
-  static const panel = Color(0xFF1C1C1E);
-  static const panelRaised = Color(0xFF2A2A2D);
-  static const emberLight = Color(0xFFFFB45C);
-  static const ember = Color(0xFFFF5A1F);
-  static const emberDeep = Color(0xFFE0261E);
-  static const white = Color(0xFFF5F5F7);
+  static const ink = Color(0xFF0A1012);
+  static const panel = Color(0xFF141E21);
+  static const panelRaised = Color(0xFF1D2A2E);
+  static const lime = Color(0xFFC6F432);
+  static const limeLight = Color(0xFFE4FF8A);
+  static const teal = Color(0xFF5CC1CC);
+  static const deepTeal = Color(0xFF1E5B66);
+  static const white = Color(0xFFEAF1F1);
 
-  /// The ember gradient, top left to bottom right.
-  static const emberGradient = LinearGradient(
+  /// The mark's gradient: teal into lime, top left to bottom right.
+  static const markGradient = LinearGradient(
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
-    colors: [emberLight, ember, emberDeep],
+    colors: [teal, lime, limeLight],
+    stops: [0.45, 0.8, 1],
   );
 }
 
-/// The Reparc mark: a white "R" whose leg is a limb. It swings from an ember
+/// The Reparc mark: a white "R" whose leg is a limb. It swings from a lime
 /// joint through a dotted arc, the range of motion of one rep (Rep + Arc).
 ///
 /// Every part has its own progress value so the intro can build the mark
@@ -69,7 +71,7 @@ class ReparcMark extends CustomPainter {
     canvas.save();
     canvas.translate((size.width - s) / 2, (size.height - s) / 2);
     final box = Offset.zero & Size(s, s);
-    final ember = BrandColors.emberGradient.createShader(box);
+    final accent = BrandColors.markGradient.createShader(box);
 
     if (background) {
       canvas.drawRect(
@@ -97,7 +99,7 @@ class ReparcMark extends CustomPainter {
           j + Offset(math.cos(a), math.sin(a)) * r,
           s * 0.015,
           Paint()
-            ..shader = ember
+            ..shader = accent
             ..color = const Color(0xFFFFFFFF).withValues(alpha: 0.85),
         );
       }
@@ -137,7 +139,7 @@ class ReparcMark extends CustomPainter {
           ..style = PaintingStyle.stroke
           ..strokeWidth = w
           ..strokeCap = StrokeCap.round
-          ..shader = ember,
+          ..shader = accent,
       );
     }
 
@@ -148,11 +150,11 @@ class ReparcMark extends CustomPainter {
           j,
           s * 0.13 * joint,
           Paint()
-            ..color = BrandColors.ember.withValues(alpha: 0.45 * glow)
+            ..color = BrandColors.lime.withValues(alpha: 0.45 * glow)
             ..maskFilter = MaskFilter.blur(BlurStyle.normal, s * 0.05),
         );
       }
-      canvas.drawCircle(j, s * 0.075 * joint, Paint()..shader = ember);
+      canvas.drawCircle(j, s * 0.075 * joint, Paint()..shader = accent);
       canvas.drawCircle(j, s * 0.026 * joint, Paint()..color = BrandColors.ink);
     }
     canvas.restore();

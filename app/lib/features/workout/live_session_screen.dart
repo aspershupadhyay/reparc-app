@@ -264,7 +264,7 @@ class _RestValue extends ConsumerWidget {
           label: over ? 'Rest over by' : 'Rest left',
           value: fmtClock(r.abs()),
           semanticValue: speakDuration(r.abs()),
-          color: over ? context.pal.amber : context.pal.onPanel,
+          color: over ? context.pal.orange : context.pal.onPanel,
           labelColor: context.pal.onPanelSoft,
         );
       },

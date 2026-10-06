@@ -337,16 +337,14 @@ Keep major choices here. Update the related chapter when a decision changes.
 
 **Boundary:** The phone opens no port and sends nothing in the background. A remote MCP service and live sync stay **To confirm** (D-006, D-009).
 
-## D-028: Ember accent and the joint "R" mark
+## D-028: The joint "R" mark, in teal and lime
 
 **Status:** Accepted by the user.
 **Date:** 2026-10-06.
 
-**Choice:** Replace the teal tint and the lime energy colour with one ember accent: #FF5A1F for training energy (black text on it), #C2410C for the light-mode tint and buttons (white text), and #FF7A3D for the dark-mode tint. The orange category colour becomes amber (#F5B400 light, #FFD60A dark) so it does not clash with ember. The new mark is a white "R" whose leg swings from an ember joint through a dotted arc, the range of motion of one rep (`lib/core/brand.dart`). App icons, splash, website, and gateway pages use the same mark and colours.
+**Choice:** The Reparc mark is a white "R" whose leg swings from a joint through a dotted arc, the range of motion of one rep (`lib/core/brand.dart`). The joint and leg use the teal-to-lime gradient. App icons, splash, intro, website, and gateway pages use it. The palette stays teal and lime (D-023): the owner tried an ember (orange) accent in v0.3.1 and asked for teal and green back.
 
-**Why:** The owner found the lime and teal colours and the gauge logo unappealing. Ember reads as energy, sits apart from the iOS system category colours, and passes the contrast checks in `app/test/palette_test.dart`.
-
-**Supersedes:** The colours in D-023 and the gauge mark in D-022. No purple remains a rule.
+**Supersedes:** The gauge mark in D-022.
 
 ## D-029: Update alerts for GitHub test builds
 

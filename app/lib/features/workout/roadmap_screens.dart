@@ -62,7 +62,7 @@ class _ChooseGoal extends StatelessWidget {
   Widget build(BuildContext context) {
     final p = context.pal;
     final t = Theme.of(context).textTheme;
-    final colors = [p.coral, p.blue, p.amber, p.green, p.brand];
+    final colors = [p.coral, p.blue, p.orange, p.green, p.brand];
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -692,7 +692,7 @@ class _ItemRow extends StatelessWidget {
                         Flexible(child: Text(item.name, style: t.titleSmall)),
                         if (item.rampUp) ...[
                           const SizedBox(width: Space.s),
-                          Tag('Ramp up', color: p.amberSoft),
+                          Tag('Ramp up', color: p.orangeSoft),
                         ],
                       ],
                     ),

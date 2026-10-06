@@ -28,7 +28,7 @@ String slotKind(MealSlot s) {
 SlotLook slotLook(Palette p, MealSlot s) => switch (slotKind(s)) {
   'breakfast' => SlotLook(LucideIcons.coffee, p.blue, p.blueSoft),
   'lunch' => SlotLook(LucideIcons.soup, p.green, p.greenSoft),
-  'snack' => SlotLook(LucideIcons.apple, p.amber, p.amberSoft),
+  'snack' => SlotLook(LucideIcons.apple, p.orange, p.orangeSoft),
   'dinner' => SlotLook(LucideIcons.utensilsCrossed, p.coral, p.coralSoft),
   'drink' => SlotLook(LucideIcons.cupSoda, p.brand, p.brandSoft),
   _ => SlotLook(LucideIcons.utensils, p.brand, p.brandSoft),

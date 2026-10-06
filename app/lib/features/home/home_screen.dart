@@ -100,7 +100,7 @@ class HomeScreen extends ConsumerWidget {
                 _Shortcut(
                   icon: LucideIcons.calculator,
                   label: 'Weight calc',
-                  color: p.amber,
+                  color: p.orange,
                   onTap: () => context.go('/workout/calculator'),
                 ),
                 _Shortcut(
@@ -227,8 +227,8 @@ class _HealthRow extends ConsumerWidget {
           Expanded(
             child: _Tile(
               icon: LucideIcons.zap,
-              color: p.amber,
-              soft: p.amberSoft,
+              color: p.orange,
+              soft: p.orangeSoft,
               label: 'Active',
               value: v?.energy == null ? '–' : '${v!.energy!.round()}',
               caption: v?.energy == null ? 'No data' : 'kcal burned',
@@ -430,7 +430,7 @@ class _TodayFood extends ConsumerWidget {
     final shown = [
       (Nutrient.protein, p.coral),
       (Nutrient.fiber, p.green),
-      (Nutrient.carbs, p.amber),
+      (Nutrient.carbs, p.orange),
       if (settings.showEnergy) (Nutrient.energy, p.brand) else (Nutrient.fat, p.blue),
     ];
     return AppCard(
