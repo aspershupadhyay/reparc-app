@@ -96,8 +96,9 @@ void main() {
       goal: BodyGoal.gain,
       diet: Diet.vegan,
     ).toMap().entries) {
-      if (e.value != null)
+      if (e.value != null) {
         await db.into(db.settings).insert(SettingsCompanion.insert(key: 'profile.${e.key}', value: e.value!));
+      }
     }
     await pumpApp(tester, at: '/meal');
     expect(find.text('Protein'), findsWidgets);
