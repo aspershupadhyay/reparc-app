@@ -2,6 +2,11 @@
     <!-- AI connections: the Wi-Fi MCP server and the owner's own gateway (handbook 10.3). -->
     <uses-permission android:name="android.permission.INTERNET"/>
 
+    <!-- App updates (D-029, handbook 17.3): lets Reparc hand a downloaded,
+         checked APK to Android's installer, which always asks the user.
+         Remove this for a Google Play build; Play delivers updates itself. -->
+    <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES"/>
+
     <!-- Health Connect: one permission per data type, each asked for only when
          the user switches that feature on (handbook 9.2, D-020). No heart rate,
          sleep, location, or clinical records. -->
@@ -55,6 +60,16 @@
                 <category android:name="android.intent.category.HEALTH_PERMISSIONS"/>
             </intent-filter>
         </activity-alias>
+        <!-- Shares only the update folder with Android's installer. -->
+        <provider
+            android:name=".UpdateFileProvider"
+            android:authorities="${applicationId}.updates"
+            android:exported="false"
+            android:grantUriPermissions="true">
+            <meta-data
+                android:name="android.support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/update_paths" />
+        </provider>
         <!-- Don't delete the meta-data below.
              This is used by the Flutter tool to generate GeneratedPluginRegistrant.java -->
         <meta-data

@@ -9,8 +9,9 @@ const releasesRepo = 'aspershupadhyay/reparc';
 final latestReleaseApi = Uri.parse('https://api.github.com/repos/$releasesRepo/releases/latest');
 final releasesPage = Uri.parse('https://github.com/$releasesRepo/releases/latest');
 
-/// One published build, read from the GitHub release. Data only: the app
-/// never runs or installs anything from it.
+/// One published build, read from the GitHub release. The app installs
+/// nothing by itself: on Android it can download the APK when the user taps,
+/// check it, and hand it to Android's installer, which asks the user.
 class ReleaseInfo {
   const ReleaseInfo({
     required this.version,
@@ -18,6 +19,7 @@ class ReleaseInfo {
     required this.page,
     this.apk,
     this.ipa,
+    this.sums,
     this.publishedAt,
   });
 
@@ -33,6 +35,9 @@ class ReleaseInfo {
 
   /// Direct download for the iPhone IPA, when the release has one.
   final Uri? ipa;
+
+  /// SHA256SUMS.txt, used to check the APK before it reaches the installer.
+  final Uri? sums;
   final DateTime? publishedAt;
 
   /// Reads the GitHub "latest release" response. Throws [FormatException]
@@ -58,6 +63,7 @@ class ReleaseInfo {
       page: Uri.parse(page),
       apk: asset('.apk'),
       ipa: asset('.ipa'),
+      sums: asset('SHA256SUMS.txt'),
       publishedAt: DateTime.tryParse(j['published_at'] as String? ?? ''),
     );
   }
@@ -68,6 +74,7 @@ class ReleaseInfo {
     'page': page.toString(),
     'apk': apk?.toString(),
     'ipa': ipa?.toString(),
+    'sums': sums?.toString(),
     'publishedAt': publishedAt?.toIso8601String(),
   };
 
@@ -79,8 +86,9 @@ class ReleaseInfo {
         version: j['version']! as String,
         notes: j['notes'] as String? ?? '',
         page: Uri.parse(j['page']! as String),
-        apk: Uri.tryParse(j['apk'] as String? ?? ''),
-        ipa: Uri.tryParse(j['ipa'] as String? ?? ''),
+        apk: j['apk'] is String ? Uri.tryParse(j['apk'] as String) : null,
+        ipa: j['ipa'] is String ? Uri.tryParse(j['ipa'] as String) : null,
+        sums: j['sums'] is String ? Uri.tryParse(j['sums'] as String) : null,
         publishedAt: DateTime.tryParse(j['publishedAt'] as String? ?? ''),
       );
     } catch (_) {

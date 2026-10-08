@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The only folder Reparc shares with Android's installer: downloaded,
+     checked update files (handbook 17.3). -->
+<paths>
+    <cache-path name="updates" path="updates/" />
+</paths>

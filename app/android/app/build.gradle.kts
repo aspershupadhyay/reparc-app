@@ -69,3 +69,9 @@ kotlin {
 flutter {
     source = "../.."
 }
+
+dependencies {
+    // FileProvider, to hand a checked update APK to Android's installer
+    // (MainActivity). The same version url_launcher already brings in.
+    implementation("androidx.core:core:1.17.0")
+}

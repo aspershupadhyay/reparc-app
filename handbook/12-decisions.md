@@ -357,6 +357,8 @@ Keep major choices here. Update the related chapter when a decision changes.
 
 **Supersedes:** The AGENTS.md rule that the app must not use GitHub for updates, for the pre-store period only.
 
+**Updated 2026-10-08 (owner request):** On Android, **Download and install** now downloads the APK inside the app instead of the browser. The app checks the file's SHA-256 against the release's `SHA256SUMS.txt` (a file that does not match is deleted) and hands it to Android's package installer through a private `FileProvider` folder. Android's installer always asks the user to confirm, and the first time it asks the user to allow installs from Reparc. The app still never installs anything by itself and never downloads without the user's tap. This needs the `REQUEST_INSTALL_PACKAGES` permission, which Google Play restricts: remove it from a Play build. iPhone still opens the release page. If the in-app download fails, the user can download in the browser instead.
+
 ## D-030: One plan model for roadmaps and plans
 
 **Status:** Accepted by the user 2026-10-08. Built.

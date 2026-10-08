@@ -7,6 +7,7 @@ import 'package:url_launcher/url_launcher.dart';
 
 import '../core/clock.dart';
 import '../data/providers.dart';
+import 'apk_installer.dart';
 import 'update_check.dart';
 
 final packageInfoProvider = FutureProvider((ref) => PackageInfo.fromPlatform());
@@ -82,16 +83,21 @@ class UpdateController {
     await check();
   }
 
-  /// Opens the download in the browser. Android gets the APK file, which the
-  /// system installer opens after the user taps it; iPhone gets the release
-  /// page, because an IPA needs AltStore or Sideloadly. The app itself never
-  /// installs anything.
+  /// Opens the download in the browser. Android uses this only as a
+  /// fallback when the in-app download fails; iPhone always gets the release
+  /// page, because an IPA needs AltStore or Sideloadly.
   Future<bool> openDownload(ReleaseInfo r) {
     final android = defaultTargetPlatform == TargetPlatform.android;
     final url = android ? (r.apk ?? r.page) : r.page;
     return launchUrl(url, mode: LaunchMode.externalApplication);
   }
 }
+
+/// Android: downloads, checks, and opens the installer. Tests replace it.
+final apkInstallerProvider = Provider<Future<void> Function(ReleaseInfo, void Function(ApkProgress))>(
+  (ref) =>
+      (r, onProgress) => downloadAndInstall(r, onProgress: onProgress),
+);
 
 /// Runs the quiet daily check once per app start. The shell watches it.
 final autoUpdateCheckProvider = FutureProvider<void>((ref) async {
