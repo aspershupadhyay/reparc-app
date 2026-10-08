@@ -206,6 +206,10 @@ class SettingsRepository {
     }
   }
 
+  /// One stored value, or null.
+  Future<String?> read(String key) async =>
+      (await (db.select(db.settings)..where((s) => s.key.equals(key))).getSingleOrNull())?.value;
+
   Future<void> setLoadUnit(String u) => set('loadUnit', u);
   Future<void> setDistanceUnit(String u) => set('distanceUnit', u);
   Future<void> setRestAfterSet(int? sec) => set('restAfterSetSec', sec?.toString());

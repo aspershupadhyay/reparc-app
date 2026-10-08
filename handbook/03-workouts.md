@@ -269,6 +269,8 @@ The user can still tap **Set done**, **Start now** (ends the rest early), **+15 
 
 A cue is said only within 2 s of its time, and a late tick says only the latest cue, so nothing stale plays after the phone wakes.
 
+**Ramp-up sets.** Their reps and share come from the exercise note ("50% × 8, 70% × 5"). The panel shows "8 reps at 50%", and the set time uses those reps.
+
 **Phone locked (Speak when locked, on by default).** Who speaks depends on where the app is. On screen, the live voice speaks. When the app goes off screen (locked or another app in front), the live voice stops and the app sets the cues still to come as local notifications that play the same voice clip. When sets end and start on their own, every time ahead is known, so the app sets the whole chain: each set start ("Set two. Go!", "Last set.", "Warm-up."), countdowns, set ends, and rests, up to 150 alerts or 2 hours ahead. It stops at a set that waits for **Set done**. Back on screen, the app catches up: every set that the alerts said started, and that ended on its time, is saved as done at the time the alerts said; then the live voice goes on. A set the alerts did not announce waits for the user. Set-start clips are copies of the bundled clips (no new recordings). Back on screen, every alert is removed. On Android a quiet, ongoing card on the lock screen shows the rest or set clock (a system chronometer) and the next set. Countdown and other short alerts leave the screen after 4 s; end alerts after 2 min. The phone's silent mode and Do Not Disturb apply. Android 14 and later need **Alarms & reminders** for alerts on the second; Me → Training offers it. Without it, only the end cues are set, because Android may deliver them late. The app asks for the notification permission once, on the first guided rest. Sound files: `app/android/app/src/main/res/raw/` (MP3) and `app/assets/voice/alerts/` (CAF for iPhone, copied to Library/Sounds on start), made by `app/tool/voice/alert_sounds.py`. Code: `app/lib/features/workout/lock_alerts.dart`.
 
 **A set that ends while locked.** A timed set that ran out while the phone was locked ends at its set time, not when the app wakes: the saved time is the set time, the set is done at that instant, and the rest starts there.
@@ -281,7 +283,7 @@ A cue is said only within 2 s of its time, and a late tick says only the latest 
 
 **Limits (To confirm).**
 
-- The set timer lives in memory. After the app restarts, tap **Start set** again. If the phone stops the app while it is locked and the app restarts, the catch-up above does not run.
+- The running set (its start, set time, and the last alerted set start) is saved in settings (`guide.running`), so after the app is closed and opened again, the set goes on, a timed set ends at its time, and the catch-up above runs. On start the app removes every lock-screen alert set before it closed, because those alerts no longer match the record.
 - With sets that end on time, the saved weight and reps are what the set row holds (typed, or filled in from the set before). The app cannot know if the user really did them. A running rest survives a restart, because it is saved on the session.
 - The screen stays on during a guided workout. If the user locks the phone, the lock-screen alerts speak. They cover what is known ahead: a rep set has no set end, so its rest is set only after **Set done**.
 - iPhone has no live lock-screen clock (that needs a Live Activity, a native widget extension; not built).

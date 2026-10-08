@@ -33,6 +33,19 @@ int? targetRepsFromNote(String? note) {
   return w == null ? null : int.parse(w.group(1)!);
 }
 
+/// Reps for the ramp-up set at [index] (0 for the first), read from a note
+/// such as "Ramp-up sets first: 50% × 8, 70% × 5 of your working weight".
+/// Returns the share of the working weight too, or null when the note has
+/// no ramp-up line or fewer ramp-up sets.
+({int percent, int reps})? rampUpFromNote(String? note, int index) {
+  if (note == null || index < 0) return null;
+  final line = RegExp(r'Ramp-up sets first: ([^\n]*)').firstMatch(note)?.group(1);
+  if (line == null) return null;
+  final all = RegExp(r'(\d+)% × (\d+)').allMatches(line).toList();
+  if (index >= all.length) return null;
+  return (percent: int.parse(all[index].group(1)!), reps: int.parse(all[index].group(2)!));
+}
+
 /// Rest in seconds read from an exercise note: "2 min rest", "1:30 min
 /// rest", or "45 s rest". Null when the note has none.
 int? restFromNote(String? note) {

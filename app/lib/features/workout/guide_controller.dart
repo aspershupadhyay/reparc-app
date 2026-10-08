@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 
 import 'package:drift/drift.dart' show Value;
 import 'package:flutter/services.dart';
@@ -121,9 +122,20 @@ int setTargetSec(SessionExerciseView e, SetEntry s, AppSettings st) {
     return null;
   }
 
-  final reps = s.reps ?? targetRepsFromNote(e.item.note) ?? previousReps();
+  final reps = s.reps ?? rampUpReps(e, s) ?? targetRepsFromNote(e.item.note) ?? previousReps();
   if (isWarmupMove(e)) return st.warmupSec ?? estimateSetSec(reps);
   return st.setSec ?? estimateSetSec(reps);
+}
+
+/// Reps of a ramp-up set from the exercise note ("50% × 8, 70% × 5"), or
+/// null when [s] is not a ramp-up set.
+int? rampUpReps(SessionExerciseView e, SetEntry s) => rampUp(e, s)?.reps;
+
+/// The share and reps of a ramp-up set, or null.
+({int percent, int reps})? rampUp(SessionExerciseView e, SetEntry s) {
+  if (s.setType != SetType.warmup || isWarmupMove(e)) return null;
+  final ramp = e.sets.where((x) => x.setType == SetType.warmup).toList();
+  return rampUpFromNote(e.item.note, ramp.indexWhere((x) => x.id == s.id));
 }
 
 /// Rest after [done], before [next]. There is no rest between warm-up
@@ -174,6 +186,12 @@ class GuideController extends Notifier<GuideState> {
       _life?.dispose();
       ScreenAwake.hold('workout', false);
     });
+    // The running set is saved, so it survives the app being closed. The
+    // first call is the empty start state; saving it would wipe the set
+    // that restore() is about to bring back.
+    listenSelf((prev, next) {
+      if (prev != null) unawaited(_save(next));
+    });
     return const GuideState();
   }
 
@@ -181,8 +199,69 @@ class GuideController extends Notifier<GuideState> {
   void attach() {
     if (_timer != null) return;
     ref.read(voicePlayerProvider).preload(ref.read(currentSettingsProvider).voice);
+    // Alerts set before the app was closed are stale now: the app speaks
+    // again, and sets new ones when it next goes off screen.
+    unawaited(ref.read(lockAlertsProvider).clear());
+    unawaited(restore());
     _timer = Timer.periodic(const Duration(seconds: 1), (_) => unawaited(tick()));
     _life ??= AppLifecycleListener(onStateChange: lifecycleChanged);
+  }
+
+  /// Settings key of the running set and [_coveredUntil].
+  static const _savedKey = 'guide.running';
+
+  Future<void> _save([GuideState? next]) async {
+    final g = next ?? state;
+    final m = {
+      if (g.phase == GuidePhase.set && g.setId != null && g.startedAt != null) ...{
+        'setId': g.setId,
+        'startedAt': g.startedAt!.toUtc().toIso8601String(),
+        'target': g.targetSec,
+        'label': g.label,
+      },
+      if (_coveredUntil != null) 'covered': _coveredUntil!.toUtc().toIso8601String(),
+    };
+    try {
+      await ref.read(settingsRepoProvider).set(_savedKey, m.isEmpty ? null : jsonEncode(m));
+    } catch (_) {
+      // Saving the set clock must never stop the workout.
+    }
+  }
+
+  /// Brings back the set that was running when the app was closed, so a
+  /// timed set ends at its time and the workout goes on. Public so tests
+  /// can drive it.
+  Future<void> restore() async {
+    final raw = await ref.read(settingsRepoProvider).read(_savedKey);
+    if (raw == null) return;
+    Map<String, Object?> m;
+    try {
+      m = (jsonDecode(raw) as Map).cast<String, Object?>();
+    } catch (_) {
+      return;
+    }
+    _coveredUntil = DateTime.tryParse(m['covered'] as String? ?? '')?.toUtc();
+    final live = await _repo.liveSession();
+    if (live == null) {
+      _coveredUntil = null;
+      await _save();
+      return;
+    }
+    final start = DateTime.tryParse(m['startedAt'] as String? ?? '')?.toUtc();
+    final d = await _repo.loadSession(live.id);
+    final set = d?.exercises.expand((e) => e.sets).where((x) => x.id == m['setId']).firstOrNull;
+    if (set == null || set.completed || start == null || state.phase != GuidePhase.idle) return;
+    final pausedAt = live.status == SessionStatus.paused ? live.pausedAt : null;
+    state = GuideState(
+      phase: GuidePhase.set,
+      setId: set.id,
+      startedAt: start,
+      targetSec: (m['target'] as num?)?.toInt() ?? 0,
+      label: m['label'] as String? ?? '',
+      pausedSec: pausedAt?.toUtc().difference(start).inSeconds.clamp(0, 86400),
+    );
+    // Cues that passed while the app was closed are not said.
+    _lastSet = state.elapsedAt(_now);
   }
 
   /// Hands the cues to the lock screen when the app goes off screen, and
@@ -417,6 +496,10 @@ class GuideController extends Notifier<GuideState> {
       ScreenAwake.hold('workout', live != null && settings.guideOn);
       if (live == null) {
         _wasPaused = null;
+        if (_coveredUntil != null) {
+          _coveredUntil = null;
+          await _save();
+        }
         if (state.phase != GuidePhase.idle) state = const GuideState();
         return;
       }
@@ -595,6 +678,7 @@ class GuideController extends Notifier<GuideState> {
       afterRest = false;
     }
     _coveredUntil = covered;
+    await _save();
     await alerts.show(cues, voice: settings.voice, card: card);
   }
 

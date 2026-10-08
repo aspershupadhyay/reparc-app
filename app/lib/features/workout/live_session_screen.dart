@@ -487,7 +487,7 @@ class _GuideHero extends ConsumerWidget {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         _Step(
-          phase: paused ? 'Paused' : (next == null ? 'Done' : 'Ready'),
+          phase: paused ? 'Paused' : (next == null && detail.exercises.isNotEmpty ? 'Done' : 'Ready'),
           color: p.energy,
           title: next == null
               ? (detail.exercises.isEmpty ? 'Add an exercise to start' : 'Every set is done')
@@ -533,7 +533,15 @@ String describeSetShort(SessionExerciseView e, SetEntry s) {
 String? aimFor(SessionExerciseView view, SetEntry set) {
   if (isTimedSet(set)) {
     final sec = set.targetSec ?? set.durationSec;
-    return sec == null ? null : 'Hold ${fmtClock(Duration(seconds: sec))}';
+    if (sec == null) return null;
+    // "Hold" suits a plank, not 5 minutes on the bike.
+    return set.setType == SetType.warmup
+        ? fmtClock(Duration(seconds: sec))
+        : 'Hold ${fmtClock(Duration(seconds: sec))}';
+  }
+  // A ramp-up set: "8 reps at 50%" of the working weight.
+  if (rampUp(view, set) case final r? when set.reps == null && set.load == null) {
+    return '${r.reps} reps at ${r.percent}%';
   }
   final before = view.sets.takeWhile((x) => x.id != set.id).where((x) => x.setType == set.setType).toList();
   final prev = before.isEmpty ? null : before.last;

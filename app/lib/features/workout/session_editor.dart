@@ -325,7 +325,7 @@ class _ExerciseCard extends ConsumerWidget {
                 live: live,
                 isNext: i == view.sets.indexWhere((x) => !x.completed),
                 cols: cols,
-                targetReps: targetRepsFromNote(view.item.note),
+                targetReps: rampUpReps(view, s) ?? targetRepsFromNote(view.item.note),
               ),
             Align(
               alignment: Alignment.centerLeft,
@@ -626,7 +626,7 @@ class _SetRowState extends ConsumerState<SetRow> {
                       textInputAction: TextInputAction.next,
                       style: t.bodyLarge?.tabular,
                       onChanged: _onLoad,
-                      decoration: field(hint: p?.load == null ? null : _num(p!.load), error: _loadError),
+                      decoration: field(hint: done || p?.load == null ? null : _num(p!.load), error: _loadError),
                     ),
                   ),
                   const SizedBox(width: Space.xs),
@@ -640,7 +640,11 @@ class _SetRowState extends ConsumerState<SetRow> {
                       textInputAction: TextInputAction.next,
                       style: t.bodyLarge?.tabular,
                       onChanged: _onReps,
-                      decoration: field(hint: (p?.reps ?? widget.targetReps)?.toString(), error: _repsError),
+                      // A done set shows only what was saved, never a guess.
+                      decoration: field(
+                        hint: done ? null : (p?.reps ?? widget.targetReps)?.toString(),
+                        error: _repsError,
+                      ),
                     ),
                   ),
                 if (widget.cols == SetColumns.time)
@@ -651,7 +655,7 @@ class _SetRowState extends ConsumerState<SetRow> {
                       keyboardType: TextInputType.datetime,
                       style: t.bodyLarge?.tabular,
                       onChanged: _onTime,
-                      decoration: field(hint: timeHint, error: _timeError),
+                      decoration: field(hint: done ? null : timeHint, error: _timeError),
                     ),
                   ),
                 const SizedBox(width: Space.xs),

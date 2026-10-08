@@ -141,6 +141,14 @@ void main() {
       expect(nextAim(reps: 1, style: LoadStyle.pyramid), (load: null, reps: 1), reason: 'Missing stays missing');
     });
 
+    test('ramp-up sets read their share and reps from the note', () {
+      const note = 'Target: 2 × 8–12 · 1:15 min rest\nRamp-up sets first: 50% × 8, 70% × 5 of your working weight';
+      expect(rampUpFromNote(note, 0), (percent: 50, reps: 8));
+      expect(rampUpFromNote(note, 1), (percent: 70, reps: 5));
+      expect(rampUpFromNote(note, 2), isNull);
+      expect(rampUpFromNote('Target: 3 × 5', 0), isNull);
+    });
+
     test('every clip exists for every voice', () {
       for (final v in ['charlie', 'matilda']) {
         for (final c in [...Clips.all, for (final id in spokenExercises) Clips.nextUp(id)!]) {
@@ -406,6 +414,36 @@ void main() {
       expect(c.read(guideProvider).phase, GuidePhase.set);
       expect(c.read(guideProvider).startedAt, start.add(const Duration(seconds: 84)));
       expect(voice.said, ['set_1'], reason: 'Nothing stale is said on return');
+    });
+
+    test('a running set survives the app being closed', () async {
+      final sessionId = await startDay();
+      await c.read(guideProvider.notifier).startSet();
+      final start = clock().toUtc();
+      await after(5);
+      await Future<void>.delayed(Duration.zero);
+      c.dispose();
+
+      // The app opens again 30 s into the 24 s set.
+      clock.advance(const Duration(seconds: 25));
+      c = ProviderContainer(
+        overrides: [
+          databaseProvider.overrideWithValue(db),
+          clockProvider.overrideWithValue(clock.call),
+          voicePlayerProvider.overrideWithValue(voice),
+          lockAlertsProvider.overrideWithValue(alerts),
+        ],
+      );
+      c.listen(currentSettingsProvider, (_, _) {});
+      await Future<void>.delayed(Duration.zero);
+      await c.read(guideProvider.notifier).restore();
+      expect(c.read(guideProvider).phase, GuidePhase.set);
+      expect(c.read(guideProvider).startedAt, start);
+      await after(0);
+      final repo = WorkoutRepository(db, clock.call);
+      final d = (await repo.loadSession(sessionId))!;
+      expect(d.exercises.single.sets.first.completedAt, start.add(const Duration(seconds: 24)));
+      expect(d.session.restStartedAt, start.add(const Duration(seconds: 24)), reason: 'The rest started on time');
     });
 
     test('a pause stops the set time and the rest', () async {
