@@ -88,38 +88,60 @@ abstract final class Clips {
   ];
 }
 
-/// Cues to say while a set runs, for the step from [before] to [now]
-/// seconds into a set of [target] seconds. A [target] of 0 means the set
-/// has no set time: the user ends it, so nothing is said.
-List<String> setCues(int before, int now, int target) => [
-  if (target >= 30 && before < target ~/ 2 && now >= target ~/ 2 && now < target) Clips.halfway,
-  if (target > 0 && before < target && now >= target) Clips.time,
+/// Spoken cues the user can turn off one by one (Me → Training).
+enum Cue {
+  /// "Halfway." in a timed set of 30 s or more.
+  halfway,
+
+  /// "Ten seconds." before the end of a rest of 20 s or more.
+  tenLeft,
+
+  /// "Three", "Two", "One", a word a second, before the end of a rest or a
+  /// timed set of 8 s or more.
+  countdown,
+
+  /// "Time! Good set." at the end of a timed set, and "Rest is up." at the
+  /// end of a rest.
+  end,
+}
+
+/// A cue [at] seconds into a set or a rest.
+typedef TimedCue = ({int at, String clip});
+
+/// The cues of a timed set of [target] seconds. A [target] of 0 means the
+/// user ends the set, so there are none.
+List<TimedCue> setPlan(int target, Set<Cue> on) => target <= 0
+    ? const []
+    : [
+        if (on.contains(Cue.halfway) && target >= 30) (at: target ~/ 2, clip: Clips.halfway),
+        if (on.contains(Cue.countdown) && target >= 8) ..._countdown(target),
+        if (on.contains(Cue.end)) (at: target, clip: Clips.time),
+      ];
+
+/// The cues of a rest of [target] seconds. With [autoStart] the next set
+/// starts at [target] and its own cue ("Set two. Go!") ends the rest.
+List<TimedCue> restPlan(int target, Set<Cue> on, {required bool autoStart}) => [
+  if (on.contains(Cue.tenLeft) && target >= 20) (at: target - 10, clip: Clips.tenLeft),
+  if (on.contains(Cue.countdown) && target >= 8) ..._countdown(target),
+  if (on.contains(Cue.end) && !autoStart) (at: target, clip: Clips.restOver),
 ];
 
-/// Cues to say while a rest runs, for the step from [before] to [now]
-/// seconds into a rest of [target] seconds.
+List<TimedCue> _countdown(int target) => [
+  (at: target - 3, clip: Clips.three),
+  (at: target - 2, clip: Clips.two),
+  (at: target - 1, clip: Clips.one),
+];
+
+/// The cue to say for the step from [before] to [now] seconds, or null.
 ///
-/// With [countdown], the last three seconds are counted one word a second
-/// ("Three", "Two", "One") and the next set starts at [target]; its own cue
-/// says "Set two. Go!". Without it, the rest ends with "Rest over. Get
-/// ready." and the user starts the set. When a late tick crosses more than
-/// one countdown second, only the latest word is said.
-List<String> restCues(int before, int now, int target, {required bool countdown}) {
-  final out = <String>[
-    if (target >= 20 && before < target - 10 && now >= target - 10 && now < target - 3) Clips.tenLeft,
-  ];
-  if (countdown) {
-    for (final (left, clip) in const [(1, Clips.one), (2, Clips.two), (3, Clips.three)]) {
-      final at = target - left;
-      if (target >= 8 && before < at && now >= at && now < target) {
-        out.add(clip);
-        break;
-      }
-    }
-  } else if (before < target && now >= target) {
-    out.add(Clips.restOver);
+/// Only the latest cue crossed is said, and only within 2 s of its time: a
+/// late tick, such as after the phone was locked, says nothing stale.
+String? cueBetween(List<TimedCue> plan, int before, int now) {
+  TimedCue? hit;
+  for (final c in plan) {
+    if (before < c.at && c.at <= now) hit = c;
   }
-  return out;
+  return hit == null || now - hit.at > 2 ? null : hit.clip;
 }
 
 /// Clip file name for a catalog ID, as tool/voice/names.py makes it:

@@ -1,3 +1,4 @@
+import '../domain/guide.dart';
 import '../domain/targets.dart';
 import 'database.dart';
 import 'models.dart';
@@ -26,8 +27,9 @@ class AppSettings {
     this.voice = 'charlie',
     this.finishRepSets = false,
     this.autoStartSets = false,
-    this.restAlert = true,
+    this.lockAlerts = true,
     this.restAlertAsked = false,
+    this.cuesOff = const {},
     this.setSec,
   });
 
@@ -47,8 +49,15 @@ class AppSettings {
   /// user starts the set.
   final bool autoStartSets;
 
-  /// A notification at the end of a guided rest, for a locked phone.
-  final bool restAlert;
+  /// With the phone locked or the app in the background, the cues come as
+  /// notifications that play the same voice clips.
+  final bool lockAlerts;
+
+  /// Cues the user turned off. All are on by default.
+  final Set<Cue> cuesOff;
+
+  /// Cues to say: every cue the user did not turn off.
+  Set<Cue> get cues => {...Cue.values}..removeAll(cuesOff);
 
   /// The app asked for the notification permission once, on the first
   /// guided rest. It does not ask again; the phone's settings decide.
@@ -145,7 +154,11 @@ class AppSettings {
     voice: const ['charlie', 'matilda', 'off'].contains(m['guide.voice']) ? m['guide.voice']! : 'charlie',
     finishRepSets: m['guide.finishReps'] == 'true',
     autoStartSets: m['guide.autoStart'] == 'true',
-    restAlert: m['guide.restAlert'] != 'false',
+    lockAlerts: m['guide.restAlert'] != 'false',
+    cuesOff: {
+      for (final c in Cue.values)
+        if (m['guide.cueOff.${c.name}'] == 'true') c,
+    },
     restAlertAsked: m['guide.restAlertAsked'] == 'true',
     setSec: int.tryParse(m['guide.setSec'] ?? ''),
   );
@@ -213,7 +226,8 @@ class SettingsRepository {
   Future<void> setVoice(String v) => set('guide.voice', v);
   Future<void> setFinishRepSets(bool v) => set('guide.finishReps', v ? 'true' : null);
   Future<void> setAutoStartSets(bool v) => set('guide.autoStart', v ? 'true' : null);
-  Future<void> setRestAlert(bool v) => set('guide.restAlert', v ? null : 'false');
+  Future<void> setLockAlerts(bool v) => set('guide.restAlert', v ? null : 'false');
+  Future<void> setCue(Cue c, bool on) => set('guide.cueOff.${c.name}', on ? null : 'true');
   Future<void> setRestAlertAsked() => set('guide.restAlertAsked', 'true');
   Future<void> setSetSec(int? sec) => set('guide.setSec', sec?.toString());
 }

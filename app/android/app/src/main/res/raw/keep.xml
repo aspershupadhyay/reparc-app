@@ -1,0 +1,4 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Lock-screen alert sounds are named only from Dart, so the resource
+     shrinker cannot see them in use. Keep them (handbook 4.13). -->
+<resources xmlns:tools="http://schemas.android.com/tools" tools:keep="@raw/voice_*" />
