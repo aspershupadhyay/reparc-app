@@ -460,9 +460,11 @@ class WorkoutRepository {
   /// Deletes a session with its exercises and sets.
   Future<void> deleteSession(String id) => (db.delete(db.workoutSessions)..where((s) => s.id.equals(id))).go();
 
-  Future<void> startRest(String id, int seconds) => _writeSession(
+  /// Starts a rest of [seconds], from [from] when the set ended earlier,
+  /// such as while the phone was locked.
+  Future<void> startRest(String id, int seconds, {DateTime? from}) => _writeSession(
     id,
-    WorkoutSessionsCompanion(restStartedAt: Value(_now), restTargetSec: Value(seconds)),
+    WorkoutSessionsCompanion(restStartedAt: Value(from ?? _now), restTargetSec: Value(seconds)),
   );
 
   Future<void> setRestTarget(String id, int seconds) =>
@@ -577,9 +579,9 @@ class WorkoutRepository {
   Future<void> updateSet(String id, SetEntriesCompanion c) =>
       (db.update(db.setEntries)..where((s) => s.id.equals(id))).write(c.copyWith(updatedAt: Value(_now)));
 
-  Future<void> setCompleted(String id, bool completed) => updateSet(
+  Future<void> setCompleted(String id, bool completed, {DateTime? at}) => updateSet(
     id,
-    SetEntriesCompanion(completed: Value(completed), completedAt: Value(completed ? _now : null)),
+    SetEntriesCompanion(completed: Value(completed), completedAt: Value(completed ? (at ?? _now) : null)),
   );
 
   Future<SetEntry?> deleteSet(String id) => db.transaction(() async {

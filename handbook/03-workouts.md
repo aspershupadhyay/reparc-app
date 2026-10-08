@@ -260,18 +260,30 @@ Built 2026-10-08 (D-031). Owner request: less typing, timers that run on their o
 
 **Exercise names.** The voice names the next exercise: "Next up: Bench press." `tool/voice/names.py` lists the coached exercises and the library exercises that plans use (95 names), with the name the plan shows. It writes `tool/voice/names.json` and `lib/domain/voice_names.dart`. Clips are in `assets/voice/<voice>/names/`. An exercise without a clip, such as one the user made, gets "Next exercise coming up."
 
-**Rest alert.** Me → Training → **Rest alert** (on by default). While a guided rest runs, the app sets one local notification for the rest's end: "Rest over · Next: Bench press · set 2 of 4". It moves with **+15 s**, and is removed on pause, **End rest**, a new set, or the end of the workout. With the app open, it is removed 2 s before the end, because the voice says it. The app asks for the notification permission once, on the first guided rest. On Android the alert is exact where Android allows exact alarms; else Android may deliver it a little late. The app does not ask for the exact-alarm permission. On iPhone the alert shows on the lock screen; the app shows none while it is open. Code: `app/lib/features/workout/rest_alert.dart`.
+**Cues and switches (2026-10-08).** One set of rules (`setPlan`, `restPlan`, `cueBetween` in `app/lib/domain/guide.dart`) drives both the live voice and the lock-screen alerts, so they never disagree. All cues are on by default; Me → Training has a switch for each:
+
+- **Halfway**: in a timed set of 30 s or more.
+- **Ten seconds left**: in a rest of 20 s or more. When the next set is on a new exercise, the next exercise is named here.
+- **3-2-1 countdown**: one word a second, before the end of a rest or a timed set of 8 s or more, with a light haptic.
+- **End of rest and set**: "Time! Good set." and "Rest is up. Start when you're ready." With **Start next set on its own**, the next set's cue ends the rest instead.
+
+A cue is said only within 2 s of its time, and a late tick says only the latest cue, so nothing stale plays after the phone wakes.
+
+**Phone locked (Speak when locked, on by default).** Who speaks depends on where the app is. On screen, the live voice speaks. When the app goes off screen (locked or another app in front), the live voice stops and the app sets the cues still to come as local notifications that play the same voice clip: the rest of this set or rest, and, after a timed set, the whole rest that follows. Back on screen, every alert is removed. On Android a quiet, ongoing card on the lock screen shows the rest or set clock (a system chronometer) and the next set. Countdown and other short alerts leave the screen after 4 s; end alerts after 2 min. The phone's silent mode and Do Not Disturb apply. Android 14 and later need **Alarms & reminders** for alerts on the second; Me → Training offers it. Without it, only the end cues are set, because Android may deliver them late. The app asks for the notification permission once, on the first guided rest. Sound files: `app/android/app/src/main/res/raw/` (MP3) and `app/assets/voice/alerts/` (CAF for iPhone, copied to Library/Sounds on start), made by `app/tool/voice/alert_sounds.py`. Code: `app/lib/features/workout/lock_alerts.dart`.
+
+**A set that ends while locked.** A timed set that ran out while the phone was locked ends at its set time, not when the app wakes: the saved time is the set time, the set is done at that instant, and the rest starts there.
 
 **Plan time and measured time (schema v6).** A set has two time fields. `targetSec` is the time the plan asks for, such as a 45 s plank. `durationSec` is the time the set measured or the user typed. A plan day writes only `targetSec`. The set row shows the target as the hint. The v6 upgrade moves a target out of `durationSec` for open sets from a plan that have a time and no reps (`AppDatabase.moveTargetTimes`). Done sets keep their time.
 
 **Set rows (2026-10-08).** Each set has weight, reps, and time. The time hint shows the set time the guide assumes. A done set has a dark-green check and a green tint (Energy strong, 5.2:1 on white). The set being timed has a teal outline. Warm-up sets show "W". The next set offers **Same as last set**: one tap fills the last set's weight and reps; it does not mark the set done. In a live workout, a finished exercise folds to one line; tap it to open it.
 
-**Off switches.** Me → Training → **Guided workout** (off gives the old manual rest chips), **Voice** (Charlie, Matilda, or Off), **Start next set on its own**, **Finish rep sets on time**, and **Set time**.
+**Off switches.** Me → Training → **Guided workout** (off gives the old manual rest chips), **Voice** (Charlie, Matilda, or Off), **Start next set on its own**, **Finish rep sets on time**, **Set time**, one switch per cue, and **Speak when locked**.
 
 **Limits (To confirm).**
 
 - The set timer lives in memory. After the app restarts, tap **Start set** again. A running rest survives a restart, because it is saved on the session.
-- The screen stays on during a guided workout. If the user locks the phone or leaves the app, iOS stops timers, so voice cues may not play there; the rest alert covers the end of the rest. Android may also delay them.
+- The screen stays on during a guided workout. If the user locks the phone, the lock-screen alerts speak. They cover what is known ahead: a rep set has no set end, so its rest is set only after **Set done**.
+- iPhone has no live lock-screen clock (that needs a Live Activity, a native widget extension; not built).
 - On iOS, music may stay lowered after a cue. Check on a device.
 - Exercises the user made are not named by the voice. A clip for each would need a network call; the app makes none.
 - License: the clips were made on the owner's free ElevenLabs plan (non-commercial). A store release needs a paid plan and the clips made again (D-031).

@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:drift/drift.dart' show Value;
+import 'package:flutter/widgets.dart' show AppLifecycleState;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:reparc/core/clock.dart';
@@ -13,7 +14,7 @@ import 'package:reparc/domain/roadmap.dart';
 import 'package:reparc/domain/session_time.dart';
 import 'package:reparc/domain/voice_names.dart';
 import 'package:reparc/features/workout/guide_controller.dart';
-import 'package:reparc/features/workout/rest_alert.dart';
+import 'package:reparc/features/workout/lock_alerts.dart';
 import 'package:reparc/features/workout/voice.dart';
 
 import 'helpers.dart';
@@ -38,10 +39,13 @@ class FakeVoice implements VoicePlayer {
   void dispose() {}
 }
 
-class FakeAlerts implements RestAlerts {
-  DateTime? at;
-  String? body;
+class FakeAlerts implements LockAlerts {
+  var cues = <AlertCue>[];
+  LiveCard? card;
   var asked = 0;
+  var cleared = 0;
+  var exact = true;
+
   @override
   Future<bool> askPermission() async {
     asked++;
@@ -49,13 +53,23 @@ class FakeAlerts implements RestAlerts {
   }
 
   @override
-  Future<void> schedule(DateTime at, {required String title, required String body}) async {
-    this.at = at;
-    this.body = body;
+  Future<bool> onTime() async => exact;
+
+  @override
+  Future<void> askOnTime() async {}
+
+  @override
+  Future<void> show(List<AlertCue> cues, {required String voice, LiveCard? card}) async {
+    this.cues = cues;
+    this.card = card;
   }
 
   @override
-  Future<void> cancel() async => at = null;
+  Future<void> clear() async {
+    cleared++;
+    cues = [];
+    card = null;
+  }
 }
 
 void main() {
@@ -79,21 +93,34 @@ void main() {
     });
 
     test('cues fire once, when their time is crossed', () {
-      expect(setCues(0, 15, 40), isEmpty);
-      expect(setCues(19, 20, 40), [Clips.halfway]);
-      expect(setCues(39, 41, 40), [Clips.time]);
-      expect(setCues(41, 42, 40), isEmpty);
-      expect(setCues(0, 600, 0), isEmpty, reason: 'A set with no set time says nothing');
-      expect(restCues(49, 50, 60, countdown: true), [Clips.tenLeft]);
-      expect(restCues(56, 57, 60, countdown: true), [Clips.three]);
-      expect(restCues(57, 58, 60, countdown: true), [Clips.two]);
-      expect(restCues(58, 59, 60, countdown: true), [Clips.one]);
-      expect(restCues(56, 59, 60, countdown: true), [Clips.one], reason: 'A late tick says only the latest word');
-      expect(restCues(59, 60, 60, countdown: true), isEmpty, reason: 'The set cue follows');
-      expect(restCues(56, 59, 60, countdown: false), isEmpty);
-      expect(restCues(59, 60, 60, countdown: false), [Clips.restOver]);
-      expect(restCues(60, 61, 60, countdown: false), isEmpty);
-      expect(restCues(10, 11, 15, countdown: true), isEmpty, reason: 'No ten-second cue in a short rest');
+      const all = {...Cue.values};
+      final set40 = setPlan(40, all);
+      expect(set40.map((c) => (c.at, c.clip)), [
+        (20, 'halfway'),
+        (37, 'three'),
+        (38, 'two'),
+        (39, 'one'),
+        (40, 'time'),
+      ]);
+      expect(cueBetween(set40, 0, 15), isNull);
+      expect(cueBetween(set40, 19, 20), Clips.halfway);
+      expect(cueBetween(set40, 39, 41), Clips.time);
+      expect(cueBetween(set40, 41, 42), isNull);
+      expect(setPlan(0, all), isEmpty, reason: 'A set with no set time says nothing');
+      final rest60 = restPlan(60, all, autoStart: false);
+      expect(cueBetween(rest60, 49, 50), Clips.tenLeft);
+      expect(cueBetween(rest60, 56, 57), Clips.three);
+      expect(cueBetween(rest60, 57, 58), Clips.two);
+      expect(cueBetween(rest60, 58, 59), Clips.one);
+      expect(cueBetween(rest60, 56, 59), Clips.one, reason: 'A late tick says only the latest word');
+      expect(cueBetween(rest60, 59, 60), Clips.restOver);
+      expect(cueBetween(rest60, 30, 65), isNull, reason: 'A tick long after the cue says nothing stale');
+      expect(cueBetween(restPlan(60, all, autoStart: true), 59, 60), isNull, reason: 'The set cue follows');
+      expect(restPlan(15, all, autoStart: false).map((c) => c.clip), ['three', 'two', 'one', 'rest_over']);
+      expect(restPlan(60, {Cue.end}, autoStart: false).map((c) => c.clip), [
+        'rest_over',
+      ], reason: 'Each cue can be off');
+      expect(setPlan(40, {}), isEmpty);
       expect(Clips.rest(90), 'rest_90');
       expect(Clips.rest(75), 'rest');
       expect(Clips.set(11), Clips.go);
@@ -128,7 +155,7 @@ void main() {
           databaseProvider.overrideWithValue(db),
           clockProvider.overrideWithValue(clock.call),
           voicePlayerProvider.overrideWithValue(voice),
-          restAlertsProvider.overrideWithValue(alerts),
+          lockAlertsProvider.overrideWithValue(alerts),
         ],
       );
       c.listen(currentSettingsProvider, (_, _) {});
@@ -201,7 +228,7 @@ void main() {
       expect(sets.first.reps, isNull, reason: 'The guide never invents reps');
 
       await ticks(60);
-      expect(voice.said.sublist(2), ['ten_left', 'rest_over'], reason: 'No countdown when the user starts the set');
+      expect(voice.said.sublist(2), ['ten_left', 'three', 'two', 'one', 'rest_over']);
       expect(c.read(guideProvider).phase, GuidePhase.rest, reason: 'The next set waits for the user');
 
       await after(20);
@@ -231,14 +258,14 @@ void main() {
       expect(c.read(guideProvider).targetSec, 24, reason: '8 reps × 3 s');
 
       await ticks(24);
-      expect(voice.said, ['set_1', 'time', 'rest_60']);
+      expect(voice.said, ['set_1', 'three', 'two', 'one', 'time', 'rest_60']);
       final repo = WorkoutRepository(db, clock.call);
       final sets = (await repo.loadSession(sessionId))!.exercises.single.sets;
       expect(sets.first.completed, isTrue);
       expect(sets.first.durationSec, isNull, reason: 'A guessed set time is not a measured value');
 
       await ticks(60);
-      expect(voice.said.sublist(3), ['ten_left', 'three', 'two', 'one', 'last_set']);
+      expect(voice.said.sublist(6), ['ten_left', 'three', 'two', 'one', 'last_set']);
       expect(c.read(guideProvider).phase, GuidePhase.set);
     });
 
@@ -306,34 +333,92 @@ void main() {
       expect(c.read(guideProvider).phase, GuidePhase.set, reason: 'The set waits for Set done');
     });
 
-    test('a rest alert follows the rest and is asked for once', () async {
-      final sessionId = await startDay();
+    test('locked during a rest: the same cues come as alerts, and the voice waits', () async {
+      await startDay();
       final guide = c.read(guideProvider.notifier);
       await guide.startSet();
       await after(30);
       await guide.finishSet();
-      expect(alerts.asked, 1);
-      await after(1);
-      final start = clock().toUtc().subtract(const Duration(seconds: 1));
-      expect(alerts.at, start.add(const Duration(seconds: 60)));
-      expect(alerts.body, 'Next: Bench press · set 2 of 2');
+      expect(alerts.asked, 1, reason: 'Asked on the first guided rest');
+      final restStart = clock().toUtc();
+      await after(5);
+      await guide.lifecycleChanged(AppLifecycleState.hidden);
+      expect(alerts.cues.map((c) => (c.at.difference(restStart).inSeconds, c.clip)), [
+        (50, 'ten_left'),
+        (57, 'three'),
+        (58, 'two'),
+        (59, 'one'),
+        (60, 'rest_over'),
+      ]);
+      expect(alerts.cues.last.body, 'Next: Bench press · set 2 of 2');
+      expect(alerts.card?.countdownTo, restStart.add(const Duration(seconds: 60)));
+      final said = voice.said.length;
+      await ticks(60);
+      expect(voice.said, hasLength(said), reason: 'Only the alerts speak while away');
 
-      await guide.addRest(15);
-      await after(1);
-      expect(alerts.at, start.add(const Duration(seconds: 75)), reason: '+15 s moves the alert');
-
-      await guide.setPaused(sessionId, true);
-      await after(1);
-      expect(alerts.at, isNull, reason: 'No alert while paused');
-      await guide.setPaused(sessionId, false);
-      await after(1);
-      expect(alerts.at, isNotNull);
-
+      await guide.lifecycleChanged(AppLifecycleState.resumed);
+      expect(alerts.cleared, 1);
+      await ticks(3);
+      expect(voice.said, hasLength(said), reason: 'Nothing stale is said on return');
       await guide.startSet();
-      await after(1);
-      expect(alerts.at, isNull, reason: 'A new set ends the rest and its alert');
       await guide.finishSet();
-      expect(alerts.asked, 1, reason: 'The permission is asked for only once');
+      expect(alerts.asked, 1, reason: 'Asked only once');
+    });
+
+    test('locked mid-plank: the plank and the rest after it are covered; the late end is saved right', () async {
+      final plan = ProgramPlan(
+        days: [
+          PlanDay(
+            name: 'Core',
+            focus: '',
+            items: [
+              PlanItem(kind: ItemKind.main, exerciseId: 'plank', name: 'Plank', sets: 2, seconds: 45, restSec: 60),
+            ],
+          ),
+        ],
+      );
+      final id = await ProgramRepository(db, clock.call).create(plan, name: 'Core');
+      final repo = WorkoutRepository(db, clock.call);
+      final sessionId = await repo.startProgramDay(programId: id, dayIndex: 0);
+      final guide = c.read(guideProvider.notifier);
+      await guide.startSet();
+      final start = clock().toUtc();
+      await after(10);
+      await guide.lifecycleChanged(AppLifecycleState.paused);
+      expect(alerts.cues.map((c) => (c.at.difference(start).inSeconds, c.clip)), [
+        (22, 'halfway'),
+        (42, 'three'),
+        (43, 'two'),
+        (44, 'one'),
+        (45, 'time'),
+        (95, 'ten_left'),
+        (102, 'three'),
+        (103, 'two'),
+        (104, 'one'),
+        (105, 'rest_over'),
+      ]);
+      expect(alerts.card?.countdownTo, start.add(const Duration(seconds: 45)));
+
+      // iPhone stops the app while locked; it wakes at 70 s.
+      clock.advance(const Duration(seconds: 60));
+      await guide.lifecycleChanged(AppLifecycleState.resumed);
+      await after(0);
+      final sets = (await repo.loadSession(sessionId))!.exercises.single.sets;
+      expect(sets.first.durationSec, 45, reason: 'The plank time, not the time the phone woke');
+      expect(sets.first.completedAt, start.add(const Duration(seconds: 45)));
+      final s = (await repo.loadSession(sessionId))!.session;
+      expect(s.restStartedAt, start.add(const Duration(seconds: 45)), reason: 'The rest started when the plank ended');
+      expect(voice.said.where((c) => c == 'time' || c.startsWith('rest')), isEmpty, reason: 'No stale cues on wake');
+    });
+
+    test('without on-time alerts, only the end cues are set when locked', () async {
+      alerts.exact = false;
+      await startDay();
+      final guide = c.read(guideProvider.notifier);
+      await guide.startSet();
+      await guide.finishSet();
+      await guide.lifecycleChanged(AppLifecycleState.hidden);
+      expect(alerts.cues.map((c) => c.clip), ['rest_over']);
     });
 
     test('a plan time is a target; only the measured time is saved', () async {

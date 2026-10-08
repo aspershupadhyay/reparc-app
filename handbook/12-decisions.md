@@ -383,5 +383,7 @@ Keep major choices here. Update the related chapter when a decision changes.
 
 **Update (2026-10-08, owner request):** A local notification marks the end of a guided rest on a locked phone (asked for once, on the first guided rest; Me → Training → **Rest alert** turns it off). The voice names the next exercise for 95 built-in exercises. Plan target times have their own column (`targetSec`, schema v6). The clips were made again with `eleven_v3`. The ElevenLabs key is never stored in the repository; the owner keeps it as an environment secret.
 
+**Update (2026-10-08, owner request, v0.4.2):** Every cue has its own switch, all on by default. With the phone locked, the same cues come as local notifications that play the bundled voice clips, and Android shows a quiet lock-screen card with the live clock. The live voice and the alerts never speak at once: on screen the voice speaks; off screen the alerts do.
+
 **License (To confirm):** The clips were made on the owner's free ElevenLabs plan, which allows non-commercial use with credit to ElevenLabs. The credit is in the app's licenses page (`app/assets/licenses/elevenlabs-voice.txt`). Before a paid or store release, upgrade the plan and make the clips again, or record new ones.
 

@@ -11,6 +11,7 @@ import '../../core/widgets.dart';
 import '../../data/models.dart';
 import '../../data/providers.dart';
 import '../../domain/guide.dart';
+import '../workout/lock_alerts.dart';
 import '../workout/voice.dart';
 
 /// Me tab. Settings grouped by purpose (handbook 3.6). Account, health,
@@ -138,17 +139,33 @@ class MeScreen extends ConsumerWidget {
                     },
                   ),
                 ),
+                for (final (cue, icon, title, sub) in const [
+                  (Cue.halfway, LucideIcons.chartPie, 'Halfway', 'In timed sets of 30 s or more'),
+                  (Cue.tenLeft, LucideIcons.timer, 'Ten seconds left', 'Before a rest ends'),
+                  (Cue.countdown, LucideIcons.listOrdered, '3-2-1 countdown', 'Before a rest or a timed set ends'),
+                  (Cue.end, LucideIcons.bellRing, 'End of rest and set', '"Rest is up" and "Time! Good set."'),
+                ])
+                  SwitchListTile(
+                    secondary: lead(icon, p.blue, p.blueSoft),
+                    title: Text(title),
+                    subtitle: Text(sub),
+                    value: s.cues.contains(cue),
+                    onChanged: (v) => repo.setCue(cue, v),
+                  ),
                 SwitchListTile(
-                  secondary: lead(LucideIcons.bellRing, p.blue, p.blueSoft),
-                  title: const Text('Rest alert'),
-                  subtitle: const Text('A notification when a rest ends and the phone is locked'),
-                  value: s.restAlert,
-                  onChanged: repo.setRestAlert,
+                  secondary: lead(LucideIcons.lockKeyhole, p.green, p.greenSoft),
+                  title: const Text('Speak when locked'),
+                  subtitle: const Text(
+                    'The same cues, in the same voice, as notifications. Android also shows the clock',
+                  ),
+                  value: s.lockAlerts,
+                  onChanged: repo.setLockAlerts,
                 ),
+                if (s.lockAlerts) const _OnTimeTile(),
                 SwitchListTile(
                   secondary: lead(LucideIcons.play, p.orange, p.orangeSoft),
                   title: const Text('Start next set on its own'),
-                  subtitle: const Text('After the rest, with a 3-2-1 countdown. Off: you tap Start set'),
+                  subtitle: const Text('When the rest ends, with the app open. Off: you tap Start set'),
                   value: s.autoStartSets,
                   onChanged: repo.setAutoStartSets,
                 ),
@@ -252,6 +269,53 @@ class MeScreen extends ConsumerWidget {
           ],
         ),
       ),
+    );
+  }
+}
+
+/// Android only: asks for "Alarms & reminders", so the countdown and other
+/// short cues fire on the second while the phone is locked. Hidden when it
+/// is already allowed, and on iPhone.
+class _OnTimeTile extends ConsumerStatefulWidget {
+  const _OnTimeTile();
+
+  @override
+  ConsumerState<_OnTimeTile> createState() => _OnTimeTileState();
+}
+
+class _OnTimeTileState extends ConsumerState<_OnTimeTile> {
+  bool? _onTime;
+  AppLifecycleListener? _life;
+
+  @override
+  void initState() {
+    super.initState();
+    _check();
+    // The user comes back from Android's settings page.
+    _life = AppLifecycleListener(onResume: _check);
+  }
+
+  @override
+  void dispose() {
+    _life?.dispose();
+    super.dispose();
+  }
+
+  Future<void> _check() async {
+    final v = await ref.read(lockAlertsProvider).onTime();
+    if (mounted) setState(() => _onTime = v);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (_onTime != false) return const SizedBox.shrink();
+    final p = context.pal;
+    return ListTile(
+      leading: IconBadge(LucideIcons.alarmClock, color: p.orangeSoft, glyph: p.orange, size: 40),
+      title: const Text('On-time cues when locked'),
+      subtitle: const Text('Allow "Alarms & reminders" so the countdown is not late. Else only the end cues play'),
+      trailing: const Icon(LucideIcons.chevronRight),
+      onTap: () => ref.read(lockAlertsProvider).askOnTime(),
     );
   }
 }

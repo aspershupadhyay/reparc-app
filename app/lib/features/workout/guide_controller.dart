@@ -2,7 +2,7 @@ import 'dart:async';
 
 import 'package:drift/drift.dart' show Value;
 import 'package:flutter/services.dart';
-import 'package:flutter/widgets.dart' show AppLifecycleState, WidgetsBinding;
+import 'package:flutter/widgets.dart' show AppLifecycleListener, AppLifecycleState;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/clock.dart';
@@ -13,7 +13,7 @@ import '../../data/providers.dart';
 import '../../data/settings_repository.dart';
 import '../../data/workout_repository.dart';
 import '../../domain/guide.dart';
-import 'rest_alert.dart';
+import 'lock_alerts.dart';
 import 'voice.dart';
 
 enum GuidePhase { idle, set, rest }
@@ -99,8 +99,11 @@ class GuideController extends Notifier<GuideState> {
   /// "Next exercise." was said during this rest.
   bool _toldNext = false;
 
-  /// When the rest alert is set to fire. Null when none is set.
-  DateTime? _alertAt;
+  /// The app is off screen (phone locked or another app in front). Then
+  /// the lock-screen alerts speak, and the live voice stays quiet, so a cue
+  /// is never said twice.
+  bool _away = false;
+  AppLifecycleListener? _life;
 
   WorkoutRepository get _repo => ref.read(workoutRepoProvider);
   DateTime get _now => ref.read(clockProvider)().toUtc();
@@ -109,6 +112,7 @@ class GuideController extends Notifier<GuideState> {
   GuideState build() {
     ref.onDispose(() {
       _timer?.cancel();
+      _life?.dispose();
       ScreenAwake.hold('workout', false);
     });
     return const GuideState();
@@ -119,10 +123,31 @@ class GuideController extends Notifier<GuideState> {
     if (_timer != null) return;
     ref.read(voicePlayerProvider).preload(ref.read(currentSettingsProvider).voice);
     _timer = Timer.periodic(const Duration(seconds: 1), (_) => unawaited(tick()));
+    _life ??= AppLifecycleListener(onStateChange: lifecycleChanged);
+  }
+
+  /// Hands the cues to the lock screen when the app goes off screen, and
+  /// takes them back when it returns. Public so tests can drive it.
+  Future<void> lifecycleChanged(AppLifecycleState s) async {
+    final away = s == AppLifecycleState.hidden || s == AppLifecycleState.paused || s == AppLifecycleState.detached;
+    if (away == _away) return;
+    _away = away;
+    if (away) {
+      _voice.silence();
+      await _scheduleAway();
+    } else {
+      await ref.read(lockAlertsProvider).clear();
+      // Cues that passed while away are not said again.
+      _lastRest = -1;
+      _lastSet = state.elapsedAt(_now);
+    }
   }
 
   VoicePlayer get _voice => ref.read(voicePlayerProvider);
-  void _say(String clip, {bool now = false}) => _voice.say(ref.read(currentSettingsProvider).voice, clip, now: now);
+  void _say(String clip, {bool now = false}) {
+    if (_away) return;
+    _voice.say(ref.read(currentSettingsProvider).voice, clip, now: now);
+  }
 
   /// Starts the next set that is not done.
   Future<void> startSet() async {
@@ -177,6 +202,11 @@ class GuideController extends Notifier<GuideState> {
     final id = state.setId;
     if (state.phase != GuidePhase.set || id == null) return;
     final elapsed = state.elapsedAt(_now);
+    final target = state.targetSec;
+    // A set that ran out while the phone was locked ends at its set time,
+    // not when the app woke up; its rest starts there too.
+    final late = onTime && target > 0 && elapsed > target + 2 && state.startedAt != null;
+    final endAt = late ? state.startedAt!.add(Duration(seconds: target)) : _now;
     final d = await _loadLive();
     final set = d?.exercises.expand((e) => e.sets).where((s) => s.id == id).firstOrNull;
     if (d == null || set == null) {
@@ -187,11 +217,12 @@ class GuideController extends Notifier<GuideState> {
     // time. A rep set that ran out was not measured: its end is a guess.
     // A time the user typed on a rep set is kept.
     if (isTimedSet(set) || (!onTime && set.durationSec == null)) {
-      await _repo.updateSet(id, SetEntriesCompanion(durationSec: Value(elapsed)));
+      final measured = onTime && target > 0 && elapsed > target ? target : elapsed;
+      await _repo.updateSet(id, SetEntriesCompanion(durationSec: Value(measured)));
     }
-    await _repo.setCompleted(id, true);
+    await _repo.setCompleted(id, true, at: endAt);
     unawaited(HapticFeedback.mediumImpact());
-    await _afterSet(d.session.id, set);
+    await _afterSet(d.session.id, set, endedAt: endAt, quiet: late);
   }
 
   /// Called when the user ticks a set in the list while the guide is on.
@@ -254,7 +285,7 @@ class GuideController extends Notifier<GuideState> {
     }
   }
 
-  Future<void> _afterSet(String sessionId, SetEntry done) async {
+  Future<void> _afterSet(String sessionId, SetEntry done, {DateTime? endedAt, bool quiet = false}) async {
     final d = await _repo.loadSession(sessionId);
     if (d == null) return;
     _toldNext = false;
@@ -265,22 +296,27 @@ class GuideController extends Notifier<GuideState> {
       return;
     }
     final view = d.exercises.firstWhere((e) => e.sets.any((s) => s.id == done.id));
-    final rest = switch (done.setType) {
-      SetType.warmup when isWarmupMove(view) => warmupMoveRestSec,
-      SetType.warmup => rampUpRestSec,
-      _ => restFromNote(view.item.note) ?? ref.read(currentSettingsProvider).restAfterSetSec ?? defaultRestSec,
-    };
-    await _repo.startRest(sessionId, rest);
-    if (done.setType != SetType.warmup || rest >= 30) _say(Clips.rest(rest));
-    // Ask once, in context: the first guided rest is when the alert helps.
+    final rest = _restFor(view, done);
+    final from = endedAt ?? _now;
+    await _repo.startRest(sessionId, rest, from: from);
+    if (!quiet && (done.setType != SetType.warmup || rest >= 30)) _say(Clips.rest(rest));
+    // Ask once, in context: the first guided rest is when the alerts help.
     final settings = ref.read(currentSettingsProvider);
-    if (settings.restAlert && !settings.restAlertAsked) {
+    if (settings.lockAlerts && !settings.restAlertAsked) {
       await ref.read(settingsRepoProvider).setRestAlertAsked();
-      unawaited(ref.read(restAlertsProvider).askPermission());
+      unawaited(ref.read(lockAlertsProvider).askPermission());
     }
-    _lastRest = 0;
+    _lastRest = _now.difference(from).inSeconds;
     state = const GuideState(phase: GuidePhase.rest);
   }
+
+  /// Rest after [done]: the plan's rest, else the user's default, else 90 s.
+  /// A warm-up move rests 20 s; a ramp-up set 60 s.
+  int _restFor(SessionExerciseView view, SetEntry done) => switch (done.setType) {
+    SetType.warmup when isWarmupMove(view) => warmupMoveRestSec,
+    SetType.warmup => rampUpRestSec,
+    _ => restFromNote(view.item.note) ?? ref.read(currentSettingsProvider).restAfterSetSec ?? defaultRestSec,
+  };
 
   /// One step of the timers. Public so tests can drive it.
   Future<void> tick() async {
@@ -292,7 +328,6 @@ class GuideController extends Notifier<GuideState> {
       // The screen stays on while the guide runs a live workout, so cues
       // play on time. It goes off when the workout ends.
       ScreenAwake.hold('workout', live != null && settings.guideOn);
-      await _syncRestAlert(live, settings);
       if (live == null) {
         _wasPaused = null;
         if (state.phase != GuidePhase.idle) state = const GuideState();
@@ -304,8 +339,10 @@ class GuideController extends Notifier<GuideState> {
       if (paused) return;
       if (state.phase == GuidePhase.set) {
         final t = state.elapsedAt(_now);
-        for (final c in setCues(_lastSet, t, state.targetSec)) {
+        final c = cueBetween(setPlan(state.targetSec, settings.cues), _lastSet, t);
+        if (c != null) {
           _say(c);
+          _haptic(c);
         }
         _lastSet = t;
         // Only a set with a set time ends on its own (a timed set, or a rep
@@ -314,63 +351,123 @@ class GuideController extends Notifier<GuideState> {
         return;
       }
       if (live.restStartedAt != null && live.restTargetSec != null) {
-        await _restStep(live, settings.autoStartSets);
+        await _restStep(live, settings);
       }
     } finally {
       _busy = false;
     }
   }
 
-  /// Keeps the one rest alert in step with the rest: set while a rest runs,
-  /// moved when the rest changes, removed on pause, stop, or a new set.
-  /// With the app open, the voice says the end, so the alert is removed
-  /// just before it.
-  Future<void> _syncRestAlert(WorkoutSession? live, AppSettings settings) async {
-    DateTime? want;
-    if (live != null &&
-        settings.guideOn &&
-        settings.restAlert &&
-        live.status == SessionStatus.active &&
-        live.restStartedAt != null &&
-        live.restTargetSec != null) {
-      final end = live.restStartedAt!.add(Duration(seconds: live.restTargetSec!));
-      final open = WidgetsBinding.instance.lifecycleState == AppLifecycleState.resumed;
-      if (end.difference(_now) > (open ? const Duration(seconds: 2) : Duration.zero)) want = end;
-    }
-    if (want == _alertAt) return;
-    _alertAt = want;
-    final alerts = ref.read(restAlertsProvider);
-    if (want == null) return alerts.cancel();
-    final d = await _repo.loadSession(live!.id);
-    final next = d == null ? null : nextSet(d);
-    await alerts.schedule(
-      want,
-      title: 'Rest over',
-      body: next == null ? 'Time for the next set.' : 'Next: ${describeSet(next.$1, next.$2)}',
-    );
-  }
-
-  Future<void> _restStep(WorkoutSession live, bool autoStart) async {
+  Future<void> _restStep(WorkoutSession live, AppSettings settings) async {
     final target = live.restTargetSec!;
+    final autoStart = settings.autoStartSets;
     final t = _now.difference(live.restStartedAt!).inSeconds;
     // After a restart, cues already passed are not said again.
     if (_lastRest < 0) _lastRest = t;
     final before = _lastRest;
-    final cues = restCues(before, t, target, countdown: autoStart);
+    final c = cueBetween(restPlan(target, settings.cues, autoStart: autoStart), before, t);
     _lastRest = t;
     if (state.phase != GuidePhase.rest) state = const GuideState(phase: GuidePhase.rest);
-    for (final c in cues) {
+    if (c != null) {
       _say(c);
+      _haptic(c);
       if (c == Clips.tenLeft) await _tellNextExercise(live.id);
-      if (c == Clips.three || c == Clips.two || c == Clips.one) unawaited(HapticFeedback.selectionClick());
-      if (c == Clips.restOver) unawaited(HapticFeedback.heavyImpact());
     }
-    // Start on its own only as the rest ends. A rest that ended long ago,
-    // such as before a restart, waits for the user.
-    if (autoStart && before < target && t >= target && t - target <= 3) {
+    // Start on its own only as the rest ends, with the app on screen. A rest
+    // that ended long ago, or while the phone was locked, waits for the user.
+    if (autoStart && !_away && before < target && t >= target && t - target <= 3) {
       unawaited(HapticFeedback.heavyImpact());
       await startSet();
     }
+  }
+
+  void _haptic(String clip) {
+    if (_away) return;
+    if (clip == Clips.three || clip == Clips.two || clip == Clips.one) unawaited(HapticFeedback.selectionClick());
+    if (clip == Clips.restOver || clip == Clips.time) unawaited(HapticFeedback.heavyImpact());
+  }
+
+  /// Sets the lock-screen cues for what happens while the app is away: the
+  /// cues left in this set or rest, and, after a timed set, the whole rest
+  /// that follows. On Android a quiet card shows the live clock. Brief cues
+  /// (countdown, ten seconds, halfway) need on-time alerts; without them
+  /// Android may deliver late, so only the end cues are set.
+  Future<void> _scheduleAway() async {
+    final settings = ref.read(currentSettingsProvider);
+    final live = await _repo.liveSession();
+    if (live == null || !settings.guideOn || !settings.lockAlerts) return;
+    final d = await _repo.loadSession(live.id);
+    if (d == null) return;
+    final alerts = ref.read(lockAlertsProvider);
+    final exact = await alerts.onTime();
+    final now = _now;
+    final cues = <AlertCue>[];
+    void add(DateTime start, List<TimedCue> plan, String label, String body) {
+      for (final c in plan) {
+        final at = start.add(Duration(seconds: c.at));
+        final brief = c.clip != Clips.time && c.clip != Clips.restOver;
+        if (!at.isAfter(now) || (brief && !exact)) continue;
+        cues.add(AlertCue(at: at, clip: c.clip, title: _cueTitle(c.clip, label), body: body, brief: brief));
+      }
+    }
+
+    String nextLine((SessionExerciseView, SetEntry)? n) =>
+        n == null ? 'Last set done' : 'Next: ${describeSet(n.$1, n.$2)}';
+    LiveCard? card;
+    if (live.status == SessionStatus.paused) {
+      card = LiveCard(title: 'Workout paused', body: live.name);
+    } else if (state.phase == GuidePhase.set && state.startedAt != null) {
+      final start = state.startedAt!;
+      final target = state.targetSec;
+      if (target > 0) {
+        final end = start.add(Duration(seconds: target));
+        add(start, setPlan(target, settings.cues), state.label, state.label);
+        card = LiveCard(title: state.label, body: 'Set time', countdownTo: end);
+        // The set ends on its own, so the rest after it is known too.
+        final view = d.exercises.where((e) => e.sets.any((s) => s.id == state.setId)).firstOrNull;
+        final set = view?.sets.firstWhere((s) => s.id == state.setId);
+        final next = _nextAfter(d, state.setId);
+        if (view != null && set != null && next != null) {
+          add(end, restPlan(_restFor(view, set), settings.cues, autoStart: false), 'Rest', nextLine(next));
+        }
+      } else {
+        card = LiveCard(title: state.label, body: 'Tap Set done when you finish', countUpFrom: start);
+      }
+    } else if (live.restStartedAt != null && live.restTargetSec != null) {
+      final next = nextSet(d);
+      add(live.restStartedAt!, restPlan(live.restTargetSec!, settings.cues, autoStart: false), 'Rest', nextLine(next));
+      card = LiveCard(
+        title: 'Rest',
+        body: nextLine(next),
+        countdownTo: live.restStartedAt!.add(Duration(seconds: live.restTargetSec!)),
+      );
+    } else {
+      final next = nextSet(d);
+      card = LiveCard(title: live.name, body: next == null ? 'Every set is done' : nextLine(next));
+    }
+    await alerts.show(cues, voice: settings.voice, card: card);
+  }
+
+  static String _cueTitle(String clip, String label) => switch (clip) {
+    Clips.halfway => 'Halfway · $label',
+    Clips.tenLeft => '10 seconds left',
+    Clips.three => '3',
+    Clips.two => '2',
+    Clips.one => '1',
+    Clips.time => 'Time! Set done',
+    Clips.restOver => 'Rest is up',
+    _ => label,
+  };
+
+  /// The first set not done after [setId], as if [setId] were done.
+  static (SessionExerciseView, SetEntry)? _nextAfter(SessionDetail d, String? setId) {
+    for (final e in d.exercises) {
+      if (e.item.skipped) continue;
+      for (final s in e.sets) {
+        if (!s.completed && s.id != setId) return (e, s);
+      }
+    }
+    return null;
   }
 
   /// Says "Next exercise." before the rest ends when the next set is on

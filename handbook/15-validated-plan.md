@@ -258,6 +258,8 @@ Updated 2026-10-06. This records what exists in code. It is not evidence of devi
 
 **Rest alert, names, plan times, new voice (2026-10-08, owner request):** Added a local notification at the end of a guided rest (`flutter_local_notifications` 22.3.1, `timezone` 0.11.1; Android: `POST_NOTIFICATIONS`, `SCHEDULE_EXACT_ALARM` declared but not asked for, core library desugaring; a `dbus` override for Linux-only code). Added spoken exercise names (95). Plan target times moved to a new `targetSec` column (schema v6, with an upgrade step). Recorded the coach script with `eleven_v3`. Checked: format, analyze, `flutter test`, build_runner output. **Not checked:** the Android and iOS builds here (no Android SDK or Xcode; CI builds them), notifications and audio on a real phone, and the upgrade on a real v5 database.
 
+**Lock-screen coach and v0.4.2 (2026-10-08, owner request):** Every cue (halfway, ten seconds, 3-2-1, end) now has its own switch and plays the same way with the phone locked, as notifications in the coach's voice, with a live clock card on Android. A timed set that ends while locked saves its set time and starts its rest at the right instant. No new ElevenLabs audio was made; the alert sounds are copies of the bundled clips. Version 0.4.2 ships this and the two commits before it. Checked: format, analyze, `flutter test`, and CI. **Not checked:** alert timing, sounds, and the Android card on real phones.
+
 ## 16.12 AI context
 
 - **Purpose:** Give every contributor the current, evidence-based build order.
