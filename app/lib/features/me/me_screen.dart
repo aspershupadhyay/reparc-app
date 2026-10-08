@@ -139,6 +139,13 @@ class MeScreen extends ConsumerWidget {
                   ),
                 ),
                 SwitchListTile(
+                  secondary: lead(LucideIcons.bellRing, p.blue, p.blueSoft),
+                  title: const Text('Rest alert'),
+                  subtitle: const Text('A notification when a rest ends and the phone is locked'),
+                  value: s.restAlert,
+                  onChanged: repo.setRestAlert,
+                ),
+                SwitchListTile(
                   secondary: lead(LucideIcons.play, p.orange, p.orangeSoft),
                   title: const Text('Start next set on its own'),
                   subtitle: const Text('After the rest, with a 3-2-1 countdown. Off: you tap Start set'),

@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:drift/drift.dart' show Value;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:reparc/core/clock.dart';
@@ -10,7 +11,9 @@ import 'package:reparc/data/workout_repository.dart';
 import 'package:reparc/domain/guide.dart';
 import 'package:reparc/domain/roadmap.dart';
 import 'package:reparc/domain/session_time.dart';
+import 'package:reparc/domain/voice_names.dart';
 import 'package:reparc/features/workout/guide_controller.dart';
+import 'package:reparc/features/workout/rest_alert.dart';
 import 'package:reparc/features/workout/voice.dart';
 
 import 'helpers.dart';
@@ -33,6 +36,26 @@ class FakeVoice implements VoicePlayer {
 
   @override
   void dispose() {}
+}
+
+class FakeAlerts implements RestAlerts {
+  DateTime? at;
+  String? body;
+  var asked = 0;
+  @override
+  Future<bool> askPermission() async {
+    asked++;
+    return true;
+  }
+
+  @override
+  Future<void> schedule(DateTime at, {required String title, required String body}) async {
+    this.at = at;
+    this.body = body;
+  }
+
+  @override
+  Future<void> cancel() async => at = null;
 }
 
 void main() {
@@ -74,11 +97,14 @@ void main() {
       expect(Clips.rest(90), 'rest_90');
       expect(Clips.rest(75), 'rest');
       expect(Clips.set(11), Clips.go);
+      expect(Clips.nextUp('bench-press'), 'names/bench_press');
+      expect(Clips.nextUp('lib:Barbell_Shrug'), 'names/lib_barbell_shrug');
+      expect(Clips.nextUp('user:abc'), isNull, reason: 'Own exercises have no clip');
     });
 
     test('every clip exists for every voice', () {
       for (final v in ['charlie', 'matilda']) {
-        for (final c in Clips.all) {
+        for (final c in [...Clips.all, for (final id in spokenExercises) Clips.nextUp(id)!]) {
           expect(File('assets/voice/$v/$c.mp3').existsSync(), isTrue, reason: '$v/$c');
         }
       }
@@ -90,16 +116,19 @@ void main() {
     late FakeClock clock;
     late FakeVoice voice;
     late ProviderContainer c;
+    late FakeAlerts alerts;
 
     setUp(() async {
       db = memoryDb();
       clock = FakeClock(DateTime.utc(2026, 3, 2, 18));
       voice = FakeVoice();
+      alerts = FakeAlerts();
       c = ProviderContainer(
         overrides: [
           databaseProvider.overrideWithValue(db),
           clockProvider.overrideWithValue(clock.call),
           voicePlayerProvider.overrideWithValue(voice),
+          restAlertsProvider.overrideWithValue(alerts),
         ],
       );
       c.listen(currentSettingsProvider, (_, _) {});
@@ -241,17 +270,17 @@ void main() {
       expect(voice.said, isNot(contains('rest_over')));
     });
 
-    test('"Next exercise" plays before the rest ends, not on top of "Go"', () async {
+    test('the next exercise is named before the rest ends, not on top of "Go"', () async {
       await startDay(exercises: 2);
       final guide = c.read(guideProvider.notifier);
       await guide.startSet();
       await after(30);
       await guide.finishSet();
       await ticks(50);
-      expect(voice.said, ['set_1', 'rest_60', 'ten_left', 'next_exercise']);
+      expect(voice.said, ['set_1', 'rest_60', 'ten_left', 'names/bench_press']);
       await guide.startSet();
       expect(voice.said.last, 'set_1');
-      expect(voice.said.where((c) => c == 'next_exercise'), hasLength(1));
+      expect(voice.said.where((c) => c.startsWith('names/')), hasLength(1));
     });
 
     test('stop cuts off the voice and ends the rest', () async {
@@ -275,6 +304,78 @@ void main() {
       await after(30);
       expect(voice.said, isEmpty);
       expect(c.read(guideProvider).phase, GuidePhase.set, reason: 'The set waits for Set done');
+    });
+
+    test('a rest alert follows the rest and is asked for once', () async {
+      final sessionId = await startDay();
+      final guide = c.read(guideProvider.notifier);
+      await guide.startSet();
+      await after(30);
+      await guide.finishSet();
+      expect(alerts.asked, 1);
+      await after(1);
+      final start = clock().toUtc().subtract(const Duration(seconds: 1));
+      expect(alerts.at, start.add(const Duration(seconds: 60)));
+      expect(alerts.body, 'Next: Bench press · set 2 of 2');
+
+      await guide.addRest(15);
+      await after(1);
+      expect(alerts.at, start.add(const Duration(seconds: 75)), reason: '+15 s moves the alert');
+
+      await guide.setPaused(sessionId, true);
+      await after(1);
+      expect(alerts.at, isNull, reason: 'No alert while paused');
+      await guide.setPaused(sessionId, false);
+      await after(1);
+      expect(alerts.at, isNotNull);
+
+      await guide.startSet();
+      await after(1);
+      expect(alerts.at, isNull, reason: 'A new set ends the rest and its alert');
+      await guide.finishSet();
+      expect(alerts.asked, 1, reason: 'The permission is asked for only once');
+    });
+
+    test('a plan time is a target; only the measured time is saved', () async {
+      final plan = ProgramPlan(
+        days: [
+          PlanDay(
+            name: 'Core',
+            focus: '',
+            items: [
+              PlanItem(kind: ItemKind.main, exerciseId: 'plank', name: 'Plank', sets: 1, seconds: 45, restSec: 60),
+            ],
+          ),
+        ],
+      );
+      final id = await ProgramRepository(db, clock.call).create(plan, name: 'Core');
+      final repo = WorkoutRepository(db, clock.call);
+      final sessionId = await repo.startProgramDay(programId: id, dayIndex: 0);
+      var set = (await repo.loadSession(sessionId))!.exercises.single.sets.single;
+      expect(set.targetSec, 45);
+      expect(set.durationSec, isNull, reason: 'Nothing is measured yet');
+
+      final guide = c.read(guideProvider.notifier);
+      await guide.startSet();
+      expect(c.read(guideProvider).targetSec, 45);
+      await ticks(45);
+      set = (await repo.loadSession(sessionId))!.exercises.single.sets.single;
+      expect(set.completed, isTrue);
+      expect(set.durationSec, 45);
+    });
+
+    test('the v6 upgrade moves plan targets out of the measured time', () async {
+      final sessionId = await startDay();
+      final repo = WorkoutRepository(db, clock.call);
+      final sets = (await repo.loadSession(sessionId))!.exercises.single.sets;
+      // As a v5 app saved them: a plan target in duration_sec.
+      await repo.updateSet(sets[0].id, const SetEntriesCompanion(durationSec: Value(45), reps: Value(null)));
+      await repo.updateSet(sets[1].id, const SetEntriesCompanion(durationSec: Value(50), reps: Value(null)));
+      await repo.setCompleted(sets[1].id, true);
+      await db.moveTargetTimes();
+      final after = (await repo.loadSession(sessionId))!.exercises.single.sets;
+      expect((after[0].targetSec, after[0].durationSec), (45, null), reason: 'An open set held a target');
+      expect((after[1].targetSec, after[1].durationSec), (null, 50), reason: 'A done set keeps its time');
     });
   });
 }

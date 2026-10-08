@@ -3,6 +3,8 @@
 /// Pure functions, so the timing can be tested without a clock or audio.
 library;
 
+import 'voice_names.dart';
+
 /// Seconds a set takes when the user has not set a time: about 3 s a rep
 /// (a controlled lift), from 20 to 90 s. Without reps, 40 s.
 int estimateSetSec(int? reps) => reps == null || reps <= 0 ? 40 : (reps * 3).clamp(20, 90);
@@ -53,6 +55,10 @@ abstract final class Clips {
   static const done = 'done';
 
   static const _rests = [30, 45, 60, 90, 120, 150, 180, 240];
+
+  /// "Next up: Bench press." for an exercise the voice can name, else null.
+  static String? nextUp(String? catalogId) =>
+      catalogId != null && spokenExercises.contains(catalogId) ? 'names/${voiceKey(catalogId)}' : null;
 
   /// "Set three. Go!" for sets 1–10, else "Go!".
   static String set(int number) => number >= 1 && number <= 10 ? 'set_$number' : go;
@@ -115,3 +121,8 @@ List<String> restCues(int before, int now, int target, {required bool countdown}
   }
   return out;
 }
+
+/// Clip file name for a catalog ID, as tool/voice/names.py makes it:
+/// 'lib:Barbell_Shrug' -> 'lib_barbell_shrug'.
+String voiceKey(String catalogId) =>
+    catalogId.toLowerCase().replaceAll(RegExp('[^a-z0-9]+'), '_').replaceAll(RegExp(r'^_+|_+$'), '');

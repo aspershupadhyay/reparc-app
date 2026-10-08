@@ -7,6 +7,13 @@
          Remove this for a Google Play build; Play delivers updates itself. -->
     <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES"/>
 
+    <!-- Rest alert (handbook 4.13): a local notification at the end of a
+         guided rest. POST_NOTIFICATIONS is asked for on the first guided rest.
+         SCHEDULE_EXACT_ALARM is not asked for; where Android grants it, the
+         alert is on time, else Android may deliver it a little late. -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
+    <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM"/>
+
     <!-- Health Connect: one permission per data type, each asked for only when
          the user switches that feature on (handbook 9.2, D-020). No heart rate,
          sleep, location, or clinical records. -->
@@ -75,6 +82,8 @@
         <meta-data
             android:name="flutterEmbedding"
             android:value="2" />
+        <!-- Shows the scheduled rest alert. -->
+        <receiver android:exported="false" android:name="com.dexterous.flutterlocalnotifications.ScheduledNotificationReceiver" />
     </application>
     <!-- Required to query activities that can process text, see:
          https://developer.android.com/training/package-visibility and

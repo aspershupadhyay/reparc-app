@@ -3241,6 +3241,17 @@ class $SetEntriesTable extends SetEntries
     type: DriftSqlType.int,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _targetSecMeta = const VerificationMeta(
+    'targetSec',
+  );
+  @override
+  late final GeneratedColumn<int> targetSec = GeneratedColumn<int>(
+    'target_sec',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
   static const VerificationMeta _distanceMeta = const VerificationMeta(
     'distance',
   );
@@ -3330,6 +3341,7 @@ class $SetEntriesTable extends SetEntries
     load,
     loadUnit,
     durationSec,
+    targetSec,
     distance,
     distanceUnit,
     restSec,
@@ -3415,6 +3427,12 @@ class $SetEntriesTable extends SetEntries
           data['duration_sec']!,
           _durationSecMeta,
         ),
+      );
+    }
+    if (data.containsKey('target_sec')) {
+      context.handle(
+        _targetSecMeta,
+        targetSec.isAcceptableOrUnknown(data['target_sec']!, _targetSecMeta),
       );
     }
     if (data.containsKey('distance')) {
@@ -3516,6 +3534,10 @@ class $SetEntriesTable extends SetEntries
         DriftSqlType.int,
         data['${effectivePrefix}duration_sec'],
       ),
+      targetSec: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}target_sec'],
+      ),
       distance: attachedDatabase.typeMapping.read(
         DriftSqlType.double,
         data['${effectivePrefix}distance'],
@@ -3566,7 +3588,12 @@ class SetEntry extends DataClass implements Insertable<SetEntry> {
   final int? reps;
   final double? load;
   final String? loadUnit;
+
+  /// Time the set measured or the user typed. Never a plan target.
   final int? durationSec;
+
+  /// Time the plan asks for, such as a 45 s plank. A target, not a result.
+  final int? targetSec;
   final double? distance;
   final String? distanceUnit;
   final int? restSec;
@@ -3585,6 +3612,7 @@ class SetEntry extends DataClass implements Insertable<SetEntry> {
     this.load,
     this.loadUnit,
     this.durationSec,
+    this.targetSec,
     this.distance,
     this.distanceUnit,
     this.restSec,
@@ -3617,6 +3645,9 @@ class SetEntry extends DataClass implements Insertable<SetEntry> {
     }
     if (!nullToAbsent || durationSec != null) {
       map['duration_sec'] = Variable<int>(durationSec);
+    }
+    if (!nullToAbsent || targetSec != null) {
+      map['target_sec'] = Variable<int>(targetSec);
     }
     if (!nullToAbsent || distance != null) {
       map['distance'] = Variable<double>(distance);
@@ -3656,6 +3687,9 @@ class SetEntry extends DataClass implements Insertable<SetEntry> {
       durationSec: durationSec == null && nullToAbsent
           ? const Value.absent()
           : Value(durationSec),
+      targetSec: targetSec == null && nullToAbsent
+          ? const Value.absent()
+          : Value(targetSec),
       distance: distance == null && nullToAbsent
           ? const Value.absent()
           : Value(distance),
@@ -3694,6 +3728,7 @@ class SetEntry extends DataClass implements Insertable<SetEntry> {
       load: serializer.fromJson<double?>(json['load']),
       loadUnit: serializer.fromJson<String?>(json['loadUnit']),
       durationSec: serializer.fromJson<int?>(json['durationSec']),
+      targetSec: serializer.fromJson<int?>(json['targetSec']),
       distance: serializer.fromJson<double?>(json['distance']),
       distanceUnit: serializer.fromJson<String?>(json['distanceUnit']),
       restSec: serializer.fromJson<int?>(json['restSec']),
@@ -3719,6 +3754,7 @@ class SetEntry extends DataClass implements Insertable<SetEntry> {
       'load': serializer.toJson<double?>(load),
       'loadUnit': serializer.toJson<String?>(loadUnit),
       'durationSec': serializer.toJson<int?>(durationSec),
+      'targetSec': serializer.toJson<int?>(targetSec),
       'distance': serializer.toJson<double?>(distance),
       'distanceUnit': serializer.toJson<String?>(distanceUnit),
       'restSec': serializer.toJson<int?>(restSec),
@@ -3740,6 +3776,7 @@ class SetEntry extends DataClass implements Insertable<SetEntry> {
     Value<double?> load = const Value.absent(),
     Value<String?> loadUnit = const Value.absent(),
     Value<int?> durationSec = const Value.absent(),
+    Value<int?> targetSec = const Value.absent(),
     Value<double?> distance = const Value.absent(),
     Value<String?> distanceUnit = const Value.absent(),
     Value<int?> restSec = const Value.absent(),
@@ -3758,6 +3795,7 @@ class SetEntry extends DataClass implements Insertable<SetEntry> {
     load: load.present ? load.value : this.load,
     loadUnit: loadUnit.present ? loadUnit.value : this.loadUnit,
     durationSec: durationSec.present ? durationSec.value : this.durationSec,
+    targetSec: targetSec.present ? targetSec.value : this.targetSec,
     distance: distance.present ? distance.value : this.distance,
     distanceUnit: distanceUnit.present ? distanceUnit.value : this.distanceUnit,
     restSec: restSec.present ? restSec.value : this.restSec,
@@ -3782,6 +3820,7 @@ class SetEntry extends DataClass implements Insertable<SetEntry> {
       durationSec: data.durationSec.present
           ? data.durationSec.value
           : this.durationSec,
+      targetSec: data.targetSec.present ? data.targetSec.value : this.targetSec,
       distance: data.distance.present ? data.distance.value : this.distance,
       distanceUnit: data.distanceUnit.present
           ? data.distanceUnit.value
@@ -3809,6 +3848,7 @@ class SetEntry extends DataClass implements Insertable<SetEntry> {
           ..write('load: $load, ')
           ..write('loadUnit: $loadUnit, ')
           ..write('durationSec: $durationSec, ')
+          ..write('targetSec: $targetSec, ')
           ..write('distance: $distance, ')
           ..write('distanceUnit: $distanceUnit, ')
           ..write('restSec: $restSec, ')
@@ -3832,6 +3872,7 @@ class SetEntry extends DataClass implements Insertable<SetEntry> {
     load,
     loadUnit,
     durationSec,
+    targetSec,
     distance,
     distanceUnit,
     restSec,
@@ -3854,6 +3895,7 @@ class SetEntry extends DataClass implements Insertable<SetEntry> {
           other.load == this.load &&
           other.loadUnit == this.loadUnit &&
           other.durationSec == this.durationSec &&
+          other.targetSec == this.targetSec &&
           other.distance == this.distance &&
           other.distanceUnit == this.distanceUnit &&
           other.restSec == this.restSec &&
@@ -3874,6 +3916,7 @@ class SetEntriesCompanion extends UpdateCompanion<SetEntry> {
   final Value<double?> load;
   final Value<String?> loadUnit;
   final Value<int?> durationSec;
+  final Value<int?> targetSec;
   final Value<double?> distance;
   final Value<String?> distanceUnit;
   final Value<int?> restSec;
@@ -3893,6 +3936,7 @@ class SetEntriesCompanion extends UpdateCompanion<SetEntry> {
     this.load = const Value.absent(),
     this.loadUnit = const Value.absent(),
     this.durationSec = const Value.absent(),
+    this.targetSec = const Value.absent(),
     this.distance = const Value.absent(),
     this.distanceUnit = const Value.absent(),
     this.restSec = const Value.absent(),
@@ -3913,6 +3957,7 @@ class SetEntriesCompanion extends UpdateCompanion<SetEntry> {
     this.load = const Value.absent(),
     this.loadUnit = const Value.absent(),
     this.durationSec = const Value.absent(),
+    this.targetSec = const Value.absent(),
     this.distance = const Value.absent(),
     this.distanceUnit = const Value.absent(),
     this.restSec = const Value.absent(),
@@ -3938,6 +3983,7 @@ class SetEntriesCompanion extends UpdateCompanion<SetEntry> {
     Expression<double>? load,
     Expression<String>? loadUnit,
     Expression<int>? durationSec,
+    Expression<int>? targetSec,
     Expression<double>? distance,
     Expression<String>? distanceUnit,
     Expression<int>? restSec,
@@ -3958,6 +4004,7 @@ class SetEntriesCompanion extends UpdateCompanion<SetEntry> {
       if (load != null) 'load': load,
       if (loadUnit != null) 'load_unit': loadUnit,
       if (durationSec != null) 'duration_sec': durationSec,
+      if (targetSec != null) 'target_sec': targetSec,
       if (distance != null) 'distance': distance,
       if (distanceUnit != null) 'distance_unit': distanceUnit,
       if (restSec != null) 'rest_sec': restSec,
@@ -3980,6 +4027,7 @@ class SetEntriesCompanion extends UpdateCompanion<SetEntry> {
     Value<double?>? load,
     Value<String?>? loadUnit,
     Value<int?>? durationSec,
+    Value<int?>? targetSec,
     Value<double?>? distance,
     Value<String?>? distanceUnit,
     Value<int?>? restSec,
@@ -4000,6 +4048,7 @@ class SetEntriesCompanion extends UpdateCompanion<SetEntry> {
       load: load ?? this.load,
       loadUnit: loadUnit ?? this.loadUnit,
       durationSec: durationSec ?? this.durationSec,
+      targetSec: targetSec ?? this.targetSec,
       distance: distance ?? this.distance,
       distanceUnit: distanceUnit ?? this.distanceUnit,
       restSec: restSec ?? this.restSec,
@@ -4046,6 +4095,9 @@ class SetEntriesCompanion extends UpdateCompanion<SetEntry> {
     if (durationSec.present) {
       map['duration_sec'] = Variable<int>(durationSec.value);
     }
+    if (targetSec.present) {
+      map['target_sec'] = Variable<int>(targetSec.value);
+    }
     if (distance.present) {
       map['distance'] = Variable<double>(distance.value);
     }
@@ -4086,6 +4138,7 @@ class SetEntriesCompanion extends UpdateCompanion<SetEntry> {
           ..write('load: $load, ')
           ..write('loadUnit: $loadUnit, ')
           ..write('durationSec: $durationSec, ')
+          ..write('targetSec: $targetSec, ')
           ..write('distance: $distance, ')
           ..write('distanceUnit: $distanceUnit, ')
           ..write('restSec: $restSec, ')
@@ -11782,6 +11835,7 @@ typedef $$SetEntriesTableCreateCompanionBuilder = SetEntriesCompanion Function({
   Value<double?> load,
   Value<String?> loadUnit,
   Value<int?> durationSec,
+  Value<int?> targetSec,
   Value<double?> distance,
   Value<String?> distanceUnit,
   Value<int?> restSec,
@@ -11802,6 +11856,7 @@ typedef $$SetEntriesTableUpdateCompanionBuilder = SetEntriesCompanion Function({
   Value<double?> load,
   Value<String?> loadUnit,
   Value<int?> durationSec,
+  Value<int?> targetSec,
   Value<double?> distance,
   Value<String?> distanceUnit,
   Value<int?> restSec,
@@ -11887,6 +11942,11 @@ class $$SetEntriesTableFilterComposer
 
   ColumnFilters<int> get durationSec => $composableBuilder(
     column: $table.durationSec,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get targetSec => $composableBuilder(
+    column: $table.targetSec,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -12003,6 +12063,11 @@ class $$SetEntriesTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<int> get targetSec => $composableBuilder(
+    column: $table.targetSec,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<double> get distance => $composableBuilder(
     column: $table.distance,
     builder: (column) => ColumnOrderings(column),
@@ -12100,6 +12165,9 @@ class $$SetEntriesTableAnnotationComposer
     builder: (column) => column,
   );
 
+  GeneratedColumn<int> get targetSec =>
+      $composableBuilder(column: $table.targetSec, builder: (column) => column);
+
   GeneratedColumn<double> get distance =>
       $composableBuilder(column: $table.distance, builder: (column) => column);
 
@@ -12187,6 +12255,7 @@ class $$SetEntriesTableTableManager
                 Value<double?> load = const Value.absent(),
                 Value<String?> loadUnit = const Value.absent(),
                 Value<int?> durationSec = const Value.absent(),
+                Value<int?> targetSec = const Value.absent(),
                 Value<double?> distance = const Value.absent(),
                 Value<String?> distanceUnit = const Value.absent(),
                 Value<int?> restSec = const Value.absent(),
@@ -12206,6 +12275,7 @@ class $$SetEntriesTableTableManager
                 load: load,
                 loadUnit: loadUnit,
                 durationSec: durationSec,
+                targetSec: targetSec,
                 distance: distance,
                 distanceUnit: distanceUnit,
                 restSec: restSec,
@@ -12227,6 +12297,7 @@ class $$SetEntriesTableTableManager
                 Value<double?> load = const Value.absent(),
                 Value<String?> loadUnit = const Value.absent(),
                 Value<int?> durationSec = const Value.absent(),
+                Value<int?> targetSec = const Value.absent(),
                 Value<double?> distance = const Value.absent(),
                 Value<String?> distanceUnit = const Value.absent(),
                 Value<int?> restSec = const Value.absent(),
@@ -12246,6 +12317,7 @@ class $$SetEntriesTableTableManager
                 load: load,
                 loadUnit: loadUnit,
                 durationSec: durationSec,
+                targetSec: targetSec,
                 distance: distance,
                 distanceUnit: distanceUnit,
                 restSec: restSec,

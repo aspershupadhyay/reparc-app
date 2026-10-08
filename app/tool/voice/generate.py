@@ -32,15 +32,19 @@ def main(argv: list[str]) -> int:
     spec = json.loads((HERE / "phrases.json").read_text())
     record = json.loads(RECORD.read_text())
     settings = spec.get("voice_settings", {})
+    # Exercise names ("Next up: Bench press.") from names.py go in names/.
+    names = json.loads((HERE / "names.json").read_text())
+    phrases = {**spec["phrases"], **{f"names/{k}": v["text"] for k, v in names.items()}}
     todo = []
     for voice in spec["voices"]:
-        for name, text in spec["phrases"].items():
+        for name, text in phrases.items():
             want = {"text": text, "model": spec["model"], "settings": settings}
             path = OUT / voice / f"{name}.mp3"
             if not path.exists() or record["clips"].get(f"{voice}/{name}") != want:
                 todo.append((voice, name, want, path))
     for voice, name, _, _ in todo:
         print(f"{'would make' if dry else 'make'} {voice}/{name}")
+    print(f"{len(todo)} clips, {sum(len(w['text']) for _, _, w, _ in todo)} characters")
     if dry or not todo:
         return 0
     key = os.environ.get("ELEVENLABS_API_KEY")

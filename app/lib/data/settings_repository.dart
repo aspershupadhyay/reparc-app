@@ -26,6 +26,8 @@ class AppSettings {
     this.voice = 'charlie',
     this.finishRepSets = false,
     this.autoStartSets = false,
+    this.restAlert = true,
+    this.restAlertAsked = false,
     this.setSec,
   });
 
@@ -44,6 +46,13 @@ class AppSettings {
   /// countdown. Off by default: the voice says the rest is over and the
   /// user starts the set.
   final bool autoStartSets;
+
+  /// A notification at the end of a guided rest, for a locked phone.
+  final bool restAlert;
+
+  /// The app asked for the notification permission once, on the first
+  /// guided rest. It does not ask again; the phone's settings decide.
+  final bool restAlertAsked;
 
   /// Set time for rep sets when [finishRepSets] is on. Null means an
   /// estimate from the reps (about 3 s a rep, 20–90 s).
@@ -136,6 +145,8 @@ class AppSettings {
     voice: const ['charlie', 'matilda', 'off'].contains(m['guide.voice']) ? m['guide.voice']! : 'charlie',
     finishRepSets: m['guide.finishReps'] == 'true',
     autoStartSets: m['guide.autoStart'] == 'true',
+    restAlert: m['guide.restAlert'] != 'false',
+    restAlertAsked: m['guide.restAlertAsked'] == 'true',
     setSec: int.tryParse(m['guide.setSec'] ?? ''),
   );
 }
@@ -202,5 +213,7 @@ class SettingsRepository {
   Future<void> setVoice(String v) => set('guide.voice', v);
   Future<void> setFinishRepSets(bool v) => set('guide.finishReps', v ? 'true' : null);
   Future<void> setAutoStartSets(bool v) => set('guide.autoStart', v ? 'true' : null);
+  Future<void> setRestAlert(bool v) => set('guide.restAlert', v ? null : 'false');
+  Future<void> setRestAlertAsked() => set('guide.restAlertAsked', 'true');
   Future<void> setSetSec(int? sec) => set('guide.setSec', sec?.toString());
 }

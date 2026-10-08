@@ -20,6 +20,8 @@ android {
     ndkVersion = flutter.ndkVersion
 
     compileOptions {
+        // flutter_local_notifications (rest alert) needs Java 8+ APIs on older Android.
+        isCoreLibraryDesugaringEnabled = true
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
     }
@@ -74,4 +76,5 @@ dependencies {
     // FileProvider, to hand a checked update APK to Android's installer
     // (MainActivity). The same version url_launcher already brings in.
     implementation("androidx.core:core:1.17.0")
+    coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.4")
 }

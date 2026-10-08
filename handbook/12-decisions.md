@@ -381,5 +381,7 @@ Keep major choices here. Update the related chapter when a decision changes.
 
 **Update (2026-10-08, owner request after a review):** The user starts each set and ends each rep set. The guide no longer ends a rep set on a guessed time or starts the next set on its own, unless the user turns on **Finish rep sets on time** or **Start next set on its own** in Me → Training (both off by default). A guessed set time is never saved. A pause also pauses the rest. The screen stays on during a guided workout. See handbook 4.13.
 
+**Update (2026-10-08, owner request):** A local notification marks the end of a guided rest on a locked phone (asked for once, on the first guided rest; Me → Training → **Rest alert** turns it off). The voice names the next exercise for 95 built-in exercises. Plan target times have their own column (`targetSec`, schema v6). The clips were made again with `eleven_v3`. The ElevenLabs key is never stored in the repository; the owner keeps it as an environment secret.
+
 **License (To confirm):** The clips were made on the owner's free ElevenLabs plan, which allows non-commercial use with credit to ElevenLabs. The credit is in the app's licenses page (`app/assets/licenses/elevenlabs-voice.txt`). Before a paid or store release, upgrade the plan and make the clips again, or record new ones.
 

@@ -254,9 +254,15 @@ Built 2026-10-08 (D-031). Owner request: less typing, timers that run on their o
 
 **Screen.** While the guide runs a live workout the screen stays on, so cues play on time (`core/screen_awake.dart`, shared with AI connections). It goes off when the workout ends or the guide is off.
 
-**Voice.** 33 short clips in two ElevenLabs voices, Charlie and Matilda, bundled in `app/assets/voice/` (about 1 MB). `app/tool/voice/postprocess.py` cuts silence at both ends, sets each clip to the same loudness (mean −18 dB, peaks under −1 dBFS), and saves 96 kbps mono MP3. "Three", "Two", and "One" were cut from the first "Three. Two. One." clip. The app loads the clips of the chosen voice when a workout starts, and a new cue can cut off old cues. It lowers other audio, such as music, while a cue plays. No network request, and no workout data leaves the phone.
+**Voice.** 33 short cue clips and 95 exercise names in two ElevenLabs voices, Charlie and Matilda, bundled in `app/assets/voice/` (about 3 MB). `app/tool/voice/postprocess.py` cuts silence at both ends, sets each clip to the same loudness (mean −18 dB, peaks under −1 dBFS), and saves 96 kbps mono MP3. The app loads the clips of the chosen voice when a workout starts, and a new cue can cut off old cues. It lowers other audio, such as music, while a cue plays. No network request, and no workout data leaves the phone.
 
-**Voice script (ready, not recorded).** `app/tool/voice/phrases.json` holds a warmer coach script for the `eleven_v3` model, with audio tags such as `[energetic]`. `generate.py` makes a clip again when its text, model, or settings differ from `tool/voice/generated.json`, the record of what the bundled clips were made from. Run `python3 tool/voice/generate.py --dry-run` to see the list. It needs `ELEVENLABS_API_KEY`. The bundled clips still use the first script.
+**Voice script (recorded 2026-10-08).** `app/tool/voice/phrases.json` holds the coach script for the `eleven_v3` model, with audio tags such as `[energetic]` that set the tone and are not spoken. `generate.py` makes a clip again when its text, model, or settings differ from `tool/voice/generated.json`, the record of what each bundled clip was made from. Run `python3 tool/voice/generate.py --dry-run` to see what would change. It reads the key from `ELEVENLABS_API_KEY` and never stores it.
+
+**Exercise names.** The voice names the next exercise: "Next up: Bench press." `tool/voice/names.py` lists the coached exercises and the library exercises that plans use (95 names), with the name the plan shows. It writes `tool/voice/names.json` and `lib/domain/voice_names.dart`. Clips are in `assets/voice/<voice>/names/`. An exercise without a clip, such as one the user made, gets "Next exercise coming up."
+
+**Rest alert.** Me → Training → **Rest alert** (on by default). While a guided rest runs, the app sets one local notification for the rest's end: "Rest over · Next: Bench press · set 2 of 4". It moves with **+15 s**, and is removed on pause, **End rest**, a new set, or the end of the workout. With the app open, it is removed 2 s before the end, because the voice says it. The app asks for the notification permission once, on the first guided rest. On Android the alert is exact where Android allows exact alarms; else Android may deliver it a little late. The app does not ask for the exact-alarm permission. On iPhone the alert shows on the lock screen; the app shows none while it is open. Code: `app/lib/features/workout/rest_alert.dart`.
+
+**Plan time and measured time (schema v6).** A set has two time fields. `targetSec` is the time the plan asks for, such as a 45 s plank. `durationSec` is the time the set measured or the user typed. A plan day writes only `targetSec`. The set row shows the target as the hint. The v6 upgrade moves a target out of `durationSec` for open sets from a plan that have a time and no reps (`AppDatabase.moveTargetTimes`). Done sets keep their time.
 
 **Set rows (2026-10-08).** Each set has weight, reps, and time. The time hint shows the set time the guide assumes. A done set has a dark-green check and a green tint (Energy strong, 5.2:1 on white). The set being timed has a teal outline. Warm-up sets show "W". The next set offers **Same as last set**: one tap fills the last set's weight and reps; it does not mark the set done. In a live workout, a finished exercise folds to one line; tap it to open it.
 
@@ -265,9 +271,9 @@ Built 2026-10-08 (D-031). Owner request: less typing, timers that run on their o
 **Limits (To confirm).**
 
 - The set timer lives in memory. After the app restarts, tap **Start set** again. A running rest survives a restart, because it is saved on the session.
-- The screen stays on during a guided workout. If the user locks the phone or leaves the app, iOS stops timers, so cues may not play there. Android may also delay them. A local notification for the end of a rest needs a notification permission and is not built (owner choice needed).
+- The screen stays on during a guided workout. If the user locks the phone or leaves the app, iOS stops timers, so voice cues may not play there; the rest alert covers the end of the rest. Android may also delay them.
 - On iOS, music may stay lowered after a cue. Check on a device.
-- The plan target time of a timed set and the measured time share one field (`durationSec`). Keeping them apart needs a database migration (owner choice needed).
-- Exercise names are not spoken. Each name needs its own clip.
+- Exercises the user made are not named by the voice. A clip for each would need a network call; the app makes none.
+- License: the clips were made on the owner's free ElevenLabs plan (non-commercial). A store release needs a paid plan and the clips made again (D-031).
 - Screen reader: the set time has a spoken label. Check VoiceOver and TalkBack on devices.
 - Code: `app/lib/domain/guide.dart` (rules), `app/lib/features/workout/guide_controller.dart`, `voice.dart`. Tests: `app/test/guide_test.dart`.

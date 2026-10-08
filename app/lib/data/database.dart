@@ -90,7 +90,12 @@ class SetEntries extends Table with RecordColumns {
   IntColumn get reps => integer().nullable()();
   RealColumn get load => real().nullable()();
   TextColumn get loadUnit => text().nullable()();
+
+  /// Time the set measured or the user typed. Never a plan target.
   IntColumn get durationSec => integer().nullable()();
+
+  /// Time the plan asks for, such as a 45 s plank. A target, not a result.
+  IntColumn get targetSec => integer().nullable()();
   RealColumn get distance => real().nullable()();
   TextColumn get distanceUnit => text().nullable()();
   IntColumn get restSec => integer().nullable()();
@@ -263,8 +268,20 @@ class AppDatabase extends _$AppDatabase {
 
   /// Current local data format. Every change needs a migration, a test from
   /// the last supported version, and a recovery plan (handbook 7.5).
+  /// Moves plan target times out of `duration_sec` (schema v6). Before v6
+  /// a plan's target was saved there, the same field as a measured time. An
+  /// open set from a plan, with a time and no reps, held a target.
+  Future<void> moveTargetTimes() => customStatement('''
+    UPDATE set_entries SET target_sec = duration_sec, duration_sec = NULL
+    WHERE completed = 0 AND duration_sec IS NOT NULL AND reps IS NULL
+      AND session_exercise_id IN (
+        SELECT se.id FROM session_exercises se
+        JOIN workout_sessions ws ON ws.id = se.session_id
+        WHERE ws.program_id IS NOT NULL)
+  ''');
+
   @override
-  int get schemaVersion => 5;
+  int get schemaVersion => 6;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -301,6 +318,11 @@ class AppDatabase extends _$AppDatabase {
       }
       // v4 -> v5: plans and roadmaps become one kind of plan.
       if (from < 5) await transaction(copyLegacyPlans);
+      // v5 -> v6: plan target times get their own column.
+      if (from < 6) {
+        await m.addColumn(setEntries, setEntries.targetSec);
+        await moveTargetTimes();
+      }
     },
     beforeOpen: (details) async {
       await customStatement('PRAGMA foreign_keys = ON');

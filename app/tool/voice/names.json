@@ -1,0 +1,382 @@
+{
+  "back_squat": {
+    "id": "back-squat",
+    "text": "Next up: Back squat."
+  },
+  "barbell_curl": {
+    "id": "barbell-curl",
+    "text": "Next up: Barbell curl."
+  },
+  "barbell_row": {
+    "id": "barbell-row",
+    "text": "Next up: Bent-over row."
+  },
+  "bench_press": {
+    "id": "bench-press",
+    "text": "Next up: Bench press."
+  },
+  "cable_crossover": {
+    "id": "cable-crossover",
+    "text": "Next up: Cable crossover."
+  },
+  "calf_raise": {
+    "id": "calf-raise",
+    "text": "Next up: Standing calf raise."
+  },
+  "db_fly": {
+    "id": "db-fly",
+    "text": "Next up: Dumbbell fly."
+  },
+  "dead_bug": {
+    "id": "dead-bug",
+    "text": "Next up: Dead bug."
+  },
+  "deadlift": {
+    "id": "deadlift",
+    "text": "Next up: Deadlift."
+  },
+  "dip_chest": {
+    "id": "dip-chest",
+    "text": "Next up: Chest dip."
+  },
+  "face_pull": {
+    "id": "face-pull",
+    "text": "Next up: Face pull."
+  },
+  "glute_bridge": {
+    "id": "glute-bridge",
+    "text": "Next up: Glute bridge."
+  },
+  "goblet_squat": {
+    "id": "goblet-squat",
+    "text": "Next up: Goblet squat."
+  },
+  "hammer_curl": {
+    "id": "hammer-curl",
+    "text": "Next up: Hammer curl."
+  },
+  "hanging_knee_raise": {
+    "id": "hanging-knee-raise",
+    "text": "Next up: Hanging knee raise."
+  },
+  "hip_thrust": {
+    "id": "hip-thrust",
+    "text": "Next up: Barbell hip thrust."
+  },
+  "incline_db_press": {
+    "id": "incline-db-press",
+    "text": "Next up: Incline dumbbell press."
+  },
+  "kettlebell_swing": {
+    "id": "kettlebell-swing",
+    "text": "Next up: Kettlebell swing."
+  },
+  "lat_pulldown": {
+    "id": "lat-pulldown",
+    "text": "Next up: Lat pulldown."
+  },
+  "lateral_raise": {
+    "id": "lateral-raise",
+    "text": "Next up: Lateral raise."
+  },
+  "leg_extension": {
+    "id": "leg-extension",
+    "text": "Next up: Leg extension."
+  },
+  "lib_arm_circles": {
+    "id": "lib:Arm_Circles",
+    "text": "Next up: Arm circles."
+  },
+  "lib_band_assisted_pull_up": {
+    "id": "lib:Band_Assisted_Pull-Up",
+    "text": "Next up: Band-assisted pull-up."
+  },
+  "lib_band_pull_apart": {
+    "id": "lib:Band_Pull_Apart",
+    "text": "Next up: Band pull-apart."
+  },
+  "lib_barbell_incline_bench_press_medium_grip": {
+    "id": "lib:Barbell_Incline_Bench_Press_-_Medium_Grip",
+    "text": "Next up: Incline bench press."
+  },
+  "lib_barbell_shrug": {
+    "id": "lib:Barbell_Shrug",
+    "text": "Next up: Barbell shrug."
+  },
+  "lib_bench_dips": {
+    "id": "lib:Bench_Dips",
+    "text": "Next up: Bench dip."
+  },
+  "lib_body_tricep_press": {
+    "id": "lib:Body_Tricep_Press",
+    "text": "Next up: Bodyweight triceps press."
+  },
+  "lib_bodyweight_squat": {
+    "id": "lib:Bodyweight_Squat",
+    "text": "Next up: Bodyweight squat."
+  },
+  "lib_bodyweight_walking_lunge": {
+    "id": "lib:Bodyweight_Walking_Lunge",
+    "text": "Next up: Walking lunge."
+  },
+  "lib_cat_stretch": {
+    "id": "lib:Cat_Stretch",
+    "text": "Next up: Cat-cow."
+  },
+  "lib_chest_and_front_of_shoulder_stretch": {
+    "id": "lib:Chest_And_Front_Of_Shoulder_Stretch",
+    "text": "Next up: Chest and shoulder stretch."
+  },
+  "lib_childs_pose": {
+    "id": "lib:Childs_Pose",
+    "text": "Next up: Child's pose."
+  },
+  "lib_chin_up": {
+    "id": "lib:Chin-Up",
+    "text": "Next up: Chin-up."
+  },
+  "lib_dips_triceps_version": {
+    "id": "lib:Dips_-_Triceps_Version",
+    "text": "Next up: Parallel bar dip."
+  },
+  "lib_dumbbell_bench_press": {
+    "id": "lib:Dumbbell_Bench_Press",
+    "text": "Next up: Dumbbell bench press."
+  },
+  "lib_dumbbell_bicep_curl": {
+    "id": "lib:Dumbbell_Bicep_Curl",
+    "text": "Next up: Dumbbell curl."
+  },
+  "lib_dumbbell_rear_lunge": {
+    "id": "lib:Dumbbell_Rear_Lunge",
+    "text": "Next up: Dumbbell reverse lunge."
+  },
+  "lib_dumbbell_shrug": {
+    "id": "lib:Dumbbell_Shrug",
+    "text": "Next up: Dumbbell shrug."
+  },
+  "lib_dumbbell_step_ups": {
+    "id": "lib:Dumbbell_Step_Ups",
+    "text": "Next up: Dumbbell step-up."
+  },
+  "lib_dynamic_chest_stretch": {
+    "id": "lib:Dynamic_Chest_Stretch",
+    "text": "Next up: Dynamic chest stretch."
+  },
+  "lib_farmers_walk": {
+    "id": "lib:Farmers_Walk",
+    "text": "Next up: Farmer's walk."
+  },
+  "lib_groiners": {
+    "id": "lib:Groiners",
+    "text": "Next up: Groiners."
+  },
+  "lib_hamstring_stretch": {
+    "id": "lib:Hamstring_Stretch",
+    "text": "Next up: Hamstring stretch."
+  },
+  "lib_handstand_push_ups": {
+    "id": "lib:Handstand_Push-Ups",
+    "text": "Next up: Pike or wall handstand push-up."
+  },
+  "lib_hanging_leg_raise": {
+    "id": "lib:Hanging_Leg_Raise",
+    "text": "Next up: Hanging leg raise."
+  },
+  "lib_hanging_pike": {
+    "id": "lib:Hanging_Pike",
+    "text": "Next up: Hanging pike."
+  },
+  "lib_hyperextensions_with_no_hyperextension_bench": {
+    "id": "lib:Hyperextensions_With_No_Hyperextension_Bench",
+    "text": "Next up: Floor back extension."
+  },
+  "lib_incline_push_up": {
+    "id": "lib:Incline_Push-Up",
+    "text": "Next up: Incline push-up."
+  },
+  "lib_inverted_row": {
+    "id": "lib:Inverted_Row",
+    "text": "Next up: Inverted row."
+  },
+  "lib_inverted_row_with_straps": {
+    "id": "lib:Inverted_Row_with_Straps",
+    "text": "Next up: Feet-up ring row."
+  },
+  "lib_kettlebell_pistol_squat": {
+    "id": "lib:Kettlebell_Pistol_Squat",
+    "text": "Next up: Pistol squat."
+  },
+  "lib_kneeling_hip_flexor": {
+    "id": "lib:Kneeling_Hip_Flexor",
+    "text": "Next up: Kneeling hip flexor stretch."
+  },
+  "lib_lateral_raise_with_bands": {
+    "id": "lib:Lateral_Raise_-_With_Bands",
+    "text": "Next up: Band lateral raise."
+  },
+  "lib_leg_press": {
+    "id": "lib:Leg_Press",
+    "text": "Next up: Leg press."
+  },
+  "lib_lying_dumbbell_tricep_extension": {
+    "id": "lib:Lying_Dumbbell_Tricep_Extension",
+    "text": "Next up: Lying dumbbell extension."
+  },
+  "lib_mountain_climbers": {
+    "id": "lib:Mountain_Climbers",
+    "text": "Next up: Mountain climbers."
+  },
+  "lib_muscle_up": {
+    "id": "lib:Muscle_Up",
+    "text": "Next up: Muscle-up."
+  },
+  "lib_natural_glute_ham_raise": {
+    "id": "lib:Natural_Glute_Ham_Raise",
+    "text": "Next up: Nordic curl."
+  },
+  "lib_one_arm_dumbbell_row": {
+    "id": "lib:One-Arm_Dumbbell_Row",
+    "text": "Next up: One-arm dumbbell row."
+  },
+  "lib_palms_up_dumbbell_wrist_curl_over_a_bench": {
+    "id": "lib:Palms-Up_Dumbbell_Wrist_Curl_Over_A_Bench",
+    "text": "Next up: Dumbbell wrist curl."
+  },
+  "lib_push_up_wide": {
+    "id": "lib:Push-Up_Wide",
+    "text": "Next up: Wide push-up."
+  },
+  "lib_push_ups_close_triceps_position": {
+    "id": "lib:Push-Ups_-_Close_Triceps_Position",
+    "text": "Next up: Close-grip push-up."
+  },
+  "lib_push_ups_with_feet_elevated": {
+    "id": "lib:Push-Ups_With_Feet_Elevated",
+    "text": "Next up: Feet-up push-up."
+  },
+  "lib_recumbent_bike": {
+    "id": "lib:Recumbent_Bike",
+    "text": "Next up: Easy bike or rower."
+  },
+  "lib_reverse_crunch": {
+    "id": "lib:Reverse_Crunch",
+    "text": "Next up: Reverse crunch."
+  },
+  "lib_ring_dips": {
+    "id": "lib:Ring_Dips",
+    "text": "Next up: Ring dip."
+  },
+  "lib_rope_jumping": {
+    "id": "lib:Rope_Jumping",
+    "text": "Next up: Jump rope."
+  },
+  "lib_rowing_stationary": {
+    "id": "lib:Rowing_Stationary",
+    "text": "Next up: Rowing machine."
+  },
+  "lib_scapular_pull_up": {
+    "id": "lib:Scapular_Pull-Up",
+    "text": "Next up: Scapular pull-up."
+  },
+  "lib_single_arm_push_up": {
+    "id": "lib:Single-Arm_Push-Up",
+    "text": "Next up: One-arm push-up (assisted)."
+  },
+  "lib_single_leg_high_box_squat": {
+    "id": "lib:Single-Leg_High_Box_Squat",
+    "text": "Next up: Single-leg box squat."
+  },
+  "lib_single_leg_glute_bridge": {
+    "id": "lib:Single_Leg_Glute_Bridge",
+    "text": "Next up: Single-leg glute bridge."
+  },
+  "lib_standing_hip_circles": {
+    "id": "lib:Standing_Hip_Circles",
+    "text": "Next up: Hip circles."
+  },
+  "lib_step_up_with_knee_raise": {
+    "id": "lib:Step-up_with_Knee_Raise",
+    "text": "Next up: Step-up."
+  },
+  "lib_stiff_legged_dumbbell_deadlift": {
+    "id": "lib:Stiff-Legged_Dumbbell_Deadlift",
+    "text": "Next up: Dumbbell stiff-leg deadlift."
+  },
+  "lib_suspended_split_squat": {
+    "id": "lib:Suspended_Split_Squat",
+    "text": "Next up: Rear-foot-up split squat."
+  },
+  "lib_weighted_pull_ups": {
+    "id": "lib:Weighted_Pull_Ups",
+    "text": "Next up: Weighted pull-up."
+  },
+  "lib_worlds_greatest_stretch": {
+    "id": "lib:Worlds_Greatest_Stretch",
+    "text": "Next up: World's greatest stretch."
+  },
+  "lib_wrist_circles": {
+    "id": "lib:Wrist_Circles",
+    "text": "Next up: Wrist circles."
+  },
+  "lying_leg_curl": {
+    "id": "lying-leg-curl",
+    "text": "Next up: Lying leg curl."
+  },
+  "overhead_press": {
+    "id": "overhead-press",
+    "text": "Next up: Overhead press."
+  },
+  "overhead_triceps": {
+    "id": "overhead-triceps",
+    "text": "Next up: Overhead triceps extension."
+  },
+  "pallof_press": {
+    "id": "pallof-press",
+    "text": "Next up: Pallof press."
+  },
+  "plank": {
+    "id": "plank",
+    "text": "Next up: Front plank."
+  },
+  "pull_up": {
+    "id": "pull-up",
+    "text": "Next up: Pull-up."
+  },
+  "push_up": {
+    "id": "push-up",
+    "text": "Next up: Push-up."
+  },
+  "rear_delt_fly": {
+    "id": "rear-delt-fly",
+    "text": "Next up: Bent-over rear delt fly."
+  },
+  "romanian_deadlift": {
+    "id": "romanian-deadlift",
+    "text": "Next up: Romanian deadlift."
+  },
+  "russian_twist": {
+    "id": "russian-twist",
+    "text": "Next up: Russian twist."
+  },
+  "seated_cable_row": {
+    "id": "seated-cable-row",
+    "text": "Next up: Seated cable row."
+  },
+  "seated_db_press": {
+    "id": "seated-db-press",
+    "text": "Next up: Seated dumbbell press."
+  },
+  "skull_crusher": {
+    "id": "skull-crusher",
+    "text": "Next up: Skull crusher."
+  },
+  "split_squat": {
+    "id": "split-squat",
+    "text": "Next up: Split squat."
+  },
+  "triceps_pushdown": {
+    "id": "triceps-pushdown",
+    "text": "Next up: Triceps pushdown."
+  }
+}

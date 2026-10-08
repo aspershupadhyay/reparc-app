@@ -530,7 +530,8 @@ class _NextUp extends StatelessWidget {
 
   String? _aim() {
     if (isTimedSet(set)) {
-      return set.durationSec == null ? null : 'Hold ${fmtClock(Duration(seconds: set.durationSec!))}';
+      final sec = set.targetSec ?? set.durationSec;
+      return sec == null ? null : 'Hold ${fmtClock(Duration(seconds: sec))}';
     }
     final before = view.sets.takeWhile((x) => x.id != set.id).where((x) => x.setType == set.setType).toList();
     final prev = before.isEmpty ? null : before.last;

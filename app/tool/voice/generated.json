@@ -2,334 +2,1796 @@
   "note": "What each bundled clip was made from. generate.py makes a clip again when its text, model, or settings in phrases.json differ from this record.",
   "clips": {
     "charlie/set_1": {
-      "text": "Set one. Go!",
-      "model": "eleven_multilingual_v2",
-      "settings": {}
+      "text": "[energetic] Set one. Go!",
+      "model": "eleven_v3",
+      "settings": {
+        "stability": 0.5
+      }
     },
     "charlie/set_2": {
-      "text": "Set two. Go!",
-      "model": "eleven_multilingual_v2",
-      "settings": {}
+      "text": "[energetic] Set two. Go!",
+      "model": "eleven_v3",
+      "settings": {
+        "stability": 0.5
+      }
     },
     "charlie/set_3": {
-      "text": "Set three. Go!",
-      "model": "eleven_multilingual_v2",
-      "settings": {}
+      "text": "[energetic] Set three. Go!",
+      "model": "eleven_v3",
+      "settings": {
+        "stability": 0.5
+      }
     },
     "charlie/set_4": {
-      "text": "Set four. Go!",
-      "model": "eleven_multilingual_v2",
-      "settings": {}
+      "text": "[energetic] Set four. Go!",
+      "model": "eleven_v3",
+      "settings": {
+        "stability": 0.5
+      }
     },
     "charlie/set_5": {
-      "text": "Set five. Go!",
-      "model": "eleven_multilingual_v2",
-      "settings": {}
+      "text": "[energetic] Set five. Go!",
+      "model": "eleven_v3",
+      "settings": {
+        "stability": 0.5
+      }
     },
     "charlie/set_6": {
-      "text": "Set six. Go!",
-      "model": "eleven_multilingual_v2",
-      "settings": {}
+      "text": "[energetic] Set six. Go!",
+      "model": "eleven_v3",
+      "settings": {
+        "stability": 0.5
+      }
     },
     "charlie/set_7": {
-      "text": "Set seven. Go!",
-      "model": "eleven_multilingual_v2",
-      "settings": {}
+      "text": "[energetic] Set seven. Go!",
+      "model": "eleven_v3",
+      "settings": {
+        "stability": 0.5
+      }
     },
     "charlie/set_8": {
-      "text": "Set eight. Go!",
-      "model": "eleven_multilingual_v2",
-      "settings": {}
+      "text": "[energetic] Set eight. Go!",
+      "model": "eleven_v3",
+      "settings": {
+        "stability": 0.5
+      }
     },
     "charlie/set_9": {
-      "text": "Set nine. Go!",
-      "model": "eleven_multilingual_v2",
-      "settings": {}
+      "text": "[energetic] Set nine. Go!",
+      "model": "eleven_v3",
+      "settings": {
+        "stability": 0.5
+      }
     },
     "charlie/set_10": {
-      "text": "Set ten. Go!",
-      "model": "eleven_multilingual_v2",
-      "settings": {}
+      "text": "[energetic] Set ten. Go!",
+      "model": "eleven_v3",
+      "settings": {
+        "stability": 0.5
+      }
     },
     "charlie/last_set": {
-      "text": "Last set. Make it count!",
-      "model": "eleven_multilingual_v2",
-      "settings": {}
+      "text": "[fired up] Last set. Make it count!",
+      "model": "eleven_v3",
+      "settings": {
+        "stability": 0.5
+      }
     },
     "charlie/go": {
-      "text": "Go!",
-      "model": "eleven_multilingual_v2",
-      "settings": {}
+      "text": "[energetic] Go!",
+      "model": "eleven_v3",
+      "settings": {
+        "stability": 0.5
+      }
     },
     "charlie/warmup": {
-      "text": "Warm-up. Nice and easy.",
-      "model": "eleven_multilingual_v2",
-      "settings": {}
+      "text": "[calm] Warm-up. Nice and easy.",
+      "model": "eleven_v3",
+      "settings": {
+        "stability": 0.5
+      }
     },
     "charlie/halfway": {
-      "text": "Halfway.",
-      "model": "eleven_multilingual_v2",
-      "settings": {}
+      "text": "[encouraging] Halfway. Keep it steady.",
+      "model": "eleven_v3",
+      "settings": {
+        "stability": 0.5
+      }
     },
     "charlie/time": {
-      "text": "Time! Set done.",
-      "model": "eleven_multilingual_v2",
-      "settings": {}
+      "text": "[energetic] Time! Good set.",
+      "model": "eleven_v3",
+      "settings": {
+        "stability": 0.5
+      }
     },
     "charlie/rest": {
-      "text": "Rest started.",
-      "model": "eleven_multilingual_v2",
-      "settings": {}
+      "text": "[relaxed] Good work. Rest now.",
+      "model": "eleven_v3",
+      "settings": {
+        "stability": 0.5
+      }
     },
     "charlie/rest_30": {
-      "text": "Rest. Thirty seconds.",
-      "model": "eleven_multilingual_v2",
-      "settings": {}
+      "text": "[relaxed] Good work. Rest thirty seconds.",
+      "model": "eleven_v3",
+      "settings": {
+        "stability": 0.5
+      }
     },
     "charlie/rest_45": {
-      "text": "Rest. Forty-five seconds.",
-      "model": "eleven_multilingual_v2",
-      "settings": {}
+      "text": "[relaxed] Good work. Rest forty-five seconds.",
+      "model": "eleven_v3",
+      "settings": {
+        "stability": 0.5
+      }
     },
     "charlie/rest_60": {
-      "text": "Rest. One minute.",
-      "model": "eleven_multilingual_v2",
-      "settings": {}
+      "text": "[relaxed] Good work. Rest one minute.",
+      "model": "eleven_v3",
+      "settings": {
+        "stability": 0.5
+      }
     },
     "charlie/rest_90": {
-      "text": "Rest. Ninety seconds.",
-      "model": "eleven_multilingual_v2",
-      "settings": {}
+      "text": "[relaxed] Good work. Rest ninety seconds.",
+      "model": "eleven_v3",
+      "settings": {
+        "stability": 0.5
+      }
     },
     "charlie/rest_120": {
-      "text": "Rest. Two minutes.",
-      "model": "eleven_multilingual_v2",
-      "settings": {}
+      "text": "[relaxed] Good work. Rest two minutes.",
+      "model": "eleven_v3",
+      "settings": {
+        "stability": 0.5
+      }
     },
     "charlie/rest_150": {
-      "text": "Rest. Two and a half minutes.",
-      "model": "eleven_multilingual_v2",
-      "settings": {}
+      "text": "[relaxed] Good work. Rest two and a half minutes.",
+      "model": "eleven_v3",
+      "settings": {
+        "stability": 0.5
+      }
     },
     "charlie/rest_180": {
-      "text": "Rest. Three minutes.",
-      "model": "eleven_multilingual_v2",
-      "settings": {}
+      "text": "[relaxed] Good work. Rest three minutes.",
+      "model": "eleven_v3",
+      "settings": {
+        "stability": 0.5
+      }
     },
     "charlie/rest_240": {
-      "text": "Rest. Four minutes.",
-      "model": "eleven_multilingual_v2",
-      "settings": {}
+      "text": "[relaxed] Good work. Rest four minutes.",
+      "model": "eleven_v3",
+      "settings": {
+        "stability": 0.5
+      }
     },
     "charlie/ten_left": {
-      "text": "Ten seconds.",
-      "model": "eleven_multilingual_v2",
-      "settings": {}
+      "text": "Ten seconds. Get set.",
+      "model": "eleven_v3",
+      "settings": {
+        "stability": 0.5
+      }
     },
     "charlie/rest_over": {
-      "text": "Rest over. Get ready.",
-      "model": "eleven_multilingual_v2",
-      "settings": {}
+      "text": "[encouraging] Rest is up. Start when you're ready.",
+      "model": "eleven_v3",
+      "settings": {
+        "stability": 0.5
+      }
     },
     "charlie/next_exercise": {
-      "text": "Next exercise.",
-      "model": "eleven_multilingual_v2",
-      "settings": {}
+      "text": "Next exercise coming up.",
+      "model": "eleven_v3",
+      "settings": {
+        "stability": 0.5
+      }
     },
     "charlie/paused": {
-      "text": "Paused.",
-      "model": "eleven_multilingual_v2",
-      "settings": {}
+      "text": "[calm] Paused.",
+      "model": "eleven_v3",
+      "settings": {
+        "stability": 0.5
+      }
     },
     "charlie/resumed": {
-      "text": "Back to it.",
-      "model": "eleven_multilingual_v2",
-      "settings": {}
+      "text": "[upbeat] And we're back.",
+      "model": "eleven_v3",
+      "settings": {
+        "stability": 0.5
+      }
     },
     "charlie/done": {
-      "text": "Workout complete. Great work!",
-      "model": "eleven_multilingual_v2",
-      "settings": {}
+      "text": "[warm] Workout complete. Great work today!",
+      "model": "eleven_v3",
+      "settings": {
+        "stability": 0.5
+      }
     },
     "charlie/three": {
-      "text": "(cut from \"Three. Two. One.\": Three.)",
-      "model": "eleven_multilingual_v2",
-      "settings": {}
+      "text": "[firm] Three.",
+      "model": "eleven_v3",
+      "settings": {
+        "stability": 0.5
+      }
     },
     "charlie/two": {
-      "text": "(cut from \"Three. Two. One.\": Two.)",
-      "model": "eleven_multilingual_v2",
-      "settings": {}
+      "text": "[firm] Two.",
+      "model": "eleven_v3",
+      "settings": {
+        "stability": 0.5
+      }
     },
     "charlie/one": {
-      "text": "(cut from \"Three. Two. One.\": One.)",
-      "model": "eleven_multilingual_v2",
-      "settings": {}
+      "text": "[firm] One.",
+      "model": "eleven_v3",
+      "settings": {
+        "stability": 0.5
+      }
     },
     "matilda/set_1": {
-      "text": "Set one. Go!",
-      "model": "eleven_multilingual_v2",
-      "settings": {}
+      "text": "[energetic] Set one. Go!",
+      "model": "eleven_v3",
+      "settings": {
+        "stability": 0.5
+      }
     },
     "matilda/set_2": {
-      "text": "Set two. Go!",
-      "model": "eleven_multilingual_v2",
-      "settings": {}
+      "text": "[energetic] Set two. Go!",
+      "model": "eleven_v3",
+      "settings": {
+        "stability": 0.5
+      }
     },
     "matilda/set_3": {
-      "text": "Set three. Go!",
-      "model": "eleven_multilingual_v2",
-      "settings": {}
+      "text": "[energetic] Set three. Go!",
+      "model": "eleven_v3",
+      "settings": {
+        "stability": 0.5
+      }
     },
     "matilda/set_4": {
-      "text": "Set four. Go!",
-      "model": "eleven_multilingual_v2",
-      "settings": {}
+      "text": "[energetic] Set four. Go!",
+      "model": "eleven_v3",
+      "settings": {
+        "stability": 0.5
+      }
     },
     "matilda/set_5": {
-      "text": "Set five. Go!",
-      "model": "eleven_multilingual_v2",
-      "settings": {}
+      "text": "[energetic] Set five. Go!",
+      "model": "eleven_v3",
+      "settings": {
+        "stability": 0.5
+      }
     },
     "matilda/set_6": {
-      "text": "Set six. Go!",
-      "model": "eleven_multilingual_v2",
-      "settings": {}
+      "text": "[energetic] Set six. Go!",
+      "model": "eleven_v3",
+      "settings": {
+        "stability": 0.5
+      }
     },
     "matilda/set_7": {
-      "text": "Set seven. Go!",
-      "model": "eleven_multilingual_v2",
-      "settings": {}
+      "text": "[energetic] Set seven. Go!",
+      "model": "eleven_v3",
+      "settings": {
+        "stability": 0.5
+      }
     },
     "matilda/set_8": {
-      "text": "Set eight. Go!",
-      "model": "eleven_multilingual_v2",
-      "settings": {}
+      "text": "[energetic] Set eight. Go!",
+      "model": "eleven_v3",
+      "settings": {
+        "stability": 0.5
+      }
     },
     "matilda/set_9": {
-      "text": "Set nine. Go!",
-      "model": "eleven_multilingual_v2",
-      "settings": {}
+      "text": "[energetic] Set nine. Go!",
+      "model": "eleven_v3",
+      "settings": {
+        "stability": 0.5
+      }
     },
     "matilda/set_10": {
-      "text": "Set ten. Go!",
-      "model": "eleven_multilingual_v2",
-      "settings": {}
+      "text": "[energetic] Set ten. Go!",
+      "model": "eleven_v3",
+      "settings": {
+        "stability": 0.5
+      }
     },
     "matilda/last_set": {
-      "text": "Last set. Make it count!",
-      "model": "eleven_multilingual_v2",
-      "settings": {}
+      "text": "[fired up] Last set. Make it count!",
+      "model": "eleven_v3",
+      "settings": {
+        "stability": 0.5
+      }
     },
     "matilda/go": {
-      "text": "Go!",
-      "model": "eleven_multilingual_v2",
-      "settings": {}
+      "text": "[energetic] Go!",
+      "model": "eleven_v3",
+      "settings": {
+        "stability": 0.5
+      }
     },
     "matilda/warmup": {
-      "text": "Warm-up. Nice and easy.",
-      "model": "eleven_multilingual_v2",
-      "settings": {}
+      "text": "[calm] Warm-up. Nice and easy.",
+      "model": "eleven_v3",
+      "settings": {
+        "stability": 0.5
+      }
     },
     "matilda/halfway": {
-      "text": "Halfway.",
-      "model": "eleven_multilingual_v2",
-      "settings": {}
+      "text": "[encouraging] Halfway. Keep it steady.",
+      "model": "eleven_v3",
+      "settings": {
+        "stability": 0.5
+      }
     },
     "matilda/time": {
-      "text": "Time! Set done.",
-      "model": "eleven_multilingual_v2",
-      "settings": {}
+      "text": "[energetic] Time! Good set.",
+      "model": "eleven_v3",
+      "settings": {
+        "stability": 0.5
+      }
     },
     "matilda/rest": {
-      "text": "Rest started.",
-      "model": "eleven_multilingual_v2",
-      "settings": {}
+      "text": "[relaxed] Good work. Rest now.",
+      "model": "eleven_v3",
+      "settings": {
+        "stability": 0.5
+      }
     },
     "matilda/rest_30": {
-      "text": "Rest. Thirty seconds.",
-      "model": "eleven_multilingual_v2",
-      "settings": {}
+      "text": "[relaxed] Good work. Rest thirty seconds.",
+      "model": "eleven_v3",
+      "settings": {
+        "stability": 0.5
+      }
     },
     "matilda/rest_45": {
-      "text": "Rest. Forty-five seconds.",
-      "model": "eleven_multilingual_v2",
-      "settings": {}
+      "text": "[relaxed] Good work. Rest forty-five seconds.",
+      "model": "eleven_v3",
+      "settings": {
+        "stability": 0.5
+      }
     },
     "matilda/rest_60": {
-      "text": "Rest. One minute.",
-      "model": "eleven_multilingual_v2",
-      "settings": {}
+      "text": "[relaxed] Good work. Rest one minute.",
+      "model": "eleven_v3",
+      "settings": {
+        "stability": 0.5
+      }
     },
     "matilda/rest_90": {
-      "text": "Rest. Ninety seconds.",
-      "model": "eleven_multilingual_v2",
-      "settings": {}
+      "text": "[relaxed] Good work. Rest ninety seconds.",
+      "model": "eleven_v3",
+      "settings": {
+        "stability": 0.5
+      }
     },
     "matilda/rest_120": {
-      "text": "Rest. Two minutes.",
-      "model": "eleven_multilingual_v2",
-      "settings": {}
+      "text": "[relaxed] Good work. Rest two minutes.",
+      "model": "eleven_v3",
+      "settings": {
+        "stability": 0.5
+      }
     },
     "matilda/rest_150": {
-      "text": "Rest. Two and a half minutes.",
-      "model": "eleven_multilingual_v2",
-      "settings": {}
+      "text": "[relaxed] Good work. Rest two and a half minutes.",
+      "model": "eleven_v3",
+      "settings": {
+        "stability": 0.5
+      }
     },
     "matilda/rest_180": {
-      "text": "Rest. Three minutes.",
-      "model": "eleven_multilingual_v2",
-      "settings": {}
+      "text": "[relaxed] Good work. Rest three minutes.",
+      "model": "eleven_v3",
+      "settings": {
+        "stability": 0.5
+      }
     },
     "matilda/rest_240": {
-      "text": "Rest. Four minutes.",
-      "model": "eleven_multilingual_v2",
-      "settings": {}
+      "text": "[relaxed] Good work. Rest four minutes.",
+      "model": "eleven_v3",
+      "settings": {
+        "stability": 0.5
+      }
     },
     "matilda/ten_left": {
-      "text": "Ten seconds.",
-      "model": "eleven_multilingual_v2",
-      "settings": {}
+      "text": "Ten seconds. Get set.",
+      "model": "eleven_v3",
+      "settings": {
+        "stability": 0.5
+      }
     },
     "matilda/rest_over": {
-      "text": "Rest over. Get ready.",
-      "model": "eleven_multilingual_v2",
-      "settings": {}
+      "text": "[encouraging] Rest is up. Start when you're ready.",
+      "model": "eleven_v3",
+      "settings": {
+        "stability": 0.5
+      }
     },
     "matilda/next_exercise": {
-      "text": "Next exercise.",
-      "model": "eleven_multilingual_v2",
-      "settings": {}
+      "text": "Next exercise coming up.",
+      "model": "eleven_v3",
+      "settings": {
+        "stability": 0.5
+      }
     },
     "matilda/paused": {
-      "text": "Paused.",
-      "model": "eleven_multilingual_v2",
-      "settings": {}
+      "text": "[calm] Paused.",
+      "model": "eleven_v3",
+      "settings": {
+        "stability": 0.5
+      }
     },
     "matilda/resumed": {
-      "text": "Back to it.",
-      "model": "eleven_multilingual_v2",
-      "settings": {}
+      "text": "[upbeat] And we're back.",
+      "model": "eleven_v3",
+      "settings": {
+        "stability": 0.5
+      }
     },
     "matilda/done": {
-      "text": "Workout complete. Great work!",
-      "model": "eleven_multilingual_v2",
-      "settings": {}
+      "text": "[warm] Workout complete. Great work today!",
+      "model": "eleven_v3",
+      "settings": {
+        "stability": 0.5
+      }
     },
     "matilda/three": {
-      "text": "(cut from \"Three. Two. One.\": Three.)",
-      "model": "eleven_multilingual_v2",
-      "settings": {}
+      "text": "[firm] Three.",
+      "model": "eleven_v3",
+      "settings": {
+        "stability": 0.5
+      }
     },
     "matilda/two": {
-      "text": "(cut from \"Three. Two. One.\": Two.)",
-      "model": "eleven_multilingual_v2",
-      "settings": {}
+      "text": "[firm] Two.",
+      "model": "eleven_v3",
+      "settings": {
+        "stability": 0.5
+      }
     },
     "matilda/one": {
-      "text": "(cut from \"Three. Two. One.\": One.)",
-      "model": "eleven_multilingual_v2",
-      "settings": {}
+      "text": "[firm] One.",
+      "model": "eleven_v3",
+      "settings": {
+        "stability": 0.5
+      }
+    },
+    "charlie/names/back_squat": {
+      "text": "Next up: Back squat.",
+      "model": "eleven_v3",
+      "settings": {
+        "stability": 0.5
+      }
+    },
+    "charlie/names/barbell_curl": {
+      "text": "Next up: Barbell curl.",
+      "model": "eleven_v3",
+      "settings": {
+        "stability": 0.5
+      }
+    },
+    "charlie/names/barbell_row": {
+      "text": "Next up: Bent-over row.",
+      "model": "eleven_v3",
+      "settings": {
+        "stability": 0.5
+      }
+    },
+    "charlie/names/bench_press": {
+      "text": "Next up: Bench press.",
+      "model": "eleven_v3",
+      "settings": {
+        "stability": 0.5
+      }
+    },
+    "charlie/names/cable_crossover": {
+      "text": "Next up: Cable crossover.",
+      "model": "eleven_v3",
+      "settings": {
+        "stability": 0.5
+      }
+    },
+    "charlie/names/calf_raise": {
+      "text": "Next up: Standing calf raise.",
+      "model": "eleven_v3",
+      "settings": {
+        "stability": 0.5
+      }
+    },
+    "charlie/names/db_fly": {
+      "text": "Next up: Dumbbell fly.",
+      "model": "eleven_v3",
+      "settings": {
+        "stability": 0.5
+      }
+    },
+    "charlie/names/dead_bug": {
+      "text": "Next up: Dead bug.",
+      "model": "eleven_v3",
+      "settings": {
+        "stability": 0.5
+      }
+    },
+    "charlie/names/deadlift": {
+      "text": "Next up: Deadlift.",
+      "model": "eleven_v3",
+      "settings": {
+        "stability": 0.5
+      }
+    },
+    "charlie/names/dip_chest": {
+      "text": "Next up: Chest dip.",
+      "model": "eleven_v3",
+      "settings": {
+        "stability": 0.5
+      }
+    },
+    "charlie/names/face_pull": {
+      "text": "Next up: Face pull.",
+      "model": "eleven_v3",
+      "settings": {
+        "stability": 0.5
+      }
+    },
+    "charlie/names/glute_bridge": {
+      "text": "Next up: Glute bridge.",
+      "model": "eleven_v3",
+      "settings": {
+        "stability": 0.5
+      }
+    },
+    "charlie/names/goblet_squat": {
+      "text": "Next up: Goblet squat.",
+      "model": "eleven_v3",
+      "settings": {
+        "stability": 0.5
+      }
+    },
+    "charlie/names/hammer_curl": {
+      "text": "Next up: Hammer curl.",
+      "model": "eleven_v3",
+      "settings": {
+        "stability": 0.5
+      }
+    },
+    "charlie/names/hanging_knee_raise": {
+      "text": "Next up: Hanging knee raise.",
+      "model": "eleven_v3",
+      "settings": {
+        "stability": 0.5
+      }
+    },
+    "charlie/names/hip_thrust": {
+      "text": "Next up: Barbell hip thrust.",
+      "model": "eleven_v3",
+      "settings": {
+        "stability": 0.5
+      }
+    },
+    "charlie/names/incline_db_press": {
+      "text": "Next up: Incline dumbbell press.",
+      "model": "eleven_v3",
+      "settings": {
+        "stability": 0.5
+      }
+    },
+    "charlie/names/kettlebell_swing": {
+      "text": "Next up: Kettlebell swing.",
+      "model": "eleven_v3",
+      "settings": {
+        "stability": 0.5
+      }
+    },
+    "charlie/names/lat_pulldown": {
+      "text": "Next up: Lat pulldown.",
+      "model": "eleven_v3",
+      "settings": {
+        "stability": 0.5
+      }
+    },
+    "charlie/names/lateral_raise": {
+      "text": "Next up: Lateral raise.",
+      "model": "eleven_v3",
+      "settings": {
+        "stability": 0.5
+      }
+    },
+    "charlie/names/leg_extension": {
+      "text": "Next up: Leg extension.",
+      "model": "eleven_v3",
+      "settings": {
+        "stability": 0.5
+      }
+    },
+    "charlie/names/lib_arm_circles": {
+      "text": "Next up: Arm circles.",
+      "model": "eleven_v3",
+      "settings": {
+        "stability": 0.5
+      }
+    },
+    "charlie/names/lib_band_assisted_pull_up": {
+      "text": "Next up: Band-assisted pull-up.",
+      "model": "eleven_v3",
+      "settings": {
+        "stability": 0.5
+      }
+    },
+    "charlie/names/lib_band_pull_apart": {
+      "text": "Next up: Band pull-apart.",
+      "model": "eleven_v3",
+      "settings": {
+        "stability": 0.5
+      }
+    },
+    "charlie/names/lib_barbell_incline_bench_press_medium_grip": {
+      "text": "Next up: Incline bench press.",
+      "model": "eleven_v3",
+      "settings": {
+        "stability": 0.5
+      }
+    },
+    "charlie/names/lib_barbell_shrug": {
+      "text": "Next up: Barbell shrug.",
+      "model": "eleven_v3",
+      "settings": {
+        "stability": 0.5
+      }
+    },
+    "charlie/names/lib_bench_dips": {
+      "text": "Next up: Bench dip.",
+      "model": "eleven_v3",
+      "settings": {
+        "stability": 0.5
+      }
+    },
+    "charlie/names/lib_body_tricep_press": {
+      "text": "Next up: Bodyweight triceps press.",
+      "model": "eleven_v3",
+      "settings": {
+        "stability": 0.5
+      }
+    },
+    "charlie/names/lib_bodyweight_squat": {
+      "text": "Next up: Bodyweight squat.",
+      "model": "eleven_v3",
+      "settings": {
+        "stability": 0.5
+      }
+    },
+    "charlie/names/lib_bodyweight_walking_lunge": {
+      "text": "Next up: Walking lunge.",
+      "model": "eleven_v3",
+      "settings": {
+        "stability": 0.5
+      }
+    },
+    "charlie/names/lib_cat_stretch": {
+      "text": "Next up: Cat-cow.",
+      "model": "eleven_v3",
+      "settings": {
+        "stability": 0.5
+      }
+    },
+    "charlie/names/lib_chest_and_front_of_shoulder_stretch": {
+      "text": "Next up: Chest and shoulder stretch.",
+      "model": "eleven_v3",
+      "settings": {
+        "stability": 0.5
+      }
+    },
+    "charlie/names/lib_childs_pose": {
+      "text": "Next up: Child's pose.",
+      "model": "eleven_v3",
+      "settings": {
+        "stability": 0.5
+      }
+    },
+    "charlie/names/lib_chin_up": {
+      "text": "Next up: Chin-up.",
+      "model": "eleven_v3",
+      "settings": {
+        "stability": 0.5
+      }
+    },
+    "charlie/names/lib_dips_triceps_version": {
+      "text": "Next up: Parallel bar dip.",
+      "model": "eleven_v3",
+      "settings": {
+        "stability": 0.5
+      }
+    },
+    "charlie/names/lib_dumbbell_bench_press": {
+      "text": "Next up: Dumbbell bench press.",
+      "model": "eleven_v3",
+      "settings": {
+        "stability": 0.5
+      }
+    },
+    "charlie/names/lib_dumbbell_bicep_curl": {
+      "text": "Next up: Dumbbell curl.",
+      "model": "eleven_v3",
+      "settings": {
+        "stability": 0.5
+      }
+    },
+    "charlie/names/lib_dumbbell_rear_lunge": {
+      "text": "Next up: Dumbbell reverse lunge.",
+      "model": "eleven_v3",
+      "settings": {
+        "stability": 0.5
+      }
+    },
+    "charlie/names/lib_dumbbell_shrug": {
+      "text": "Next up: Dumbbell shrug.",
+      "model": "eleven_v3",
+      "settings": {
+        "stability": 0.5
+      }
+    },
+    "charlie/names/lib_dumbbell_step_ups": {
+      "text": "Next up: Dumbbell step-up.",
+      "model": "eleven_v3",
+      "settings": {
+        "stability": 0.5
+      }
+    },
+    "charlie/names/lib_dynamic_chest_stretch": {
+      "text": "Next up: Dynamic chest stretch.",
+      "model": "eleven_v3",
+      "settings": {
+        "stability": 0.5
+      }
+    },
+    "charlie/names/lib_farmers_walk": {
+      "text": "Next up: Farmer's walk.",
+      "model": "eleven_v3",
+      "settings": {
+        "stability": 0.5
+      }
+    },
+    "charlie/names/lib_groiners": {
+      "text": "Next up: Groiners.",
+      "model": "eleven_v3",
+      "settings": {
+        "stability": 0.5
+      }
+    },
+    "charlie/names/lib_hamstring_stretch": {
+      "text": "Next up: Hamstring stretch.",
+      "model": "eleven_v3",
+      "settings": {
+        "stability": 0.5
+      }
+    },
+    "charlie/names/lib_handstand_push_ups": {
+      "text": "Next up: Pike or wall handstand push-up.",
+      "model": "eleven_v3",
+      "settings": {
+        "stability": 0.5
+      }
+    },
+    "charlie/names/lib_hanging_leg_raise": {
+      "text": "Next up: Hanging leg raise.",
+      "model": "eleven_v3",
+      "settings": {
+        "stability": 0.5
+      }
+    },
+    "charlie/names/lib_hanging_pike": {
+      "text": "Next up: Hanging pike.",
+      "model": "eleven_v3",
+      "settings": {
+        "stability": 0.5
+      }
+    },
+    "charlie/names/lib_hyperextensions_with_no_hyperextension_bench": {
+      "text": "Next up: Floor back extension.",
+      "model": "eleven_v3",
+      "settings": {
+        "stability": 0.5
+      }
+    },
+    "charlie/names/lib_incline_push_up": {
+      "text": "Next up: Incline push-up.",
+      "model": "eleven_v3",
+      "settings": {
+        "stability": 0.5
+      }
+    },
+    "charlie/names/lib_inverted_row": {
+      "text": "Next up: Inverted row.",
+      "model": "eleven_v3",
+      "settings": {
+        "stability": 0.5
+      }
+    },
+    "charlie/names/lib_inverted_row_with_straps": {
+      "text": "Next up: Feet-up ring row.",
+      "model": "eleven_v3",
+      "settings": {
+        "stability": 0.5
+      }
+    },
+    "charlie/names/lib_kettlebell_pistol_squat": {
+      "text": "Next up: Pistol squat.",
+      "model": "eleven_v3",
+      "settings": {
+        "stability": 0.5
+      }
+    },
+    "charlie/names/lib_kneeling_hip_flexor": {
+      "text": "Next up: Kneeling hip flexor stretch.",
+      "model": "eleven_v3",
+      "settings": {
+        "stability": 0.5
+      }
+    },
+    "charlie/names/lib_lateral_raise_with_bands": {
+      "text": "Next up: Band lateral raise.",
+      "model": "eleven_v3",
+      "settings": {
+        "stability": 0.5
+      }
+    },
+    "charlie/names/lib_leg_press": {
+      "text": "Next up: Leg press.",
+      "model": "eleven_v3",
+      "settings": {
+        "stability": 0.5
+      }
+    },
+    "charlie/names/lib_lying_dumbbell_tricep_extension": {
+      "text": "Next up: Lying dumbbell extension.",
+      "model": "eleven_v3",
+      "settings": {
+        "stability": 0.5
+      }
+    },
+    "charlie/names/lib_mountain_climbers": {
+      "text": "Next up: Mountain climbers.",
+      "model": "eleven_v3",
+      "settings": {
+        "stability": 0.5
+      }
+    },
+    "charlie/names/lib_muscle_up": {
+      "text": "Next up: Muscle-up.",
+      "model": "eleven_v3",
+      "settings": {
+        "stability": 0.5
+      }
+    },
+    "charlie/names/lib_natural_glute_ham_raise": {
+      "text": "Next up: Nordic curl.",
+      "model": "eleven_v3",
+      "settings": {
+        "stability": 0.5
+      }
+    },
+    "charlie/names/lib_one_arm_dumbbell_row": {
+      "text": "Next up: One-arm dumbbell row.",
+      "model": "eleven_v3",
+      "settings": {
+        "stability": 0.5
+      }
+    },
+    "charlie/names/lib_palms_up_dumbbell_wrist_curl_over_a_bench": {
+      "text": "Next up: Dumbbell wrist curl.",
+      "model": "eleven_v3",
+      "settings": {
+        "stability": 0.5
+      }
+    },
+    "charlie/names/lib_push_up_wide": {
+      "text": "Next up: Wide push-up.",
+      "model": "eleven_v3",
+      "settings": {
+        "stability": 0.5
+      }
+    },
+    "charlie/names/lib_push_ups_close_triceps_position": {
+      "text": "Next up: Close-grip push-up.",
+      "model": "eleven_v3",
+      "settings": {
+        "stability": 0.5
+      }
+    },
+    "charlie/names/lib_push_ups_with_feet_elevated": {
+      "text": "Next up: Feet-up push-up.",
+      "model": "eleven_v3",
+      "settings": {
+        "stability": 0.5
+      }
+    },
+    "charlie/names/lib_recumbent_bike": {
+      "text": "Next up: Easy bike or rower.",
+      "model": "eleven_v3",
+      "settings": {
+        "stability": 0.5
+      }
+    },
+    "charlie/names/lib_reverse_crunch": {
+      "text": "Next up: Reverse crunch.",
+      "model": "eleven_v3",
+      "settings": {
+        "stability": 0.5
+      }
+    },
+    "charlie/names/lib_ring_dips": {
+      "text": "Next up: Ring dip.",
+      "model": "eleven_v3",
+      "settings": {
+        "stability": 0.5
+      }
+    },
+    "charlie/names/lib_rope_jumping": {
+      "text": "Next up: Jump rope.",
+      "model": "eleven_v3",
+      "settings": {
+        "stability": 0.5
+      }
+    },
+    "charlie/names/lib_rowing_stationary": {
+      "text": "Next up: Rowing machine.",
+      "model": "eleven_v3",
+      "settings": {
+        "stability": 0.5
+      }
+    },
+    "charlie/names/lib_scapular_pull_up": {
+      "text": "Next up: Scapular pull-up.",
+      "model": "eleven_v3",
+      "settings": {
+        "stability": 0.5
+      }
+    },
+    "charlie/names/lib_single_arm_push_up": {
+      "text": "Next up: One-arm push-up (assisted).",
+      "model": "eleven_v3",
+      "settings": {
+        "stability": 0.5
+      }
+    },
+    "charlie/names/lib_single_leg_high_box_squat": {
+      "text": "Next up: Single-leg box squat.",
+      "model": "eleven_v3",
+      "settings": {
+        "stability": 0.5
+      }
+    },
+    "charlie/names/lib_single_leg_glute_bridge": {
+      "text": "Next up: Single-leg glute bridge.",
+      "model": "eleven_v3",
+      "settings": {
+        "stability": 0.5
+      }
+    },
+    "charlie/names/lib_standing_hip_circles": {
+      "text": "Next up: Hip circles.",
+      "model": "eleven_v3",
+      "settings": {
+        "stability": 0.5
+      }
+    },
+    "charlie/names/lib_step_up_with_knee_raise": {
+      "text": "Next up: Step-up.",
+      "model": "eleven_v3",
+      "settings": {
+        "stability": 0.5
+      }
+    },
+    "charlie/names/lib_stiff_legged_dumbbell_deadlift": {
+      "text": "Next up: Dumbbell stiff-leg deadlift.",
+      "model": "eleven_v3",
+      "settings": {
+        "stability": 0.5
+      }
+    },
+    "charlie/names/lib_suspended_split_squat": {
+      "text": "Next up: Rear-foot-up split squat.",
+      "model": "eleven_v3",
+      "settings": {
+        "stability": 0.5
+      }
+    },
+    "charlie/names/lib_weighted_pull_ups": {
+      "text": "Next up: Weighted pull-up.",
+      "model": "eleven_v3",
+      "settings": {
+        "stability": 0.5
+      }
+    },
+    "charlie/names/lib_worlds_greatest_stretch": {
+      "text": "Next up: World's greatest stretch.",
+      "model": "eleven_v3",
+      "settings": {
+        "stability": 0.5
+      }
+    },
+    "charlie/names/lib_wrist_circles": {
+      "text": "Next up: Wrist circles.",
+      "model": "eleven_v3",
+      "settings": {
+        "stability": 0.5
+      }
+    },
+    "charlie/names/lying_leg_curl": {
+      "text": "Next up: Lying leg curl.",
+      "model": "eleven_v3",
+      "settings": {
+        "stability": 0.5
+      }
+    },
+    "charlie/names/overhead_press": {
+      "text": "Next up: Overhead press.",
+      "model": "eleven_v3",
+      "settings": {
+        "stability": 0.5
+      }
+    },
+    "charlie/names/overhead_triceps": {
+      "text": "Next up: Overhead triceps extension.",
+      "model": "eleven_v3",
+      "settings": {
+        "stability": 0.5
+      }
+    },
+    "charlie/names/pallof_press": {
+      "text": "Next up: Pallof press.",
+      "model": "eleven_v3",
+      "settings": {
+        "stability": 0.5
+      }
+    },
+    "charlie/names/plank": {
+      "text": "Next up: Front plank.",
+      "model": "eleven_v3",
+      "settings": {
+        "stability": 0.5
+      }
+    },
+    "charlie/names/pull_up": {
+      "text": "Next up: Pull-up.",
+      "model": "eleven_v3",
+      "settings": {
+        "stability": 0.5
+      }
+    },
+    "charlie/names/push_up": {
+      "text": "Next up: Push-up.",
+      "model": "eleven_v3",
+      "settings": {
+        "stability": 0.5
+      }
+    },
+    "charlie/names/rear_delt_fly": {
+      "text": "Next up: Bent-over rear delt fly.",
+      "model": "eleven_v3",
+      "settings": {
+        "stability": 0.5
+      }
+    },
+    "charlie/names/romanian_deadlift": {
+      "text": "Next up: Romanian deadlift.",
+      "model": "eleven_v3",
+      "settings": {
+        "stability": 0.5
+      }
+    },
+    "charlie/names/russian_twist": {
+      "text": "Next up: Russian twist.",
+      "model": "eleven_v3",
+      "settings": {
+        "stability": 0.5
+      }
+    },
+    "charlie/names/seated_cable_row": {
+      "text": "Next up: Seated cable row.",
+      "model": "eleven_v3",
+      "settings": {
+        "stability": 0.5
+      }
+    },
+    "charlie/names/seated_db_press": {
+      "text": "Next up: Seated dumbbell press.",
+      "model": "eleven_v3",
+      "settings": {
+        "stability": 0.5
+      }
+    },
+    "charlie/names/skull_crusher": {
+      "text": "Next up: Skull crusher.",
+      "model": "eleven_v3",
+      "settings": {
+        "stability": 0.5
+      }
+    },
+    "charlie/names/split_squat": {
+      "text": "Next up: Split squat.",
+      "model": "eleven_v3",
+      "settings": {
+        "stability": 0.5
+      }
+    },
+    "charlie/names/triceps_pushdown": {
+      "text": "Next up: Triceps pushdown.",
+      "model": "eleven_v3",
+      "settings": {
+        "stability": 0.5
+      }
+    },
+    "matilda/names/back_squat": {
+      "text": "Next up: Back squat.",
+      "model": "eleven_v3",
+      "settings": {
+        "stability": 0.5
+      }
+    },
+    "matilda/names/barbell_curl": {
+      "text": "Next up: Barbell curl.",
+      "model": "eleven_v3",
+      "settings": {
+        "stability": 0.5
+      }
+    },
+    "matilda/names/barbell_row": {
+      "text": "Next up: Bent-over row.",
+      "model": "eleven_v3",
+      "settings": {
+        "stability": 0.5
+      }
+    },
+    "matilda/names/bench_press": {
+      "text": "Next up: Bench press.",
+      "model": "eleven_v3",
+      "settings": {
+        "stability": 0.5
+      }
+    },
+    "matilda/names/cable_crossover": {
+      "text": "Next up: Cable crossover.",
+      "model": "eleven_v3",
+      "settings": {
+        "stability": 0.5
+      }
+    },
+    "matilda/names/calf_raise": {
+      "text": "Next up: Standing calf raise.",
+      "model": "eleven_v3",
+      "settings": {
+        "stability": 0.5
+      }
+    },
+    "matilda/names/db_fly": {
+      "text": "Next up: Dumbbell fly.",
+      "model": "eleven_v3",
+      "settings": {
+        "stability": 0.5
+      }
+    },
+    "matilda/names/dead_bug": {
+      "text": "Next up: Dead bug.",
+      "model": "eleven_v3",
+      "settings": {
+        "stability": 0.5
+      }
+    },
+    "matilda/names/deadlift": {
+      "text": "Next up: Deadlift.",
+      "model": "eleven_v3",
+      "settings": {
+        "stability": 0.5
+      }
+    },
+    "matilda/names/dip_chest": {
+      "text": "Next up: Chest dip.",
+      "model": "eleven_v3",
+      "settings": {
+        "stability": 0.5
+      }
+    },
+    "matilda/names/face_pull": {
+      "text": "Next up: Face pull.",
+      "model": "eleven_v3",
+      "settings": {
+        "stability": 0.5
+      }
+    },
+    "matilda/names/glute_bridge": {
+      "text": "Next up: Glute bridge.",
+      "model": "eleven_v3",
+      "settings": {
+        "stability": 0.5
+      }
+    },
+    "matilda/names/goblet_squat": {
+      "text": "Next up: Goblet squat.",
+      "model": "eleven_v3",
+      "settings": {
+        "stability": 0.5
+      }
+    },
+    "matilda/names/hammer_curl": {
+      "text": "Next up: Hammer curl.",
+      "model": "eleven_v3",
+      "settings": {
+        "stability": 0.5
+      }
+    },
+    "matilda/names/hanging_knee_raise": {
+      "text": "Next up: Hanging knee raise.",
+      "model": "eleven_v3",
+      "settings": {
+        "stability": 0.5
+      }
+    },
+    "matilda/names/hip_thrust": {
+      "text": "Next up: Barbell hip thrust.",
+      "model": "eleven_v3",
+      "settings": {
+        "stability": 0.5
+      }
+    },
+    "matilda/names/incline_db_press": {
+      "text": "Next up: Incline dumbbell press.",
+      "model": "eleven_v3",
+      "settings": {
+        "stability": 0.5
+      }
+    },
+    "matilda/names/kettlebell_swing": {
+      "text": "Next up: Kettlebell swing.",
+      "model": "eleven_v3",
+      "settings": {
+        "stability": 0.5
+      }
+    },
+    "matilda/names/lat_pulldown": {
+      "text": "Next up: Lat pulldown.",
+      "model": "eleven_v3",
+      "settings": {
+        "stability": 0.5
+      }
+    },
+    "matilda/names/lateral_raise": {
+      "text": "Next up: Lateral raise.",
+      "model": "eleven_v3",
+      "settings": {
+        "stability": 0.5
+      }
+    },
+    "matilda/names/leg_extension": {
+      "text": "Next up: Leg extension.",
+      "model": "eleven_v3",
+      "settings": {
+        "stability": 0.5
+      }
+    },
+    "matilda/names/lib_arm_circles": {
+      "text": "Next up: Arm circles.",
+      "model": "eleven_v3",
+      "settings": {
+        "stability": 0.5
+      }
+    },
+    "matilda/names/lib_band_assisted_pull_up": {
+      "text": "Next up: Band-assisted pull-up.",
+      "model": "eleven_v3",
+      "settings": {
+        "stability": 0.5
+      }
+    },
+    "matilda/names/lib_band_pull_apart": {
+      "text": "Next up: Band pull-apart.",
+      "model": "eleven_v3",
+      "settings": {
+        "stability": 0.5
+      }
+    },
+    "matilda/names/lib_barbell_incline_bench_press_medium_grip": {
+      "text": "Next up: Incline bench press.",
+      "model": "eleven_v3",
+      "settings": {
+        "stability": 0.5
+      }
+    },
+    "matilda/names/lib_barbell_shrug": {
+      "text": "Next up: Barbell shrug.",
+      "model": "eleven_v3",
+      "settings": {
+        "stability": 0.5
+      }
+    },
+    "matilda/names/lib_bench_dips": {
+      "text": "Next up: Bench dip.",
+      "model": "eleven_v3",
+      "settings": {
+        "stability": 0.5
+      }
+    },
+    "matilda/names/lib_body_tricep_press": {
+      "text": "Next up: Bodyweight triceps press.",
+      "model": "eleven_v3",
+      "settings": {
+        "stability": 0.5
+      }
+    },
+    "matilda/names/lib_bodyweight_squat": {
+      "text": "Next up: Bodyweight squat.",
+      "model": "eleven_v3",
+      "settings": {
+        "stability": 0.5
+      }
+    },
+    "matilda/names/lib_bodyweight_walking_lunge": {
+      "text": "Next up: Walking lunge.",
+      "model": "eleven_v3",
+      "settings": {
+        "stability": 0.5
+      }
+    },
+    "matilda/names/lib_cat_stretch": {
+      "text": "Next up: Cat-cow.",
+      "model": "eleven_v3",
+      "settings": {
+        "stability": 0.5
+      }
+    },
+    "matilda/names/lib_chest_and_front_of_shoulder_stretch": {
+      "text": "Next up: Chest and shoulder stretch.",
+      "model": "eleven_v3",
+      "settings": {
+        "stability": 0.5
+      }
+    },
+    "matilda/names/lib_childs_pose": {
+      "text": "Next up: Child's pose.",
+      "model": "eleven_v3",
+      "settings": {
+        "stability": 0.5
+      }
+    },
+    "matilda/names/lib_chin_up": {
+      "text": "Next up: Chin-up.",
+      "model": "eleven_v3",
+      "settings": {
+        "stability": 0.5
+      }
+    },
+    "matilda/names/lib_dips_triceps_version": {
+      "text": "Next up: Parallel bar dip.",
+      "model": "eleven_v3",
+      "settings": {
+        "stability": 0.5
+      }
+    },
+    "matilda/names/lib_dumbbell_bench_press": {
+      "text": "Next up: Dumbbell bench press.",
+      "model": "eleven_v3",
+      "settings": {
+        "stability": 0.5
+      }
+    },
+    "matilda/names/lib_dumbbell_bicep_curl": {
+      "text": "Next up: Dumbbell curl.",
+      "model": "eleven_v3",
+      "settings": {
+        "stability": 0.5
+      }
+    },
+    "matilda/names/lib_dumbbell_rear_lunge": {
+      "text": "Next up: Dumbbell reverse lunge.",
+      "model": "eleven_v3",
+      "settings": {
+        "stability": 0.5
+      }
+    },
+    "matilda/names/lib_dumbbell_shrug": {
+      "text": "Next up: Dumbbell shrug.",
+      "model": "eleven_v3",
+      "settings": {
+        "stability": 0.5
+      }
+    },
+    "matilda/names/lib_dumbbell_step_ups": {
+      "text": "Next up: Dumbbell step-up.",
+      "model": "eleven_v3",
+      "settings": {
+        "stability": 0.5
+      }
+    },
+    "matilda/names/lib_dynamic_chest_stretch": {
+      "text": "Next up: Dynamic chest stretch.",
+      "model": "eleven_v3",
+      "settings": {
+        "stability": 0.5
+      }
+    },
+    "matilda/names/lib_farmers_walk": {
+      "text": "Next up: Farmer's walk.",
+      "model": "eleven_v3",
+      "settings": {
+        "stability": 0.5
+      }
+    },
+    "matilda/names/lib_groiners": {
+      "text": "Next up: Groiners.",
+      "model": "eleven_v3",
+      "settings": {
+        "stability": 0.5
+      }
+    },
+    "matilda/names/lib_hamstring_stretch": {
+      "text": "Next up: Hamstring stretch.",
+      "model": "eleven_v3",
+      "settings": {
+        "stability": 0.5
+      }
+    },
+    "matilda/names/lib_handstand_push_ups": {
+      "text": "Next up: Pike or wall handstand push-up.",
+      "model": "eleven_v3",
+      "settings": {
+        "stability": 0.5
+      }
+    },
+    "matilda/names/lib_hanging_leg_raise": {
+      "text": "Next up: Hanging leg raise.",
+      "model": "eleven_v3",
+      "settings": {
+        "stability": 0.5
+      }
+    },
+    "matilda/names/lib_hanging_pike": {
+      "text": "Next up: Hanging pike.",
+      "model": "eleven_v3",
+      "settings": {
+        "stability": 0.5
+      }
+    },
+    "matilda/names/lib_hyperextensions_with_no_hyperextension_bench": {
+      "text": "Next up: Floor back extension.",
+      "model": "eleven_v3",
+      "settings": {
+        "stability": 0.5
+      }
+    },
+    "matilda/names/lib_incline_push_up": {
+      "text": "Next up: Incline push-up.",
+      "model": "eleven_v3",
+      "settings": {
+        "stability": 0.5
+      }
+    },
+    "matilda/names/lib_inverted_row": {
+      "text": "Next up: Inverted row.",
+      "model": "eleven_v3",
+      "settings": {
+        "stability": 0.5
+      }
+    },
+    "matilda/names/lib_inverted_row_with_straps": {
+      "text": "Next up: Feet-up ring row.",
+      "model": "eleven_v3",
+      "settings": {
+        "stability": 0.5
+      }
+    },
+    "matilda/names/lib_kettlebell_pistol_squat": {
+      "text": "Next up: Pistol squat.",
+      "model": "eleven_v3",
+      "settings": {
+        "stability": 0.5
+      }
+    },
+    "matilda/names/lib_kneeling_hip_flexor": {
+      "text": "Next up: Kneeling hip flexor stretch.",
+      "model": "eleven_v3",
+      "settings": {
+        "stability": 0.5
+      }
+    },
+    "matilda/names/lib_lateral_raise_with_bands": {
+      "text": "Next up: Band lateral raise.",
+      "model": "eleven_v3",
+      "settings": {
+        "stability": 0.5
+      }
+    },
+    "matilda/names/lib_leg_press": {
+      "text": "Next up: Leg press.",
+      "model": "eleven_v3",
+      "settings": {
+        "stability": 0.5
+      }
+    },
+    "matilda/names/lib_lying_dumbbell_tricep_extension": {
+      "text": "Next up: Lying dumbbell extension.",
+      "model": "eleven_v3",
+      "settings": {
+        "stability": 0.5
+      }
+    },
+    "matilda/names/lib_mountain_climbers": {
+      "text": "Next up: Mountain climbers.",
+      "model": "eleven_v3",
+      "settings": {
+        "stability": 0.5
+      }
+    },
+    "matilda/names/lib_muscle_up": {
+      "text": "Next up: Muscle-up.",
+      "model": "eleven_v3",
+      "settings": {
+        "stability": 0.5
+      }
+    },
+    "matilda/names/lib_natural_glute_ham_raise": {
+      "text": "Next up: Nordic curl.",
+      "model": "eleven_v3",
+      "settings": {
+        "stability": 0.5
+      }
+    },
+    "matilda/names/lib_one_arm_dumbbell_row": {
+      "text": "Next up: One-arm dumbbell row.",
+      "model": "eleven_v3",
+      "settings": {
+        "stability": 0.5
+      }
+    },
+    "matilda/names/lib_palms_up_dumbbell_wrist_curl_over_a_bench": {
+      "text": "Next up: Dumbbell wrist curl.",
+      "model": "eleven_v3",
+      "settings": {
+        "stability": 0.5
+      }
+    },
+    "matilda/names/lib_push_up_wide": {
+      "text": "Next up: Wide push-up.",
+      "model": "eleven_v3",
+      "settings": {
+        "stability": 0.5
+      }
+    },
+    "matilda/names/lib_push_ups_close_triceps_position": {
+      "text": "Next up: Close-grip push-up.",
+      "model": "eleven_v3",
+      "settings": {
+        "stability": 0.5
+      }
+    },
+    "matilda/names/lib_push_ups_with_feet_elevated": {
+      "text": "Next up: Feet-up push-up.",
+      "model": "eleven_v3",
+      "settings": {
+        "stability": 0.5
+      }
+    },
+    "matilda/names/lib_recumbent_bike": {
+      "text": "Next up: Easy bike or rower.",
+      "model": "eleven_v3",
+      "settings": {
+        "stability": 0.5
+      }
+    },
+    "matilda/names/lib_reverse_crunch": {
+      "text": "Next up: Reverse crunch.",
+      "model": "eleven_v3",
+      "settings": {
+        "stability": 0.5
+      }
+    },
+    "matilda/names/lib_ring_dips": {
+      "text": "Next up: Ring dip.",
+      "model": "eleven_v3",
+      "settings": {
+        "stability": 0.5
+      }
+    },
+    "matilda/names/lib_rope_jumping": {
+      "text": "Next up: Jump rope.",
+      "model": "eleven_v3",
+      "settings": {
+        "stability": 0.5
+      }
+    },
+    "matilda/names/lib_rowing_stationary": {
+      "text": "Next up: Rowing machine.",
+      "model": "eleven_v3",
+      "settings": {
+        "stability": 0.5
+      }
+    },
+    "matilda/names/lib_scapular_pull_up": {
+      "text": "Next up: Scapular pull-up.",
+      "model": "eleven_v3",
+      "settings": {
+        "stability": 0.5
+      }
+    },
+    "matilda/names/lib_single_arm_push_up": {
+      "text": "Next up: One-arm push-up (assisted).",
+      "model": "eleven_v3",
+      "settings": {
+        "stability": 0.5
+      }
+    },
+    "matilda/names/lib_single_leg_high_box_squat": {
+      "text": "Next up: Single-leg box squat.",
+      "model": "eleven_v3",
+      "settings": {
+        "stability": 0.5
+      }
+    },
+    "matilda/names/lib_single_leg_glute_bridge": {
+      "text": "Next up: Single-leg glute bridge.",
+      "model": "eleven_v3",
+      "settings": {
+        "stability": 0.5
+      }
+    },
+    "matilda/names/lib_standing_hip_circles": {
+      "text": "Next up: Hip circles.",
+      "model": "eleven_v3",
+      "settings": {
+        "stability": 0.5
+      }
+    },
+    "matilda/names/lib_step_up_with_knee_raise": {
+      "text": "Next up: Step-up.",
+      "model": "eleven_v3",
+      "settings": {
+        "stability": 0.5
+      }
+    },
+    "matilda/names/lib_stiff_legged_dumbbell_deadlift": {
+      "text": "Next up: Dumbbell stiff-leg deadlift.",
+      "model": "eleven_v3",
+      "settings": {
+        "stability": 0.5
+      }
+    },
+    "matilda/names/lib_suspended_split_squat": {
+      "text": "Next up: Rear-foot-up split squat.",
+      "model": "eleven_v3",
+      "settings": {
+        "stability": 0.5
+      }
+    },
+    "matilda/names/lib_weighted_pull_ups": {
+      "text": "Next up: Weighted pull-up.",
+      "model": "eleven_v3",
+      "settings": {
+        "stability": 0.5
+      }
+    },
+    "matilda/names/lib_worlds_greatest_stretch": {
+      "text": "Next up: World's greatest stretch.",
+      "model": "eleven_v3",
+      "settings": {
+        "stability": 0.5
+      }
+    },
+    "matilda/names/lib_wrist_circles": {
+      "text": "Next up: Wrist circles.",
+      "model": "eleven_v3",
+      "settings": {
+        "stability": 0.5
+      }
+    },
+    "matilda/names/lying_leg_curl": {
+      "text": "Next up: Lying leg curl.",
+      "model": "eleven_v3",
+      "settings": {
+        "stability": 0.5
+      }
+    },
+    "matilda/names/overhead_press": {
+      "text": "Next up: Overhead press.",
+      "model": "eleven_v3",
+      "settings": {
+        "stability": 0.5
+      }
+    },
+    "matilda/names/overhead_triceps": {
+      "text": "Next up: Overhead triceps extension.",
+      "model": "eleven_v3",
+      "settings": {
+        "stability": 0.5
+      }
+    },
+    "matilda/names/pallof_press": {
+      "text": "Next up: Pallof press.",
+      "model": "eleven_v3",
+      "settings": {
+        "stability": 0.5
+      }
+    },
+    "matilda/names/plank": {
+      "text": "Next up: Front plank.",
+      "model": "eleven_v3",
+      "settings": {
+        "stability": 0.5
+      }
+    },
+    "matilda/names/pull_up": {
+      "text": "Next up: Pull-up.",
+      "model": "eleven_v3",
+      "settings": {
+        "stability": 0.5
+      }
+    },
+    "matilda/names/push_up": {
+      "text": "Next up: Push-up.",
+      "model": "eleven_v3",
+      "settings": {
+        "stability": 0.5
+      }
+    },
+    "matilda/names/rear_delt_fly": {
+      "text": "Next up: Bent-over rear delt fly.",
+      "model": "eleven_v3",
+      "settings": {
+        "stability": 0.5
+      }
+    },
+    "matilda/names/romanian_deadlift": {
+      "text": "Next up: Romanian deadlift.",
+      "model": "eleven_v3",
+      "settings": {
+        "stability": 0.5
+      }
+    },
+    "matilda/names/russian_twist": {
+      "text": "Next up: Russian twist.",
+      "model": "eleven_v3",
+      "settings": {
+        "stability": 0.5
+      }
+    },
+    "matilda/names/seated_cable_row": {
+      "text": "Next up: Seated cable row.",
+      "model": "eleven_v3",
+      "settings": {
+        "stability": 0.5
+      }
+    },
+    "matilda/names/seated_db_press": {
+      "text": "Next up: Seated dumbbell press.",
+      "model": "eleven_v3",
+      "settings": {
+        "stability": 0.5
+      }
+    },
+    "matilda/names/skull_crusher": {
+      "text": "Next up: Skull crusher.",
+      "model": "eleven_v3",
+      "settings": {
+        "stability": 0.5
+      }
+    },
+    "matilda/names/split_squat": {
+      "text": "Next up: Split squat.",
+      "model": "eleven_v3",
+      "settings": {
+        "stability": 0.5
+      }
+    },
+    "matilda/names/triceps_pushdown": {
+      "text": "Next up: Triceps pushdown.",
+      "model": "eleven_v3",
+      "settings": {
+        "stability": 0.5
+      }
     }
   }
 }

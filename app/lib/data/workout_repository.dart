@@ -289,8 +289,8 @@ class WorkoutRepository {
         for (var i = 0; i < item.sets; i++) {
           final setId = await _insertSet(seId, i, SetType.warmup);
           if (item.seconds != null) {
-            // A target time to start from, not a completed value.
-            await updateSet(setId, SetEntriesCompanion(durationSec: Value(item.seconds)));
+            // The plan's time is a target, kept apart from the measured time.
+            await updateSet(setId, SetEntriesCompanion(targetSec: Value(item.seconds)));
           }
         }
       }
@@ -313,8 +313,8 @@ class WorkoutRepository {
       for (var i = 0; i < item.sets; i++) {
         final setId = await _insertSet(seId, setPos++, item.seconds != null ? SetType.timed : SetType.working);
         if (item.seconds != null) {
-          // A target time to start from, not a completed value.
-          await updateSet(setId, SetEntriesCompanion(durationSec: Value(item.seconds)));
+          // The plan's time is a target, kept apart from the measured time.
+          await updateSet(setId, SetEntriesCompanion(targetSec: Value(item.seconds)));
         }
       }
     }

@@ -38,7 +38,7 @@ void main() {
     expect(slots['own']!.kind, isNull);
     expect(slots['own']!.name, 'Pre-workout');
     final v = await db.customSelect('PRAGMA user_version').getSingle();
-    expect(v.data.values.first, 5);
+    expect(v.data.values.first, 6);
     await db.close();
   });
 
@@ -68,7 +68,7 @@ void main() {
     expect(await db.select(db.aiProposals).get(), isEmpty);
     expect(await db.select(db.healthWrites).get(), isEmpty);
     final v = await db.customSelect('PRAGMA user_version').getSingle();
-    expect(v.data.values.first, 5);
+    expect(v.data.values.first, 6);
     await db.close();
   });
 
@@ -107,7 +107,7 @@ void main() {
     expect(await db.select(db.programs).get(), isEmpty);
     expect(await db.select(db.bodyWeights).get(), isEmpty);
     final v = await db.customSelect('PRAGMA user_version').getSingle();
-    expect(v.data.values.first, 5);
+    expect(v.data.values.first, 6);
     await db.close();
   });
 
@@ -175,7 +175,52 @@ void main() {
     // Running the copy again changes nothing.
     expect(await db.copyLegacyPlans(), 0);
     final v = await db.customSelect('PRAGMA user_version').getSingle();
-    expect(v.data.values.first, 5);
+    expect(v.data.values.first, 6);
+    await db.close();
+  });
+
+  test('v5 to v6 moves plan target times out of the measured time', () async {
+    final file = File('${dir.path}/v5.sqlite');
+    // Build the v5 shape: today's schema without the target_sec column.
+    driftRuntimeOptions.dontWarnAboutMultipleDatabases = true;
+    final fresh = AppDatabase(NativeDatabase(file));
+    await fresh.customSelect('SELECT 1').get();
+    await fresh.close();
+    final raw = sql.sqlite3.open(file.path);
+    raw.execute('ALTER TABLE set_entries DROP COLUMN target_sec');
+    const t = '2026-03-02T08:00:00.000Z';
+    raw.execute("INSERT INTO exercises (id, created_at, updated_at, name) VALUES ('e1', '$t', '$t', 'Plank')");
+    raw.execute(
+      'INSERT INTO workout_sessions (id, created_at, updated_at, name, status, started_at, utc_offset_minutes, '
+      "time_zone_name, program_id, program_day) VALUES ('plan', '$t', '$t', 'Core', 'active', '$t', 0, 'UTC', 'p1', 0), "
+      "('free', '$t', '$t', 'Free', 'finished', '$t', 0, 'UTC', NULL, NULL)",
+    );
+    raw.execute(
+      'INSERT INTO session_exercises (id, created_at, updated_at, session_id, exercise_id, position) VALUES '
+      "('se1', '$t', '$t', 'plan', 'e1', 0), ('se2', '$t', '$t', 'free', 'e1', 0)",
+    );
+    raw.execute(
+      'INSERT INTO set_entries (id, created_at, updated_at, session_exercise_id, position, set_type, reps, '
+      "duration_sec, completed) VALUES ('open', '$t', '$t', 'se1', 0, 'timed', NULL, 45, 0), "
+      "('done', '$t', '$t', 'se1', 1, 'timed', NULL, 50, 1), "
+      "('reps', '$t', '$t', 'se1', 2, 'working', 8, 30, 0), "
+      "('own', '$t', '$t', 'se2', 0, 'timed', NULL, 60, 0)",
+    );
+    raw.execute('PRAGMA user_version = 5');
+    raw.close();
+
+    final db = AppDatabase(NativeDatabase(file));
+    final sets = {for (final s in await db.select(db.setEntries).get()) s.id: s};
+    expect((sets['open']!.targetSec, sets['open']!.durationSec), (45, null), reason: 'An open plan set held a target');
+    expect((sets['done']!.targetSec, sets['done']!.durationSec), (null, 50), reason: 'A done set keeps its time');
+    expect((sets['reps']!.targetSec, sets['reps']!.durationSec), (null, 30), reason: 'A rep set keeps its time');
+    expect(
+      (sets['own']!.targetSec, sets['own']!.durationSec),
+      (null, 60),
+      reason: 'A set outside a plan is the user\'s',
+    );
+    final v = await db.customSelect('PRAGMA user_version').getSingle();
+    expect(v.data.values.first, 6);
     await db.close();
   });
 }

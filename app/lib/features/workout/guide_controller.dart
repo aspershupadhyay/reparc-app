@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:drift/drift.dart' show Value;
 import 'package:flutter/services.dart';
+import 'package:flutter/widgets.dart' show AppLifecycleState, WidgetsBinding;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/clock.dart';
@@ -9,8 +10,10 @@ import '../../core/screen_awake.dart';
 import '../../data/database.dart';
 import '../../data/models.dart';
 import '../../data/providers.dart';
+import '../../data/settings_repository.dart';
 import '../../data/workout_repository.dart';
 import '../../domain/guide.dart';
+import 'rest_alert.dart';
 import 'voice.dart';
 
 enum GuidePhase { idle, set, rest }
@@ -69,7 +72,8 @@ class GuideState {
 }
 
 /// True for a set that is done for a time, such as a plank, not for reps.
-bool isTimedSet(SetEntry s) => s.setType == SetType.timed || (s.durationSec != null && s.reps == null);
+bool isTimedSet(SetEntry s) =>
+    s.setType == SetType.timed || ((s.targetSec != null || s.durationSec != null) && s.reps == null);
 
 /// True when every set of the exercise is a warm-up: a warm-up move, not
 /// the lighter ramp-up sets of a main lift.
@@ -94,6 +98,9 @@ class GuideController extends Notifier<GuideState> {
 
   /// "Next exercise." was said during this rest.
   bool _toldNext = false;
+
+  /// When the rest alert is set to fire. Null when none is set.
+  DateTime? _alertAt;
 
   WorkoutRepository get _repo => ref.read(workoutRepoProvider);
   DateTime get _now => ref.read(clockProvider)().toUtc();
@@ -132,7 +139,7 @@ class GuideController extends Notifier<GuideState> {
     final (e, s) = next;
     final settings = ref.read(currentSettingsProvider);
     final target = switch (isTimedSet(s)) {
-      true => s.durationSec ?? 40,
+      true => s.targetSec ?? s.durationSec ?? 40,
       false when settings.finishRepSets =>
         settings.setSec ?? estimateSetSec(s.reps ?? targetRepsFromNote(e.item.note) ?? _previousReps(e, s)),
       false => 0,
@@ -143,7 +150,7 @@ class GuideController extends Notifier<GuideState> {
     // The first cue cuts off any cue from the rest, such as "Ten seconds".
     var first = true;
     if (!_toldNext && last != null && last.$1.item.id != e.item.id) {
-      _say(Clips.nextExercise, now: true);
+      _say(Clips.nextUp(e.exercise.catalogId) ?? Clips.nextExercise, now: true);
       first = false;
     }
     _say(switch (s.setType) {
@@ -265,6 +272,12 @@ class GuideController extends Notifier<GuideState> {
     };
     await _repo.startRest(sessionId, rest);
     if (done.setType != SetType.warmup || rest >= 30) _say(Clips.rest(rest));
+    // Ask once, in context: the first guided rest is when the alert helps.
+    final settings = ref.read(currentSettingsProvider);
+    if (settings.restAlert && !settings.restAlertAsked) {
+      await ref.read(settingsRepoProvider).setRestAlertAsked();
+      unawaited(ref.read(restAlertsProvider).askPermission());
+    }
     _lastRest = 0;
     state = const GuideState(phase: GuidePhase.rest);
   }
@@ -279,6 +292,7 @@ class GuideController extends Notifier<GuideState> {
       // The screen stays on while the guide runs a live workout, so cues
       // play on time. It goes off when the workout ends.
       ScreenAwake.hold('workout', live != null && settings.guideOn);
+      await _syncRestAlert(live, settings);
       if (live == null) {
         _wasPaused = null;
         if (state.phase != GuidePhase.idle) state = const GuideState();
@@ -305,6 +319,35 @@ class GuideController extends Notifier<GuideState> {
     } finally {
       _busy = false;
     }
+  }
+
+  /// Keeps the one rest alert in step with the rest: set while a rest runs,
+  /// moved when the rest changes, removed on pause, stop, or a new set.
+  /// With the app open, the voice says the end, so the alert is removed
+  /// just before it.
+  Future<void> _syncRestAlert(WorkoutSession? live, AppSettings settings) async {
+    DateTime? want;
+    if (live != null &&
+        settings.guideOn &&
+        settings.restAlert &&
+        live.status == SessionStatus.active &&
+        live.restStartedAt != null &&
+        live.restTargetSec != null) {
+      final end = live.restStartedAt!.add(Duration(seconds: live.restTargetSec!));
+      final open = WidgetsBinding.instance.lifecycleState == AppLifecycleState.resumed;
+      if (end.difference(_now) > (open ? const Duration(seconds: 2) : Duration.zero)) want = end;
+    }
+    if (want == _alertAt) return;
+    _alertAt = want;
+    final alerts = ref.read(restAlertsProvider);
+    if (want == null) return alerts.cancel();
+    final d = await _repo.loadSession(live!.id);
+    final next = d == null ? null : nextSet(d);
+    await alerts.schedule(
+      want,
+      title: 'Rest over',
+      body: next == null ? 'Time for the next set.' : 'Next: ${describeSet(next.$1, next.$2)}',
+    );
   }
 
   Future<void> _restStep(WorkoutSession live, bool autoStart) async {
@@ -337,7 +380,7 @@ class GuideController extends Notifier<GuideState> {
     final next = d == null ? null : nextSet(d);
     final last = d == null ? null : _lastDone(d);
     if (next == null || last == null || last.$1.item.id == next.$1.item.id) return;
-    _say(Clips.nextExercise);
+    _say(Clips.nextUp(next.$1.exercise.catalogId) ?? Clips.nextExercise);
     _toldNext = true;
   }
 
