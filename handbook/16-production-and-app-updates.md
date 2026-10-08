@@ -146,6 +146,26 @@ Before public release, name an owner for:
 
 The release owner must confirm the current Apple and Google requirements before each submission. Store requirements and APIs can change.
 
+## 17.9 Private source, public builds
+
+**Status:** Set up 2026-10-08 at the owner's request. The owner made this repository private. The license question below is **To confirm**.
+
+- **Source:** `aspershupadhyay/reparc` stays private.
+- **Builds:** a public repository, `aspershupadhyay/reparc-releases`, holds only a README and GitHub Releases (APK, IPA, `SHA256SUMS.txt`). The release workflow publishes there. The app's update check (D-029) and the website read from there, because a private repository's releases are not visible without a sign-in.
+- **Website:** Vercel, project root `site/` (`site/vercel.json`). GitHub Pages for a private repository needs a paid GitHub plan, so `pages.yml` was removed.
+- **Gateway:** unchanged. It already deploys to Vercel from this repository.
+
+**Owner steps (one time):**
+
+1. Create the public repository `reparc-releases` on GitHub, with a README. The text is in `release-notes/RELEASES-REPO-README.md`.
+2. Create a fine-grained personal access token: repository access **only** `reparc-releases`, permission **Contents: Read and write**. Add it to this repository as the Actions secret `RELEASES_TOKEN`.
+3. In Vercel, import this repository as a new project, set **Root Directory** to `site`, and deploy. Add a domain if wanted, then update the website link in `README.md`.
+4. Push a version tag (for example `v0.4.0`) to publish the first public build.
+
+**Limits.** Anyone can still unpack an APK or IPA and read the compiled code; private source makes copying harder, not impossible. Code that was public under AGPL-3.0 stays available under AGPL-3.0 to anyone who copied it.
+
+**To confirm (owner):** the license for new versions. The app still ships under AGPL-3.0 (12.2), which lets anyone who gets the app ask for its source. Keeping the source private for new releases needs a different license for them, for example "all rights reserved". The owner is the only human author in the history, so the owner can choose this.
+
 ## AI context
 
 - **Purpose:** Direct engineering agents to build and update the app safely.

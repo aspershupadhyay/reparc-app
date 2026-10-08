@@ -1,5 +1,6 @@
 # Builds the Android APK and the iPhone IPA and publishes them as a GitHub
-# Release (handbook 17). Run it by pushing a tag such as v0.2.0, or from the
+# Release in the public aspershupadhyay/reparc-releases repository (handbook
+# 17.9). Run it by pushing a tag such as v0.2.0, or from the
 # Actions tab. The tag must match the version in app/pubspec.yaml.
 #
 # Signing, honestly:
@@ -142,8 +143,16 @@ jobs:
         run: cd dist && sha256sum reparc-android.apk reparc-ios-unsigned.ipa > SHA256SUMS.txt && cat SHA256SUMS.txt
       - name: Create the release
         env:
-          GH_TOKEN: ${{ github.token }}
+          # The source repository is private. Builds go to a public repository
+          # that holds only releases (handbook 17.9). RELEASES_TOKEN is a
+          # fine-grained token with Contents: read and write on that repo.
+          GH_TOKEN: ${{ secrets.RELEASES_TOKEN }}
+          RELEASES_REPO: aspershupadhyay/reparc-releases
         run: |
+          if [ -z "$GH_TOKEN" ]; then
+            echo "::error::Add the RELEASES_TOKEN secret (Settings → Secrets → Actions). See handbook 17.9."
+            exit 1
+          fi
           # What's new comes first: the app shows its first line (D-029).
           if [ -f "release-notes/${TAG#v}.md" ]; then
             cat "release-notes/${TAG#v}.md" > notes.md
@@ -158,9 +167,9 @@ jobs:
 
           **iPhone:** \`reparc-ios-unsigned.ipa\` is not from the App Store. Install it with AltStore or Sideloadly using your own Apple ID (iOS 15+). A free Apple ID must refresh it every 7 days.
 
-          **AI connections:** Me → AI connections. Wi-Fi mode for AI apps on your computer, or deploy your own gateway on Vercel: see gateway/README.md.
+          **AI connections:** Me → AI connections. Wi-Fi mode for AI apps on your computer, or the owner's online gateway.
 
           Check downloads against \`SHA256SUMS.txt\`. The app tells you when a new version is out (Me → App updates); your phone's installer does the install.
           NOTES
           gh release create "$TAG" dist/reparc-android.apk dist/reparc-ios-unsigned.ipa dist/SHA256SUMS.txt \
-            --target "$GITHUB_SHA" --title "Reparc $TAG" --notes-file notes.md --latest
+            --repo "$RELEASES_REPO" --title "Reparc $TAG" --notes-file notes.md --latest

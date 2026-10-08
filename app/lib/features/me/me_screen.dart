@@ -232,7 +232,7 @@ class MeScreen extends ConsumerWidget {
                   applicationLegalese: 'Copyright the Reparc contributors.\nLicensed under GNU AGPL v3.0 only.',
                 ),
               ),
-              info(lead(LucideIcons.lifeBuoy, p.inkSoft, p.surfaceAlt), 'Support', 'github.com/aspershupadhyay/reparc'),
+              info(lead(LucideIcons.lifeBuoy, p.inkSoft, p.surfaceAlt), 'Support', 'github.com/aspershupadhyay/reparc-releases'),
             ]),
           ],
         ),

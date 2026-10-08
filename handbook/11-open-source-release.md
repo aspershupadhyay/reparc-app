@@ -26,6 +26,8 @@ Assign an owner for each responsibility before public release. One person can ow
 
 The project uses the GNU Affero General Public License, version 3.0 (AGPL-3.0-only). The user selected this license on 2026-10-05. See the repository root [LICENSE](../LICENSE).
 
+**Changed 2026-10-08:** The owner made the source repository private and publishes only builds (section 17.9). The license for new versions is **To confirm**.
+
 AGPL-3.0 is a strong copyleft license. It requires a user who modifies the program and lets people use it over a network to offer those users the corresponding source under the license terms. Review the terms with contributors and service operators before launch.
 
 Keep app code, brand assets, exercise text, food data, fonts, and user data rights clear. Open-source source code does not make user records public.

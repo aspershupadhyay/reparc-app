@@ -2,9 +2,11 @@
 
 **Train. Eat. Own your data.** A free, open-source gym and meal log for iPhone and Android. Your records live on your phone. There is no Reparc account and no Reparc server.
 
-🌐 **Website:** [aspershupadhyay.github.io/reparc](https://aspershupadhyay.github.io/reparc/) · ⬇️ **Download:** [latest release](https://github.com/aspershupadhyay/reparc/releases/latest)
+🌐 **Website:** on Vercel from `site/` (address To confirm) · ⬇️ **Download:** [latest release](https://github.com/aspershupadhyay/reparc-releases/releases/latest)
 
-> Beta. The core was tested on a real Android phone. AI connections, health access, and backup have passed automated tests only. Reports are welcome in [issues](https://github.com/aspershupadhyay/reparc/issues).
+> This repository is private. Builds are published in the public [reparc-releases](https://github.com/aspershupadhyay/reparc-releases) repository (handbook 17.9).
+
+> Beta. The core was tested on a real Android phone. AI connections, health access, and backup have passed automated tests only. Reports are welcome in [issues](https://github.com/aspershupadhyay/reparc-releases/issues).
 
 ## What it does
 
@@ -30,7 +32,7 @@ Start the setup in the app first (Me → AI connections → Set up my gateway), 
 
 ## Install
 
-- **Android (8+):** download `reparc-android.apk` from the [latest release](https://github.com/aspershupadhyay/reparc/releases/latest) on your phone and open it.
+- **Android (8+):** download `reparc-android.apk` from the [latest release](https://github.com/aspershupadhyay/reparc-releases/releases/latest) on your phone and open it.
 - **iPhone (iOS 15+):** Reparc is not on the App Store yet. Download `reparc-ios-unsigned.ipa` and install it with AltStore or Sideloadly using your own Apple ID.
 
 Check downloads against `SHA256SUMS.txt`. The app never installs updates itself.
