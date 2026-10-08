@@ -15,6 +15,8 @@ void main() {
     yield LicenseEntryWithLineBreaks(['Inter'], ofl);
     final lucide = await rootBundle.loadString('assets/licenses/lucide-ISC.txt');
     yield LicenseEntryWithLineBreaks(['Lucide icons'], lucide);
+    final voice = await rootBundle.loadString('assets/licenses/elevenlabs-voice.txt');
+    yield LicenseEntryWithLineBreaks(['Voice cues (ElevenLabs)'], voice);
   });
 
   final db = AppDatabase.open();

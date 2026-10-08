@@ -368,3 +368,14 @@ Keep major choices here. Update the related chapter when a decision changes.
 
 **Owner choices:** Call it a plan. Keep the old tables for one release. Several AI workouts become one plan with days. A new or approved plan is followed only when the user taps Follow; a plan built for a goal is followed when the user taps **Follow this plan** in the builder.
 
+## D-031: Guided workout with bundled voice cues
+
+**Status:** Accepted by the user 2026-10-08 (owner request). Built.
+**Date:** 2026-10-08.
+
+**Choice:** Set and rest timers run on their own and save only measured times (handbook 4.13). Spoken cues are short clips made once with ElevenLabs and bundled in the app, in two voices. The app never calls ElevenLabs and holds no ElevenLabs key. The owner can turn the guide, the voice, and auto-finish off.
+
+**Why bundled clips:** A key in the app can be read by anyone who has the app file. Bundled clips also work offline and send no workout data out (D-003, D-009).
+
+**License (To confirm):** The clips were made on the owner's free ElevenLabs plan, which allows non-commercial use with credit to ElevenLabs. The credit is in the app's licenses page (`app/assets/licenses/elevenlabs-voice.txt`). Before a paid or store release, upgrade the plan and make the clips again, or record new ones.
+

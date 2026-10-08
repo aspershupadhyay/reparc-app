@@ -7,6 +7,7 @@ environment:
   sdk: ^3.13.5
 
 dependencies:
+  audioplayers: 6.8.1
   cryptography: 2.9.0
   drift: 2.35.1
   drift_flutter: 0.3.1
@@ -44,6 +45,9 @@ flutter:
     - assets/foods/
     - assets/mcp/
     - assets/exercises/img/
+    - assets/voice/charlie/
+    - assets/voice/matilda/
+    - assets/licenses/elevenlabs-voice.txt
   fonts:
     - family: Inter
       fonts:

@@ -229,3 +229,32 @@ Run format, analysis, generated-code checks, and all tests after each step. Test
 2. **Old tables.** Keep `workout_templates` and `template_exercises` for one release, then remove them (recommended). Or remove them in v5.
 3. **AI proposals.** Several proposed workouts become one plan with days (recommended). Or each workout becomes its own one-day plan.
 4. **Following.** An approved AI plan or a new own plan is not followed until the user taps Follow (recommended). Or it is followed at once, as an imported roadmap is now.
+
+## 4.13 Guided workout and voice cues
+
+Built 2026-10-08 (D-031). Owner request: less typing, timers that run on their own, and a voice that says when a set or rest starts and ends. Not yet tested on a real phone.
+
+**Flow.**
+
+1. In a live workout, tap **Start set**. The guide picks the first set that is not done, in order, and skips skipped exercises.
+2. The voice says "Set two. Go!", "Last set. Make it count!", or "Warm-up. Nice and easy." On a new exercise it says "Next exercise." first.
+3. The set timer counts up to the set time. Around halfway in a long set it says "Halfway." At the end it says "Time! Set done."
+4. With **Finish sets on time** on (default), the set is marked done and the rest starts. With it off, the set waits for **Set done**.
+5. The rest comes from the plan (the "rest" in the exercise note). Else it is the **Default rest** in Me → Training, else 90 s. A warm-up move rests 20 s. A ramp-up set rests 60 s. The voice says "Rest. Ninety seconds."
+6. At 10 s left it says "Ten seconds." At 3 s it says "Three. Two. One." Then the next set starts on its own.
+7. After the last set it says "Workout complete. Great work!"
+
+**Set time.** A timed set uses its own time. Else the set time from Me → Training (30–90 s), else an estimate: about 3 s a rep, 20–90 s, from the reps typed, the plan target, or the set before. **+15 s** gives the current set more time.
+
+**What is saved.** Only measured values. The set's duration is the time from **Start set** to its end. A time the user typed on a rep set is kept. The rest really taken is saved on the set before, when the next set starts. The guide never saves reps or load; the user types those, during the rest if they like. Ticking a set in the list also starts the right rest.
+
+**Voice.** 31 short clips in two ElevenLabs voices, Charlie and Matilda, bundled in `app/assets/voice/` (about 0.9 MB). `app/tool/voice/generate.py` makes them from `phrases.json`. It reads the key from `ELEVENLABS_API_KEY`; the key is never stored in the repo or the app. The app plays the files with `audioplayers` and lowers other audio, such as music, while a cue plays. No network request, and no workout data leaves the phone.
+
+**Off switches.** Me → Training → **Guided workout** (off gives the old manual rest chips), **Voice** (Charlie, Matilda, or Off), **Finish sets on time**, and **Set time**.
+
+**Limits (To confirm).**
+
+- The set timer lives in memory. After the app restarts, tap **Start set** again. A running rest survives a restart, because it is saved on the session.
+- With the screen locked or the app in the background, iOS stops timers, so cues may not play there. Android may also delay them. A local notification for the end of a rest needs a notification permission and is not built.
+- Screen reader: the set time has a spoken label. Check VoiceOver and TalkBack on devices.
+- Code: `app/lib/domain/guide.dart` (rules), `app/lib/features/workout/guide_controller.dart`, `voice.dart`. Tests: `app/test/guide_test.dart`.

@@ -1,0 +1,42 @@
+{
+  "note": "Voice cues for the guided workout (handbook 4.13). Generated once with ElevenLabs by generate.py and bundled in assets/voice/. The app makes no network request for voice.",
+  "model": "eleven_multilingual_v2",
+  "format": "mp3_44100_64",
+  "voices": {
+    "charlie": "IKne3meq5aSn9XLyUdCD",
+    "matilda": "XrExE9yKIg1WjnnlVkGX"
+  },
+  "phrases": {
+    "set_1": "Set one. Go!",
+    "set_2": "Set two. Go!",
+    "set_3": "Set three. Go!",
+    "set_4": "Set four. Go!",
+    "set_5": "Set five. Go!",
+    "set_6": "Set six. Go!",
+    "set_7": "Set seven. Go!",
+    "set_8": "Set eight. Go!",
+    "set_9": "Set nine. Go!",
+    "set_10": "Set ten. Go!",
+    "last_set": "Last set. Make it count!",
+    "go": "Go!",
+    "warmup": "Warm-up. Nice and easy.",
+    "halfway": "Halfway.",
+    "time": "Time! Set done.",
+    "rest": "Rest started.",
+    "rest_30": "Rest. Thirty seconds.",
+    "rest_45": "Rest. Forty-five seconds.",
+    "rest_60": "Rest. One minute.",
+    "rest_90": "Rest. Ninety seconds.",
+    "rest_120": "Rest. Two minutes.",
+    "rest_150": "Rest. Two and a half minutes.",
+    "rest_180": "Rest. Three minutes.",
+    "rest_240": "Rest. Four minutes.",
+    "ten_left": "Ten seconds.",
+    "countdown": "Three. Two. One.",
+    "rest_over": "Rest over. Get ready.",
+    "next_exercise": "Next exercise.",
+    "paused": "Paused.",
+    "resumed": "Back to it.",
+    "done": "Workout complete. Great work!"
+  }
+}

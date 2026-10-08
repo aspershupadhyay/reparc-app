@@ -10,6 +10,8 @@ import '../../core/tokens.dart';
 import '../../core/widgets.dart';
 import '../../data/models.dart';
 import '../../data/providers.dart';
+import '../../domain/guide.dart';
+import '../workout/voice.dart';
 
 /// Me tab. Settings grouped by purpose (handbook 3.6). Account, health,
 /// and AI are separate rows.
@@ -111,12 +113,57 @@ class MeScreen extends ConsumerWidget {
               ),
             ]),
             group('Training', [
+              SwitchListTile(
+                secondary: lead(LucideIcons.audioLines, p.green, p.greenSoft),
+                title: const Text('Guided workout'),
+                subtitle: const Text('Set and rest timers run on their own'),
+                value: s.guideOn,
+                onChanged: repo.setGuideOn,
+              ),
+              if (s.guideOn) ...[
+                ListTile(
+                  leading: lead(LucideIcons.volume2, p.blue, p.blueSoft),
+                  title: const Text('Voice'),
+                  subtitle: const Text('Speaks when a set or rest starts and ends'),
+                  trailing: dropdown(
+                    s.voice,
+                    const [
+                      ('charlie', 'Charlie'),
+                      ('matilda', 'Matilda'),
+                      ('off', 'Off'),
+                    ],
+                    (v) {
+                      repo.setVoice(v!);
+                      ref.read(voicePlayerProvider).say(v, Clips.set(1));
+                    },
+                  ),
+                ),
+                SwitchListTile(
+                  secondary: lead(LucideIcons.timerReset, p.orange, p.orangeSoft),
+                  title: const Text('Finish sets on time'),
+                  subtitle: const Text('When the set time ends, the set is done and the rest starts'),
+                  value: s.autoFinishSets,
+                  onChanged: repo.setAutoFinishSets,
+                ),
+                ListTile(
+                  leading: lead(LucideIcons.hourglass, p.coral, p.coralSoft),
+                  title: const Text('Set time'),
+                  subtitle: const Text('Auto: about 3 s a rep'),
+                  trailing: dropdown<int?>(s.setSec, const [
+                    (null, 'Auto'),
+                    (30, '30 s'),
+                    (45, '45 s'),
+                    (60, '60 s'),
+                    (90, '90 s'),
+                  ], repo.setSetSec),
+                ),
+              ],
               ListTile(
                 leading: lead(LucideIcons.timer, p.orange, p.orangeSoft),
-                title: const Text('Auto rest timer'),
-                subtitle: const Text('Starts when a set is done'),
-                trailing: dropdown<int?>(s.restAfterSetSec, const [
-                  (null, 'Off'),
+                title: Text(s.guideOn ? 'Default rest' : 'Auto rest timer'),
+                subtitle: Text(s.guideOn ? 'When the plan has no rest. Auto: 90 s' : 'Starts when a set is done'),
+                trailing: dropdown<int?>(s.restAfterSetSec, [
+                  (null, s.guideOn ? 'Auto' : 'Off'),
                   (60, '60 s'),
                   (90, '90 s'),
                   (120, '2 min'),

@@ -17,6 +17,7 @@ import '../../data/models.dart';
 import '../../data/providers.dart';
 import '../../data/workout_repository.dart';
 import '../../domain/session_time.dart';
+import 'guide_controller.dart';
 import 'session_clock.dart';
 import 'session_editor.dart';
 
@@ -230,7 +231,10 @@ class _Hero extends ConsumerWidget {
                       ],
                     ),
                     const SizedBox(height: Space.m),
-                    _RestControls(session: s),
+                    if (ref.watch(currentSettingsProvider).guideOn)
+                      _GuidePanel(detail: detail)
+                    else
+                      _RestControls(session: s),
                   ],
                 ),
               ),
@@ -268,6 +272,140 @@ class _RestValue extends ConsumerWidget {
           labelColor: context.pal.onPanelSoft,
         );
       },
+    );
+  }
+}
+
+/// Guided workout controls (handbook 4.13): start the next set, see its
+/// time, finish it, or skip the rest. Timers and voice run on their own.
+class _GuidePanel extends ConsumerWidget {
+  const _GuidePanel({required this.detail});
+  final SessionDetail detail;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final p = context.pal;
+    final t = Theme.of(context).textTheme;
+    final g = ref.watch(guideProvider);
+    final guide = ref.read(guideProvider.notifier);
+    final s = detail.session;
+    final next = nextSet(detail);
+    final resting = s.restStartedAt != null;
+    final onInk = t.bodySmall?.copyWith(color: p.onPanelSoft);
+    Widget chip(String label, VoidCallback onTap) => ActionChip(
+      label: Text(label),
+      backgroundColor: p.panelRaised,
+      side: BorderSide(color: p.panelRaised),
+      labelStyle: t.labelMedium?.copyWith(color: p.onPanel),
+      onPressed: onTap,
+    );
+    final big = FilledButton.styleFrom(
+      backgroundColor: p.energy,
+      foregroundColor: p.onEnergy,
+      minimumSize: const Size.fromHeight(56),
+      textStyle: t.titleMedium,
+    );
+
+    if (g.phase == GuidePhase.set) {
+      return Ticker1s(
+        builder: (context) {
+          final clock = ref.read(clockProvider);
+          final el = g.startedAt == null ? 0 : clock().toUtc().difference(g.startedAt!).inSeconds;
+          final frac = g.targetSec == 0 ? 0.0 : (el / g.targetSec).clamp(0.0, 1.0);
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Text(
+                g.label,
+                style: t.titleSmall?.copyWith(color: p.onPanel),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+              const SizedBox(height: Space.xs),
+              Semantics(
+                label:
+                    'Set time ${speakDuration(Duration(seconds: el))} of ${speakDuration(Duration(seconds: g.targetSec))}',
+                excludeSemantics: true,
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.baseline,
+                  textBaseline: TextBaseline.alphabetic,
+                  children: [
+                    Text(
+                      fmtClock(Duration(seconds: el)),
+                      style: t.headlineMedium?.tabular.copyWith(color: p.energy),
+                    ),
+                    Text('  / ${fmtClock(Duration(seconds: g.targetSec))}', style: onInk?.tabular),
+                  ],
+                ),
+              ),
+              const SizedBox(height: Space.s),
+              ClipRRect(
+                borderRadius: Radii.small,
+                child: LinearProgressIndicator(
+                  value: frac,
+                  minHeight: 6,
+                  color: p.energy,
+                  backgroundColor: p.panelRaised,
+                ),
+              ),
+              const SizedBox(height: Space.m),
+              FilledButton.icon(
+                style: big,
+                onPressed: () => guardedWrite(context, guide.finishSet),
+                icon: const Icon(LucideIcons.check),
+                label: const Text('Set done'),
+              ),
+              const SizedBox(height: Space.s),
+              Wrap(
+                spacing: Space.s,
+                children: [
+                  chip('+15 s', () => guide.addTime(15)),
+                  chip('Stop guide', () => guardedWrite(context, guide.stop)),
+                ],
+              ),
+            ],
+          );
+        },
+      );
+    }
+    if (resting) {
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          if (next != null)
+            Text(
+              'Next: ${next.$1.exercise.name}',
+              style: t.titleSmall?.copyWith(color: p.onPanel),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+          const SizedBox(height: Space.s),
+          Wrap(
+            spacing: Space.s,
+            runSpacing: Space.s,
+            children: [
+              chip('Skip rest', () => guardedWrite(context, guide.skipRest)),
+              chip('+30 s', () {
+                final target = (s.restTargetSec ?? 0) + 30;
+                guardedWrite(context, () => ref.read(workoutRepoProvider).setRestTarget(s.id, target));
+              }),
+              chip('Stop guide', () => guardedWrite(context, guide.stop)),
+            ],
+          ),
+        ],
+      );
+    }
+    if (next == null) {
+      return Text(
+        detail.exercises.isEmpty ? 'Add an exercise to start the guide.' : 'Every set is done. Finish when ready.',
+        style: onInk,
+      );
+    }
+    return FilledButton.icon(
+      style: big,
+      onPressed: () => guardedWrite(context, guide.startSet),
+      icon: const Icon(LucideIcons.play),
+      label: Text('Start set · ${next.$1.exercise.name}', maxLines: 1, overflow: TextOverflow.ellipsis),
     );
   }
 }

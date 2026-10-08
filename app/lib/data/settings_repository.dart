@@ -22,7 +22,25 @@ class AppSettings {
     this.updatesCheckedAt,
     this.updatesLatest,
     this.updatesDismissed,
+    this.guideOn = true,
+    this.voice = 'charlie',
+    this.autoFinishSets = true,
+    this.setSec,
   });
+
+  /// Guided workout: set and rest timers that run on their own (handbook
+  /// 4.13). On unless the user turns it off.
+  final bool guideOn;
+
+  /// Voice for spoken cues: 'charlie', 'matilda', or 'off'.
+  final String voice;
+
+  /// End a set when its set timer runs out, then start the rest.
+  final bool autoFinishSets;
+
+  /// Set time the user chose for every set. Null means an estimate from the
+  /// reps (about 3 s a rep, 20–90 s).
+  final int? setSec;
 
   final String loadUnit;
   final String distanceUnit;
@@ -107,6 +125,10 @@ class AppSettings {
     updatesCheckedAt: DateTime.tryParse(m['updates.checkedAt'] ?? ''),
     updatesLatest: m['updates.latest'],
     updatesDismissed: m['updates.dismissed'],
+    guideOn: m['guide.on'] != 'false',
+    voice: const ['charlie', 'matilda', 'off'].contains(m['guide.voice']) ? m['guide.voice']! : 'charlie',
+    autoFinishSets: m['guide.autoFinish'] != 'false',
+    setSec: int.tryParse(m['guide.setSec'] ?? ''),
   );
 }
 
@@ -168,4 +190,8 @@ class SettingsRepository {
 
   Future<void> setLastBackupAt(DateTime at) => set('backup.lastAt', at.toUtc().toIso8601String());
   Future<void> setIntroSeen() => set('introSeen', 'true');
+  Future<void> setGuideOn(bool v) => set('guide.on', v ? null : 'false');
+  Future<void> setVoice(String v) => set('guide.voice', v);
+  Future<void> setAutoFinishSets(bool v) => set('guide.autoFinish', v ? null : 'false');
+  Future<void> setSetSec(int? sec) => set('guide.setSec', sec?.toString());
 }

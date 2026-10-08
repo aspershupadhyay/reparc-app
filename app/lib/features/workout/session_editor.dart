@@ -21,6 +21,7 @@ import '../../data/workout_repository.dart';
 import '../exercises/library/library.dart';
 import 'exercise_form.dart';
 import 'exercise_picker.dart';
+import 'guide_controller.dart';
 
 /// Exercises and sets of one session. Used by the live workout and by the
 /// saved-workout editor.
@@ -346,6 +347,11 @@ class _SetRowState extends ConsumerState<SetRow> {
     final repo = ref.read(workoutRepoProvider);
     final done = !widget.set.completed;
     await guardedWrite(context, () async {
+      if (done && widget.live && widget.settings.guideOn) {
+        // The guide saves the measured time and starts the right rest.
+        await ref.read(guideProvider.notifier).completeFromRow(widget.set);
+        return;
+      }
       await repo.setCompleted(widget.set.id, done);
       final rest = widget.settings.restAfterSetSec;
       if (done && widget.live && rest != null) await repo.startRest(widget.sessionId, rest);
