@@ -10,9 +10,6 @@ import '../../core/tokens.dart';
 import '../../core/widgets.dart';
 import '../../data/models.dart';
 import '../../data/providers.dart';
-import '../../domain/guide.dart';
-import '../workout/lock_alerts.dart';
-import '../workout/voice.dart';
 
 /// Me tab. Settings grouped by purpose (handbook 3.6). Account, health,
 /// and AI are separate rows.
@@ -117,91 +114,33 @@ class MeScreen extends ConsumerWidget {
               SwitchListTile(
                 secondary: lead(LucideIcons.audioLines, p.green, p.greenSoft),
                 title: const Text('Guided workout'),
-                subtitle: const Text('Set and rest timers with voice cues. The screen stays on in a workout'),
+                subtitle: const Text('Timers and a voice run your workout. The screen stays on'),
                 value: s.guideOn,
                 onChanged: repo.setGuideOn,
               ),
-              if (s.guideOn) ...[
+              if (s.guideOn)
+                link(
+                  lead(LucideIcons.slidersHorizontal, p.orange, p.orangeSoft),
+                  'Times and voice',
+                  [
+                    s.finishRepSets && s.autoStartSets ? 'Runs on its own' : 'You start or end sets',
+                    s.voice == 'off' ? 'Voice off' : 'Voice ${s.voice[0].toUpperCase()}${s.voice.substring(1)}',
+                  ].join(' · '),
+                  '/me/training',
+                )
+              else
                 ListTile(
-                  leading: lead(LucideIcons.volume2, p.blue, p.blueSoft),
-                  title: const Text('Voice'),
-                  subtitle: const Text('Speaks when a set or rest starts and ends'),
-                  trailing: dropdown(
-                    s.voice,
-                    const [
-                      ('charlie', 'Charlie'),
-                      ('matilda', 'Matilda'),
-                      ('off', 'Off'),
-                    ],
-                    (v) {
-                      repo.setVoice(v!);
-                      ref.read(voicePlayerProvider).say(v, Clips.set(1));
-                    },
-                  ),
+                  leading: lead(LucideIcons.timer, p.orange, p.orangeSoft),
+                  title: const Text('Auto rest timer'),
+                  subtitle: const Text('Starts when a set is done'),
+                  trailing: dropdown<int?>(s.restAfterSetSec, [
+                    (null, 'Off'),
+                    (60, '60 s'),
+                    (90, '90 s'),
+                    (120, '2 min'),
+                    (180, '3 min'),
+                  ], repo.setRestAfterSet),
                 ),
-                for (final (cue, icon, title, sub) in const [
-                  (Cue.halfway, LucideIcons.chartPie, 'Halfway', 'In timed sets of 30 s or more'),
-                  (Cue.tenLeft, LucideIcons.timer, 'Ten seconds left', 'Before a rest ends'),
-                  (Cue.countdown, LucideIcons.listOrdered, '3-2-1 countdown', 'Before a rest or a timed set ends'),
-                  (Cue.end, LucideIcons.bellRing, 'End of rest and set', '"Rest is up" and "Time! Good set."'),
-                ])
-                  SwitchListTile(
-                    secondary: lead(icon, p.blue, p.blueSoft),
-                    title: Text(title),
-                    subtitle: Text(sub),
-                    value: s.cues.contains(cue),
-                    onChanged: (v) => repo.setCue(cue, v),
-                  ),
-                SwitchListTile(
-                  secondary: lead(LucideIcons.lockKeyhole, p.green, p.greenSoft),
-                  title: const Text('Speak when locked'),
-                  subtitle: const Text(
-                    'The same cues, in the same voice, as notifications. Android also shows the clock',
-                  ),
-                  value: s.lockAlerts,
-                  onChanged: repo.setLockAlerts,
-                ),
-                if (s.lockAlerts) const _OnTimeTile(),
-                SwitchListTile(
-                  secondary: lead(LucideIcons.play, p.orange, p.orangeSoft),
-                  title: const Text('Start next set on its own'),
-                  subtitle: const Text('When the rest ends, with the app open. Off: you tap Start set'),
-                  value: s.autoStartSets,
-                  onChanged: repo.setAutoStartSets,
-                ),
-                SwitchListTile(
-                  secondary: lead(LucideIcons.timerReset, p.orange, p.orangeSoft),
-                  title: const Text('Finish rep sets on time'),
-                  subtitle: const Text('Off: you tap Set done. Timed sets always end on time'),
-                  value: s.finishRepSets,
-                  onChanged: repo.setFinishRepSets,
-                ),
-                if (s.finishRepSets)
-                  ListTile(
-                    leading: lead(LucideIcons.hourglass, p.coral, p.coralSoft),
-                    title: const Text('Set time'),
-                    subtitle: const Text('Auto: about 3 s a rep'),
-                    trailing: dropdown<int?>(s.setSec, const [
-                      (null, 'Auto'),
-                      (30, '30 s'),
-                      (45, '45 s'),
-                      (60, '60 s'),
-                      (90, '90 s'),
-                    ], repo.setSetSec),
-                  ),
-              ],
-              ListTile(
-                leading: lead(LucideIcons.timer, p.orange, p.orangeSoft),
-                title: Text(s.guideOn ? 'Default rest' : 'Auto rest timer'),
-                subtitle: Text(s.guideOn ? 'When the plan has no rest. Auto: 90 s' : 'Starts when a set is done'),
-                trailing: dropdown<int?>(s.restAfterSetSec, [
-                  (null, s.guideOn ? 'Auto' : 'Off'),
-                  (60, '60 s'),
-                  (90, '90 s'),
-                  (120, '2 min'),
-                  (180, '3 min'),
-                ], repo.setRestAfterSet),
-              ),
               SwitchListTile(
                 secondary: lead(LucideIcons.flame, p.coral, p.coralSoft),
                 title: const Text('Show calories'),
@@ -276,46 +215,3 @@ class MeScreen extends ConsumerWidget {
 /// Android only: asks for "Alarms & reminders", so the countdown and other
 /// short cues fire on the second while the phone is locked. Hidden when it
 /// is already allowed, and on iPhone.
-class _OnTimeTile extends ConsumerStatefulWidget {
-  const _OnTimeTile();
-
-  @override
-  ConsumerState<_OnTimeTile> createState() => _OnTimeTileState();
-}
-
-class _OnTimeTileState extends ConsumerState<_OnTimeTile> {
-  bool? _onTime;
-  AppLifecycleListener? _life;
-
-  @override
-  void initState() {
-    super.initState();
-    _check();
-    // The user comes back from Android's settings page.
-    _life = AppLifecycleListener(onResume: _check);
-  }
-
-  @override
-  void dispose() {
-    _life?.dispose();
-    super.dispose();
-  }
-
-  Future<void> _check() async {
-    final v = await ref.read(lockAlertsProvider).onTime();
-    if (mounted) setState(() => _onTime = v);
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    if (_onTime != false) return const SizedBox.shrink();
-    final p = context.pal;
-    return ListTile(
-      leading: IconBadge(LucideIcons.alarmClock, color: p.orangeSoft, glyph: p.orange, size: 40),
-      title: const Text('On-time cues when locked'),
-      subtitle: const Text('Allow "Alarms & reminders" so the countdown is not late. Else only the end cues play'),
-      trailing: const Icon(LucideIcons.chevronRight),
-      onTap: () => ref.read(lockAlertsProvider).askOnTime(),
-    );
-  }
-}

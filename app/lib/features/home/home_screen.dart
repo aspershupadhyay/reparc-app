@@ -341,7 +341,13 @@ class _Hero extends ConsumerWidget {
     final next = program == null || program.plan.days.isEmpty ? null : program.plan.days[program.nextDay];
 
     final (String eyebrow, String title, String? sub, String label, VoidCallback onTap) = switch ((live, next)) {
-      (final l?, _) => ('Training now', '', null, 'Continue workout', () => context.push('/live/${l.id}')),
+      (final l?, _) => (
+        l.status == SessionStatus.paused ? 'Paused' : 'Training now',
+        '',
+        null,
+        'Continue workout',
+        () => context.push('/live/${l.id}'),
+      ),
       (null, final d?) => (
         'Next in your plan',
         d.name,

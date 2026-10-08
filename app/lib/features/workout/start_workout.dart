@@ -30,8 +30,7 @@ Future<void> startWorkout(
     }
     final id = await repo.startSession();
     if (firstExerciseId != null) {
-      final se = await repo.addSessionExercise(id, firstExerciseId);
-      await repo.addSet(se);
+      await repo.addExerciseWithSets(id, firstExerciseId);
     }
     return id;
   });

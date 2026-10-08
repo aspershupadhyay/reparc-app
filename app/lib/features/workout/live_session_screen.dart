@@ -43,12 +43,17 @@ class LiveSessionScreen extends ConsumerWidget {
           if (!d.session.status.isLive) {
             return _Gone(message: 'This workout is saved.', sessionId: id);
           }
-          return CustomScrollView(
-            slivers: [
-              SliverToBoxAdapter(child: _Hero(detail: d)),
-              SliverPadding(
-                padding: const EdgeInsets.fromLTRB(Space.l, Space.l, Space.l, Space.xxl),
-                sliver: SliverList.list(
+          // The panel with the clock stays at the top; the sets scroll under
+          // it. With large text the panel scrolls too, up to most of the screen.
+          return Column(
+            children: [
+              ConstrainedBox(
+                constraints: BoxConstraints(maxHeight: MediaQuery.sizeOf(context).height * 0.62),
+                child: SingleChildScrollView(child: _Hero(detail: d)),
+              ),
+              Expanded(
+                child: ListView(
+                  padding: const EdgeInsets.fromLTRB(Space.l, Space.l, Space.l, Space.xxl),
                   children: [
                     SessionExerciseList(detail: d, live: true),
                     const SizedBox(height: Space.xl),
@@ -183,10 +188,10 @@ class _Hero extends ConsumerWidget {
                           }
                         },
                         child: Padding(
-                          padding: const EdgeInsets.symmetric(vertical: Space.s),
+                          padding: const EdgeInsets.symmetric(vertical: Space.xs),
                           child: Text(
                             s.name,
-                            style: t.titleLarge?.copyWith(color: context.pal.onPanel),
+                            style: t.titleMedium?.copyWith(color: context.pal.onPanel),
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                           ),
@@ -209,9 +214,13 @@ class _Hero extends ConsumerWidget {
               Padding(
                 padding: const EdgeInsets.only(left: Space.m),
                 child: ref.watch(currentSettingsProvider).guideOn
-                    ? Padding(
-                        padding: const EdgeInsets.only(top: Space.s),
-                        child: _GuideHero(detail: detail),
+                    ? Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          _Progress(detail: detail),
+                          const SizedBox(height: Space.l),
+                          _GuideHero(detail: detail),
+                        ],
                       )
                     : Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -240,6 +249,49 @@ class _Hero extends ConsumerWidget {
             ],
           ),
         ),
+      ),
+    );
+  }
+}
+
+/// One quiet line for the whole workout: time, sets done, and a bar.
+class _Progress extends StatelessWidget {
+  const _Progress({required this.detail});
+  final SessionDetail detail;
+
+  @override
+  Widget build(BuildContext context) {
+    final p = context.pal;
+    final t = Theme.of(context).textTheme;
+    final done = detail.completedSets;
+    final total = detail.totalSets;
+    final style = t.bodySmall?.tabular.copyWith(color: p.onPanelSoft);
+    return Semantics(
+      container: true,
+      label: 'Sets done: $done of $total',
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Row(
+            children: [
+              Icon(LucideIcons.clock, size: 14, color: p.onPanelSoft),
+              const SizedBox(width: Space.xs),
+              SessionClock(sessionId: detail.session.id, style: style!),
+              const Spacer(),
+              ExcludeSemantics(child: Text('$done / $total sets', style: style)),
+            ],
+          ),
+          const SizedBox(height: Space.xs),
+          ClipRRect(
+            borderRadius: Radii.small,
+            child: LinearProgressIndicator(
+              value: total == 0 ? 0 : done / total,
+              minHeight: 3,
+              color: p.energy,
+              backgroundColor: p.panelRaised,
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -290,9 +342,9 @@ class _SetsDone extends StatelessWidget {
   );
 }
 
-/// Guided workout (handbook 4.13). The clock the user needs now is the big
-/// one: the set time during a set, the rest during a rest, else the
-/// workout time. The user starts each set; the voice and timers follow.
+/// Guided workout (handbook 4.13). One step at a time: what to do now, one
+/// big clock, and one button. The clock counts down a timed set and a rest,
+/// and counts up a set the user ends.
 class _GuideHero extends ConsumerWidget {
   const _GuideHero({required this.detail});
   final SessionDetail detail;
@@ -307,9 +359,12 @@ class _GuideHero extends ConsumerWidget {
     final s = detail.session;
     final paused = s.status == SessionStatus.paused;
     final next = nextSet(detail);
-    final onInk = t.bodySmall?.copyWith(color: p.onPanelSoft);
-    final bigStyle = t.displaySmall!.copyWith(fontSize: 48, color: p.energy).tabular;
-    Widget caption(String text) => Semantics(liveRegion: true, child: OneLine(text, style: onInk));
+    final big = FilledButton.styleFrom(
+      backgroundColor: p.energy,
+      foregroundColor: p.onEnergy,
+      minimumSize: const Size.fromHeight(56),
+      textStyle: t.titleMedium,
+    );
     Widget chip(String label, String semantic, VoidCallback onTap) => Semantics(
       button: true,
       label: semantic,
@@ -328,33 +383,6 @@ class _GuideHero extends ConsumerWidget {
       onPressed: onTap,
       child: Text(label),
     );
-    final big = FilledButton.styleFrom(
-      backgroundColor: p.energy,
-      foregroundColor: p.onEnergy,
-      minimumSize: const Size.fromHeight(56),
-      textStyle: t.titleMedium,
-    );
-    final metrics = Row(
-      children: [
-        Expanded(
-          child: Semantics(
-            container: true,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text('Elapsed', style: onInk),
-                const SizedBox(height: 2),
-                SessionClock(
-                  sessionId: s.id,
-                  style: t.titleLarge!.tabular.copyWith(color: p.onPanel),
-                ),
-              ],
-            ),
-          ),
-        ),
-        Expanded(child: _SetsDone(detail: detail)),
-      ],
-    );
     Widget startButton(String label) => FilledButton.icon(
       style: big,
       onPressed: () {
@@ -366,53 +394,34 @@ class _GuideHero extends ConsumerWidget {
     );
 
     if (g.phase == GuidePhase.set) {
+      final view = detail.exercises.where((e) => e.sets.any((x) => x.id == g.setId)).firstOrNull;
+      final set = view?.sets.firstWhere((x) => x.id == g.setId);
+      final after = view == null ? null : _after(detail, g.setId);
       return Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
+          _Step(
+            phase: paused ? 'Paused' : _phaseLabel(view, set),
+            color: p.energy,
+            title: view?.exercise.name ?? g.label,
+            aim: view == null || set == null ? null : aimFor(view, set),
+          ),
+          const SizedBox(height: Space.m),
           Ticker1s(
             builder: (context) {
               final el = g.elapsedAt(clock().toUtc());
               final target = g.targetSec;
-              return Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  caption(paused ? 'Paused · ${g.label}' : g.label),
-                  Semantics(
-                    label: target > 0
-                        ? 'Set time ${speakDuration(Duration(seconds: el))} of ${speakDuration(Duration(seconds: target))}'
-                        : 'Set time ${speakDuration(Duration(seconds: el))}',
-                    excludeSemantics: true,
-                    child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.baseline,
-                      textBaseline: TextBaseline.alphabetic,
-                      children: [
-                        Text(fmtClock(Duration(seconds: el)), style: bigStyle),
-                        if (target > 0)
-                          Text(
-                            '  / ${fmtClock(Duration(seconds: target))}',
-                            style: t.titleMedium?.tabular.copyWith(color: p.onPanelSoft),
-                          ),
-                      ],
-                    ),
-                  ),
-                  if (target > 0) ...[
-                    const SizedBox(height: Space.s),
-                    ClipRRect(
-                      borderRadius: Radii.small,
-                      child: LinearProgressIndicator(
-                        value: (el / target).clamp(0.0, 1.0),
-                        minHeight: 6,
-                        color: p.energy,
-                        backgroundColor: p.panelRaised,
-                      ),
-                    ),
-                  ],
-                ],
+              final left = (target - el).clamp(0, target);
+              return _BigClock(
+                text: fmtClock(Duration(seconds: target > 0 ? left : el)),
+                semantic: target > 0
+                    ? 'Set time left ${speakDuration(Duration(seconds: left))}'
+                    : 'Set time ${speakDuration(Duration(seconds: el))}',
+                progress: target > 0 ? (el / target).clamp(0.0, 1.0) : null,
+                color: p.energy,
               );
             },
           ),
-          const SizedBox(height: Space.l),
-          metrics,
           const SizedBox(height: Space.l),
           FilledButton.icon(
             style: big,
@@ -420,7 +429,6 @@ class _GuideHero extends ConsumerWidget {
             icon: const Icon(LucideIcons.check),
             label: const Text('Set done'),
           ),
-          const SizedBox(height: Space.xs),
           Row(
             children: [
               if (g.targetSec > 0) chip('+15 s', 'Add 15 seconds to this set', () => guide.addTime(15)),
@@ -428,6 +436,7 @@ class _GuideHero extends ConsumerWidget {
               quiet('Stop timer', () => guardedWrite(context, guide.stop)),
             ],
           ),
+          if (after != null) _UpNext(view: after.$1, set: after.$2),
         ],
       );
     }
@@ -436,6 +445,13 @@ class _GuideHero extends ConsumerWidget {
       return Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
+          _Step(
+            phase: paused ? 'Paused · rest' : 'Rest',
+            color: p.brandSoft,
+            title: next == null ? 'Rest' : 'Next: ${next.$1.exercise.name}',
+            aim: next == null ? null : [describeSetShort(next.$1, next.$2), ?aimFor(next.$1, next.$2)].join(' · '),
+          ),
+          const SizedBox(height: Space.m),
           Ticker1s(
             builder: (context) {
               final r = restRemaining(
@@ -444,28 +460,17 @@ class _GuideHero extends ConsumerWidget {
                 now: s.pausedAt ?? clock().toUtc(),
               )!;
               final over = r.isNegative || r == Duration.zero;
-              return Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  caption(paused ? 'Paused · rest' : (over ? 'Rest over by' : 'Rest')),
-                  Semantics(
-                    label: '${over ? 'Rest over by' : 'Rest left'} ${speakDuration(r.abs())}',
-                    excludeSemantics: true,
-                    child: Text(fmtClock(r.abs()), style: bigStyle.copyWith(color: over ? p.orange : p.energy)),
-                  ),
-                ],
+              final total = s.restTargetSec ?? 0;
+              return _BigClock(
+                text: fmtClock(r.abs()),
+                semantic: '${over ? 'Rest over by' : 'Rest left'} ${speakDuration(r.abs())}',
+                progress: total > 0 ? (1 - r.inSeconds / total).clamp(0.0, 1.0) : null,
+                color: over ? p.orange : p.onPanel,
               );
             },
           ),
           const SizedBox(height: Space.l),
-          metrics,
-          if (next != null) ...[
-            const SizedBox(height: Space.l),
-            _NextUp(view: next.$1, set: next.$2),
-            const SizedBox(height: Space.s),
-            startButton('Start set'),
-          ],
-          const SizedBox(height: Space.xs),
+          if (next != null) startButton(ref.watch(currentSettingsProvider).autoStartSets ? 'Start now' : 'Start set'),
           Row(
             children: [
               chip('+15 s', 'Add 15 seconds to the rest', () => guardedWrite(context, () => guide.addRest(15))),
@@ -477,70 +482,169 @@ class _GuideHero extends ConsumerWidget {
       );
     }
 
+    final first = detail.completedSets == 0;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        caption(paused ? 'Paused' : 'Elapsed'),
-        SessionClock(sessionId: s.id, style: bigStyle),
-        const SizedBox(height: Space.l),
-        Row(
-          children: [Expanded(child: _SetsDone(detail: detail))],
+        _Step(
+          phase: paused ? 'Paused' : (next == null ? 'Done' : 'Ready'),
+          color: p.energy,
+          title: next == null
+              ? (detail.exercises.isEmpty ? 'Add an exercise to start' : 'Every set is done')
+              : next.$1.exercise.name,
+          aim: next == null
+              ? (detail.exercises.isEmpty ? null : 'Finish the workout when you are ready.')
+              : [describeSetShort(next.$1, next.$2), ?aimFor(next.$1, next.$2)].join(' · '),
         ),
-        const SizedBox(height: Space.l),
-        if (next == null)
-          Text(
-            detail.exercises.isEmpty ? 'Add an exercise to start the guide.' : 'Every set is done. Finish when ready.',
-            style: onInk,
-          )
-        else ...[
-          _NextUp(view: next.$1, set: next.$2),
-          const SizedBox(height: Space.s),
-          startButton('Start set'),
+        if (next != null) ...[
+          const SizedBox(height: Space.l),
+          startButton(first ? 'Start workout' : 'Start set'),
         ],
       ],
     );
   }
+
+  /// The set after [setId], as if it were done.
+  static (SessionExerciseView, SetEntry)? _after(SessionDetail d, String? setId) {
+    for (final e in d.exercises) {
+      if (e.item.skipped) continue;
+      for (final s in e.sets) {
+        if (!s.completed && s.id != setId) return (e, s);
+      }
+    }
+    return null;
+  }
+
+  static String _phaseLabel(SessionExerciseView? view, SetEntry? set) {
+    if (view == null || set == null) return 'Set';
+    return describeSetShort(view, set);
+  }
 }
 
-/// The next set and what it aims for: "Bench press · set 2 of 4" and
-/// "60 kg × 8". Weight and reps come from the set, else the set before.
-class _NextUp extends StatelessWidget {
-  const _NextUp({required this.view, required this.set});
-  final SessionExerciseView view;
-  final SetEntry set;
+/// "Set 2 of 3", "Warm-up", or "Ramp-up".
+String describeSetShort(SessionExerciseView e, SetEntry s) {
+  if (s.setType == SetType.warmup) return isWarmupMove(e) ? 'Warm-up' : 'Ramp-up';
+  final working = e.sets.where((x) => x.setType != SetType.warmup).toList();
+  return 'Set ${working.indexWhere((x) => x.id == s.id) + 1} of ${working.length}';
+}
+
+/// What a set aims for: "60 kg × 8", "8 reps", or "Hold 0:30". Weight and
+/// reps come from the set, else the set before, else the plan target.
+String? aimFor(SessionExerciseView view, SetEntry set) {
+  if (isTimedSet(set)) {
+    final sec = set.targetSec ?? set.durationSec;
+    return sec == null ? null : 'Hold ${fmtClock(Duration(seconds: sec))}';
+  }
+  final before = view.sets.takeWhile((x) => x.id != set.id).where((x) => x.setType == set.setType).toList();
+  final prev = before.isEmpty ? null : before.last;
+  final load = set.load ?? prev?.load;
+  final unit = set.load != null ? set.loadUnit : prev?.loadUnit;
+  final reps = set.reps ?? prev?.reps ?? targetRepsFromNote(view.item.note);
+  if (load == null && reps == null) return null;
+  if (load == null) return '$reps reps';
+  return [fmtWithUnit(load, unit), ?reps?.toString()].join(' × ');
+}
+
+/// The step now: a small phase tag, the exercise, and what it aims for.
+class _Step extends StatelessWidget {
+  const _Step({required this.phase, required this.color, required this.title, this.aim});
+  final String phase;
+  final Color color;
+  final String title;
+  final String? aim;
 
   @override
   Widget build(BuildContext context) {
     final p = context.pal;
     final t = Theme.of(context).textTheme;
-    final aim = _aim();
     return Semantics(
       container: true,
-      label: 'Next: ${describeSet(view, set)}${aim == null ? '' : ', $aim'}',
+      liveRegion: true,
+      label: [phase, title, ?aim].join('. '),
       excludeSemantics: true,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          OneLine('Next · ${describeSet(view, set)}', style: t.titleSmall?.copyWith(color: p.onPanel)),
-          if (aim != null) Text(aim, style: t.bodySmall?.copyWith(color: p.onPanelSoft)),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: Space.s, vertical: 2),
+            decoration: BoxDecoration(color: color, borderRadius: Radii.small),
+            child: Text(
+              phase.toUpperCase(),
+              style: t.labelSmall?.copyWith(color: p.on(color), fontWeight: FontWeight.w700, letterSpacing: 0.6),
+            ),
+          ),
+          const SizedBox(height: Space.s),
+          Text(
+            title,
+            style: t.headlineSmall?.copyWith(color: p.onPanel, fontWeight: FontWeight.w700),
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+          ),
+          if (aim != null) Text(aim!, style: t.titleMedium?.copyWith(color: p.onPanelSoft)),
         ],
       ),
     );
   }
+}
 
-  String? _aim() {
-    if (isTimedSet(set)) {
-      final sec = set.targetSec ?? set.durationSec;
-      return sec == null ? null : 'Hold ${fmtClock(Duration(seconds: sec))}';
-    }
-    final before = view.sets.takeWhile((x) => x.id != set.id).where((x) => x.setType == set.setType).toList();
-    final prev = before.isEmpty ? null : before.last;
-    final load = set.load ?? prev?.load;
-    final unit = set.load != null ? set.loadUnit : prev?.loadUnit;
-    final reps = set.reps ?? prev?.reps ?? targetRepsFromNote(view.item.note);
-    if (load == null && reps == null) return null;
-    if (load == null) return '$reps reps';
-    return [fmtWithUnit(load, unit), ?reps?.toString()].join(' × ');
+/// The one big clock, with a thin bar that fills as the time runs.
+class _BigClock extends StatelessWidget {
+  const _BigClock({required this.text, required this.semantic, required this.color, this.progress});
+  final String text;
+  final String semantic;
+  final Color color;
+  final double? progress;
+
+  @override
+  Widget build(BuildContext context) {
+    final p = context.pal;
+    final t = Theme.of(context).textTheme;
+    return Semantics(
+      label: semantic,
+      excludeSemantics: true,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Center(
+            child: FittedBox(
+              fit: BoxFit.scaleDown,
+              child: Text(
+                text,
+                style: t.displayLarge!.tabular.copyWith(color: color, fontWeight: FontWeight.w700, height: 1.05),
+              ),
+            ),
+          ),
+          if (progress != null) ...[
+            const SizedBox(height: Space.s),
+            ClipRRect(
+              borderRadius: Radii.small,
+              child: LinearProgressIndicator(
+                value: progress,
+                minHeight: 6,
+                color: color,
+                backgroundColor: p.panelRaised,
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+/// A quiet line under the set: what comes after it.
+class _UpNext extends StatelessWidget {
+  const _UpNext({required this.view, required this.set});
+  final SessionExerciseView view;
+  final SetEntry set;
+
+  @override
+  Widget build(BuildContext context) {
+    final t = Theme.of(context).textTheme;
+    return OneLine(
+      'Up next · ${view.exercise.name} · ${describeSetShort(view, set)}',
+      style: t.bodySmall?.copyWith(color: context.pal.onPanelSoft),
+    );
   }
 }
 

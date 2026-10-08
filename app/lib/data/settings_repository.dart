@@ -25,12 +25,15 @@ class AppSettings {
     this.updatesDismissed,
     this.guideOn = true,
     this.voice = 'charlie',
-    this.finishRepSets = false,
-    this.autoStartSets = false,
+    this.finishRepSets = true,
+    this.autoStartSets = true,
     this.lockAlerts = true,
     this.restAlertAsked = false,
     this.cuesOff = const {},
     this.setSec,
+    this.warmupSec,
+    this.warmupRestSec,
+    this.loadStyle = LoadStyle.same,
   });
 
   /// Guided workout: set and rest timers that run on their own (handbook
@@ -40,14 +43,27 @@ class AppSettings {
   /// Voice for spoken cues: 'charlie', 'matilda', or 'off'.
   final String voice;
 
-  /// End a rep set when its set time runs out, then start the rest. Off by
-  /// default: the user taps Set done. A timed set always ends on its time.
+  /// End a rep set when its set time runs out, then start the rest. On by
+  /// default, so a workout runs on its own (owner request 2026-10-08). Off:
+  /// the user taps Set done. A timed set always ends on its time.
   final bool finishRepSets;
 
   /// Start the next set on its own when the rest ends, after a 3-2-1
-  /// countdown. Off by default: the voice says the rest is over and the
+  /// countdown. On by default. Off: the voice says the rest is over and the
   /// user starts the set.
   final bool autoStartSets;
+
+  /// Time for each warm-up move done for reps, such as arm circles. Null
+  /// means about 3 s a rep. A timed move, such as 5 min on the bike, keeps
+  /// its own time.
+  final int? warmupSec;
+
+  /// Rest after the last warm-up move. Null means [defaultWarmupRestSec].
+  /// There is no rest between warm-up moves.
+  final int? warmupRestSec;
+
+  /// Same weight each set, or a pyramid: more weight and fewer reps.
+  final LoadStyle loadStyle;
 
   /// With the phone locked or the app in the background, the cues come as
   /// notifications that play the same voice clips.
@@ -70,7 +86,8 @@ class AppSettings {
   final String loadUnit;
   final String distanceUnit;
 
-  /// Rest timer that starts after a completed set. Null means off.
+  /// Rest between sets. Null means the plan's rest, else 90 s. A value
+  /// the user picks is used for every rest between sets.
   final int? restAfterSetSec;
 
   /// The user can hide calorie views (handbook 5.5).
@@ -152,8 +169,8 @@ class AppSettings {
     updatesDismissed: m['updates.dismissed'],
     guideOn: m['guide.on'] != 'false',
     voice: const ['charlie', 'matilda', 'off'].contains(m['guide.voice']) ? m['guide.voice']! : 'charlie',
-    finishRepSets: m['guide.finishReps'] == 'true',
-    autoStartSets: m['guide.autoStart'] == 'true',
+    finishRepSets: m['guide.finishReps'] != 'false',
+    autoStartSets: m['guide.autoStart'] != 'false',
     lockAlerts: m['guide.restAlert'] != 'false',
     cuesOff: {
       for (final c in Cue.values)
@@ -161,6 +178,9 @@ class AppSettings {
     },
     restAlertAsked: m['guide.restAlertAsked'] == 'true',
     setSec: int.tryParse(m['guide.setSec'] ?? ''),
+    warmupSec: int.tryParse(m['guide.warmupSec'] ?? ''),
+    warmupRestSec: int.tryParse(m['guide.warmupRestSec'] ?? ''),
+    loadStyle: m['guide.loadStyle'] == 'pyramid' ? LoadStyle.pyramid : LoadStyle.same,
   );
 }
 
@@ -224,10 +244,13 @@ class SettingsRepository {
   Future<void> setIntroSeen() => set('introSeen', 'true');
   Future<void> setGuideOn(bool v) => set('guide.on', v ? null : 'false');
   Future<void> setVoice(String v) => set('guide.voice', v);
-  Future<void> setFinishRepSets(bool v) => set('guide.finishReps', v ? 'true' : null);
-  Future<void> setAutoStartSets(bool v) => set('guide.autoStart', v ? 'true' : null);
+  Future<void> setFinishRepSets(bool v) => set('guide.finishReps', v ? null : 'false');
+  Future<void> setAutoStartSets(bool v) => set('guide.autoStart', v ? null : 'false');
   Future<void> setLockAlerts(bool v) => set('guide.restAlert', v ? null : 'false');
   Future<void> setCue(Cue c, bool on) => set('guide.cueOff.${c.name}', on ? null : 'true');
   Future<void> setRestAlertAsked() => set('guide.restAlertAsked', 'true');
   Future<void> setSetSec(int? sec) => set('guide.setSec', sec?.toString());
+  Future<void> setWarmupSec(int? sec) => set('guide.warmupSec', sec?.toString());
+  Future<void> setWarmupRestSec(int? sec) => set('guide.warmupRestSec', sec?.toString());
+  Future<void> setLoadStyle(LoadStyle s) => set('guide.loadStyle', s == LoadStyle.same ? null : s.name);
 }

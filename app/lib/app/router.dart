@@ -20,6 +20,7 @@ import '../features/me/proposal_screen.dart';
 import '../features/me/data_screen.dart';
 import '../features/me/me_screen.dart';
 import '../features/me/privacy_screen.dart';
+import '../features/me/training_screen.dart';
 import '../features/meal/meal_screen.dart';
 import '../features/shell/app_shell.dart';
 import '../features/workout/calculator_screen.dart';
@@ -146,6 +147,7 @@ GoRouter buildRouter({String initialLocation = '/home'}) => GoRouter(
                 GoRoute(path: 'updates', builder: (_, _) => const AppUpdatesScreen()),
                 GoRoute(path: 'data', builder: (_, _) => const DataScreen()),
                 GoRoute(path: 'privacy', builder: (_, _) => const PrivacyScreen()),
+                GoRoute(path: 'training', builder: (_, _) => const TrainingScreen()),
               ],
             ),
           ],

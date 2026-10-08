@@ -757,7 +757,8 @@ typedef _Dose = (int sets, int low, int high, int rest, int rir);
 _Dose _dose(RoadmapGoal g, RoadmapLevel l, ItemKind k) {
   final lv = l.index; // 0 beginner, 1 intermediate, 2 advanced
   final rir = [3, 2, 1][lv];
-  int sets(List<int> s) => s[lv];
+  // At least 3 working sets on every exercise (owner request 2026-10-08).
+  int sets(List<int> s) => s[lv] < 3 ? 3 : s[lv];
   return switch ((g, k)) {
     (RoadmapGoal.strength, ItemKind.main) => (sets([3, 4, 5]), lv == 0 ? 5 : 3, 5, 180, rir),
     (RoadmapGoal.strength, ItemKind.secondary) => (sets([2, 3, 3]), 5, 8, 150, rir),
@@ -821,7 +822,7 @@ PlanItem _work(String pattern, ItemKind kind, RoadmapGoal g, RoadmapLevel l, Gym
       exerciseId: id,
       name: name,
       pattern: pattern,
-      sets: [2, 3, 3][l.index],
+      sets: 3,
       seconds: [30, 45, 60][l.index],
       restSec: 60,
     );

@@ -2,6 +2,7 @@ import 'package:drift/drift.dart';
 import 'package:uuid/uuid.dart';
 
 import '../core/clock.dart';
+import '../domain/guide.dart';
 import 'database.dart';
 import '../domain/roadmap.dart';
 import 'models.dart';
@@ -489,6 +490,16 @@ class WorkoutRepository {
     await _writeSession(sessionId, const WorkoutSessionsCompanion());
     return id;
   }
+
+  /// Adds an exercise with [sets] empty working sets (3 by default).
+  Future<String> addExerciseWithSets(String sessionId, String exerciseId, {int sets = defaultSetCount}) =>
+      db.transaction(() async {
+        final id = await addSessionExercise(sessionId, exerciseId);
+        for (var i = 0; i < sets; i++) {
+          await addSet(id);
+        }
+        return id;
+      });
 
   Future<void> replaceSessionExercise(String itemId, String exerciseId) =>
       (db.update(db.sessionExercises)..where((x) => x.id.equals(itemId))).write(

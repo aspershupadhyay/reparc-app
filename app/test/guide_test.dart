@@ -65,6 +65,9 @@ class FakeAlerts implements LockAlerts {
   }
 
   @override
+  Future<void> showCard(LiveCard card) async => this.card = card;
+
+  @override
   Future<void> clear() async {
     cleared++;
     cues = [];
@@ -127,6 +130,15 @@ void main() {
       expect(Clips.nextUp('bench-press'), 'names/bench_press');
       expect(Clips.nextUp('lib:Barbell_Shrug'), 'names/lib_barbell_shrug');
       expect(Clips.nextUp('user:abc'), isNull, reason: 'Own exercises have no clip');
+    });
+
+    test('warm-up moves have no rest between them; the warm-up rest and set rest are the user\'s', () {
+      expect(targetRepsFromNote('Warm-up · 8 reps · Move the whole spine slowly.'), 8);
+      expect(targetRepsFromNote('Warm-up · 5 min · Get warm.'), isNull);
+      expect(nextAim(load: 60, reps: 8, unit: 'kg'), (load: 60.0, reps: 8));
+      expect(nextAim(load: 60, reps: 8, unit: 'kg', style: LoadStyle.pyramid), (load: 62.5, reps: 6));
+      expect(nextAim(load: 135, reps: 2, unit: 'lb', style: LoadStyle.pyramid), (load: 140.0, reps: 1));
+      expect(nextAim(reps: 1, style: LoadStyle.pyramid), (load: null, reps: 1), reason: 'Missing stays missing');
     });
 
     test('every clip exists for every voice', () {
@@ -195,6 +207,12 @@ void main() {
       await Future<void>.delayed(Duration.zero);
     }
 
+    /// The user starts and ends each set (both hands-free switches off).
+    Future<void> manual() async {
+      await setting('guide.finishReps', 'false');
+      await setting('guide.autoStart', 'false');
+    }
+
     Future<void> after(int seconds) async {
       clock.advance(Duration(seconds: seconds));
       await c.read(guideProvider.notifier).tick();
@@ -206,7 +224,8 @@ void main() {
       }
     }
 
-    test('by default the user starts and ends each set; the guide times it and speaks', () async {
+    test('in manual mode the user starts and ends each set; the guide times it and speaks', () async {
+      await manual();
       final sessionId = await startDay();
       final guide = c.read(guideProvider.notifier);
       final repo = WorkoutRepository(db, clock.call);
@@ -249,9 +268,7 @@ void main() {
       expect(voice.said.last, 'done');
     });
 
-    test('with both switches on, sets end on time and start after a countdown', () async {
-      await setting('guide.finishReps', 'true');
-      await setting('guide.autoStart', 'true');
+    test('by default sets end on time and start after a countdown', () async {
       final sessionId = await startDay();
       final guide = c.read(guideProvider.notifier);
       await guide.startSet();
@@ -267,6 +284,128 @@ void main() {
       await ticks(60);
       expect(voice.said.sublist(6), ['ten_left', 'three', 'two', 'one', 'last_set']);
       expect(c.read(guideProvider).phase, GuidePhase.set);
+    });
+
+    Future<String> startWarmupDay() async {
+      final plan = ProgramPlan(
+        days: [
+          PlanDay(
+            name: 'Push',
+            focus: '',
+            items: const [
+              PlanItem(kind: ItemKind.warmup, exerciseId: 'lib:Recumbent_Bike', name: 'Easy bike', seconds: 60),
+              PlanItem(kind: ItemKind.warmup, exerciseId: 'lib:Arm_Circles', name: 'Arm circles', repsLow: 10),
+              PlanItem(
+                kind: ItemKind.main,
+                exerciseId: 'bench-press',
+                name: 'Bench press',
+                sets: 3,
+                repsLow: 8,
+                repsHigh: 8,
+                restSec: 60,
+              ),
+            ],
+          ),
+        ],
+      );
+      final id = await ProgramRepository(db, clock.call).create(plan, name: 'Push');
+      return WorkoutRepository(db, clock.call).startProgramDay(programId: id, dayIndex: 0);
+    }
+
+    test('warm-up moves run back to back, then the user\'s warm-up rest, then sets on their own', () async {
+      await setting('guide.warmupRestSec', '45');
+      final sessionId = await startWarmupDay();
+      final guide = c.read(guideProvider.notifier);
+      final repo = WorkoutRepository(db, clock.call);
+      await guide.startSet();
+      expect(c.read(guideProvider).label, 'Easy bike · warm-up');
+      expect(c.read(guideProvider).targetSec, 60);
+
+      await ticks(60);
+      expect(c.read(guideProvider).phase, GuidePhase.set, reason: 'No rest between warm-up moves');
+      expect(c.read(guideProvider).label, 'Arm circles · warm-up');
+      expect(c.read(guideProvider).targetSec, 30, reason: '10 reps × 3 s');
+      expect((await repo.loadSession(sessionId))!.session.restStartedAt, isNull);
+
+      await ticks(30);
+      var s = (await repo.loadSession(sessionId))!.session;
+      expect(s.restTargetSec, 45, reason: 'The rest after the warm-up is the user\'s');
+      expect(c.read(guideProvider).phase, GuidePhase.rest);
+      expect(voice.said.last, 'rest_45');
+
+      await ticks(45);
+      expect(c.read(guideProvider).label, 'Bench press · set 1 of 3');
+      expect(voice.said.last, 'set_1');
+      // The user types what they lift during the set.
+      final sets = (await repo.loadSession(sessionId))!.exercises.last.sets;
+      await repo.updateSet(
+        sets[0].id,
+        const SetEntriesCompanion(load: Value(60), loadUnit: Value('kg'), reps: Value(8)),
+      );
+      await ticks(24);
+      s = (await repo.loadSession(sessionId))!.session;
+      expect(s.restTargetSec, 60, reason: 'The plan rest, when the user has not chosen one');
+      final next = (await repo.loadSession(sessionId))!.exercises.last.sets[1];
+      expect((next.load, next.reps, next.completed), (60.0, 8, false), reason: 'Same weight, not marked done');
+
+      await ticks(60);
+      expect(c.read(guideProvider).label, 'Bench press · set 2 of 3');
+      expect(voice.said.where((x) => x == 'rest_over'), isEmpty, reason: 'The set cue ends the rest');
+    });
+
+    test('a pyramid adds weight and takes off reps; the user\'s rest wins over the plan', () async {
+      await setting('guide.loadStyle', 'pyramid');
+      await setting('restAfterSetSec', '90');
+      final sessionId = await startDay();
+      final repo = WorkoutRepository(db, clock.call);
+      final guide = c.read(guideProvider.notifier);
+      await guide.startSet();
+      final sets = (await repo.loadSession(sessionId))!.exercises.single.sets;
+      await repo.updateSet(
+        sets[0].id,
+        const SetEntriesCompanion(load: Value(60), loadUnit: Value('kg'), reps: Value(10)),
+      );
+      await ticks(24);
+      final after = (await repo.loadSession(sessionId))!;
+      expect((after.exercises.single.sets[1].load, after.exercises.single.sets[1].reps), (62.5, 8));
+      expect(after.session.restTargetSec, 90);
+    });
+
+    test('locked: the whole timed chain is set as alerts, and the record catches up on return', () async {
+      final sessionId = await startDay();
+      final guide = c.read(guideProvider.notifier);
+      final repo = WorkoutRepository(db, clock.call);
+      await guide.startSet();
+      final start = clock().toUtc();
+      await after(5);
+      await guide.lifecycleChanged(AppLifecycleState.paused);
+      final timeline = alerts.cues.map((c) => (c.at.difference(start).inSeconds, c.clip)).toList();
+      expect(timeline, [
+        (21, 'three'),
+        (22, 'two'),
+        (23, 'one'),
+        (24, 'time'),
+        (74, 'ten_left'),
+        (81, 'three'),
+        (82, 'two'),
+        (83, 'one'),
+        (84, 'last_set'),
+        (105, 'three'),
+        (106, 'two'),
+        (107, 'one'),
+        (108, 'time'),
+      ]);
+
+      // The phone stops the app; it wakes 95 s into the workout.
+      clock.advance(const Duration(seconds: 90));
+      await guide.lifecycleChanged(AppLifecycleState.resumed);
+      await after(0);
+      final d = (await repo.loadSession(sessionId))!;
+      expect(d.exercises.single.sets.first.completedAt, start.add(const Duration(seconds: 24)));
+      expect(d.exercises.single.sets.first.restSec, 60, reason: 'The rest as the alerts timed it');
+      expect(c.read(guideProvider).phase, GuidePhase.set);
+      expect(c.read(guideProvider).startedAt, start.add(const Duration(seconds: 84)));
+      expect(voice.said, ['set_1'], reason: 'Nothing stale is said on return');
     });
 
     test('a pause stops the set time and the rest', () async {
@@ -298,6 +437,7 @@ void main() {
     });
 
     test('the next exercise is named before the rest ends, not on top of "Go"', () async {
+      await manual();
       await startDay(exercises: 2);
       final guide = c.read(guideProvider.notifier);
       await guide.startSet();
@@ -325,6 +465,7 @@ void main() {
 
     test('voice off and guide off are respected', () async {
       await setting('guide.voice', 'off');
+      await manual();
       await startDay();
       final guide = c.read(guideProvider.notifier);
       await guide.startSet();
@@ -334,6 +475,7 @@ void main() {
     });
 
     test('locked during a rest: the same cues come as alerts, and the voice waits', () async {
+      await manual();
       await startDay();
       final guide = c.read(guideProvider.notifier);
       await guide.startSet();
@@ -366,6 +508,7 @@ void main() {
     });
 
     test('locked mid-plank: the plank and the rest after it are covered; the late end is saved right', () async {
+      await manual();
       final plan = ProgramPlan(
         days: [
           PlanDay(
@@ -413,6 +556,7 @@ void main() {
 
     test('without on-time alerts, only the end cues are set when locked', () async {
       alerts.exact = false;
+      await manual();
       await startDay();
       final guide = c.read(guideProvider.notifier);
       await guide.startSet();

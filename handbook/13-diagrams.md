@@ -50,6 +50,24 @@ stateDiagram-v2
     Edited --> [*]
 ```
 
+## 2a. Guided workout flow (handbook 4.13)
+
+With both **Run on its own** switches on (the default), no tap is needed after **Start workout**. Every time comes from Me → Workout guide.
+
+```mermaid
+flowchart LR
+    Start([Start workout]) --> W1[Warm-up move 1]
+    W1 -->|no rest| W2[Warm-up move 2 ... last]
+    W2 --> WR[Rest after warm-up]
+    WR --> S1[Set 1]
+    S1 --> R1[Rest between sets]
+    R1 --> S2[Set 2]
+    S2 --> R2[Rest between sets]
+    R2 --> S3[Set 3]
+    S3 --> R3[Rest] --> Next[Next exercise: set 1, rest, set 2, rest, set 3]
+    Next --> Done([Every set done: user finishes and saves])
+```
+
 ## 3. Local-first record flow
 
 ```mermaid

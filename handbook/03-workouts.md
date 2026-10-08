@@ -54,7 +54,7 @@ The app also bundles 873 exercises from Free Exercise DB (public domain, D-017).
 
 - **Browse:** Workout → Exercises shows a search field, body-area tiles with counts, the coached guides, and the user's own exercises. The full list filters by text, body area, and equipment. Each movement shows once; a coached guide replaces its library twin.
 - **Detail:** Start and end photos as a cross-fade loop, muscles, level, equipment, and steps. Tap to pause. With reduced motion the loop does not run; the user switches between the start and end photo.
-- **Logging:** A library exercise links by `catalogId` = `lib:<source id>`. The add-exercise sheet in a workout searches the same list. A new exercise in a workout starts with one empty set. Guide links in a workout open above the live screen (`/learn/guide/:id`, `/learn/move/:id`).
+- **Logging:** A library exercise links by `catalogId` = `lib:<source id>`. The add-exercise sheet in a workout searches the same list. A new exercise in a workout starts with three empty sets. Guide links in a workout open above the live screen (`/learn/guide/:id`, `/learn/move/:id`).
 - **Offline:** Everything is in the app bundle. The library makes no network requests.
 
 ## 4.4 Set details
@@ -133,7 +133,7 @@ Built 2026-10-06 (D-024, D-025).
 **Roadmaps.** Workout → Roadmap. The user picks a goal, level, days a week, and where they train. The generator is `app/lib/domain/roadmap.dart`. Rules it follows:
 
 - Each muscle about twice a week.
-- Sets per exercise rise with level (beginner 2–3, intermediate 3–4, advanced 4–5). Reps in reserve fall with level (3, 2, 1).
+- Every exercise gets at least 3 working sets (owner request 2026-10-08). Sets rise with level (beginner 3, intermediate 3–4, advanced 4–5). Reps in reserve fall with level (3, 2, 1).
 - Rep ranges by goal: strength 3–5 on main lifts; muscle and look 6–10 main, 10–15 extras; lean & fit 8–15 with short rest and a cardio finisher; calisthenics 5–10 with a level-based progression for each movement.
 - Every day starts with 5 minutes of easy cardio and 4 joint moves for the day's focus. The first loaded main lift gets ramp-up sets (about 50%, 70%, and 85% of the working weight; beginners do two). Body-weight moves (home setup, calisthenics, and pull-ups) get none, because the shares need a working weight.
 - Every exercise has a version for a full gym, dumbbells, and home. The user can swap to any of them or to any library exercise.
@@ -234,17 +234,17 @@ Run format, analysis, generated-code checks, and all tests after each step. Test
 
 Built 2026-10-08 (D-031). Owner request: less typing, timers that run on their own, and a voice that says when a set or rest starts and ends. Not yet tested on a real phone.
 
-**Flow (updated 2026-10-08 after a review of the guide).** The user starts each set and ends each rep set. The guide times, speaks, and counts the rest. It does not guess when a lift is done.
+**Flow (updated 2026-10-08, second owner review: "no user intervention").** By default the whole workout runs on its own, on times the user chooses in Me → Workout guide:
 
-1. In a live workout, the panel shows the next set and its aim, such as "Next · Bench press · set 2 of 4" and "60 kg × 8". The weight and reps come from the set, else the set before, else the plan target.
-2. Tap **Start set**. The voice says "Set two. Go!", "Last set. Make it count!", "Warm-up. Nice and easy." for a warm-up move, or "Go!" for a ramp-up set.
-3. The set clock is the big number. A rep set counts up until the user taps **Set done**. A timed set counts to its time, says "Halfway." in a long set, says "Time! Set done." and ends on its own.
-4. The rest comes from the plan (the "rest" in the exercise note). Else it is the **Default rest** in Me → Training, else 90 s. A warm-up move rests 20 s. A ramp-up set rests 60 s. The voice says "Rest. Ninety seconds." The rest clock is the big number.
-5. At 10 s left it says "Ten seconds." When the next set is on a new exercise, it adds "Next exercise." here, so the set cue plays at the start of the set.
-6. At the end it says "Rest over. Get ready." with a strong haptic. The clock shows "Rest over by". The user taps **Start set**.
-7. "Workout complete. Great work!" plays when the user finishes and saves the workout, not before.
+1. **Warm-up.** The user taps **Start workout**. Warm-up moves follow each other with **no rest** between them. A timed move (5 min on the bike) keeps its time. A move done for reps (arm circles) lasts **Each warm-up move** (Auto: about 3 s a rep).
+2. **Rest after warm-up.** After the last warm-up move comes one rest, **Rest after warm-up** (default 1 min).
+3. **Sets.** Each exercise starts with 3 sets. A set lasts **Each set** (Auto: about 3 s a rep; a timed set keeps its time), then the rest starts: **Rest between sets** (Auto: the plan's rest, else 90 s). A ramp-up set rests 60 s. At the end of the rest the voice counts "Three, two, one" and the next set starts. The next exercise follows in the same way, until every set is done.
+4. **Next set filled in.** When a working set ends, the next set of the same exercise is filled in from it if it is empty. **Next set: Same** copies the weight and reps. **Next set: Pyramid** adds 2.5 kg (5 lb) and takes off 2 reps (not below 1). The filled set is not marked done; the user can change it. Missing values stay missing.
+5. "Workout complete. Great work!" plays when the user finishes and saves the workout, not before.
 
-**Switches for a hands-free workout.** Me → Training → **Start next set on its own** (off by default): at the end of the rest the voice counts "Three", "Two", "One", one word a second with a light haptic, and the next set starts. **Finish rep sets on time** (off by default): a rep set ends on a set time, from **Set time** (30–90 s) or about 3 s a rep. A set that ends on a guessed time saves no duration.
+The user can still tap **Set done**, **Start now** (ends the rest early), **+15 s**, **Stop timer**, or **End rest** at any time.
+
+**Switches.** Me → Workout guide → **Run on its own**: **End each set on time** and **Start the next set on its own**. Both are on by default. With them off, the user starts each set and taps **Set done**, as in the first review. A set that ended on a set time (not a timed set) saves no duration, because the time is a setting, not a measurement.
 
 **Pause.** Pause stops the set clock and the rest. "Paused." and "Back to it." cut off any cue that still plays. On resume the rest goes on from where it was (`WorkoutRepository.resume` moves the rest start by the paused time).
 
@@ -269,7 +269,7 @@ Built 2026-10-08 (D-031). Owner request: less typing, timers that run on their o
 
 A cue is said only within 2 s of its time, and a late tick says only the latest cue, so nothing stale plays after the phone wakes.
 
-**Phone locked (Speak when locked, on by default).** Who speaks depends on where the app is. On screen, the live voice speaks. When the app goes off screen (locked or another app in front), the live voice stops and the app sets the cues still to come as local notifications that play the same voice clip: the rest of this set or rest, and, after a timed set, the whole rest that follows. Back on screen, every alert is removed. On Android a quiet, ongoing card on the lock screen shows the rest or set clock (a system chronometer) and the next set. Countdown and other short alerts leave the screen after 4 s; end alerts after 2 min. The phone's silent mode and Do Not Disturb apply. Android 14 and later need **Alarms & reminders** for alerts on the second; Me → Training offers it. Without it, only the end cues are set, because Android may deliver them late. The app asks for the notification permission once, on the first guided rest. Sound files: `app/android/app/src/main/res/raw/` (MP3) and `app/assets/voice/alerts/` (CAF for iPhone, copied to Library/Sounds on start), made by `app/tool/voice/alert_sounds.py`. Code: `app/lib/features/workout/lock_alerts.dart`.
+**Phone locked (Speak when locked, on by default).** Who speaks depends on where the app is. On screen, the live voice speaks. When the app goes off screen (locked or another app in front), the live voice stops and the app sets the cues still to come as local notifications that play the same voice clip. When sets end and start on their own, every time ahead is known, so the app sets the whole chain: each set start ("Set two. Go!", "Last set.", "Warm-up."), countdowns, set ends, and rests, up to 150 alerts or 2 hours ahead. It stops at a set that waits for **Set done**. Back on screen, the app catches up: every set that the alerts said started, and that ended on its time, is saved as done at the time the alerts said; then the live voice goes on. A set the alerts did not announce waits for the user. Set-start clips are copies of the bundled clips (no new recordings). Back on screen, every alert is removed. On Android a quiet, ongoing card on the lock screen shows the rest or set clock (a system chronometer) and the next set. Countdown and other short alerts leave the screen after 4 s; end alerts after 2 min. The phone's silent mode and Do Not Disturb apply. Android 14 and later need **Alarms & reminders** for alerts on the second; Me → Training offers it. Without it, only the end cues are set, because Android may deliver them late. The app asks for the notification permission once, on the first guided rest. Sound files: `app/android/app/src/main/res/raw/` (MP3) and `app/assets/voice/alerts/` (CAF for iPhone, copied to Library/Sounds on start), made by `app/tool/voice/alert_sounds.py`. Code: `app/lib/features/workout/lock_alerts.dart`.
 
 **A set that ends while locked.** A timed set that ran out while the phone was locked ends at its set time, not when the app wakes: the saved time is the set time, the set is done at that instant, and the rest starts there.
 
@@ -277,11 +277,12 @@ A cue is said only within 2 s of its time, and a late tick says only the latest 
 
 **Set rows (2026-10-08).** Each set has weight, reps, and time. The time hint shows the set time the guide assumes. A done set has a dark-green check and a green tint (Energy strong, 5.2:1 on white). The set being timed has a teal outline. Warm-up sets show "W". The next set offers **Same as last set**: one tap fills the last set's weight and reps; it does not mark the set done. In a live workout, a finished exercise folds to one line; tap it to open it.
 
-**Off switches.** Me → Training → **Guided workout** (off gives the old manual rest chips), **Voice** (Charlie, Matilda, or Off), **Start next set on its own**, **Finish rep sets on time**, **Set time**, one switch per cue, and **Speak when locked**.
+**Settings.** Me → Training has **Guided workout** (off gives the old manual rest chips) and **Times and voice**, which opens Me → Workout guide: **Times** (Each warm-up move, Rest after warm-up, Each set, Rest between sets, Next set), **Run on its own** (two switches), and **Voice** (Charlie, Matilda, or Off; Speak when locked; one switch per cue).
 
 **Limits (To confirm).**
 
-- The set timer lives in memory. After the app restarts, tap **Start set** again. A running rest survives a restart, because it is saved on the session.
+- The set timer lives in memory. After the app restarts, tap **Start set** again. If the phone stops the app while it is locked and the app restarts, the catch-up above does not run.
+- With sets that end on time, the saved weight and reps are what the set row holds (typed, or filled in from the set before). The app cannot know if the user really did them. A running rest survives a restart, because it is saved on the session.
 - The screen stays on during a guided workout. If the user locks the phone, the lock-screen alerts speak. They cover what is known ahead: a rep set has no set end, so its rest is set only after **Set done**.
 - iPhone has no live lock-screen clock (that needs a Live Activity, a native widget extension; not built).
 - On iOS, music may stay lowered after a cue. Check on a device.

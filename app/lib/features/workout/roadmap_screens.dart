@@ -767,7 +767,7 @@ class RoadmapDayScreen extends ConsumerWidget {
             style: FilledButton.styleFrom(backgroundColor: p.energy, foregroundColor: p.onEnergy),
             onPressed: d.work.isEmpty ? null : () => startWorkout(context, ref, programId: programId, programDay: day),
             icon: const Icon(LucideIcons.play, size: 20),
-            label: const Text('Start workout'),
+            label: Text(ref.watch(liveSessionProvider).value == null ? 'Start workout' : 'Continue workout'),
           ),
         ),
       ),
@@ -969,9 +969,10 @@ class _ItemSheetState extends ConsumerState<_ItemSheet> {
             Wrap(
               spacing: Space.s,
               children: [
-                for (final s in const [45, 60, 90, 120, 180, 240])
+                // The plan's own rest, such as 1:15, shows as a choice too.
+                for (final s in ({45, 60, 90, 120, 180, 240, ?_it.restSec}.toList()..sort()))
                   ChoiceChip(
-                    label: Text(s < 60 ? '$s s' : (s % 60 == 0 ? '${s ~/ 60} min' : '1:30')),
+                    label: Text(restText(s)),
                     selected: _it.restSec == s,
                     onSelected: (_) => setState(() => _it = _it.copyWith(restSec: s)),
                   ),

@@ -9,8 +9,12 @@ import 'voice_names.dart';
 /// (a controlled lift), from 20 to 90 s. Without reps, 40 s.
 int estimateSetSec(int? reps) => reps == null || reps <= 0 ? 40 : (reps * 3).clamp(20, 90);
 
-/// Rest after a warm-up move, before the next move.
-const warmupMoveRestSec = 20;
+/// Sets a new exercise starts with (owner request 2026-10-08).
+const defaultSetCount = 3;
+
+/// Rest after the whole warm-up, when the user has not chosen one. There
+/// is no rest between warm-up moves: the next move starts at once.
+const defaultWarmupRestSec = 60;
 
 /// Rest after a lighter ramp-up set of a main lift.
 const rampUpRestSec = 60;
@@ -20,11 +24,13 @@ const defaultRestSec = 90;
 
 /// Reps a set aims for, read from an exercise note such as
 /// "Target: 3 × 8–12 · 2 min rest". The top of a range is used.
+/// A warm-up move's note, "Warm-up · 8 reps · Move slowly.", gives 8.
 int? targetRepsFromNote(String? note) {
   if (note == null) return null;
   final m = RegExp(r'Target: (?:\d+ × )?(\d+)(?:–(\d+))?(?: reps)?(?: ·|$|\n)').firstMatch(note);
-  if (m == null) return null;
-  return int.tryParse(m.group(2) ?? m.group(1)!);
+  if (m != null) return int.tryParse(m.group(2) ?? m.group(1)!);
+  final w = RegExp(r'^Warm-up · (\d+) reps').firstMatch(note);
+  return w == null ? null : int.parse(w.group(1)!);
 }
 
 /// Rest in seconds read from an exercise note: "2 min rest", "1:30 min
@@ -35,6 +41,24 @@ int? restFromNote(String? note) {
   if (m == null) return null;
   final a = int.parse(m.group(1)!);
   return m.group(3) == 's' ? a : a * 60 + int.parse(m.group(2) ?? '0');
+}
+
+/// How weight changes from one working set to the next.
+enum LoadStyle {
+  /// The same weight and reps each set (straight sets).
+  same,
+
+  /// A little more weight and 2 fewer reps each set (an ascending pyramid).
+  pyramid,
+}
+
+/// The weight and reps the next working set aims for, after a set of
+/// [load] × [reps]. A pyramid adds 2.5 kg (5 lb) and takes off 2 reps,
+/// down to 1. Missing values stay missing.
+({double? load, int? reps}) nextAim({double? load, int? reps, String? unit, LoadStyle style = LoadStyle.same}) {
+  if (style == LoadStyle.same) return (load: load, reps: reps);
+  final step = unit == 'lb' ? 5.0 : 2.5;
+  return (load: load == null ? null : load + step, reps: reps == null || reps <= 1 ? reps : (reps - 2).clamp(1, reps));
 }
 
 /// Voice clip names in `assets/voice/<voice>/`.

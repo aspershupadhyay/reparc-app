@@ -34,6 +34,9 @@ class SessionExerciseList extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final items = detail.exercises;
+    final warm = items.where(isWarmupMove).toList();
+    // In a live workout a finished warm-up folds to one line.
+    final warmupDone = warm.length > 1 && warm.every((v) => v.sets.isNotEmpty && v.completedSets == v.sets.length);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -43,23 +46,38 @@ class SessionExerciseList extends ConsumerWidget {
             title: 'No exercises yet',
             body: 'Add an exercise, then record each set.',
           ),
-        for (final (i, v) in items.indexed) ...[
-          _Collapsible(
-            key: ValueKey(v.item.id),
-            // In a live workout a finished exercise folds to one line, so the
-            // next lift stays in view. Tap it to open it again.
-            folded: live && v.sets.isNotEmpty && v.completedSets == v.sets.length,
-            view: v,
-            card: _ExerciseCard(
+        if (live && warmupDone)
+          _WarmupFolded(
+            views: [
+              for (final v in items)
+                if (isWarmupMove(v)) v,
+            ],
+            builder: (v) => _ExerciseCard(
               view: v,
-              index: i,
+              index: items.indexOf(v),
               count: items.length,
               sessionId: detail.session.id,
               live: live,
             ),
           ),
-          const SizedBox(height: Space.m),
-        ],
+        for (final (i, v) in items.indexed)
+          if (!(live && warmupDone && isWarmupMove(v))) ...[
+            _Collapsible(
+              key: ValueKey(v.item.id),
+              // In a live workout a finished exercise folds to one line, so the
+              // next lift stays in view. Tap it to open it again.
+              folded: live && v.sets.isNotEmpty && v.completedSets == v.sets.length,
+              view: v,
+              card: _ExerciseCard(
+                view: v,
+                index: i,
+                count: items.length,
+                sessionId: detail.session.id,
+                live: live,
+              ),
+            ),
+            const SizedBox(height: Space.m),
+          ],
         const SizedBox(height: Space.s),
         OutlinedButton.icon(
           onPressed: () async {
@@ -68,9 +86,7 @@ class SessionExerciseList extends ConsumerWidget {
             await guardedWrite(
               context,
               () async {
-                // Start with one empty set, as a new workout does.
-                final repo = ref.read(workoutRepoProvider);
-                await repo.addSet(await repo.addSessionExercise(detail.session.id, exId));
+                await ref.read(workoutRepoProvider).addExerciseWithSets(detail.session.id, exId);
               },
             );
           },
@@ -78,6 +94,59 @@ class SessionExerciseList extends ConsumerWidget {
           label: const Text('Add exercise'),
         ),
       ],
+    );
+  }
+}
+
+/// Every warm-up move, done, as one line. Tap it to see the moves.
+class _WarmupFolded extends StatefulWidget {
+  const _WarmupFolded({required this.views, required this.builder});
+  final List<SessionExerciseView> views;
+  final Widget Function(SessionExerciseView) builder;
+
+  @override
+  State<_WarmupFolded> createState() => _WarmupFoldedState();
+}
+
+class _WarmupFoldedState extends State<_WarmupFolded> {
+  bool _open = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final p = context.pal;
+    final t = Theme.of(context).textTheme;
+    final n = widget.views.length;
+    return Padding(
+      padding: const EdgeInsets.only(bottom: Space.m),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          AppCard(
+            padding: const EdgeInsets.symmetric(horizontal: Space.l, vertical: Space.m),
+            onTap: () => setState(() => _open = !_open),
+            semanticLabel: 'Warm-up done, $n moves. ${_open ? 'Close' : 'Open'}',
+            child: ExcludeSemantics(
+              child: Row(
+                children: [
+                  Container(
+                    width: 28,
+                    height: 28,
+                    decoration: BoxDecoration(color: p.energyStrong, shape: BoxShape.circle),
+                    child: Icon(LucideIcons.check, size: 16, color: p.on(p.energyStrong)),
+                  ),
+                  const SizedBox(width: Space.m),
+                  Expanded(child: Text('Warm-up', style: t.titleSmall)),
+                  Text('$n moves done', style: t.bodySmall),
+                  const SizedBox(width: Space.s),
+                  Icon(_open ? LucideIcons.chevronUp : LucideIcons.chevronDown, size: IconSizes.s, color: p.inkSoft),
+                ],
+              ),
+            ),
+          ),
+          if (_open)
+            for (final v in widget.views) ...[const SizedBox(height: Space.s), widget.builder(v)],
+        ],
+      ),
     );
   }
 }
@@ -188,6 +257,7 @@ class _ExerciseCard extends ConsumerWidget {
     final t = Theme.of(context).textTheme;
     final settings = ref.watch(currentSettingsProvider);
     final skipped = view.item.skipped;
+    final cols = SetColumns.of(view);
     return AppCard(
       padding: const EdgeInsets.fromLTRB(Space.l, Space.s, Space.s, Space.m),
       child: Column(
@@ -242,18 +312,20 @@ class _ExerciseCard extends ConsumerWidget {
           if (!skipped) ...[
             if (view.sets.isNotEmpty) ...[
               const SizedBox(height: Space.s),
-              _SetHeader(unit: settings.loadUnit),
+              _SetHeader(unit: settings.loadUnit, cols: cols),
             ],
             for (final (i, s) in view.sets.indexed)
               SetRow(
                 key: ValueKey(s.id),
                 set: s,
-                number: i + 1,
+                number: view.sets.take(i + 1).where((x) => x.setType != SetType.warmup).length,
                 previous: i > 0 ? view.sets[i - 1] : null,
                 settings: settings,
                 sessionId: sessionId,
                 live: live,
                 isNext: i == view.sets.indexWhere((x) => !x.completed),
+                cols: cols,
+                targetReps: targetRepsFromNote(view.item.note),
               ),
             Align(
               alignment: Alignment.centerLeft,
@@ -270,9 +342,25 @@ class _ExerciseCard extends ConsumerWidget {
   }
 }
 
+/// The fields a card shows for its sets: weight and reps, reps only (a
+/// warm-up move), or time only (a timed set). Every field stays in Set
+/// details.
+enum SetColumns {
+  loadReps,
+  reps,
+  time;
+
+  static SetColumns of(SessionExerciseView v) {
+    if (v.sets.isNotEmpty && v.sets.every(isTimedSet)) return time;
+    if (isWarmupMove(v)) return reps;
+    return loadReps;
+  }
+}
+
 class _SetHeader extends StatelessWidget {
-  const _SetHeader({required this.unit});
+  const _SetHeader({required this.unit, required this.cols});
   final String unit;
+  final SetColumns cols;
 
   @override
   Widget build(BuildContext context) {
@@ -284,11 +372,12 @@ class _SetHeader extends StatelessWidget {
           children: [
             SizedBox(width: 40, child: Text('Set', style: s)),
             const SizedBox(width: Space.xs),
-            Expanded(flex: 5, child: Text(unit, style: s)),
-            const SizedBox(width: Space.xs),
-            Expanded(flex: 4, child: Text('Reps', style: s)),
-            const SizedBox(width: Space.xs),
-            Expanded(flex: 5, child: Text('Time', style: s)),
+            if (cols == SetColumns.loadReps) ...[
+              Expanded(child: Text(unit, style: s)),
+              const SizedBox(width: Space.xs),
+            ],
+            if (cols != SetColumns.time) Expanded(child: Text('Reps', style: s)),
+            if (cols == SetColumns.time) Expanded(child: Text('Time', style: s)),
             const SizedBox(width: Space.xs),
             SizedBox(
               width: 48,
@@ -312,7 +401,15 @@ class SetRow extends ConsumerStatefulWidget {
     required this.sessionId,
     required this.live,
     this.isNext = false,
+    this.cols = SetColumns.loadReps,
+    this.targetReps,
   });
+
+  /// Which fields the row shows.
+  final SetColumns cols;
+
+  /// Reps the plan aims for, shown as the hint when no set came before.
+  final int? targetReps;
 
   final SetEntry set;
   final int number;
@@ -489,7 +586,8 @@ class _SetRowState extends ConsumerState<SetRow> {
               children: [
                 Semantics(
                   button: true,
-                  label: 'Set ${widget.number}, ${s.setType.label}${now ? ', timing now' : ''}. Open set details',
+                  label:
+                      '${warm ? 'Warm-up set' : 'Set ${widget.number}'}, ${s.setType.label}${now ? ', timing now' : ''}. Open set details',
                   excludeSemantics: true,
                   child: InkWell(
                     borderRadius: Radii.small,
@@ -507,7 +605,7 @@ class _SetRowState extends ConsumerState<SetRow> {
                             shape: BoxShape.circle,
                           ),
                           child: Text(
-                            warm ? 'W' : '${widget.number}${s.setType.short}',
+                            warm ? 'W' : '${widget.number}',
                             style: t.labelMedium?.tabular.copyWith(
                               color: now ? pal.onBrand : pal.ink,
                               fontWeight: FontWeight.w600,
@@ -519,46 +617,46 @@ class _SetRowState extends ConsumerState<SetRow> {
                   ),
                 ),
                 const SizedBox(width: Space.xs),
-                Expanded(
-                  flex: 5,
-                  child: TextField(
-                    controller: _load,
-                    focusNode: _loadFocus,
-                    keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                    textInputAction: TextInputAction.next,
-                    style: t.bodyLarge?.tabular,
-                    onChanged: _onLoad,
-                    decoration: field(hint: p?.load == null ? null : _num(p!.load), error: _loadError),
+                if (widget.cols == SetColumns.loadReps) ...[
+                  Expanded(
+                    child: TextField(
+                      controller: _load,
+                      focusNode: _loadFocus,
+                      keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                      textInputAction: TextInputAction.next,
+                      style: t.bodyLarge?.tabular,
+                      onChanged: _onLoad,
+                      decoration: field(hint: p?.load == null ? null : _num(p!.load), error: _loadError),
+                    ),
                   ),
-                ),
-                const SizedBox(width: Space.xs),
-                Expanded(
-                  flex: 4,
-                  child: TextField(
-                    controller: _reps,
-                    focusNode: _repsFocus,
-                    keyboardType: TextInputType.number,
-                    textInputAction: TextInputAction.next,
-                    style: t.bodyLarge?.tabular,
-                    onChanged: _onReps,
-                    decoration: field(hint: p?.reps?.toString(), error: _repsError),
+                  const SizedBox(width: Space.xs),
+                ],
+                if (widget.cols != SetColumns.time)
+                  Expanded(
+                    child: TextField(
+                      controller: _reps,
+                      focusNode: _repsFocus,
+                      keyboardType: TextInputType.number,
+                      textInputAction: TextInputAction.next,
+                      style: t.bodyLarge?.tabular,
+                      onChanged: _onReps,
+                      decoration: field(hint: (p?.reps ?? widget.targetReps)?.toString(), error: _repsError),
+                    ),
                   ),
-                ),
-                const SizedBox(width: Space.xs),
-                Expanded(
-                  flex: 5,
-                  child: TextField(
-                    controller: _time,
-                    focusNode: _timeFocus,
-                    keyboardType: TextInputType.datetime,
-                    style: t.bodyLarge?.tabular,
-                    onChanged: _onTime,
-                    decoration: field(hint: timeHint, error: _timeError),
+                if (widget.cols == SetColumns.time)
+                  Expanded(
+                    child: TextField(
+                      controller: _time,
+                      focusNode: _timeFocus,
+                      keyboardType: TextInputType.datetime,
+                      style: t.bodyLarge?.tabular,
+                      onChanged: _onTime,
+                      decoration: field(hint: timeHint, error: _timeError),
+                    ),
                   ),
-                ),
                 const SizedBox(width: Space.xs),
                 Semantics(
-                  label: 'Set ${widget.number} complete',
+                  label: warm ? 'Warm-up set complete' : 'Set ${widget.number} complete',
                   checked: done,
                   button: true,
                   excludeSemantics: true,

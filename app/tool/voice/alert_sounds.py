@@ -12,7 +12,11 @@ import subprocess
 APP = pathlib.Path(__file__).resolve().parent.parent.parent
 VOICES = ["charlie", "matilda"]
 # Clip name in assets/voice/<voice>/ for each alert.
-CLIPS = ["halfway", "ten_left", "three", "two", "one", "time", "rest_over"]
+# The set cues let a workout that runs on its own say each set start while
+# the phone is locked. They are copies of the bundled clips; nothing new is
+# recorded.
+CLIPS = ["halfway", "ten_left", "three", "two", "one", "time", "rest_over",
+         "go", "warmup", "last_set", "next_exercise"] + [f"set_{n}" for n in range(1, 11)]
 
 
 def main() -> None:

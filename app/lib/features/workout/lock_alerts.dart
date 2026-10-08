@@ -48,6 +48,9 @@ abstract class LockAlerts {
   /// 'matilda', or 'off' (the phone's own alert sound).
   Future<void> show(List<AlertCue> cues, {required String voice, LiveCard? card});
 
+  /// Replaces only the live card. Cues that are set or playing stay.
+  Future<void> showCard(LiveCard card);
+
   /// Removes every cue, waiting or shown, and the live card.
   Future<void> clear();
 }
@@ -189,6 +192,15 @@ class LocalLockAlerts implements LockAlerts {
     );
   }
 
+  @override
+  Future<void> showCard(LiveCard card) async {
+    if (_ios) return;
+    try {
+      await _init();
+      await _showCard(card);
+    } catch (_) {}
+  }
+
   Future<void> _showCard(LiveCard card) => _plugin.show(
     id: _cardId,
     title: card.title,
@@ -223,7 +235,7 @@ class LocalLockAlerts implements LockAlerts {
     } catch (_) {}
   }
 
-  static const _names = {
+  static final _names = {
     'halfway': 'Halfway',
     'ten_left': 'Ten seconds',
     'three': 'Three',
@@ -231,6 +243,11 @@ class LocalLockAlerts implements LockAlerts {
     'one': 'One',
     'time': 'Time',
     'rest_over': 'Rest is up',
+    'go': 'Go',
+    'warmup': 'Warm-up',
+    'last_set': 'Last set',
+    'next_exercise': 'Next exercise',
+    for (var n = 1; n <= 10; n++) 'set_$n': 'Set $n',
   };
 }
 

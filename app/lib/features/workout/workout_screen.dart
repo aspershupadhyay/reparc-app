@@ -78,7 +78,11 @@ class _StartCard extends ConsumerWidget {
     final prog = ref.watch(activeProgramProvider).value;
     final next = liveId != null || prog == null || prog.plan.days.isEmpty ? null : prog.plan.days[prog.nextDay];
     final (String eyebrow, String? title, String? sub) = switch ((liveId, next)) {
-      (_?, _) => ('Training now', null, null),
+      (_?, _) => (
+        ref.watch(liveSessionProvider).value?.status == SessionStatus.paused ? 'Paused' : 'Training now',
+        null,
+        null,
+      ),
       (null, final d?) => (
         'Next in your plan',
         d.name,

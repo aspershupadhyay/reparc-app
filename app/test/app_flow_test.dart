@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:drift/drift.dart' show OrderingTerm;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -13,6 +14,7 @@ import 'package:reparc/features/analytics/analytics_screen.dart';
 import 'package:reparc/features/exercises/library/library.dart';
 import 'package:reparc/features/me/ai_connections_screen.dart';
 import 'package:reparc/features/me/me_screen.dart';
+import 'package:reparc/features/workout/live_session_screen.dart';
 import 'package:reparc/features/workout/session_detail_screen.dart';
 
 import 'helpers.dart';
@@ -83,7 +85,7 @@ void main() {
 
     await tester.tap(find.widgetWithText(FilledButton, 'Start'));
     await tester.pumpAndSettle();
-    expect(find.text('Elapsed'), findsOneWidget);
+    expect(find.text('Add an exercise to start'), findsOneWidget);
     expect(await db.select(db.workoutSessions).get(), hasLength(1));
 
     // Create an exercise without leaving the workout.
@@ -94,15 +96,18 @@ void main() {
     await tester.enterText(find.widgetWithText(TextField, 'Name'), 'Squat');
     await tester.tap(find.widgetWithText(FilledButton, 'Save exercise'));
     await tester.pumpAndSettle();
-    expect(find.text('Squat'), findsOneWidget);
+    expect(find.text('Squat'), findsWidgets, reason: 'On its card and as the next step');
 
-    // A new exercise starts with one empty set.
+    // A new exercise starts with three empty sets: weight and reps each.
     final fields = find.byType(TextField);
+    expect(fields, findsNWidgets(6));
     await tester.enterText(fields.at(0), '100');
     await tester.enterText(fields.at(1), '5');
     await tester.pumpAndSettle();
 
-    final set = (await db.select(db.setEntries).get()).single;
+    final sets = await (db.select(db.setEntries)..orderBy([(s) => OrderingTerm.asc(s.position)])).get();
+    expect(sets, hasLength(3));
+    final set = sets.first;
     expect(set.load, 100);
     expect(set.loadUnit, 'kg');
     expect(set.reps, 5);
@@ -110,8 +115,8 @@ void main() {
 
     await tester.tap(find.bySemanticsLabel('Set 1 complete'));
     await tester.pumpAndSettle();
-    expect((await db.select(db.setEntries).get()).single.completed, isTrue);
-    expect(find.text('1 / 1'), findsOneWidget);
+    expect((await db.select(db.setEntries).get()).where((s) => s.completed), hasLength(1));
+    expect(find.text('1 / 3 sets'), findsOneWidget);
 
     // Leaving the screen keeps the session live.
     await tester.tap(find.byTooltip('Leave screen. The workout keeps running.'));
@@ -120,7 +125,17 @@ void main() {
     await tester.tap(find.widgetWithText(FilledButton, 'Open'));
     await tester.pumpAndSettle();
 
-    await tester.ensureVisible(find.widgetWithText(FilledButton, 'Finish workout'));
+    // The sets scroll under the pinned clock panel.
+    await tester.scrollUntilVisible(
+      find.widgetWithText(FilledButton, 'Finish workout'),
+      300,
+      scrollable: find
+          .descendant(
+            of: find.descendant(of: find.byType(LiveSessionScreen), matching: find.byType(ListView)),
+            matching: find.byType(Scrollable),
+          )
+          .first,
+    );
     await tester.tap(find.widgetWithText(FilledButton, 'Finish workout'));
     await tester.pumpAndSettle();
     await tester.tap(find.widgetWithText(FilledButton, 'Finish and save'));
@@ -200,7 +215,7 @@ void main() {
 
     await tester.tap(find.byTooltip('Back'));
     await tester.pumpAndSettle();
-    expect(find.text('Elapsed'), findsOneWidget);
+    expect(find.widgetWithText(FilledButton, 'Start workout'), findsOneWidget, reason: 'Back on the live workout');
     await unmount(tester);
   });
 
