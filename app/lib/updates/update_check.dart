@@ -5,7 +5,7 @@ import 'dart:io';
 /// Where Reparc builds are published (handbook 17.3, D-029).
 /// Public repository that holds only the release builds. The source code
 /// is private (handbook 17.9).
-const releasesRepo = 'aspershupadhyay/reparc-releases';
+const releasesRepo = 'aspershupadhyay/reparc';
 final latestReleaseApi = Uri.parse('https://api.github.com/repos/$releasesRepo/releases/latest');
 final releasesPage = Uri.parse('https://github.com/$releasesRepo/releases/latest');
 

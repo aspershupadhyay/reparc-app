@@ -54,7 +54,7 @@ Show:
 
 Check for update metadata at launch, when the app returns to the foreground, and when the user asks. Cache results. Add a delay between checks. Do not block app start if the network or metadata service fails.
 
-**Built for the GitHub test builds (D-029, 2026-10-06):** the metadata source is the GitHub "latest release" API for `aspershupadhyay/reparc`. `app/lib/updates/` reads the tag, notes, and download links (data only), compares the version with the installed one, and saves the result on the phone. It checks once a day when the app opens (the user can turn this off) and when the user taps **Check for updates**. Home shows a notice that the user can hide until the next version. **Download and install** opens the APK (Android) or the release page (iPhone) in the browser. The phone's installer does the install and asks the user. The first line of `release-notes/<version>.md` is the notice text. Store builds will use the store flows below instead.
+**Built for the GitHub test builds (D-029, 2026-10-06):** the metadata source is the GitHub "latest release" API for the public builds repository `aspershupadhyay/reparc` (17.9). `app/lib/updates/` reads the tag, notes, and download links (data only), compares the version with the installed one, and saves the result on the phone. It checks once a day when the app opens (the user can turn this off) and when the user taps **Check for updates**. Home shows a notice that the user can hide until the next version. **Download and install** opens the APK (Android) or the release page (iPhone) in the browser. The phone's installer does the install and asks the user. The first line of `release-notes/<version>.md` is the notice text. Store builds will use the store flows below instead.
 
 For store builds, the metadata source, hosting, schema, and backend are **To confirm**. It may be a small public release manifest, but it must contain data only, such as version, notes, minimum supported version, and store links. Validate its signature or integrity where the chosen hosting supports it. The app must not execute content from the manifest. If metadata is unavailable, use the platform store as the source of truth.
 
@@ -148,23 +148,31 @@ The release owner must confirm the current Apple and Google requirements before 
 
 ## 17.9 Private source, public builds
 
-**Status:** Set up 2026-10-08 at the owner's request. The owner made this repository private. The license question below is **To confirm**.
+**Status:** Set up 2026-10-08 at the owner's request. The license question below is **To confirm**.
 
-- **Source:** `aspershupadhyay/reparc` stays private.
-- **Builds:** a public repository, `aspershupadhyay/reparc-releases`, holds only a README and GitHub Releases (APK, IPA, `SHA256SUMS.txt`). The release workflow publishes there. The app's update check (D-029) and the website read from there, because a private repository's releases are not visible without a sign-in.
-- **Website:** Vercel, project root `site/` (`site/vercel.json`). GitHub Pages for a private repository needs a paid GitHub plan, so `pages.yml` was removed.
-- **Gateway:** unchanged. It already deploys to Vercel from this repository.
+| Repository | Visibility | Holds |
+|---|---|---|
+| `aspershupadhyay/reparc-app` | Private | All source code, the handbook, the gateway, and CI. All development happens here. |
+| `aspershupadhyay/reparc` | Public | A README and GitHub Releases (APK, IPA, `SHA256SUMS.txt`) only. No source code. |
 
-**Owner steps (one time):**
+- The release workflow in `reparc-app` builds the app and publishes the release to `reparc` with the `RELEASES_TOKEN` secret. Nobody commits to `reparc` except its README.
+- The app's update check (D-029), the Support link, and the website read from `reparc`. Apps already installed (v0.3.x) also check `aspershupadhyay/reparc`, so they find new builds there.
+- **Never make `reparc-app` public.** Git history keeps every old file, so a public repository shows all source ever committed, even after files are deleted.
+- **Website:** Vercel, project root `site/` (`site/vercel.json`). GitHub Pages for a private repository needs a paid GitHub plan.
+- **Gateway:** deploys to Vercel from `reparc-app`, folder `gateway/`.
 
-1. Create the public repository `reparc-releases` on GitHub, with a README. The text is in `release-notes/RELEASES-REPO-README.md`.
-2. Create a fine-grained personal access token: repository access **only** `reparc-releases`, permission **Contents: Read and write**. Add it to this repository as the Actions secret `RELEASES_TOKEN`.
-3. In Vercel, import this repository as a new project, set **Root Directory** to `site`, and deploy. Add a domain if wanted, then update the website link in `README.md`.
-4. Push a version tag (for example `v0.4.0`) to publish the first public build.
+**Owner steps (one time), in this order:**
 
-**Limits.** Anyone can still unpack an APK or IPA and read the compiled code; private source makes copying harder, not impossible. Code that was public under AGPL-3.0 stays available under AGPL-3.0 to anyone who copied it.
+1. Rename the current repository `reparc` to `reparc-app` (Settings → General → Repository name). Keep it private.
+2. On every computer and session that has a copy, point it at the new name before step 3: `git remote set-url origin https://github.com/aspershupadhyay/reparc-app.git`. GitHub redirects the old name only until a new repository takes it; after that, a push to the old address would go to the public repository.
+3. Create the new public repository `reparc` with a README (text: `release-notes/PUBLIC-REPO-README.md`).
+4. Create a fine-grained token with access to `reparc` only and **Contents: Read and write**. Save it in `reparc-app` as the Actions secret `RELEASES_TOKEN`.
+5. In Vercel, check that the gateway project and the website project (Root Directory `site`) point to `reparc-app`.
+6. Push a version tag in `reparc-app` (for example `v0.4.0`) to publish the first public build.
 
-**To confirm (owner):** the license for new versions. The app still ships under AGPL-3.0 (12.2), which lets anyone who gets the app ask for its source. Keeping the source private for new releases needs a different license for them, for example "all rights reserved". The owner is the only human author in the history, so the owner can choose this.
+**Limits.** Anyone can unpack an APK or IPA and read the compiled code; private source makes copying harder, not impossible. Code that was public under AGPL-3.0 stays available under AGPL-3.0 to anyone who copied it.
+
+**To confirm (owner):** the license for new versions. The app still ships under AGPL-3.0 (12.2), which lets anyone who gets the app ask for its source. Keeping the source private for new releases needs a different license, for example "all rights reserved". The owner is the only human author in the history, so the owner can choose this.
 
 ## AI context
 

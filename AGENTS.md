@@ -13,10 +13,17 @@ Before you change code, data, design, or project rules:
 7. Use handbook/14-feature-spec-template.md when you add a new feature.
 8. Read handbook/16-production-and-app-updates.md before changing CI, release automation, signing, update checks, or store delivery.
 
+## Repositories
+
+- **`aspershupadhyay/reparc-app` (private):** all source code, the handbook, the gateway, and CI. Do all work here. This file lives here.
+- **`aspershupadhyay/reparc` (public):** builds only, a README and GitHub Releases. Never push source code, handbook files, or git history to it. The release workflow publishes builds to it with the `RELEASES_TOKEN` secret.
+- Never make `reparc-app` public. Its history contains all source.
+- The app's update check, the website download links, and the Support link point to the public `reparc` repository. See handbook/16-production-and-app-updates.md, section 17.9.
+
 ## Authority and status
 
 - Follow direct user instructions first.
-- **Owner instruction (2026-10-05):** Push every change directly to the `main` branch on GitHub as soon as it is ready. Do not ask for confirmation first. Run the matching checks before each push.
+- **Owner instruction (2026-10-05):** Push every change directly to the `main` branch of `reparc-app` on GitHub as soon as it is ready. Do not ask for confirmation first. Run the matching checks before each push.
 - Keep the five accepted tabs: Home, Workout, Meal, Analytics, and Me.
 - Keep the two supplied image files as visual references for Meal and Workout. Read them before changing those screens.
 - Treat the handbook as the product and architecture plan.

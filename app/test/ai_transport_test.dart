@@ -163,7 +163,7 @@ void main() {
       expect(url.host, 'vercel.com');
       expect(url.queryParameters['root-directory'], 'gateway');
       expect(url.queryParameters['env'], 'REPARC_OWNER_KEY');
-      expect(url.queryParameters['repository-url'], 'https://github.com/aspershupadhyay/reparc');
+      expect(url.queryParameters['repository-url'], 'https://github.com/aspershupadhyay/reparc-app');
       expect(url.queryParameters['env'], isNot(contains(k)));
     });
 

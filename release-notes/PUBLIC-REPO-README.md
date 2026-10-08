@@ -6,7 +6,7 @@ This repository holds **only the app builds**. The source code is private.
 
 ## Download
 
-Get the [latest release](https://github.com/aspershupadhyay/reparc-releases/releases/latest).
+Get the [latest release](https://github.com/aspershupadhyay/reparc/releases/latest).
 
 - **Android (8+):** download `reparc-android.apk` on your phone and open it.
 - **iPhone (iOS 15+):** `reparc-ios-unsigned.ipa` is not from the App Store. Install it with AltStore or Sideloadly using your own Apple ID.
@@ -17,4 +17,4 @@ The app tells you when a new version is out (Me → App updates). It never insta
 
 ## Problems
 
-Report a problem in [Issues](https://github.com/aspershupadhyay/reparc-releases/issues). Do not post health data or personal records.
+Report a problem in [Issues](https://github.com/aspershupadhyay/reparc/issues). Do not post health data or personal records.

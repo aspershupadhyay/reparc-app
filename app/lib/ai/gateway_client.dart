@@ -7,7 +7,8 @@ import 'rpc.dart';
 import 'tools.dart';
 
 /// Repository that holds the Vercel gateway (`gateway/` folder).
-const gatewayRepository = 'https://github.com/aspershupadhyay/reparc';
+/// The private source repository; the gateway deploys from its gateway/ folder.
+const gatewayRepository = 'https://github.com/aspershupadhyay/reparc-app';
 
 /// One-click deploy of the gateway into the owner's own Vercel account,
 /// with an Upstash Redis store from the Vercel Marketplace. Vercel asks for

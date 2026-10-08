@@ -1,5 +1,6 @@
 # Builds the Android APK and the iPhone IPA and publishes them as a GitHub
-# Release in the public aspershupadhyay/reparc-releases repository (handbook
+# Release in the public aspershupadhyay/reparc repository, which holds no
+# source code (handbook
 # 17.9). Run it by pushing a tag such as v0.2.0, or from the
 # Actions tab. The tag must match the version in app/pubspec.yaml.
 #
@@ -147,7 +148,7 @@ jobs:
           # that holds only releases (handbook 17.9). RELEASES_TOKEN is a
           # fine-grained token with Contents: read and write on that repo.
           GH_TOKEN: ${{ secrets.RELEASES_TOKEN }}
-          RELEASES_REPO: aspershupadhyay/reparc-releases
+          RELEASES_REPO: aspershupadhyay/reparc
         run: |
           if [ -z "$GH_TOKEN" ]; then
             echo "::error::Add the RELEASES_TOKEN secret (Settings → Secrets → Actions). See handbook 17.9."
