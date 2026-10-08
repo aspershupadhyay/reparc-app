@@ -153,12 +153,12 @@ The release owner must confirm the current Apple and Google requirements before 
 | Repository | Visibility | Holds |
 |---|---|---|
 | `aspershupadhyay/reparc-app` | Private | All source code, the handbook, the gateway, and CI. All development happens here. |
-| `aspershupadhyay/reparc` | Public | A README and GitHub Releases (APK, IPA, `SHA256SUMS.txt`) only. No source code. |
+| `aspershupadhyay/reparc` | Public | A README, GitHub Releases (APK, IPA, `SHA256SUMS.txt`), and the website on its `gh-pages` branch. No source code. |
 
 - The release workflow in `reparc-app` builds the app and publishes the release to `reparc` with the `RELEASES_TOKEN` secret. Nobody commits to `reparc` except its README.
 - The app's update check (D-029), the Support link, and the website read from `reparc`. Apps already installed (v0.3.x) also check `aspershupadhyay/reparc`, so they find new builds there.
 - **Never make `reparc-app` public.** Git history keeps every old file, so a public repository shows all source ever committed, even after files are deleted.
-- **Website:** Vercel, project root `site/` (`site/vercel.json`). GitHub Pages for a private repository needs a paid GitHub plan.
+- **Website:** GitHub Pages from the public `reparc` repository, at https://aspershupadhyay.github.io/reparc/. `.github/workflows/site.yml` copies only the static files in `site/` to its `gh-pages` branch, as one commit with no history. Vercel (`site/vercel.json`) is a later option.
 - **Gateway:** deploys to Vercel from `reparc-app`, folder `gateway/`.
 
 **Owner steps (one time), in this order:**
@@ -167,7 +167,7 @@ The release owner must confirm the current Apple and Google requirements before 
 2. On every computer and session that has a copy, point it at the new name before step 3: `git remote set-url origin https://github.com/aspershupadhyay/reparc-app.git`. GitHub redirects the old name only until a new repository takes it; after that, a push to the old address would go to the public repository.
 3. Create the new public repository `reparc` with a README (text: `release-notes/PUBLIC-REPO-README.md`).
 4. Create a fine-grained token with access to `reparc` only and **Contents: Read and write**. Save it in `reparc-app` as the Actions secret `RELEASES_TOKEN`.
-5. In Vercel, check that the gateway project and the website project (Root Directory `site`) point to `reparc-app`.
+5. Turn on the website: in the public `reparc` repository, Settings → Pages → Source **Deploy from a branch** → branch **gh-pages**, folder **/ (root)** → Save. Run the **Website** workflow in `reparc-app` once (Actions → Website → Run workflow) to create that branch first. Later: check that the Vercel gateway project points to `reparc-app`.
 6. Push a version tag in `reparc-app` (for example `v0.4.0`) to publish the first public build.
 
 **Limits.** Anyone can unpack an APK or IPA and read the compiled code; private source makes copying harder, not impossible. Code that was public under AGPL-3.0 stays available under AGPL-3.0 to anyone who copied it.

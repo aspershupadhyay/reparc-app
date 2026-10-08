@@ -16,7 +16,8 @@ Before you change code, data, design, or project rules:
 ## Repositories
 
 - **`aspershupadhyay/reparc-app` (private):** all source code, the handbook, the gateway, and CI. Do all work here. This file lives here.
-- **`aspershupadhyay/reparc` (public):** builds only, a README and GitHub Releases. Never push source code, handbook files, or git history to it. The release workflow publishes builds to it with the `RELEASES_TOKEN` secret.
+- **`aspershupadhyay/reparc` (public):** builds and the website only: a README, GitHub Releases, and the static `site/` files on its `gh-pages` branch. Never push source code, handbook files, or git history to it. The release and website workflows publish to it with the `RELEASES_TOKEN` secret.
+- Work only in a clone whose `origin` is `reparc-app`. Check with `git remote -v` before any push.
 - Never make `reparc-app` public. Its history contains all source.
 - The app's update check, the website download links, and the Support link point to the public `reparc` repository. See handbook/16-production-and-app-updates.md, section 17.9.
 

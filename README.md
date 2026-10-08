@@ -2,7 +2,7 @@
 
 **Train. Eat. Own your data.** A free, open-source gym and meal log for iPhone and Android. Your records live on your phone. There is no Reparc account and no Reparc server.
 
-🌐 **Website:** on Vercel from `site/` (address To confirm) · ⬇️ **Download:** [latest release](https://github.com/aspershupadhyay/reparc/releases/latest)
+🌐 **Website:** [aspershupadhyay.github.io/reparc](https://aspershupadhyay.github.io/reparc/) · ⬇️ **Download:** [latest release](https://github.com/aspershupadhyay/reparc/releases/latest)
 
 > This is the private source repository, `aspershupadhyay/reparc-app`. Builds are published in the public [aspershupadhyay/reparc](https://github.com/aspershupadhyay/reparc) repository, which holds no source (handbook 17.9).
 
