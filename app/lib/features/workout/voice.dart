@@ -3,11 +3,21 @@ import 'dart:async';
 import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../domain/guide.dart';
+
 /// Plays the bundled voice cues (handbook 4.13). Clips come from
 /// `assets/voice/<voice>/`; nothing is fetched from the network.
 abstract class VoicePlayer {
   /// Queues [clip] and plays it after any clip that is still playing.
-  void say(String voice, String clip);
+  /// With [now], the clip that plays and the clips that wait are dropped
+  /// first, so an old cue never plays after the user acted.
+  void say(String voice, String clip, {bool now = false});
+
+  /// Drops the clip that plays and the clips that wait.
+  void silence();
+
+  /// Loads the clips of [voice] before the first cue, so it plays on time.
+  void preload(String voice);
   void dispose();
 }
 
@@ -27,11 +37,31 @@ class AssetVoicePlayer implements VoicePlayer {
     stayAwake: false,
   ).build();
 
+  String? _loaded;
+
   @override
-  void say(String voice, String clip) {
+  void say(String voice, String clip, {bool now = false}) {
     if (voice == 'off') return;
+    if (now) silence();
     _queue.add('voice/$voice/$clip.mp3');
     if (!_playing) unawaited(_next());
+  }
+
+  @override
+  void silence() {
+    _queue.clear();
+    if (!_playing) return;
+    _playing = false;
+    unawaited(_player.stop().catchError((_) {}));
+  }
+
+  @override
+  void preload(String voice) {
+    if (voice == 'off' || voice == _loaded) return;
+    _loaded = voice;
+    unawaited(
+      _player.audioCache.loadAll([for (final c in Clips.all) 'voice/$voice/$c.mp3']).catchError((_) => <Uri>[]),
+    );
   }
 
   Future<void> _next() async {

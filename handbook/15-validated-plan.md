@@ -254,6 +254,8 @@ Updated 2026-10-06. This records what exists in code. It is not evidence of devi
 
 **Not checked for this round:** Real devices, VoiceOver and TalkBack on the new screens, large text on devices, and coach or dietitian review of the content.
 
+**Guided workout review fixes (2026-10-08, owner request):** Fixed: the set clock kept running during a pause; a pause did not pause the rest, so the next set could start at once on resume; old voice cues played after Skip, Stop, or Pause; "Three. Two. One." was one clip that ended a second early; "Next exercise." delayed "Go"; "Workout complete" played before the workout was saved; a false "Paused." after a restart. Changed: the user starts each set and ends each rep set (two new switches turn the old hands-free behaviour back on); a guessed set time is no longer saved; the screen stays on during a guided workout; the big clock is the set or rest clock; the next set shows its aim; stop buttons moved away from **+15 s**. Voice clips were trimmed and set to one loudness, and a coach script for `eleven_v3` is ready to record (handbook 4.13). Checked: format, `flutter analyze --fatal-infos`, and `flutter test`. **Not checked:** real devices, audio on a phone (timing, ducking on iOS), VoiceOver and TalkBack on the new panel, and the new script, which is not recorded yet.
+
 ## 16.12 AI context
 
 - **Purpose:** Give every contributor the current, evidence-based build order.

@@ -234,29 +234,40 @@ Run format, analysis, generated-code checks, and all tests after each step. Test
 
 Built 2026-10-08 (D-031). Owner request: less typing, timers that run on their own, and a voice that says when a set or rest starts and ends. Not yet tested on a real phone.
 
-**Flow.**
+**Flow (updated 2026-10-08 after a review of the guide).** The user starts each set and ends each rep set. The guide times, speaks, and counts the rest. It does not guess when a lift is done.
 
-1. In a live workout, tap **Start set**. The guide picks the first set that is not done, in order, and skips skipped exercises.
-2. The voice says "Set two. Go!", "Last set. Make it count!", or "Warm-up. Nice and easy." On a new exercise it says "Next exercise." first.
-3. The set timer counts up to the set time. Around halfway in a long set it says "Halfway." At the end it says "Time! Set done."
-4. With **Finish sets on time** on (default), the set is marked done and the rest starts. With it off, the set waits for **Set done**.
-5. The rest comes from the plan (the "rest" in the exercise note). Else it is the **Default rest** in Me → Training, else 90 s. A warm-up move rests 20 s. A ramp-up set rests 60 s. The voice says "Rest. Ninety seconds."
-6. At 10 s left it says "Ten seconds." At 3 s it says "Three. Two. One." Then the next set starts on its own.
-7. After the last set it says "Workout complete. Great work!"
+1. In a live workout, the panel shows the next set and its aim, such as "Next · Bench press · set 2 of 4" and "60 kg × 8". The weight and reps come from the set, else the set before, else the plan target.
+2. Tap **Start set**. The voice says "Set two. Go!", "Last set. Make it count!", "Warm-up. Nice and easy." for a warm-up move, or "Go!" for a ramp-up set.
+3. The set clock is the big number. A rep set counts up until the user taps **Set done**. A timed set counts to its time, says "Halfway." in a long set, says "Time! Set done." and ends on its own.
+4. The rest comes from the plan (the "rest" in the exercise note). Else it is the **Default rest** in Me → Training, else 90 s. A warm-up move rests 20 s. A ramp-up set rests 60 s. The voice says "Rest. Ninety seconds." The rest clock is the big number.
+5. At 10 s left it says "Ten seconds." When the next set is on a new exercise, it adds "Next exercise." here, so the set cue plays at the start of the set.
+6. At the end it says "Rest over. Get ready." with a strong haptic. The clock shows "Rest over by". The user taps **Start set**.
+7. "Workout complete. Great work!" plays when the user finishes and saves the workout, not before.
 
-**Set time.** A timed set uses its own time. Else the set time from Me → Training (30–90 s), else an estimate: about 3 s a rep, 20–90 s, from the reps typed, the plan target, or the set before. **+15 s** gives the current set more time.
+**Switches for a hands-free workout.** Me → Training → **Start next set on its own** (off by default): at the end of the rest the voice counts "Three", "Two", "One", one word a second with a light haptic, and the next set starts. **Finish rep sets on time** (off by default): a rep set ends on a set time, from **Set time** (30–90 s) or about 3 s a rep. A set that ends on a guessed time saves no duration.
 
-**What is saved.** Only measured values. The set's duration is the time from **Start set** to its end. A time the user typed on a rep set is kept. The rest really taken is saved on the set before, when the next set starts. The guide never saves reps or load; the user types those, during the rest if they like. Ticking a set in the list also starts the right rest.
+**Pause.** Pause stops the set clock and the rest. "Paused." and "Back to it." cut off any cue that still plays. On resume the rest goes on from where it was (`WorkoutRepository.resume` moves the rest start by the paused time).
 
-**Voice.** 31 short clips in two ElevenLabs voices, Charlie and Matilda, bundled in `app/assets/voice/` (about 0.9 MB). `app/tool/voice/generate.py` makes them from `phrases.json`. It reads the key from `ELEVENLABS_API_KEY`; the key is never stored in the repo or the app. The app plays the files with `audioplayers` and lowers other audio, such as music, while a cue plays. No network request, and no workout data leaves the phone.
+**Stop.** **Stop timer** (set) and **End rest** (rest) are quiet text buttons, away from **+15 s**. They cut off the voice. **+15 s** adds time to a timed set or to the rest.
+
+**What is saved.** Only measured values. The duration of a rep set is the time from **Start set** to **Set done**. A timed set that ran to its time saves that time. A rep set that ended on a guessed time saves none. A time the user typed on a rep set is kept. The rest really taken is saved on the set before, when the next set starts. The guide never saves reps or load; the user types those. Ticking a set in the list also starts the right rest.
+
+**Screen.** While the guide runs a live workout the screen stays on, so cues play on time (`core/screen_awake.dart`, shared with AI connections). It goes off when the workout ends or the guide is off.
+
+**Voice.** 33 short clips in two ElevenLabs voices, Charlie and Matilda, bundled in `app/assets/voice/` (about 1 MB). `app/tool/voice/postprocess.py` cuts silence at both ends, sets each clip to the same loudness (mean −18 dB, peaks under −1 dBFS), and saves 96 kbps mono MP3. "Three", "Two", and "One" were cut from the first "Three. Two. One." clip. The app loads the clips of the chosen voice when a workout starts, and a new cue can cut off old cues. It lowers other audio, such as music, while a cue plays. No network request, and no workout data leaves the phone.
+
+**Voice script (ready, not recorded).** `app/tool/voice/phrases.json` holds a warmer coach script for the `eleven_v3` model, with audio tags such as `[energetic]`. `generate.py` makes a clip again when its text, model, or settings differ from `tool/voice/generated.json`, the record of what the bundled clips were made from. Run `python3 tool/voice/generate.py --dry-run` to see the list. It needs `ELEVENLABS_API_KEY`. The bundled clips still use the first script.
 
 **Set rows (2026-10-08).** Each set has weight, reps, and time. The time hint shows the set time the guide assumes. A done set has a dark-green check and a green tint (Energy strong, 5.2:1 on white). The set being timed has a teal outline. Warm-up sets show "W". The next set offers **Same as last set**: one tap fills the last set's weight and reps; it does not mark the set done. In a live workout, a finished exercise folds to one line; tap it to open it.
 
-**Off switches.** Me → Training → **Guided workout** (off gives the old manual rest chips), **Voice** (Charlie, Matilda, or Off), **Finish sets on time**, and **Set time**.
+**Off switches.** Me → Training → **Guided workout** (off gives the old manual rest chips), **Voice** (Charlie, Matilda, or Off), **Start next set on its own**, **Finish rep sets on time**, and **Set time**.
 
 **Limits (To confirm).**
 
 - The set timer lives in memory. After the app restarts, tap **Start set** again. A running rest survives a restart, because it is saved on the session.
-- With the screen locked or the app in the background, iOS stops timers, so cues may not play there. Android may also delay them. A local notification for the end of a rest needs a notification permission and is not built.
+- The screen stays on during a guided workout. If the user locks the phone or leaves the app, iOS stops timers, so cues may not play there. Android may also delay them. A local notification for the end of a rest needs a notification permission and is not built (owner choice needed).
+- On iOS, music may stay lowered after a cue. Check on a device.
+- The plan target time of a timed set and the measured time share one field (`durationSec`). Keeping them apart needs a database migration (owner choice needed).
+- Exercise names are not spoken. Each name needs its own clip.
 - Screen reader: the set time has a spoken label. Check VoiceOver and TalkBack on devices.
 - Code: `app/lib/domain/guide.dart` (rules), `app/lib/features/workout/guide_controller.dart`, `voice.dart`. Tests: `app/test/guide_test.dart`.

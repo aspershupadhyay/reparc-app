@@ -1,0 +1,335 @@
+{
+  "note": "What each bundled clip was made from. generate.py makes a clip again when its text, model, or settings in phrases.json differ from this record.",
+  "clips": {
+    "charlie/set_1": {
+      "text": "Set one. Go!",
+      "model": "eleven_multilingual_v2",
+      "settings": {}
+    },
+    "charlie/set_2": {
+      "text": "Set two. Go!",
+      "model": "eleven_multilingual_v2",
+      "settings": {}
+    },
+    "charlie/set_3": {
+      "text": "Set three. Go!",
+      "model": "eleven_multilingual_v2",
+      "settings": {}
+    },
+    "charlie/set_4": {
+      "text": "Set four. Go!",
+      "model": "eleven_multilingual_v2",
+      "settings": {}
+    },
+    "charlie/set_5": {
+      "text": "Set five. Go!",
+      "model": "eleven_multilingual_v2",
+      "settings": {}
+    },
+    "charlie/set_6": {
+      "text": "Set six. Go!",
+      "model": "eleven_multilingual_v2",
+      "settings": {}
+    },
+    "charlie/set_7": {
+      "text": "Set seven. Go!",
+      "model": "eleven_multilingual_v2",
+      "settings": {}
+    },
+    "charlie/set_8": {
+      "text": "Set eight. Go!",
+      "model": "eleven_multilingual_v2",
+      "settings": {}
+    },
+    "charlie/set_9": {
+      "text": "Set nine. Go!",
+      "model": "eleven_multilingual_v2",
+      "settings": {}
+    },
+    "charlie/set_10": {
+      "text": "Set ten. Go!",
+      "model": "eleven_multilingual_v2",
+      "settings": {}
+    },
+    "charlie/last_set": {
+      "text": "Last set. Make it count!",
+      "model": "eleven_multilingual_v2",
+      "settings": {}
+    },
+    "charlie/go": {
+      "text": "Go!",
+      "model": "eleven_multilingual_v2",
+      "settings": {}
+    },
+    "charlie/warmup": {
+      "text": "Warm-up. Nice and easy.",
+      "model": "eleven_multilingual_v2",
+      "settings": {}
+    },
+    "charlie/halfway": {
+      "text": "Halfway.",
+      "model": "eleven_multilingual_v2",
+      "settings": {}
+    },
+    "charlie/time": {
+      "text": "Time! Set done.",
+      "model": "eleven_multilingual_v2",
+      "settings": {}
+    },
+    "charlie/rest": {
+      "text": "Rest started.",
+      "model": "eleven_multilingual_v2",
+      "settings": {}
+    },
+    "charlie/rest_30": {
+      "text": "Rest. Thirty seconds.",
+      "model": "eleven_multilingual_v2",
+      "settings": {}
+    },
+    "charlie/rest_45": {
+      "text": "Rest. Forty-five seconds.",
+      "model": "eleven_multilingual_v2",
+      "settings": {}
+    },
+    "charlie/rest_60": {
+      "text": "Rest. One minute.",
+      "model": "eleven_multilingual_v2",
+      "settings": {}
+    },
+    "charlie/rest_90": {
+      "text": "Rest. Ninety seconds.",
+      "model": "eleven_multilingual_v2",
+      "settings": {}
+    },
+    "charlie/rest_120": {
+      "text": "Rest. Two minutes.",
+      "model": "eleven_multilingual_v2",
+      "settings": {}
+    },
+    "charlie/rest_150": {
+      "text": "Rest. Two and a half minutes.",
+      "model": "eleven_multilingual_v2",
+      "settings": {}
+    },
+    "charlie/rest_180": {
+      "text": "Rest. Three minutes.",
+      "model": "eleven_multilingual_v2",
+      "settings": {}
+    },
+    "charlie/rest_240": {
+      "text": "Rest. Four minutes.",
+      "model": "eleven_multilingual_v2",
+      "settings": {}
+    },
+    "charlie/ten_left": {
+      "text": "Ten seconds.",
+      "model": "eleven_multilingual_v2",
+      "settings": {}
+    },
+    "charlie/rest_over": {
+      "text": "Rest over. Get ready.",
+      "model": "eleven_multilingual_v2",
+      "settings": {}
+    },
+    "charlie/next_exercise": {
+      "text": "Next exercise.",
+      "model": "eleven_multilingual_v2",
+      "settings": {}
+    },
+    "charlie/paused": {
+      "text": "Paused.",
+      "model": "eleven_multilingual_v2",
+      "settings": {}
+    },
+    "charlie/resumed": {
+      "text": "Back to it.",
+      "model": "eleven_multilingual_v2",
+      "settings": {}
+    },
+    "charlie/done": {
+      "text": "Workout complete. Great work!",
+      "model": "eleven_multilingual_v2",
+      "settings": {}
+    },
+    "charlie/three": {
+      "text": "(cut from \"Three. Two. One.\": Three.)",
+      "model": "eleven_multilingual_v2",
+      "settings": {}
+    },
+    "charlie/two": {
+      "text": "(cut from \"Three. Two. One.\": Two.)",
+      "model": "eleven_multilingual_v2",
+      "settings": {}
+    },
+    "charlie/one": {
+      "text": "(cut from \"Three. Two. One.\": One.)",
+      "model": "eleven_multilingual_v2",
+      "settings": {}
+    },
+    "matilda/set_1": {
+      "text": "Set one. Go!",
+      "model": "eleven_multilingual_v2",
+      "settings": {}
+    },
+    "matilda/set_2": {
+      "text": "Set two. Go!",
+      "model": "eleven_multilingual_v2",
+      "settings": {}
+    },
+    "matilda/set_3": {
+      "text": "Set three. Go!",
+      "model": "eleven_multilingual_v2",
+      "settings": {}
+    },
+    "matilda/set_4": {
+      "text": "Set four. Go!",
+      "model": "eleven_multilingual_v2",
+      "settings": {}
+    },
+    "matilda/set_5": {
+      "text": "Set five. Go!",
+      "model": "eleven_multilingual_v2",
+      "settings": {}
+    },
+    "matilda/set_6": {
+      "text": "Set six. Go!",
+      "model": "eleven_multilingual_v2",
+      "settings": {}
+    },
+    "matilda/set_7": {
+      "text": "Set seven. Go!",
+      "model": "eleven_multilingual_v2",
+      "settings": {}
+    },
+    "matilda/set_8": {
+      "text": "Set eight. Go!",
+      "model": "eleven_multilingual_v2",
+      "settings": {}
+    },
+    "matilda/set_9": {
+      "text": "Set nine. Go!",
+      "model": "eleven_multilingual_v2",
+      "settings": {}
+    },
+    "matilda/set_10": {
+      "text": "Set ten. Go!",
+      "model": "eleven_multilingual_v2",
+      "settings": {}
+    },
+    "matilda/last_set": {
+      "text": "Last set. Make it count!",
+      "model": "eleven_multilingual_v2",
+      "settings": {}
+    },
+    "matilda/go": {
+      "text": "Go!",
+      "model": "eleven_multilingual_v2",
+      "settings": {}
+    },
+    "matilda/warmup": {
+      "text": "Warm-up. Nice and easy.",
+      "model": "eleven_multilingual_v2",
+      "settings": {}
+    },
+    "matilda/halfway": {
+      "text": "Halfway.",
+      "model": "eleven_multilingual_v2",
+      "settings": {}
+    },
+    "matilda/time": {
+      "text": "Time! Set done.",
+      "model": "eleven_multilingual_v2",
+      "settings": {}
+    },
+    "matilda/rest": {
+      "text": "Rest started.",
+      "model": "eleven_multilingual_v2",
+      "settings": {}
+    },
+    "matilda/rest_30": {
+      "text": "Rest. Thirty seconds.",
+      "model": "eleven_multilingual_v2",
+      "settings": {}
+    },
+    "matilda/rest_45": {
+      "text": "Rest. Forty-five seconds.",
+      "model": "eleven_multilingual_v2",
+      "settings": {}
+    },
+    "matilda/rest_60": {
+      "text": "Rest. One minute.",
+      "model": "eleven_multilingual_v2",
+      "settings": {}
+    },
+    "matilda/rest_90": {
+      "text": "Rest. Ninety seconds.",
+      "model": "eleven_multilingual_v2",
+      "settings": {}
+    },
+    "matilda/rest_120": {
+      "text": "Rest. Two minutes.",
+      "model": "eleven_multilingual_v2",
+      "settings": {}
+    },
+    "matilda/rest_150": {
+      "text": "Rest. Two and a half minutes.",
+      "model": "eleven_multilingual_v2",
+      "settings": {}
+    },
+    "matilda/rest_180": {
+      "text": "Rest. Three minutes.",
+      "model": "eleven_multilingual_v2",
+      "settings": {}
+    },
+    "matilda/rest_240": {
+      "text": "Rest. Four minutes.",
+      "model": "eleven_multilingual_v2",
+      "settings": {}
+    },
+    "matilda/ten_left": {
+      "text": "Ten seconds.",
+      "model": "eleven_multilingual_v2",
+      "settings": {}
+    },
+    "matilda/rest_over": {
+      "text": "Rest over. Get ready.",
+      "model": "eleven_multilingual_v2",
+      "settings": {}
+    },
+    "matilda/next_exercise": {
+      "text": "Next exercise.",
+      "model": "eleven_multilingual_v2",
+      "settings": {}
+    },
+    "matilda/paused": {
+      "text": "Paused.",
+      "model": "eleven_multilingual_v2",
+      "settings": {}
+    },
+    "matilda/resumed": {
+      "text": "Back to it.",
+      "model": "eleven_multilingual_v2",
+      "settings": {}
+    },
+    "matilda/done": {
+      "text": "Workout complete. Great work!",
+      "model": "eleven_multilingual_v2",
+      "settings": {}
+    },
+    "matilda/three": {
+      "text": "(cut from \"Three. Two. One.\": Three.)",
+      "model": "eleven_multilingual_v2",
+      "settings": {}
+    },
+    "matilda/two": {
+      "text": "(cut from \"Three. Two. One.\": Two.)",
+      "model": "eleven_multilingual_v2",
+      "settings": {}
+    },
+    "matilda/one": {
+      "text": "(cut from \"Three. Two. One.\": One.)",
+      "model": "eleven_multilingual_v2",
+      "settings": {}
+    }
+  }
+}

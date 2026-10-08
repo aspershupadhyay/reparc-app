@@ -116,7 +116,7 @@ class MeScreen extends ConsumerWidget {
               SwitchListTile(
                 secondary: lead(LucideIcons.audioLines, p.green, p.greenSoft),
                 title: const Text('Guided workout'),
-                subtitle: const Text('Set and rest timers run on their own'),
+                subtitle: const Text('Set and rest timers with voice cues. The screen stays on in a workout'),
                 value: s.guideOn,
                 onChanged: repo.setGuideOn,
               ),
@@ -139,24 +139,32 @@ class MeScreen extends ConsumerWidget {
                   ),
                 ),
                 SwitchListTile(
+                  secondary: lead(LucideIcons.play, p.orange, p.orangeSoft),
+                  title: const Text('Start next set on its own'),
+                  subtitle: const Text('After the rest, with a 3-2-1 countdown. Off: you tap Start set'),
+                  value: s.autoStartSets,
+                  onChanged: repo.setAutoStartSets,
+                ),
+                SwitchListTile(
                   secondary: lead(LucideIcons.timerReset, p.orange, p.orangeSoft),
-                  title: const Text('Finish sets on time'),
-                  subtitle: const Text('When the set time ends, the set is done and the rest starts'),
-                  value: s.autoFinishSets,
-                  onChanged: repo.setAutoFinishSets,
+                  title: const Text('Finish rep sets on time'),
+                  subtitle: const Text('Off: you tap Set done. Timed sets always end on time'),
+                  value: s.finishRepSets,
+                  onChanged: repo.setFinishRepSets,
                 ),
-                ListTile(
-                  leading: lead(LucideIcons.hourglass, p.coral, p.coralSoft),
-                  title: const Text('Set time'),
-                  subtitle: const Text('Auto: about 3 s a rep'),
-                  trailing: dropdown<int?>(s.setSec, const [
-                    (null, 'Auto'),
-                    (30, '30 s'),
-                    (45, '45 s'),
-                    (60, '60 s'),
-                    (90, '90 s'),
-                  ], repo.setSetSec),
-                ),
+                if (s.finishRepSets)
+                  ListTile(
+                    leading: lead(LucideIcons.hourglass, p.coral, p.coralSoft),
+                    title: const Text('Set time'),
+                    subtitle: const Text('Auto: about 3 s a rep'),
+                    trailing: dropdown<int?>(s.setSec, const [
+                      (null, 'Auto'),
+                      (30, '30 s'),
+                      (45, '45 s'),
+                      (60, '60 s'),
+                      (90, '90 s'),
+                    ], repo.setSetSec),
+                  ),
               ],
               ListTile(
                 leading: lead(LucideIcons.timer, p.orange, p.orangeSoft),

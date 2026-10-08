@@ -43,7 +43,9 @@ abstract final class Clips {
   static const halfway = 'halfway';
   static const time = 'time';
   static const tenLeft = 'ten_left';
-  static const countdown = 'countdown';
+  static const three = 'three';
+  static const two = 'two';
+  static const one = 'one';
   static const restOver = 'rest_over';
   static const nextExercise = 'next_exercise';
   static const paused = 'paused';
@@ -69,7 +71,9 @@ abstract final class Clips {
     'rest',
     for (final r in _rests) 'rest_$r',
     tenLeft,
-    countdown,
+    three,
+    two,
+    one,
     restOver,
     nextExercise,
     paused,
@@ -79,16 +83,35 @@ abstract final class Clips {
 }
 
 /// Cues to say while a set runs, for the step from [before] to [now]
-/// seconds into a set of [target] seconds.
+/// seconds into a set of [target] seconds. A [target] of 0 means the set
+/// has no set time: the user ends it, so nothing is said.
 List<String> setCues(int before, int now, int target) => [
   if (target >= 30 && before < target ~/ 2 && now >= target ~/ 2 && now < target) Clips.halfway,
-  if (before < target && now >= target) Clips.time,
+  if (target > 0 && before < target && now >= target) Clips.time,
 ];
 
 /// Cues to say while a rest runs, for the step from [before] to [now]
-/// seconds into a rest of [target] seconds. The next set starts at
-/// [target]; its own cue says "Set two. Go!".
-List<String> restCues(int before, int now, int target) => [
-  if (target >= 20 && before < target - 10 && now >= target - 10 && now < target - 3) Clips.tenLeft,
-  if (target >= 8 && before < target - 3 && now >= target - 3 && now < target) Clips.countdown,
-];
+/// seconds into a rest of [target] seconds.
+///
+/// With [countdown], the last three seconds are counted one word a second
+/// ("Three", "Two", "One") and the next set starts at [target]; its own cue
+/// says "Set two. Go!". Without it, the rest ends with "Rest over. Get
+/// ready." and the user starts the set. When a late tick crosses more than
+/// one countdown second, only the latest word is said.
+List<String> restCues(int before, int now, int target, {required bool countdown}) {
+  final out = <String>[
+    if (target >= 20 && before < target - 10 && now >= target - 10 && now < target - 3) Clips.tenLeft,
+  ];
+  if (countdown) {
+    for (final (left, clip) in const [(1, Clips.one), (2, Clips.two), (3, Clips.three)]) {
+      final at = target - left;
+      if (target >= 8 && before < at && now >= at && now < target) {
+        out.add(clip);
+        break;
+      }
+    }
+  } else if (before < target && now >= target) {
+    out.add(Clips.restOver);
+  }
+  return out;
+}

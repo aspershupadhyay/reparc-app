@@ -414,6 +414,10 @@ class WorkoutRepository {
         status: const Value(SessionStatus.active),
         pausedAt: const Value(null),
         pausedMs: Value(s.pausedMs + extra),
+        // A pause also pauses the rest: the rest goes on from where it was.
+        restStartedAt: s.restStartedAt == null
+            ? const Value.absent()
+            : Value(s.restStartedAt!.add(Duration(milliseconds: extra))),
       ),
     );
   }

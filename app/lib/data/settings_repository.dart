@@ -24,7 +24,8 @@ class AppSettings {
     this.updatesDismissed,
     this.guideOn = true,
     this.voice = 'charlie',
-    this.autoFinishSets = true,
+    this.finishRepSets = false,
+    this.autoStartSets = false,
     this.setSec,
   });
 
@@ -35,11 +36,17 @@ class AppSettings {
   /// Voice for spoken cues: 'charlie', 'matilda', or 'off'.
   final String voice;
 
-  /// End a set when its set timer runs out, then start the rest.
-  final bool autoFinishSets;
+  /// End a rep set when its set time runs out, then start the rest. Off by
+  /// default: the user taps Set done. A timed set always ends on its time.
+  final bool finishRepSets;
 
-  /// Set time the user chose for every set. Null means an estimate from the
-  /// reps (about 3 s a rep, 20–90 s).
+  /// Start the next set on its own when the rest ends, after a 3-2-1
+  /// countdown. Off by default: the voice says the rest is over and the
+  /// user starts the set.
+  final bool autoStartSets;
+
+  /// Set time for rep sets when [finishRepSets] is on. Null means an
+  /// estimate from the reps (about 3 s a rep, 20–90 s).
   final int? setSec;
 
   final String loadUnit;
@@ -127,7 +134,8 @@ class AppSettings {
     updatesDismissed: m['updates.dismissed'],
     guideOn: m['guide.on'] != 'false',
     voice: const ['charlie', 'matilda', 'off'].contains(m['guide.voice']) ? m['guide.voice']! : 'charlie',
-    autoFinishSets: m['guide.autoFinish'] != 'false',
+    finishRepSets: m['guide.finishReps'] == 'true',
+    autoStartSets: m['guide.autoStart'] == 'true',
     setSec: int.tryParse(m['guide.setSec'] ?? ''),
   );
 }
@@ -192,6 +200,7 @@ class SettingsRepository {
   Future<void> setIntroSeen() => set('introSeen', 'true');
   Future<void> setGuideOn(bool v) => set('guide.on', v ? null : 'false');
   Future<void> setVoice(String v) => set('guide.voice', v);
-  Future<void> setAutoFinishSets(bool v) => set('guide.autoFinish', v ? null : 'false');
+  Future<void> setFinishRepSets(bool v) => set('guide.finishReps', v ? 'true' : null);
+  Future<void> setAutoStartSets(bool v) => set('guide.autoStart', v ? 'true' : null);
   Future<void> setSetSec(int? sec) => set('guide.setSec', sec?.toString());
 }

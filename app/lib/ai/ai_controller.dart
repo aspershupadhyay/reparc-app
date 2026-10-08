@@ -4,9 +4,9 @@ import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
-import 'package:wakelock_plus/wakelock_plus.dart';
 
 import '../core/clock.dart';
+import '../core/screen_awake.dart';
 import '../data/providers.dart';
 import '../features/exercises/library/library.dart';
 import '../health/health_service.dart';
@@ -211,7 +211,7 @@ class AiController extends Notifier<AiState> {
   }
 
   void _updateWakelock() {
-    unawaited(WakelockPlus.toggle(enable: state.anyOn).catchError((_) {}));
+    ScreenAwake.hold('ai', state.anyOn);
   }
 
   // ------------------------------------------------------------------ Wi-Fi

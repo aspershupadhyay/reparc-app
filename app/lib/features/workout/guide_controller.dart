@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/clock.dart';
+import '../../core/screen_awake.dart';
 import '../../data/database.dart';
 import '../../data/models.dart';
 import '../../data/providers.dart';
@@ -17,7 +18,14 @@ enum GuidePhase { idle, set, rest }
 /// What the guided workout is doing now. Set timing lives in memory; rest
 /// lives on the session row, so it survives a restart (handbook 4.13).
 class GuideState {
-  const GuideState({this.phase = GuidePhase.idle, this.setId, this.startedAt, this.targetSec = 0, this.label = ''});
+  const GuideState({
+    this.phase = GuidePhase.idle,
+    this.setId,
+    this.startedAt,
+    this.targetSec = 0,
+    this.label = '',
+    this.pausedSec,
+  });
 
   final GuidePhase phase;
 
@@ -25,18 +33,26 @@ class GuideState {
   final String? setId;
   final DateTime? startedAt;
 
-  /// Set time the voice counts to.
+  /// Set time the set ends on. 0 means the user ends the set.
   final int targetSec;
 
   /// "Bench press · set 2 of 4".
   final String label;
 
-  GuideState copyWith({GuidePhase? phase, int? targetSec}) => GuideState(
-    phase: phase ?? this.phase,
+  /// Set time when the workout was paused, frozen until it goes on.
+  final int? pausedSec;
+
+  /// Seconds into the set being done now.
+  int elapsedAt(DateTime now) =>
+      pausedSec ?? (startedAt == null ? 0 : now.difference(startedAt!).inSeconds.clamp(0, 86400));
+
+  GuideState copyWith({int? targetSec, DateTime? startedAt, int? Function()? pausedSec}) => GuideState(
+    phase: phase,
     setId: setId,
-    startedAt: startedAt,
+    startedAt: startedAt ?? this.startedAt,
     targetSec: targetSec ?? this.targetSec,
     label: label,
+    pausedSec: pausedSec == null ? this.pausedSec : pausedSec(),
   );
 }
 
@@ -52,29 +68,54 @@ class GuideState {
   return null;
 }
 
-/// Runs set and rest timers on their own, saves measured set and rest
-/// times, and speaks cues. The user can turn it off in Me → Training.
+/// True for a set that is done for a time, such as a plank, not for reps.
+bool isTimedSet(SetEntry s) => s.setType == SetType.timed || (s.durationSec != null && s.reps == null);
+
+/// True when every set of the exercise is a warm-up: a warm-up move, not
+/// the lighter ramp-up sets of a main lift.
+bool isWarmupMove(SessionExerciseView e) => e.sets.every((s) => s.setType == SetType.warmup);
+
+/// "Bench press · set 2 of 4", or "Bench press · warm-up".
+String describeSet(SessionExerciseView e, SetEntry s) {
+  if (s.setType == SetType.warmup) return '${e.exercise.name} · warm-up';
+  final working = e.sets.where((x) => x.setType != SetType.warmup).toList();
+  return '${e.exercise.name} · set ${working.indexWhere((x) => x.id == s.id) + 1} of ${working.length}';
+}
+
+/// Runs set and rest timers, saves measured set and rest times, and speaks
+/// cues. The user starts each set and ends each rep set; the guide only
+/// does that on its own when the user turns it on in Me → Training.
 class GuideController extends Notifier<GuideState> {
   Timer? _timer;
   bool _busy = false;
   int _lastSet = 0;
   int _lastRest = -1;
-  int? _pausedAt;
-  bool _wasPaused = false;
+  bool? _wasPaused;
+
+  /// "Next exercise." was said during this rest.
+  bool _toldNext = false;
 
   WorkoutRepository get _repo => ref.read(workoutRepoProvider);
   DateTime get _now => ref.read(clockProvider)().toUtc();
 
   @override
   GuideState build() {
-    ref.onDispose(() => _timer?.cancel());
+    ref.onDispose(() {
+      _timer?.cancel();
+      ScreenAwake.hold('workout', false);
+    });
     return const GuideState();
   }
 
   /// Starts the one-second ticker. Called by the app shell.
-  void attach() => _timer ??= Timer.periodic(const Duration(seconds: 1), (_) => unawaited(tick()));
+  void attach() {
+    if (_timer != null) return;
+    ref.read(voicePlayerProvider).preload(ref.read(currentSettingsProvider).voice);
+    _timer = Timer.periodic(const Duration(seconds: 1), (_) => unawaited(tick()));
+  }
 
-  void _say(String clip) => ref.read(voicePlayerProvider).say(ref.read(currentSettingsProvider).voice, clip);
+  VoicePlayer get _voice => ref.read(voicePlayerProvider);
+  void _say(String clip, {bool now = false}) => _voice.say(ref.read(currentSettingsProvider).voice, clip, now: now);
 
   /// Starts the next set that is not done.
   Future<void> startSet() async {
@@ -90,46 +131,55 @@ class GuideController extends Notifier<GuideState> {
     await _saveRestTaken(d);
     final (e, s) = next;
     final settings = ref.read(currentSettingsProvider);
-    final timed = s.setType == SetType.timed || (s.durationSec != null && s.reps == null);
-    final reps = s.reps ?? targetRepsFromNote(e.item.note) ?? _previousReps(e, s);
-    final target = timed ? (s.durationSec ?? 40) : (settings.setSec ?? estimateSetSec(reps));
+    final target = switch (isTimedSet(s)) {
+      true => s.durationSec ?? 40,
+      false when settings.finishRepSets =>
+        settings.setSec ?? estimateSetSec(s.reps ?? targetRepsFromNote(e.item.note) ?? _previousReps(e, s)),
+      false => 0,
+    };
     final working = e.sets.where((x) => x.setType != SetType.warmup).toList();
     final n = working.indexWhere((x) => x.id == s.id) + 1;
     final last = _lastDone(d);
-    if (last != null && last.$1.item.id != e.item.id) _say(Clips.nextExercise);
+    // The first cue cuts off any cue from the rest, such as "Ten seconds".
+    var first = true;
+    if (!_toldNext && last != null && last.$1.item.id != e.item.id) {
+      _say(Clips.nextExercise, now: true);
+      first = false;
+    }
     _say(switch (s.setType) {
-      SetType.warmup => Clips.warmup,
+      SetType.warmup => isWarmupMove(e) ? Clips.warmup : Clips.go,
       _ when n == working.length && working.length > 1 => Clips.lastSet,
       _ => Clips.set(n),
-    });
+    }, now: first);
+    _toldNext = false;
     _lastSet = 0;
-    _pausedAt = null;
+    _lastRest = -1;
     state = GuideState(
       phase: GuidePhase.set,
       setId: s.id,
       startedAt: _now,
       targetSec: target,
-      label: s.setType == SetType.warmup
-          ? '${e.exercise.name} · warm-up'
-          : '${e.exercise.name} · set $n of ${working.length}',
+      label: describeSet(e, s),
+      pausedSec: live.status == SessionStatus.paused ? 0 : null,
     );
   }
 
   /// Ends the set being done now: saves the measured time, marks it done,
-  /// and starts the rest.
-  Future<void> finishSet() async {
+  /// and starts the rest. [onTime] is true when the set time ran out.
+  Future<void> finishSet({bool onTime = false}) async {
     final id = state.setId;
     if (state.phase != GuidePhase.set || id == null) return;
-    final elapsed = _setElapsed();
+    final elapsed = state.elapsedAt(_now);
     final d = await _loadLive();
     final set = d?.exercises.expand((e) => e.sets).where((s) => s.id == id).firstOrNull;
     if (d == null || set == null) {
       state = const GuideState();
       return;
     }
-    final timed = set.setType == SetType.timed || (set.durationSec != null && set.reps == null);
-    // A measured time is a real value. A time the user typed is kept.
-    if (timed || set.durationSec == null) {
+    // Save only a measured time. A timed set that ran out was held for its
+    // time. A rep set that ran out was not measured: its end is a guess.
+    // A time the user typed on a rep set is kept.
+    if (isTimedSet(set) || (!onTime && set.durationSec == null)) {
       await _repo.updateSet(id, SetEntriesCompanion(durationSec: Value(elapsed)));
     }
     await _repo.setCompleted(id, true);
@@ -150,28 +200,66 @@ class GuideController extends Notifier<GuideState> {
 
   /// Gives the set being done more time.
   void addTime(int seconds) {
-    if (state.phase == GuidePhase.set) state = state.copyWith(targetSec: state.targetSec + seconds);
+    if (state.phase == GuidePhase.set && state.targetSec > 0) {
+      state = state.copyWith(targetSec: state.targetSec + seconds);
+    }
   }
 
-  /// Stops guiding until the user starts a set again.
+  /// Gives the rest more time. The cues follow the new end.
+  Future<void> addRest(int seconds) async {
+    final live = await _repo.liveSession();
+    if (live?.restStartedAt == null) return;
+    await _repo.setRestTarget(live!.id, (live.restTargetSec ?? 0) + seconds);
+  }
+
+  /// Stops the set timer or the rest. The guide waits until the user starts
+  /// a set again.
   Future<void> stop() async {
+    _voice.silence();
     final live = await _repo.liveSession();
     if (live?.restStartedAt != null) await _repo.stopRest(live!.id);
     state = const GuideState();
   }
 
+  /// Pauses or continues the workout, its set timer, and its rest.
+  Future<void> setPaused(String sessionId, bool paused) async {
+    paused ? await _repo.pause(sessionId) : await _repo.resume(sessionId);
+    _pauseChanged(paused);
+  }
+
+  /// Says the workout is saved. Called when the user finishes it.
+  void workoutSaved() => _say(Clips.done, now: true);
+
+  void _pauseChanged(bool paused) {
+    final was = _wasPaused;
+    _wasPaused = paused;
+    // The first look only learns the state, so a restart says nothing.
+    if (was == null || was == paused) return;
+    if (ref.read(currentSettingsProvider).guideOn) _say(paused ? Clips.paused : Clips.resumed, now: true);
+    if (state.phase != GuidePhase.set) return;
+    if (paused && state.pausedSec == null) {
+      state = state.copyWith(pausedSec: () => state.elapsedAt(_now));
+    } else if (!paused && state.pausedSec != null) {
+      state = state.copyWith(
+        startedAt: _now.subtract(Duration(seconds: state.pausedSec!)),
+        pausedSec: () => null,
+      );
+    }
+  }
+
   Future<void> _afterSet(String sessionId, SetEntry done) async {
     final d = await _repo.loadSession(sessionId);
     if (d == null) return;
-    final next = nextSet(d);
-    if (next == null) {
-      _say(Clips.done);
+    _toldNext = false;
+    if (nextSet(d) == null) {
+      // The workout is not saved yet. "Workout complete" plays when the user
+      // finishes it.
       state = const GuideState();
       return;
     }
     final view = d.exercises.firstWhere((e) => e.sets.any((s) => s.id == done.id));
     final rest = switch (done.setType) {
-      SetType.warmup when view.sets.every((s) => s.setType == SetType.warmup) => warmupMoveRestSec,
+      SetType.warmup when isWarmupMove(view) => warmupMoveRestSec,
       SetType.warmup => rampUpRestSec,
       _ => restFromNote(view.item.note) ?? ref.read(currentSettingsProvider).restAfterSetSec ?? defaultRestSec,
     };
@@ -188,60 +276,70 @@ class GuideController extends Notifier<GuideState> {
     try {
       final settings = ref.read(currentSettingsProvider);
       final live = await _repo.liveSession();
+      // The screen stays on while the guide runs a live workout, so cues
+      // play on time. It goes off when the workout ends.
+      ScreenAwake.hold('workout', live != null && settings.guideOn);
       if (live == null) {
+        _wasPaused = null;
         if (state.phase != GuidePhase.idle) state = const GuideState();
         return;
       }
       if (!settings.guideOn) return;
       final paused = live.status == SessionStatus.paused;
-      if (paused != _wasPaused) {
-        _wasPaused = paused;
-        _say(paused ? Clips.paused : Clips.resumed);
-        if (state.phase == GuidePhase.set) {
-          if (paused) {
-            _pausedAt = _setElapsed();
-          } else if (_pausedAt != null) {
-            state = GuideState(
-              phase: GuidePhase.set,
-              setId: state.setId,
-              startedAt: _now.subtract(Duration(seconds: _pausedAt!)),
-              targetSec: state.targetSec,
-              label: state.label,
-            );
-            _pausedAt = null;
-          }
-        }
-      }
+      _pauseChanged(paused);
       if (paused) return;
       if (state.phase == GuidePhase.set) {
-        final t = _setElapsed();
+        final t = state.elapsedAt(_now);
         for (final c in setCues(_lastSet, t, state.targetSec)) {
           _say(c);
         }
         _lastSet = t;
-        if (t >= state.targetSec && settings.autoFinishSets) await finishSet();
+        // Only a set with a set time ends on its own (a timed set, or a rep
+        // set with Finish rep sets on time on).
+        if (state.targetSec > 0 && t >= state.targetSec) await finishSet(onTime: true);
         return;
       }
       if (live.restStartedAt != null && live.restTargetSec != null) {
-        final t = _now.difference(live.restStartedAt!).inSeconds;
-        if (_lastRest < 0) _lastRest = t;
-        for (final c in restCues(_lastRest, t, live.restTargetSec!)) {
-          _say(c);
-        }
-        _lastRest = t;
-        if (state.phase != GuidePhase.rest) state = const GuideState(phase: GuidePhase.rest);
-        if (t >= live.restTargetSec!) {
-          _lastRest = -1;
-          await startSet();
-        }
+        await _restStep(live, settings.autoStartSets);
       }
     } finally {
       _busy = false;
     }
   }
 
-  int _setElapsed() =>
-      _pausedAt ?? (state.startedAt == null ? 0 : _now.difference(state.startedAt!).inSeconds.clamp(0, 86400));
+  Future<void> _restStep(WorkoutSession live, bool autoStart) async {
+    final target = live.restTargetSec!;
+    final t = _now.difference(live.restStartedAt!).inSeconds;
+    // After a restart, cues already passed are not said again.
+    if (_lastRest < 0) _lastRest = t;
+    final before = _lastRest;
+    final cues = restCues(before, t, target, countdown: autoStart);
+    _lastRest = t;
+    if (state.phase != GuidePhase.rest) state = const GuideState(phase: GuidePhase.rest);
+    for (final c in cues) {
+      _say(c);
+      if (c == Clips.tenLeft) await _tellNextExercise(live.id);
+      if (c == Clips.three || c == Clips.two || c == Clips.one) unawaited(HapticFeedback.selectionClick());
+      if (c == Clips.restOver) unawaited(HapticFeedback.heavyImpact());
+    }
+    // Start on its own only as the rest ends. A rest that ended long ago,
+    // such as before a restart, waits for the user.
+    if (autoStart && before < target && t >= target && t - target <= 3) {
+      unawaited(HapticFeedback.heavyImpact());
+      await startSet();
+    }
+  }
+
+  /// Says "Next exercise." before the rest ends when the next set is on
+  /// another exercise, so the set cue itself plays at the start.
+  Future<void> _tellNextExercise(String sessionId) async {
+    final d = await _repo.loadSession(sessionId);
+    final next = d == null ? null : nextSet(d);
+    final last = d == null ? null : _lastDone(d);
+    if (next == null || last == null || last.$1.item.id == next.$1.item.id) return;
+    _say(Clips.nextExercise);
+    _toldNext = true;
+  }
 
   Future<SessionDetail?> _loadLive() async {
     final live = await _repo.liveSession();

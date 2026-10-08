@@ -379,5 +379,7 @@ Keep major choices here. Update the related chapter when a decision changes.
 
 **Why bundled clips:** A key in the app can be read by anyone who has the app file. Bundled clips also work offline and send no workout data out (D-003, D-009).
 
+**Update (2026-10-08, owner request after a review):** The user starts each set and ends each rep set. The guide no longer ends a rep set on a guessed time or starts the next set on its own, unless the user turns on **Finish rep sets on time** or **Start next set on its own** in Me → Training (both off by default). A guessed set time is never saved. A pause also pauses the rest. The screen stays on during a guided workout. See handbook 4.13.
+
 **License (To confirm):** The clips were made on the owner's free ElevenLabs plan, which allows non-commercial use with credit to ElevenLabs. The credit is in the app's licenses page (`app/assets/licenses/elevenlabs-voice.txt`). Before a paid or store release, upgrade the plan and make the clips again, or record new ones.
 

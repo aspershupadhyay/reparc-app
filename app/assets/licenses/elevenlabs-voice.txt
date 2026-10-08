@@ -8,3 +8,7 @@ account (free plan). Voice by ElevenLabs.
 The free plan allows non-commercial use with this credit. Commercial use,
 including paid store releases, needs a paid ElevenLabs plan or new
 recordings (Reparc handbook D-031, To confirm).
+
+On 2026-10-08 the clips were trimmed and set to one loudness with
+app/tool/voice/postprocess.py, and the "Three. Two. One." clip was cut
+into three clips. The words and voices are unchanged.

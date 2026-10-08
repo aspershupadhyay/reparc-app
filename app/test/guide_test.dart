@@ -9,6 +9,7 @@ import 'package:reparc/data/providers.dart';
 import 'package:reparc/data/workout_repository.dart';
 import 'package:reparc/domain/guide.dart';
 import 'package:reparc/domain/roadmap.dart';
+import 'package:reparc/domain/session_time.dart';
 import 'package:reparc/features/workout/guide_controller.dart';
 import 'package:reparc/features/workout/voice.dart';
 
@@ -16,10 +17,19 @@ import 'helpers.dart';
 
 class FakeVoice implements VoicePlayer {
   final said = <String>[];
+  var silenced = 0;
   @override
-  void say(String voice, String clip) {
-    if (voice != 'off') said.add(clip);
+  void say(String voice, String clip, {bool now = false}) {
+    if (voice == 'off') return;
+    if (now) silence();
+    said.add(clip);
   }
+
+  @override
+  void silence() => silenced++;
+
+  @override
+  void preload(String voice) {}
 
   @override
   void dispose() {}
@@ -50,9 +60,17 @@ void main() {
       expect(setCues(19, 20, 40), [Clips.halfway]);
       expect(setCues(39, 41, 40), [Clips.time]);
       expect(setCues(41, 42, 40), isEmpty);
-      expect(restCues(49, 50, 60), [Clips.tenLeft]);
-      expect(restCues(56, 57, 60), [Clips.countdown]);
-      expect(restCues(10, 11, 15), isEmpty, reason: 'No ten-second cue in a short rest');
+      expect(setCues(0, 600, 0), isEmpty, reason: 'A set with no set time says nothing');
+      expect(restCues(49, 50, 60, countdown: true), [Clips.tenLeft]);
+      expect(restCues(56, 57, 60, countdown: true), [Clips.three]);
+      expect(restCues(57, 58, 60, countdown: true), [Clips.two]);
+      expect(restCues(58, 59, 60, countdown: true), [Clips.one]);
+      expect(restCues(56, 59, 60, countdown: true), [Clips.one], reason: 'A late tick says only the latest word');
+      expect(restCues(59, 60, 60, countdown: true), isEmpty, reason: 'The set cue follows');
+      expect(restCues(56, 59, 60, countdown: false), isEmpty);
+      expect(restCues(59, 60, 60, countdown: false), [Clips.restOver]);
+      expect(restCues(60, 61, 60, countdown: false), isEmpty);
+      expect(restCues(10, 11, 15, countdown: true), isEmpty, reason: 'No ten-second cue in a short rest');
       expect(Clips.rest(90), 'rest_90');
       expect(Clips.rest(75), 'rest');
       expect(Clips.set(11), Clips.go);
@@ -91,22 +109,23 @@ void main() {
       await db.close();
     });
 
-    Future<String> startDay() async {
+    Future<String> startDay({int exercises = 1}) async {
       final plan = ProgramPlan(
         days: [
           PlanDay(
             name: 'Push',
             focus: '',
             items: [
-              PlanItem(
-                kind: ItemKind.main,
-                exerciseId: 'bench-press',
-                name: 'Bench press',
-                sets: 2,
-                repsLow: 8,
-                repsHigh: 8,
-                restSec: 60,
-              ),
+              for (var i = 0; i < exercises; i++)
+                PlanItem(
+                  kind: ItemKind.main,
+                  exerciseId: 'bench-press',
+                  name: i == 0 ? 'Bench press' : 'Incline press',
+                  sets: exercises == 1 ? 2 : 1,
+                  repsLow: 8,
+                  repsHigh: 8,
+                  restSec: 60,
+                ),
             ],
           ),
         ],
@@ -115,59 +134,147 @@ void main() {
       return WorkoutRepository(db, clock.call).startProgramDay(programId: id, dayIndex: 0);
     }
 
+    Future<void> setting(String key, String value) async {
+      await db.into(db.settings).insert(SettingsCompanion.insert(key: key, value: value));
+      await Future<void>.delayed(Duration.zero);
+    }
+
     Future<void> after(int seconds) async {
       clock.advance(Duration(seconds: seconds));
       await c.read(guideProvider.notifier).tick();
     }
 
-    test('runs set, rest, and the next set on its own, and saves measured times', () async {
+    Future<void> ticks(int seconds) async {
+      for (var i = 0; i < seconds; i++) {
+        await after(1);
+      }
+    }
+
+    test('by default the user starts and ends each set; the guide times it and speaks', () async {
       final sessionId = await startDay();
       final guide = c.read(guideProvider.notifier);
+      final repo = WorkoutRepository(db, clock.call);
       await guide.startSet();
       expect(c.read(guideProvider).phase, GuidePhase.set);
-      expect(c.read(guideProvider).targetSec, 24, reason: '8 reps × 3 s');
+      expect(c.read(guideProvider).targetSec, 0, reason: 'A rep set has no guessed end');
       expect(c.read(guideProvider).label, 'Bench press · set 1 of 2');
       expect(voice.said, ['set_1']);
 
-      await after(10);
-      await after(14);
-      // Time is up: the set is done and the plan's 60 s rest starts.
-      expect(voice.said, ['set_1', 'time', 'rest_60']);
-      final repo = WorkoutRepository(db, clock.call);
+      await ticks(40);
+      expect(c.read(guideProvider).phase, GuidePhase.set, reason: 'The set waits for Set done');
+      expect(voice.said, ['set_1']);
+
+      await guide.finishSet();
+      expect(voice.said, ['set_1', 'rest_60']);
       var sets = (await repo.loadSession(sessionId))!.exercises.single.sets;
       expect(sets.first.completed, isTrue);
-      expect(sets.first.durationSec, 24, reason: 'The measured set time is saved');
+      expect(sets.first.durationSec, 40, reason: 'The measured set time is saved');
       expect(sets.first.reps, isNull, reason: 'The guide never invents reps');
-      expect((await repo.loadSession(sessionId))!.session.restTargetSec, 60);
 
-      await after(50);
-      await after(7);
-      await after(3);
-      expect(voice.said.sublist(3), ['ten_left', 'countdown', 'last_set']);
-      expect(c.read(guideProvider).phase, GuidePhase.set);
+      await ticks(60);
+      expect(voice.said.sublist(2), ['ten_left', 'rest_over'], reason: 'No countdown when the user starts the set');
+      expect(c.read(guideProvider).phase, GuidePhase.rest, reason: 'The next set waits for the user');
+
+      await after(20);
+      await guide.startSet();
+      expect(voice.said.last, 'last_set');
       sets = (await repo.loadSession(sessionId))!.exercises.single.sets;
-      expect(sets.first.restSec, 60, reason: 'The rest really taken is saved on the set before');
+      expect(sets.first.restSec, 80, reason: 'The rest really taken is saved');
 
-      // The user finishes early.
       clock.advance(const Duration(seconds: 15));
       await guide.finishSet();
-      expect(voice.said.last, 'done');
+      expect(voice.said.last, 'last_set', reason: '"Workout complete" waits until the workout is saved');
       sets = (await repo.loadSession(sessionId))!.exercises.single.sets;
       expect(sets.last.durationSec, 15);
       expect(sets.every((s) => s.completed), isTrue);
       expect(c.read(guideProvider).phase, GuidePhase.idle);
+
+      guide.workoutSaved();
+      expect(voice.said.last, 'done');
+    });
+
+    test('with both switches on, sets end on time and start after a countdown', () async {
+      await setting('guide.finishReps', 'true');
+      await setting('guide.autoStart', 'true');
+      final sessionId = await startDay();
+      final guide = c.read(guideProvider.notifier);
+      await guide.startSet();
+      expect(c.read(guideProvider).targetSec, 24, reason: '8 reps × 3 s');
+
+      await ticks(24);
+      expect(voice.said, ['set_1', 'time', 'rest_60']);
+      final repo = WorkoutRepository(db, clock.call);
+      final sets = (await repo.loadSession(sessionId))!.exercises.single.sets;
+      expect(sets.first.completed, isTrue);
+      expect(sets.first.durationSec, isNull, reason: 'A guessed set time is not a measured value');
+
+      await ticks(60);
+      expect(voice.said.sublist(3), ['ten_left', 'three', 'two', 'one', 'last_set']);
+      expect(c.read(guideProvider).phase, GuidePhase.set);
+    });
+
+    test('a pause stops the set time and the rest', () async {
+      final sessionId = await startDay();
+      final guide = c.read(guideProvider.notifier);
+      final repo = WorkoutRepository(db, clock.call);
+      await after(0);
+      await guide.startSet();
+      await ticks(10);
+      await guide.setPaused(sessionId, true);
+      expect(voice.said.last, 'paused');
+      await ticks(30);
+      expect(c.read(guideProvider).elapsedAt(clock().toUtc()), 10);
+      await guide.setPaused(sessionId, false);
+      expect(voice.said.last, 'resumed');
+      await ticks(5);
+      expect(c.read(guideProvider).elapsedAt(clock().toUtc()), 15);
+
+      await guide.finishSet();
+      await ticks(20);
+      await guide.setPaused(sessionId, true);
+      await after(300);
+      await guide.setPaused(sessionId, false);
+      final s = (await repo.loadSession(sessionId))!.session;
+      final left = restRemaining(restStartedAt: s.restStartedAt, restTargetSec: s.restTargetSec, now: clock().toUtc());
+      expect(left, const Duration(seconds: 40), reason: 'The rest goes on from where it was');
+      expect(voice.said.where((c) => c == 'paused'), hasLength(2));
+      expect(voice.said, isNot(contains('rest_over')));
+    });
+
+    test('"Next exercise" plays before the rest ends, not on top of "Go"', () async {
+      await startDay(exercises: 2);
+      final guide = c.read(guideProvider.notifier);
+      await guide.startSet();
+      await after(30);
+      await guide.finishSet();
+      await ticks(50);
+      expect(voice.said, ['set_1', 'rest_60', 'ten_left', 'next_exercise']);
+      await guide.startSet();
+      expect(voice.said.last, 'set_1');
+      expect(voice.said.where((c) => c == 'next_exercise'), hasLength(1));
+    });
+
+    test('stop cuts off the voice and ends the rest', () async {
+      await startDay();
+      final guide = c.read(guideProvider.notifier);
+      await guide.startSet();
+      await guide.finishSet();
+      final before = voice.silenced;
+      await guide.stop();
+      expect(voice.silenced, before + 1);
+      expect(c.read(guideProvider).phase, GuidePhase.idle);
+      await ticks(70);
+      expect(voice.said, ['set_1', 'rest_60'], reason: 'No rest cues after stop');
     });
 
     test('voice off and guide off are respected', () async {
-      await db.into(db.settings).insert(SettingsCompanion.insert(key: 'guide.voice', value: 'off'));
-      await db.into(db.settings).insert(SettingsCompanion.insert(key: 'guide.autoFinish', value: 'false'));
+      await setting('guide.voice', 'off');
       await startDay();
-      await Future<void>.delayed(Duration.zero);
       final guide = c.read(guideProvider.notifier);
       await guide.startSet();
       await after(30);
       expect(voice.said, isEmpty);
-      expect(c.read(guideProvider).phase, GuidePhase.set, reason: 'Without auto-finish the set waits for Done');
+      expect(c.read(guideProvider).phase, GuidePhase.set, reason: 'The set waits for Set done');
     });
   });
 }

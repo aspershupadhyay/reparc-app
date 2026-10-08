@@ -449,7 +449,7 @@ class _SetRowState extends ConsumerState<SetRow> {
     // The guide's set time is the hint, so the user sees what is assumed.
     final timeHint = p?.durationSec != null
         ? _dur(p!.durationSec)
-        : widget.settings.guideOn
+        : widget.settings.guideOn && widget.settings.finishRepSets
         ? _dur(widget.settings.setSec ?? estimateSetSec(s.reps ?? p?.reps))
         : 'm:ss';
     InputDecoration field({String? hint, String? suffix, String? error}) => InputDecoration(

@@ -16,6 +16,7 @@ import '../../data/database.dart';
 import '../../data/models.dart';
 import '../../data/providers.dart';
 import '../../data/workout_repository.dart';
+import '../../domain/guide.dart';
 import '../../domain/session_time.dart';
 import 'guide_controller.dart';
 import 'session_clock.dart';
@@ -94,6 +95,9 @@ class LiveSessionScreen extends ConsumerWidget {
       await repo.end(d.session.id, finished: finished);
       return true;
     });
+    if (done == true && finished && ref.read(currentSettingsProvider).guideOn) {
+      ref.read(guideProvider.notifier).workoutSaved();
+    }
     if (done == true && context.mounted) {
       unawaited(HapticFeedback.mediumImpact());
       context.go('/workout/session/${d.session.id}');
@@ -129,7 +133,7 @@ class _Gone extends StatelessWidget {
   }
 }
 
-/// Ink panel with elapsed time, rest time, and set count as separate values.
+/// Ink panel with the workout clocks and controls.
 class _Hero extends ConsumerWidget {
   const _Hero({required this.detail});
   final SessionDetail detail;
@@ -196,47 +200,42 @@ class _Hero extends ConsumerWidget {
                       backgroundColor: context.pal.energy,
                       foregroundColor: context.pal.onEnergy,
                     ),
-                    onPressed: () => guardedWrite(context, () => paused ? repo.resume(s.id) : repo.pause(s.id)),
+                    onPressed: () =>
+                        guardedWrite(context, () => ref.read(guideProvider.notifier).setPaused(s.id, !paused)),
                     icon: Icon(paused ? LucideIcons.play : LucideIcons.pause),
                   ),
                 ],
               ),
               Padding(
                 padding: const EdgeInsets.only(left: Space.m),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    SizedBox(height: Space.s),
-                    Semantics(
-                      liveRegion: true,
-                      child: Text(paused ? 'Paused' : 'Elapsed', style: onInk),
-                    ),
-                    SessionClock(
-                      sessionId: s.id,
-                      style: t.displaySmall!.copyWith(fontSize: 48, color: context.pal.energy).tabular,
-                    ),
-                    SizedBox(height: Space.l),
-                    Row(
-                      children: [
-                        Expanded(child: _RestValue(session: s)),
-                        Expanded(
-                          child: Metric(
-                            label: 'Sets done',
-                            value: '${detail.completedSets} / ${detail.totalSets}',
-                            semanticValue: '${detail.completedSets} of ${detail.totalSets}',
-                            color: context.pal.onPanel,
-                            labelColor: context.pal.onPanelSoft,
+                child: ref.watch(currentSettingsProvider).guideOn
+                    ? Padding(
+                        padding: const EdgeInsets.only(top: Space.s),
+                        child: _GuideHero(detail: detail),
+                      )
+                    : Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          SizedBox(height: Space.s),
+                          Semantics(
+                            liveRegion: true,
+                            child: Text(paused ? 'Paused' : 'Elapsed', style: onInk),
                           ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: Space.m),
-                    if (ref.watch(currentSettingsProvider).guideOn)
-                      _GuidePanel(detail: detail)
-                    else
-                      _RestControls(session: s),
-                  ],
-                ),
+                          SessionClock(
+                            sessionId: s.id,
+                            style: t.displaySmall!.copyWith(fontSize: 48, color: context.pal.energy).tabular,
+                          ),
+                          SizedBox(height: Space.l),
+                          Row(
+                            children: [
+                              Expanded(child: _RestValue(session: s)),
+                              Expanded(child: _SetsDone(detail: detail)),
+                            ],
+                          ),
+                          const SizedBox(height: Space.m),
+                          _RestControls(session: s),
+                        ],
+                      ),
               ),
             ],
           ),
@@ -261,7 +260,8 @@ class _RestValue extends ConsumerWidget {
         final r = restRemaining(
           restStartedAt: session.restStartedAt,
           restTargetSec: session.restTargetSec,
-          now: clock().toUtc(),
+          // A pause also pauses the rest.
+          now: session.pausedAt ?? clock().toUtc(),
         )!;
         final over = r.isNegative || r == Duration.zero;
         return Metric(
@@ -276,10 +276,25 @@ class _RestValue extends ConsumerWidget {
   }
 }
 
-/// Guided workout controls (handbook 4.13): start the next set, see its
-/// time, finish it, or skip the rest. Timers and voice run on their own.
-class _GuidePanel extends ConsumerWidget {
-  const _GuidePanel({required this.detail});
+class _SetsDone extends StatelessWidget {
+  const _SetsDone({required this.detail});
+  final SessionDetail detail;
+
+  @override
+  Widget build(BuildContext context) => Metric(
+    label: 'Sets done',
+    value: '${detail.completedSets} / ${detail.totalSets}',
+    semanticValue: '${detail.completedSets} of ${detail.totalSets}',
+    color: context.pal.onPanel,
+    labelColor: context.pal.onPanelSoft,
+  );
+}
+
+/// Guided workout (handbook 4.13). The clock the user needs now is the big
+/// one: the set time during a set, the rest during a rest, else the
+/// workout time. The user starts each set; the voice and timers follow.
+class _GuideHero extends ConsumerWidget {
+  const _GuideHero({required this.detail});
   final SessionDetail detail;
 
   @override
@@ -288,16 +303,30 @@ class _GuidePanel extends ConsumerWidget {
     final t = Theme.of(context).textTheme;
     final g = ref.watch(guideProvider);
     final guide = ref.read(guideProvider.notifier);
+    final clock = ref.watch(clockProvider);
     final s = detail.session;
+    final paused = s.status == SessionStatus.paused;
     final next = nextSet(detail);
-    final resting = s.restStartedAt != null;
     final onInk = t.bodySmall?.copyWith(color: p.onPanelSoft);
-    Widget chip(String label, VoidCallback onTap) => ActionChip(
-      label: Text(label),
-      backgroundColor: p.panelRaised,
-      side: BorderSide(color: p.panelRaised),
-      labelStyle: t.labelMedium?.copyWith(color: p.onPanel),
+    final bigStyle = t.displaySmall!.copyWith(fontSize: 48, color: p.energy).tabular;
+    Widget caption(String text) => Semantics(liveRegion: true, child: OneLine(text, style: onInk));
+    Widget chip(String label, String semantic, VoidCallback onTap) => Semantics(
+      button: true,
+      label: semantic,
+      excludeSemantics: true,
+      child: ActionChip(
+        label: Text(label),
+        backgroundColor: p.panelRaised,
+        side: BorderSide(color: p.panelRaised),
+        labelStyle: t.labelMedium?.copyWith(color: p.onPanel),
+        onPressed: onTap,
+      ),
+    );
+    // Stopping is a quiet text button at the far end, away from "+15 s".
+    Widget quiet(String label, VoidCallback onTap) => TextButton(
+      style: TextButton.styleFrom(foregroundColor: p.onPanelSoft),
       onPressed: onTap,
+      child: Text(label),
     );
     final big = FilledButton.styleFrom(
       backgroundColor: p.energy,
@@ -305,108 +334,212 @@ class _GuidePanel extends ConsumerWidget {
       minimumSize: const Size.fromHeight(56),
       textStyle: t.titleMedium,
     );
+    final metrics = Row(
+      children: [
+        Expanded(
+          child: Semantics(
+            container: true,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('Elapsed', style: onInk),
+                const SizedBox(height: 2),
+                SessionClock(
+                  sessionId: s.id,
+                  style: t.titleLarge!.tabular.copyWith(color: p.onPanel),
+                ),
+              ],
+            ),
+          ),
+        ),
+        Expanded(child: _SetsDone(detail: detail)),
+      ],
+    );
+    Widget startButton(String label) => FilledButton.icon(
+      style: big,
+      onPressed: () {
+        unawaited(HapticFeedback.mediumImpact());
+        guardedWrite(context, guide.startSet);
+      },
+      icon: const Icon(LucideIcons.play),
+      label: Text(label),
+    );
 
     if (g.phase == GuidePhase.set) {
-      return Ticker1s(
-        builder: (context) {
-          final clock = ref.read(clockProvider);
-          final el = g.startedAt == null ? 0 : clock().toUtc().difference(g.startedAt!).inSeconds;
-          final frac = g.targetSec == 0 ? 0.0 : (el / g.targetSec).clamp(0.0, 1.0);
-          return Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Text(
-                g.label,
-                style: t.titleSmall?.copyWith(color: p.onPanel),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-              ),
-              const SizedBox(height: Space.xs),
-              Semantics(
-                label:
-                    'Set time ${speakDuration(Duration(seconds: el))} of ${speakDuration(Duration(seconds: g.targetSec))}',
-                excludeSemantics: true,
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.baseline,
-                  textBaseline: TextBaseline.alphabetic,
-                  children: [
-                    Text(
-                      fmtClock(Duration(seconds: el)),
-                      style: t.headlineMedium?.tabular.copyWith(color: p.energy),
-                    ),
-                    Text('  / ${fmtClock(Duration(seconds: g.targetSec))}', style: onInk?.tabular),
-                  ],
-                ),
-              ),
-              const SizedBox(height: Space.s),
-              ClipRRect(
-                borderRadius: Radii.small,
-                child: LinearProgressIndicator(
-                  value: frac,
-                  minHeight: 6,
-                  color: p.energy,
-                  backgroundColor: p.panelRaised,
-                ),
-              ),
-              const SizedBox(height: Space.m),
-              FilledButton.icon(
-                style: big,
-                onPressed: () => guardedWrite(context, guide.finishSet),
-                icon: const Icon(LucideIcons.check),
-                label: const Text('Set done'),
-              ),
-              const SizedBox(height: Space.s),
-              Wrap(
-                spacing: Space.s,
-                children: [
-                  chip('+15 s', () => guide.addTime(15)),
-                  chip('Stop guide', () => guardedWrite(context, guide.stop)),
-                ],
-              ),
-            ],
-          );
-        },
-      );
-    }
-    if (resting) {
       return Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          if (next != null)
-            Text(
-              'Next: ${next.$1.exercise.name}',
-              style: t.titleSmall?.copyWith(color: p.onPanel),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-            ),
-          const SizedBox(height: Space.s),
-          Wrap(
-            spacing: Space.s,
-            runSpacing: Space.s,
+          Ticker1s(
+            builder: (context) {
+              final el = g.elapsedAt(clock().toUtc());
+              final target = g.targetSec;
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  caption(paused ? 'Paused · ${g.label}' : g.label),
+                  Semantics(
+                    label: target > 0
+                        ? 'Set time ${speakDuration(Duration(seconds: el))} of ${speakDuration(Duration(seconds: target))}'
+                        : 'Set time ${speakDuration(Duration(seconds: el))}',
+                    excludeSemantics: true,
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.baseline,
+                      textBaseline: TextBaseline.alphabetic,
+                      children: [
+                        Text(fmtClock(Duration(seconds: el)), style: bigStyle),
+                        if (target > 0)
+                          Text(
+                            '  / ${fmtClock(Duration(seconds: target))}',
+                            style: t.titleMedium?.tabular.copyWith(color: p.onPanelSoft),
+                          ),
+                      ],
+                    ),
+                  ),
+                  if (target > 0) ...[
+                    const SizedBox(height: Space.s),
+                    ClipRRect(
+                      borderRadius: Radii.small,
+                      child: LinearProgressIndicator(
+                        value: (el / target).clamp(0.0, 1.0),
+                        minHeight: 6,
+                        color: p.energy,
+                        backgroundColor: p.panelRaised,
+                      ),
+                    ),
+                  ],
+                ],
+              );
+            },
+          ),
+          const SizedBox(height: Space.l),
+          metrics,
+          const SizedBox(height: Space.l),
+          FilledButton.icon(
+            style: big,
+            onPressed: () => guardedWrite(context, guide.finishSet),
+            icon: const Icon(LucideIcons.check),
+            label: const Text('Set done'),
+          ),
+          const SizedBox(height: Space.xs),
+          Row(
             children: [
-              chip('Skip rest', () => guardedWrite(context, guide.skipRest)),
-              chip('+30 s', () {
-                final target = (s.restTargetSec ?? 0) + 30;
-                guardedWrite(context, () => ref.read(workoutRepoProvider).setRestTarget(s.id, target));
-              }),
-              chip('Stop guide', () => guardedWrite(context, guide.stop)),
+              if (g.targetSec > 0) chip('+15 s', 'Add 15 seconds to this set', () => guide.addTime(15)),
+              const Spacer(),
+              quiet('Stop timer', () => guardedWrite(context, guide.stop)),
             ],
           ),
         ],
       );
     }
-    if (next == null) {
-      return Text(
-        detail.exercises.isEmpty ? 'Add an exercise to start the guide.' : 'Every set is done. Finish when ready.',
-        style: onInk,
+
+    if (s.restStartedAt != null) {
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Ticker1s(
+            builder: (context) {
+              final r = restRemaining(
+                restStartedAt: s.restStartedAt,
+                restTargetSec: s.restTargetSec,
+                now: s.pausedAt ?? clock().toUtc(),
+              )!;
+              final over = r.isNegative || r == Duration.zero;
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  caption(paused ? 'Paused · rest' : (over ? 'Rest over by' : 'Rest')),
+                  Semantics(
+                    label: '${over ? 'Rest over by' : 'Rest left'} ${speakDuration(r.abs())}',
+                    excludeSemantics: true,
+                    child: Text(fmtClock(r.abs()), style: bigStyle.copyWith(color: over ? p.orange : p.energy)),
+                  ),
+                ],
+              );
+            },
+          ),
+          const SizedBox(height: Space.l),
+          metrics,
+          if (next != null) ...[
+            const SizedBox(height: Space.l),
+            _NextUp(view: next.$1, set: next.$2),
+            const SizedBox(height: Space.s),
+            startButton('Start set'),
+          ],
+          const SizedBox(height: Space.xs),
+          Row(
+            children: [
+              chip('+15 s', 'Add 15 seconds to the rest', () => guardedWrite(context, () => guide.addRest(15))),
+              const Spacer(),
+              quiet('End rest', () => guardedWrite(context, guide.stop)),
+            ],
+          ),
+        ],
       );
     }
-    return FilledButton.icon(
-      style: big,
-      onPressed: () => guardedWrite(context, guide.startSet),
-      icon: const Icon(LucideIcons.play),
-      label: Text('Start set · ${next.$1.exercise.name}', maxLines: 1, overflow: TextOverflow.ellipsis),
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        caption(paused ? 'Paused' : 'Elapsed'),
+        SessionClock(sessionId: s.id, style: bigStyle),
+        const SizedBox(height: Space.l),
+        Row(
+          children: [Expanded(child: _SetsDone(detail: detail))],
+        ),
+        const SizedBox(height: Space.l),
+        if (next == null)
+          Text(
+            detail.exercises.isEmpty ? 'Add an exercise to start the guide.' : 'Every set is done. Finish when ready.',
+            style: onInk,
+          )
+        else ...[
+          _NextUp(view: next.$1, set: next.$2),
+          const SizedBox(height: Space.s),
+          startButton('Start set'),
+        ],
+      ],
     );
+  }
+}
+
+/// The next set and what it aims for: "Bench press · set 2 of 4" and
+/// "60 kg × 8". Weight and reps come from the set, else the set before.
+class _NextUp extends StatelessWidget {
+  const _NextUp({required this.view, required this.set});
+  final SessionExerciseView view;
+  final SetEntry set;
+
+  @override
+  Widget build(BuildContext context) {
+    final p = context.pal;
+    final t = Theme.of(context).textTheme;
+    final aim = _aim();
+    return Semantics(
+      container: true,
+      label: 'Next: ${describeSet(view, set)}${aim == null ? '' : ', $aim'}',
+      excludeSemantics: true,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          OneLine('Next · ${describeSet(view, set)}', style: t.titleSmall?.copyWith(color: p.onPanel)),
+          if (aim != null) Text(aim, style: t.bodySmall?.copyWith(color: p.onPanelSoft)),
+        ],
+      ),
+    );
+  }
+
+  String? _aim() {
+    if (isTimedSet(set)) {
+      return set.durationSec == null ? null : 'Hold ${fmtClock(Duration(seconds: set.durationSec!))}';
+    }
+    final before = view.sets.takeWhile((x) => x.id != set.id).where((x) => x.setType == set.setType).toList();
+    final prev = before.isEmpty ? null : before.last;
+    final load = set.load ?? prev?.load;
+    final unit = set.load != null ? set.loadUnit : prev?.loadUnit;
+    final reps = set.reps ?? prev?.reps ?? targetRepsFromNote(view.item.note);
+    if (load == null && reps == null) return null;
+    if (load == null) return '$reps reps';
+    return [fmtWithUnit(load, unit), ?reps?.toString()].join(' × ');
   }
 }
 
