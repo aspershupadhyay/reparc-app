@@ -250,6 +250,8 @@ Built 2026-10-08 (D-031). Owner request: less typing, timers that run on their o
 
 **Voice.** 31 short clips in two ElevenLabs voices, Charlie and Matilda, bundled in `app/assets/voice/` (about 0.9 MB). `app/tool/voice/generate.py` makes them from `phrases.json`. It reads the key from `ELEVENLABS_API_KEY`; the key is never stored in the repo or the app. The app plays the files with `audioplayers` and lowers other audio, such as music, while a cue plays. No network request, and no workout data leaves the phone.
 
+**Set rows (2026-10-08).** Each set has weight, reps, and time. The time hint shows the set time the guide assumes. A done set has a dark-green check and a green tint (Energy strong, 5.2:1 on white). The set being timed has a teal outline. Warm-up sets show "W". The next set offers **Same as last set**: one tap fills the last set's weight and reps; it does not mark the set done. In a live workout, a finished exercise folds to one line; tap it to open it.
+
 **Off switches.** Me → Training → **Guided workout** (off gives the old manual rest chips), **Voice** (Charlie, Matilda, or Off), **Finish sets on time**, and **Set time**.
 
 **Limits (To confirm).**

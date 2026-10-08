@@ -564,11 +564,11 @@ class _WeekCard extends StatelessWidget {
                             width: 36,
                             height: 36,
                             decoration: BoxDecoration(
-                              color: done ? p.energy : (planned ? p.brandSoft : p.surfaceAlt),
+                              color: done ? p.energyStrong : (planned ? p.brandSoft : p.surfaceAlt),
                               shape: BoxShape.circle,
                               border: isToday ? Border.all(color: p.ink, width: 2) : null,
                             ),
-                            child: done ? Icon(LucideIcons.check, size: 18, color: p.onEnergy) : null,
+                            child: done ? Icon(LucideIcons.check, size: 18, color: p.on(p.energyStrong)) : null,
                           ),
                         ],
                       );

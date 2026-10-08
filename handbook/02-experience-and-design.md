@@ -117,12 +117,15 @@ Colours live in `app/lib/core/palette.dart`. Screens read colours only from ther
 | Ink | #000000 | #FFFFFF | Main text |
 | Ink soft | #636366 | #98989F | Supporting text |
 | Brand teal | #00727E | #40C8E0 | Tint: selection, links, main buttons (light) |
-| Energy lime | #C6F432 | #C6F432 | Training actions, main buttons (dark) |
+| Energy lime | #C6F432 | #C6F432 | Training actions, main buttons (dark), anything on the dark panel |
+| Energy strong | #4A7A00 | #C6F432 | Lime meaning on a light surface: done sets, done days, the next day. 5.2:1 on white (2026-10-08) |
 | Panel | #1C1C1E | #1C1C1E | Workout hero |
-| Green / soft | #34C759 / #E3F6E7 | #30D158 / #0F2A17 | Fibre, legs, lunch |
+| Green / soft | #248A3D / #E3F6E7 | #30D158 / #0F2A17 | Fibre, legs, lunch |
 | Blue / soft | #007AFF / #E0EEFF | #0A84FF / #0A2340 | Fat, back, breakfast |
-| Orange / soft | #FF9500 / #FFF0DB | #FF9F0A / #2E1F06 | Carbs, shoulders, snacks, helper muscles |
-| Coral / soft | #FF3B30 / #FFE5E3 | #FF453A / #33110F | Protein, chest, dinner |
+| Orange / soft | #C46A00 / #FFF0DB | #FF9F0A / #2E1F06 | Carbs, shoulders, snacks, helper muscles |
+| Coral / soft | #D70015 / #FFE5E3 | #FF453A / #33110F | Protein, chest, dinner |
+
+**Contrast fix (2026-10-08, owner request):** In light mode, lime on white was about 1.3:1, and green and orange icons on their soft tints were about 2:1. Light green, orange, and coral now use Apple's "Increase Contrast" shades, so every category icon is at least 3:1 on its soft tint and on white. Lime stays on the dark panel and on fills with a black glyph; on light surfaces the app uses Energy strong. `app/test/palette_test.dart` checks these pairs.
 
 The category colours are the iOS system colours (D-023).
 

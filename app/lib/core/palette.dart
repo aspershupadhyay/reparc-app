@@ -17,6 +17,7 @@ class Palette extends ThemeExtension<Palette> {
     required this.brandSoft,
     required this.energy,
     required this.onEnergy,
+    required this.energyStrong,
     required this.panel,
     required this.panelRaised,
     required this.onPanel,
@@ -49,6 +50,10 @@ class Palette extends ThemeExtension<Palette> {
   /// Lime. Training energy: the live workout and main workout actions.
   final Color energy;
   final Color onEnergy;
+
+  /// Lime meaning on a light surface, such as a done set or a done day.
+  /// Dark green in light mode (5.2:1 on white); lime in dark mode.
+  final Color energyStrong;
 
   /// Dark panel for the workout hero, in both modes.
   final Color panel;
@@ -90,6 +95,7 @@ class Palette extends ThemeExtension<Palette> {
     brandSoft: Color(0xFFDDF0F2),
     energy: Color(0xFFC6F432),
     onEnergy: Color(0xFF000000),
+    energyStrong: Color(0xFF4A7A00),
     panel: Color(0xFF1C1C1E),
     panelRaised: Color(0xFF2C2C2E),
     onPanel: Color(0xFFFFFFFF),
@@ -97,13 +103,14 @@ class Palette extends ThemeExtension<Palette> {
     success: Color(0xFF248A3D),
     warning: Color(0xFFC93400),
     error: Color(0xFFD70015),
-    green: Color(0xFF34C759), // systemGreen
+    // Increase Contrast shades, so icons reach 3:1 on their soft tints.
+    green: Color(0xFF248A3D), // systemGreen, high contrast
     greenSoft: Color(0xFFE3F6E7),
     blue: Color(0xFF007AFF), // systemBlue
     blueSoft: Color(0xFFE0EEFF),
-    orange: Color(0xFFFF9500), // systemOrange
+    orange: Color(0xFFC46A00), // deeper systemOrange
     orangeSoft: Color(0xFFFFF0DB),
-    coral: Color(0xFFFF3B30), // systemRed
+    coral: Color(0xFFD70015), // systemRed, high contrast
     coralSoft: Color(0xFFFFE5E3),
   );
 
@@ -119,6 +126,7 @@ class Palette extends ThemeExtension<Palette> {
     brandSoft: Color(0xFF0D2E33),
     energy: Color(0xFFC6F432),
     onEnergy: Color(0xFF000000),
+    energyStrong: Color(0xFFC6F432),
     panel: Color(0xFF1C1C1E),
     panelRaised: Color(0xFF2C2C2E),
     onPanel: Color(0xFFFFFFFF),

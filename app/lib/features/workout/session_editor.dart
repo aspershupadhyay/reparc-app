@@ -21,6 +21,7 @@ import '../../data/workout_repository.dart';
 import '../exercises/library/library.dart';
 import 'exercise_form.dart';
 import 'exercise_picker.dart';
+import '../../domain/guide.dart';
 import 'guide_controller.dart';
 
 /// Exercises and sets of one session. Used by the live workout and by the
@@ -43,13 +44,19 @@ class SessionExerciseList extends ConsumerWidget {
             body: 'Add an exercise, then record each set.',
           ),
         for (final (i, v) in items.indexed) ...[
-          _ExerciseCard(
+          _Collapsible(
             key: ValueKey(v.item.id),
+            // In a live workout a finished exercise folds to one line, so the
+            // next lift stays in view. Tap it to open it again.
+            folded: live && v.sets.isNotEmpty && v.completedSets == v.sets.length,
             view: v,
-            index: i,
-            count: items.length,
-            sessionId: detail.session.id,
-            live: live,
+            card: _ExerciseCard(
+              view: v,
+              index: i,
+              count: items.length,
+              sessionId: detail.session.id,
+              live: live,
+            ),
           ),
           const SizedBox(height: Space.m),
         ],
@@ -75,11 +82,57 @@ class SessionExerciseList extends ConsumerWidget {
   }
 }
 
+class _Collapsible extends StatefulWidget {
+  const _Collapsible({super.key, required this.folded, required this.view, required this.card});
+  final bool folded;
+  final SessionExerciseView view;
+  final Widget card;
+
+  @override
+  State<_Collapsible> createState() => _CollapsibleState();
+}
+
+class _CollapsibleState extends State<_Collapsible> {
+  bool _open = false;
+
+  @override
+  Widget build(BuildContext context) {
+    if (!widget.folded || _open) return widget.card;
+    final p = context.pal;
+    final t = Theme.of(context).textTheme;
+    final v = widget.view;
+    final n = v.sets.length;
+    return AppCard(
+      padding: const EdgeInsets.symmetric(horizontal: Space.l, vertical: Space.m),
+      onTap: () => setState(() => _open = true),
+      semanticLabel: '${v.exercise.name}, done, $n set${n == 1 ? '' : 's'}. Open',
+      child: ExcludeSemantics(
+        child: Row(
+          children: [
+            Container(
+              width: 28,
+              height: 28,
+              decoration: BoxDecoration(color: p.energyStrong, shape: BoxShape.circle),
+              child: Icon(LucideIcons.check, size: 16, color: p.on(p.energyStrong)),
+            ),
+            const SizedBox(width: Space.m),
+            Expanded(
+              child: Text(v.exercise.name, style: t.titleSmall, maxLines: 1, overflow: TextOverflow.ellipsis),
+            ),
+            Text('$n set${n == 1 ? '' : 's'} done', style: t.bodySmall),
+            const SizedBox(width: Space.s),
+            Icon(LucideIcons.chevronDown, size: IconSizes.s, color: p.inkSoft),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
 enum _ExerciseAction { up, down, replace, skip, edit, remove }
 
 class _ExerciseCard extends ConsumerWidget {
   const _ExerciseCard({
-    super.key,
     required this.view,
     required this.index,
     required this.count,
@@ -150,7 +203,10 @@ class _ExerciseCard extends ConsumerWidget {
                     Text(
                       [
                         ?view.exercise.variation,
-                        if (skipped) 'Skipped' else '${view.completedSets} of ${view.sets.length} sets done',
+                        if (skipped)
+                          'Skipped'
+                        else
+                          '${view.completedSets} of ${view.sets.length} set${view.sets.length == 1 ? '' : 's'} done',
                       ].join(' · '),
                       style: t.bodySmall,
                     ),
@@ -197,6 +253,7 @@ class _ExerciseCard extends ConsumerWidget {
                 settings: settings,
                 sessionId: sessionId,
                 live: live,
+                isNext: i == view.sets.indexWhere((x) => !x.completed),
               ),
             Align(
               alignment: Alignment.centerLeft,
@@ -225,12 +282,14 @@ class _SetHeader extends StatelessWidget {
         padding: const EdgeInsets.only(right: Space.s, bottom: Space.xs),
         child: Row(
           children: [
-            SizedBox(width: 48, child: Text('Set', style: s)),
-            const SizedBox(width: Space.s),
-            Expanded(child: Text('Load', style: s)),
-            const SizedBox(width: Space.s),
-            Expanded(child: Text('Reps or time', style: s)),
-            const SizedBox(width: Space.s),
+            SizedBox(width: 40, child: Text('Set', style: s)),
+            const SizedBox(width: Space.xs),
+            Expanded(flex: 5, child: Text(unit, style: s)),
+            const SizedBox(width: Space.xs),
+            Expanded(flex: 4, child: Text('Reps', style: s)),
+            const SizedBox(width: Space.xs),
+            Expanded(flex: 5, child: Text('Time', style: s)),
+            const SizedBox(width: Space.xs),
             SizedBox(
               width: 48,
               child: Text('Done', style: s, textAlign: TextAlign.center),
@@ -252,6 +311,7 @@ class SetRow extends ConsumerStatefulWidget {
     required this.settings,
     required this.sessionId,
     required this.live,
+    this.isNext = false,
   });
 
   final SetEntry set;
@@ -260,6 +320,9 @@ class SetRow extends ConsumerStatefulWidget {
   final AppSettings settings;
   final String sessionId;
   final bool live;
+
+  /// The first set that is not done. It offers "Same as last set".
+  final bool isNext;
 
   @override
   ConsumerState<SetRow> createState() => _SetRowState();
@@ -359,112 +422,168 @@ class _SetRowState extends ConsumerState<SetRow> {
     if (done) unawaited(HapticFeedback.lightImpact());
   }
 
+  /// Fills load and reps from the last set, on the user's tap. The set is
+  /// not marked done (handbook 4.5).
+  void _sameAsLast(SetEntry p) {
+    if (p.load != null) _load.text = _num(p.load);
+    if (p.reps != null) _reps.text = '${p.reps}';
+    _save(
+      SetEntriesCompanion(
+        load: p.load == null ? const Value.absent() : Value(p.load),
+        loadUnit: p.load == null ? const Value.absent() : Value(p.loadUnit ?? _unit),
+        reps: p.reps == null ? const Value.absent() : Value(p.reps),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final t = Theme.of(context).textTheme;
+    final pal = context.pal;
     final s = widget.set;
     final p = widget.previous;
-    // Timed sets, and any set with a time and no reps (such as a 5-minute
-    // cardio warm-up), show the time field.
-    final timed = s.setType == SetType.timed || (s.durationSec != null && s.reps == null);
-    final typeMark = s.setType.short;
-    final dense = InputDecoration(
+    final g = ref.watch(guideProvider);
+    final now = widget.live && g.phase == GuidePhase.set && g.setId == s.id;
+    final warm = s.setType == SetType.warmup;
+    final done = s.completed;
+    // The guide's set time is the hint, so the user sees what is assumed.
+    final timeHint = p?.durationSec != null
+        ? _dur(p!.durationSec)
+        : widget.settings.guideOn
+        ? _dur(widget.settings.setSec ?? estimateSetSec(s.reps ?? p?.reps))
+        : 'm:ss';
+    InputDecoration field({String? hint, String? suffix, String? error}) => InputDecoration(
       isDense: true,
-      contentPadding: const EdgeInsets.symmetric(horizontal: Space.m, vertical: Space.m),
+      contentPadding: const EdgeInsets.symmetric(horizontal: Space.s, vertical: Space.m),
       constraints: const BoxConstraints(minHeight: minTarget),
       errorMaxLines: 1,
+      hintText: hint,
+      suffixText: suffix,
+      errorText: error,
+      filled: true,
+      fillColor: done ? pal.surface : pal.surfaceAlt,
     );
-    return AnimatedContainer(
-      duration: motionOf(context, Motion.quick),
-      curve: Motion.change,
-      margin: const EdgeInsets.only(bottom: Space.xs, right: Space.s),
-      decoration: BoxDecoration(
-        color: s.completed ? context.pal.energy.withValues(alpha: 0.28) : Colors.transparent,
-        borderRadius: Radii.small,
-      ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
+    final canCopy =
+        widget.isNext && !done && p != null && (p.load != null || p.reps != null) && s.load == null && s.reps == null;
+    return Padding(
+      padding: const EdgeInsets.only(bottom: Space.xs, right: Space.s),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Semantics(
-            button: true,
-            label: 'Set ${widget.number}, ${s.setType.label}. Open set details',
-            excludeSemantics: true,
-            child: InkWell(
+          AnimatedContainer(
+            duration: motionOf(context, Motion.quick),
+            curve: Motion.change,
+            padding: const EdgeInsets.symmetric(vertical: 2),
+            decoration: BoxDecoration(
+              color: done ? pal.energyStrong.withValues(alpha: 0.12) : Colors.transparent,
               borderRadius: Radii.small,
-              onTap: () => showSetDetails(context, s, widget.settings),
-              child: SizedBox(
-                width: 48,
-                height: 48,
-                child: Center(
-                  child: Text('${widget.number}$typeMark', style: t.titleSmall?.tabular),
+              border: Border.all(
+                color: now ? pal.brand : (done ? pal.energyStrong.withValues(alpha: 0.5) : Colors.transparent),
+                width: now ? 2 : 1,
+              ),
+            ),
+            child: Row(
+              children: [
+                Semantics(
+                  button: true,
+                  label: 'Set ${widget.number}, ${s.setType.label}${now ? ', timing now' : ''}. Open set details',
+                  excludeSemantics: true,
+                  child: InkWell(
+                    borderRadius: Radii.small,
+                    onTap: () => showSetDetails(context, s, widget.settings),
+                    child: SizedBox(
+                      width: 40,
+                      height: 48,
+                      child: Center(
+                        child: Container(
+                          width: 30,
+                          height: 30,
+                          alignment: Alignment.center,
+                          decoration: BoxDecoration(
+                            color: warm ? pal.orangeSoft : (now ? pal.brand : pal.surfaceAlt),
+                            shape: BoxShape.circle,
+                          ),
+                          child: Text(
+                            warm ? 'W' : '${widget.number}${s.setType.short}',
+                            style: t.labelMedium?.tabular.copyWith(
+                              color: now ? pal.onBrand : pal.ink,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
                 ),
-              ),
-            ),
-          ),
-          SizedBox(width: Space.s),
-          Expanded(
-            child: TextField(
-              controller: _load,
-              focusNode: _loadFocus,
-              keyboardType: const TextInputType.numberWithOptions(decimal: true),
-              textInputAction: TextInputAction.next,
-              style: t.bodyLarge?.tabular,
-              onChanged: _onLoad,
-              decoration: dense.copyWith(
-                hintText: p?.load == null ? null : _num(p!.load),
-                suffixText: _unit,
-                errorText: _loadError,
-                semanticCounterText: '',
-                labelText: null,
-              ),
-            ),
-          ),
-          const SizedBox(width: Space.s),
-          Expanded(
-            child: timed
-                ? TextField(
+                const SizedBox(width: Space.xs),
+                Expanded(
+                  flex: 5,
+                  child: TextField(
+                    controller: _load,
+                    focusNode: _loadFocus,
+                    keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                    textInputAction: TextInputAction.next,
+                    style: t.bodyLarge?.tabular,
+                    onChanged: _onLoad,
+                    decoration: field(hint: p?.load == null ? null : _num(p!.load), error: _loadError),
+                  ),
+                ),
+                const SizedBox(width: Space.xs),
+                Expanded(
+                  flex: 4,
+                  child: TextField(
+                    controller: _reps,
+                    focusNode: _repsFocus,
+                    keyboardType: TextInputType.number,
+                    textInputAction: TextInputAction.next,
+                    style: t.bodyLarge?.tabular,
+                    onChanged: _onReps,
+                    decoration: field(hint: p?.reps?.toString(), error: _repsError),
+                  ),
+                ),
+                const SizedBox(width: Space.xs),
+                Expanded(
+                  flex: 5,
+                  child: TextField(
                     controller: _time,
                     focusNode: _timeFocus,
                     keyboardType: TextInputType.datetime,
                     style: t.bodyLarge?.tabular,
                     onChanged: _onTime,
-                    decoration: dense.copyWith(
-                      hintText: p?.durationSec == null ? 'm:ss' : _dur(p!.durationSec),
-                      errorText: _timeError,
-                    ),
-                  )
-                : TextField(
-                    controller: _reps,
-                    focusNode: _repsFocus,
-                    keyboardType: TextInputType.number,
-                    style: t.bodyLarge?.tabular,
-                    onChanged: _onReps,
-                    decoration: dense.copyWith(
-                      hintText: p?.reps?.toString(),
-                      suffixText: 'reps',
-                      errorText: _repsError,
-                    ),
+                    decoration: field(hint: timeHint, error: _timeError),
                   ),
-          ),
-          const SizedBox(width: Space.s),
-          Semantics(
-            label: 'Set ${widget.number} complete',
-            checked: s.completed,
-            button: true,
-            excludeSemantics: true,
-            child: IconButton(
-              onPressed: _toggleDone,
-              tooltip: s.completed ? 'Mark set not complete' : 'Mark set complete',
-              style: IconButton.styleFrom(
-                backgroundColor: s.completed ? context.pal.ink : context.pal.surfaceAlt,
-                side: BorderSide(color: context.pal.line),
-              ),
-              icon: Icon(
-                s.completed ? LucideIcons.check : LucideIcons.circle,
-                color: s.completed ? context.pal.energy : context.pal.inkSoft,
-              ),
+                ),
+                const SizedBox(width: Space.xs),
+                Semantics(
+                  label: 'Set ${widget.number} complete',
+                  checked: done,
+                  button: true,
+                  excludeSemantics: true,
+                  child: IconButton(
+                    onPressed: _toggleDone,
+                    tooltip: done ? 'Mark set not complete' : 'Mark set complete',
+                    style: IconButton.styleFrom(
+                      backgroundColor: done ? pal.energyStrong : pal.surface,
+                      side: BorderSide(color: done ? pal.energyStrong : pal.inkSoft, width: 1.5),
+                    ),
+                    icon: Icon(LucideIcons.check, color: done ? pal.on(pal.energyStrong) : pal.inkSoft),
+                  ),
+                ),
+              ],
             ),
           ),
+          if (canCopy)
+            Align(
+              alignment: Alignment.centerLeft,
+              child: TextButton.icon(
+                onPressed: () => _sameAsLast(p),
+                style: TextButton.styleFrom(visualDensity: VisualDensity.compact),
+                icon: const Icon(LucideIcons.copy, size: 16),
+                label: Text(
+                  'Same as last set: ${[if (p.load != null) '${_num(p.load)} ${p.loadUnit ?? _unit}', if (p.reps != null) '${p.reps} reps'].join(' × ')}',
+                ),
+              ),
+            ),
         ],
       ),
     );

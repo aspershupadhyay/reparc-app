@@ -12,7 +12,12 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:reparc/app/app.dart';
 import 'package:reparc/app/router.dart';
+import 'package:drift/drift.dart' show Value;
 import 'package:reparc/core/clock.dart';
+import 'package:reparc/data/database.dart';
+import 'package:reparc/data/program_repository.dart';
+import 'package:reparc/data/workout_repository.dart';
+import 'package:reparc/domain/roadmap.dart';
 import 'package:reparc/data/providers.dart';
 import 'package:reparc/features/exercises/library/library.dart';
 import 'package:reparc/updates/update_controller.dart';
@@ -44,7 +49,8 @@ void main() {
     'analytics': '/analytics',
     'me': '/me',
     'updates': '/me/updates',
-    'roadmap': '/workout/roadmap/new?goal=aesthetic',
+    'roadmap': '/workout/plan/new?goal=aesthetic',
+    'live': '/live/',
     'calculator': '/workout/calculator',
     'library': '/workout/library',
     'body': '/me/body',
@@ -54,6 +60,8 @@ void main() {
     for (final MapEntry(key: name, value: at) in tabs.entries) {
       testWidgets('$name ${dark ? 'dark' : 'light'}', (tester) async {
         final db = memoryDb();
+        var route = at;
+        if (name == 'live') route = await tester.runAsync(() => _seedLive(db)) ?? at;
         tester.view.physicalSize = const Size(1170, 2532);
         tester.view.devicePixelRatio = 3;
         tester.platformDispatcher.platformBrightnessTestValue = dark ? Brightness.dark : Brightness.light;
@@ -75,13 +83,17 @@ void main() {
                 },
               ),
             ],
-            child: ReparcApp(router: buildRouter(initialLocation: at)),
+            child: ReparcApp(router: buildRouter(initialLocation: route)),
           ),
         );
-        await tester.pumpAndSettle();
+        // The live screen ticks every second, so it never settles.
+        Future<void> settle() =>
+            name == 'live' ? tester.pump(const Duration(milliseconds: 500)) : tester.pumpAndSettle();
+        await settle();
         // Let the update check's database write land.
         await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 200)));
-        await tester.pumpAndSettle();
+        await settle();
+        await settle();
         await expectLater(
           find.byType(ReparcApp),
           matchesGoldenFile('out/$name-${dark ? 'dark' : 'light'}.png'),
@@ -92,4 +104,31 @@ void main() {
       });
     }
   }
+}
+
+/// A live plan day with a done warm-up and one done working set.
+Future<String> _seedLive(AppDatabase db) async {
+  DateTime clock() => DateTime(2026, 3, 4, 17, 40);
+  final plan = buildProgram(goal: RoadmapGoal.bodybuilding, level: RoadmapLevel.beginner, setup: GymSetup.fullGym);
+  final id = await ProgramRepository(db, clock).adopt(plan);
+  final w = WorkoutRepository(db, clock);
+  final sid = await w.startProgramDay(programId: id, dayIndex: 0);
+  final d = (await w.loadSession(sid))!;
+  for (final e in d.exercises.take(5)) {
+    await w.setCompleted(e.sets.first.id, true);
+  }
+  final main = d.exercises[5];
+  for (final s in main.sets.take(3)) {
+    await w.updateSet(
+      s.id,
+      SetEntriesCompanion(
+        load: const Value(60),
+        loadUnit: const Value('kg'),
+        reps: const Value(8),
+        durationSec: const Value(26),
+      ),
+    );
+    await w.setCompleted(s.id, true);
+  }
+  return '/live/$sid';
 }

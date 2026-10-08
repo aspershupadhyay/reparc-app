@@ -19,6 +19,21 @@ void main() {
       }
     });
 
+    test('$name category icons on their soft tints and lime on surfaces meet 3:1', () {
+      for (final (c, soft) in [
+        (p.green, p.greenSoft),
+        (p.blue, p.blueSoft),
+        (p.orange, p.orangeSoft),
+        (p.coral, p.coralSoft),
+        (p.brand, p.brandSoft),
+      ]) {
+        expect(contrast(c, soft), greaterThanOrEqualTo(3), reason: '$c on $soft');
+        expect(contrast(c, p.surface), greaterThanOrEqualTo(3), reason: '$c on surface');
+      }
+      expect(contrast(p.energyStrong, p.surface), greaterThanOrEqualTo(4.5));
+      expect(contrast(p.on(p.energyStrong), p.energyStrong), greaterThanOrEqualTo(4.5));
+    });
+
     test('$name icon glyphs on category colours meet 3:1', () {
       for (final c in [p.green, p.blue, p.orange, p.coral, p.brand, p.energy]) {
         expect(contrast(p.on(c), c), greaterThanOrEqualTo(3));

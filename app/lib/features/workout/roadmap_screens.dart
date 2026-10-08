@@ -263,12 +263,12 @@ class _ActiveRoadmap extends ConsumerWidget {
                     height: 44,
                     alignment: Alignment.center,
                     decoration: BoxDecoration(
-                      color: i == prog.nextDay ? p.energy : p.surfaceAlt,
+                      color: i == prog.nextDay ? p.energyStrong : p.surfaceAlt,
                       borderRadius: Radii.small,
                     ),
                     child: Text(
                       i < plan.weekdays.length ? _dayNames[(plan.weekdays[i] - 1) % 7] : 'D${i + 1}',
-                      style: t.labelMedium?.copyWith(color: i == prog.nextDay ? p.onEnergy : p.ink),
+                      style: t.labelMedium?.copyWith(color: i == prog.nextDay ? p.on(p.energyStrong) : p.ink),
                     ),
                   ),
                   title: Text(i == prog.nextDay ? '${d.name} · next' : d.name),
