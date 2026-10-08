@@ -11,6 +11,7 @@ import '../../data/providers.dart';
 import '../../domain/roadmap.dart';
 import '../exercises/library/library.dart';
 import '../exercises/library/move_browser.dart';
+import 'exercise_picker.dart';
 import 'start_workout.dart';
 
 IconData goalIcon(RoadmapGoal g) => switch (g) {
@@ -23,24 +24,139 @@ IconData goalIcon(RoadmapGoal g) => switch (g) {
 
 const _dayNames = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 
-/// Roadmap section of the Workout tab.
-class RoadmapSection extends ConsumerWidget {
-  const RoadmapSection({super.key});
+/// Plan section of the Workout tab: the followed plan's week, then every
+/// other plan (handbook 4.12).
+class PlanSection extends ConsumerWidget {
+  const PlanSection({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     return AsyncBody(
-      value: ref.watch(activeProgramProvider),
-      builder: (prog) => prog == null ? const _ChooseGoal() : _ActiveRoadmap(prog: prog),
+      value: ref.watch(programsProvider),
+      builder: (plans) {
+        if (plans.isEmpty) return const _ChooseGoal();
+        final followed = plans.where((p) => p.followed).firstOrNull;
+        final others = plans.where((p) => !p.followed).toList();
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            if (followed != null) _ActiveRoadmap(prog: followed),
+            if (others.isNotEmpty) ...[
+              SectionHeader(followed == null ? 'Your plans' : 'Other plans'),
+              if (followed == null)
+                const Padding(
+                  padding: EdgeInsets.only(bottom: Space.s),
+                  child: StatusLine(
+                    icon: LucideIcons.info,
+                    text: 'Follow a plan to see its next day on Home. You can start any day of any plan.',
+                  ),
+                ),
+              for (final o in others) ...[_PlanCard(prog: o), const SizedBox(height: Space.s)],
+            ],
+            const SizedBox(height: Space.s),
+            OutlinedButton.icon(
+              onPressed: () => newPlan(context, ref),
+              icon: const Icon(LucideIcons.plus, size: IconSizes.s),
+              label: const Text('New plan'),
+            ),
+          ],
+        );
+      },
     );
   }
 }
 
-class _ChooseGoal extends StatelessWidget {
-  const _ChooseGoal();
+/// Asks how to make a plan: with the builder, or an empty one.
+Future<void> newPlan(BuildContext context, WidgetRef ref) async {
+  final choice = await showAppSheet<String>(
+    context,
+    (context) => Padding(
+      padding: const EdgeInsets.fromLTRB(Space.l, 0, Space.l, Space.xl),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Text('New plan', style: Theme.of(context).textTheme.titleLarge),
+          const SizedBox(height: Space.m),
+          FilledButton.icon(
+            onPressed: () => Navigator.pop(context, 'build'),
+            icon: const Icon(LucideIcons.sparkles, size: IconSizes.s),
+            label: const Text('Build for my goal'),
+          ),
+          const SizedBox(height: Space.s),
+          OutlinedButton.icon(
+            onPressed: () => Navigator.pop(context, 'own'),
+            icon: const Icon(LucideIcons.pencil, size: IconSizes.s),
+            label: const Text('Make my own'),
+          ),
+        ],
+      ),
+    ),
+  );
+  if (!context.mounted) return;
+  if (choice == 'build') {
+    await context.push('/workout/plan/new');
+  } else if (choice == 'own') {
+    await makeOwnPlan(context, ref);
+  }
+}
+
+/// Creates an empty plan with one day and opens it.
+Future<void> makeOwnPlan(BuildContext context, WidgetRef ref) async {
+  final name = await promptText(context, title: 'New plan', label: 'Plan name', confirmLabel: 'Create');
+  if (name == null || !context.mounted) return;
+  final id = await guardedWrite(
+    context,
+    () => ref.read(programRepoProvider).create(ProgramPlan(days: [emptyDay(1)]), name: name),
+  );
+  if (id != null && context.mounted) await context.push('/workout/plan/$id');
+}
+
+class _PlanCard extends StatelessWidget {
+  const _PlanCard({required this.prog});
+  final SavedProgram prog;
 
   @override
   Widget build(BuildContext context) {
+    final t = Theme.of(context).textTheme;
+    final p = context.pal;
+    final days = prog.plan.days.length;
+    final sub = [prog.plan.about ?? 'Your own plan', '$days day${days == 1 ? '' : 's'}'].join(' · ');
+    return AppCard(
+      onTap: () => context.push('/workout/plan/${prog.id}'),
+      semanticLabel: '${prog.name}. $sub. Open plan',
+      child: ExcludeSemantics(
+        child: Row(
+          children: [
+            IconBadge(
+              prog.plan.goal == null ? LucideIcons.clipboardList : goalIcon(prog.plan.goal!),
+              color: p.brandSoft,
+              glyph: p.brand,
+              size: 44,
+            ),
+            const SizedBox(width: Space.m),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(prog.name, style: t.titleMedium),
+                  Text(sub, style: t.bodySmall),
+                ],
+              ),
+            ),
+            Icon(LucideIcons.chevronRight, size: IconSizes.s, color: p.inkSoft),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _ChooseGoal extends ConsumerWidget {
+  const _ChooseGoal();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
     final p = context.pal;
     final t = Theme.of(context).textTheme;
     final colors = [p.coral, p.blue, p.orange, p.green, p.brand];
@@ -50,13 +166,14 @@ class _ChooseGoal extends StatelessWidget {
         Text('What do you want to work towards?', style: t.titleLarge),
         const SizedBox(height: Space.xs),
         Text(
-          'Pick a roadmap. You choose the level, days, and equipment next, and you can change any part later.',
+          'Pick a goal and get a plan for it. You choose the level, days, and equipment next, and you can '
+          'change any part later.',
           style: t.bodyMedium?.copyWith(color: p.inkSoft),
         ),
         const SizedBox(height: Space.l),
         for (final (i, g) in RoadmapGoal.values.indexed) ...[
           AppCard(
-            onTap: () => context.push('/workout/roadmap/new?goal=${g.name}'),
+            onTap: () => context.push('/workout/plan/new?goal=${g.name}'),
             semanticLabel: '${g.label}. ${g.summary}',
             child: ExcludeSemantics(
               child: Row(
@@ -79,6 +196,11 @@ class _ChooseGoal extends StatelessWidget {
           ),
           const SizedBox(height: Space.s),
         ],
+        TextButton.icon(
+          onPressed: () => makeOwnPlan(context, ref),
+          icon: const Icon(LucideIcons.pencil, size: IconSizes.s),
+          label: const Text('Or make my own plan'),
+        ),
       ],
     );
   }
@@ -97,7 +219,30 @@ class _ActiveRoadmap extends ConsumerWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        StatusLine(icon: goalIcon(plan.goal), text: '${plan.title} · ${plan.setup.label}', color: p.ink),
+        AppCard(
+          onTap: () => context.push('/workout/plan/${prog.id}'),
+          semanticLabel: 'Following ${prog.name}. Open plan',
+          padding: const EdgeInsets.all(Space.m),
+          child: ExcludeSemantics(
+            child: Row(
+              children: [
+                Icon(plan.goal == null ? LucideIcons.clipboardList : goalIcon(plan.goal!), color: p.brand),
+                const SizedBox(width: Space.m),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text('Following', style: t.labelSmall?.copyWith(color: p.brand)),
+                      Text(prog.name, style: t.titleMedium),
+                      if (plan.about case final about?) Text(about, style: t.bodySmall),
+                    ],
+                  ),
+                ),
+                Icon(LucideIcons.chevronRight, size: IconSizes.s, color: p.inkSoft),
+              ],
+            ),
+          ),
+        ),
         SectionHeader(
           'This week',
           action: TextButton.icon(
@@ -127,23 +272,27 @@ class _ActiveRoadmap extends ConsumerWidget {
                     ),
                   ),
                   title: Text(i == prog.nextDay ? '${d.name} · next' : d.name),
-                  subtitle: Text('${d.focus} · ${d.workSets} sets · ~${d.minutes} min'),
+                  subtitle: Text(
+                    [if (d.focus.isNotEmpty) d.focus, '${d.workSets} sets', '~${d.minutes} min'].join(' · '),
+                  ),
                   trailing: Icon(LucideIcons.chevronRight, size: IconSizes.s, color: p.inkSoft),
-                  onTap: () => context.push('/workout/roadmap/${prog.id}/day/$i'),
+                  onTap: () => context.push('/workout/plan/${prog.id}/day/$i'),
                 ),
               ],
             ],
           ),
         ),
-        if (plan.showNotes) ...[
+        if (plan.showNotes && plan.progression.isNotEmpty) ...[
           const SectionHeader('How to progress'),
           AppCard(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 StatusLine(icon: LucideIcons.trendingUp, text: plan.progression, color: p.ink),
-                const SizedBox(height: Space.m),
-                StatusLine(icon: LucideIcons.batteryCharging, text: plan.deload, color: p.ink),
+                if (plan.deload.isNotEmpty) ...[
+                  const SizedBox(height: Space.m),
+                  StatusLine(icon: LucideIcons.batteryCharging, text: plan.deload, color: p.ink),
+                ],
               ],
             ),
           ),
@@ -203,8 +352,8 @@ class _TrainingDaysState extends State<_TrainingDays> {
             child: StatusLine(
               icon: LucideIcons.info,
               text: diff > 0
-                  ? 'Pick $diff more ${diff == 1 ? 'day' : 'days'}, one for each roadmap day. Saved when it adds up.'
-                  : 'Remove ${-diff} ${diff == -1 ? 'day' : 'days'}. This roadmap has ${widget.needed} days a week.',
+                  ? 'Pick $diff more ${diff == 1 ? 'day' : 'days'}, one for each plan day. Saved when it adds up.'
+                  : 'Remove ${-diff} ${diff == -1 ? 'day' : 'days'}. This plan has ${widget.needed} days a week.',
             ),
           ),
         ],
@@ -230,7 +379,7 @@ class _RoadmapSettings extends ConsumerWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Text('Customize roadmap', style: t.titleLarge),
+          Text('Customize plan', style: t.titleLarge),
           const SizedBox(height: Space.m),
           Text('Show on each day', style: t.labelMedium),
           SwitchListTile(
@@ -279,18 +428,18 @@ class _RoadmapSettings extends ConsumerWidget {
           OutlinedButton.icon(
             onPressed: () {
               Navigator.pop(context);
-              context.push('/workout/roadmap/new?goal=${plan.goal.name}');
+              context.push('/workout/plan/new${plan.goal == null ? '' : '?goal=${plan.goal!.name}'}');
             },
             icon: const Icon(LucideIcons.refreshCw, size: IconSizes.s),
-            label: const Text('Build a new roadmap'),
+            label: const Text('Build a new plan'),
           ),
           const SizedBox(height: Space.s),
           TextButton(
             onPressed: () async {
               final ok = await confirmAction(
                 context,
-                title: 'Stop this roadmap?',
-                body: 'It stays saved with your workout history. You can pick a new roadmap any time.',
+                title: 'Stop following this plan?',
+                body: 'It stays saved in Other plans with your workout history. You can follow any plan again.',
                 confirmLabel: 'Stop',
                 destructive: true,
               );
@@ -299,7 +448,7 @@ class _RoadmapSettings extends ConsumerWidget {
               if (context.mounted) Navigator.pop(context);
             },
             style: TextButton.styleFrom(foregroundColor: context.pal.error),
-            child: const Text('Stop following this roadmap'),
+            child: const Text('Stop following this plan'),
           ),
         ],
       ),
@@ -334,7 +483,7 @@ class _RoadmapBuilderScreenState extends ConsumerState<RoadmapBuilderScreen> {
     final t = Theme.of(context).textTheme;
     final plan = buildProgram(goal: _goal, level: _level, setup: _setup, days: _days);
     return Scaffold(
-      appBar: AppBar(title: const Text('New roadmap')),
+      appBar: AppBar(title: const Text('Build a plan')),
       bottomNavigationBar: SafeArea(
         child: Padding(
           padding: const EdgeInsets.fromLTRB(Space.l, Space.s, Space.l, Space.s),
@@ -346,13 +495,13 @@ class _RoadmapBuilderScreenState extends ConsumerState<RoadmapBuilderScreen> {
                     final id = await guardedWrite(
                       context,
                       () => ref.read(programRepoProvider).adopt(plan),
-                      success: 'Roadmap saved. You can change any part of it.',
+                      success: 'Plan saved and followed. You can change any part of it.',
                     );
                     if (!context.mounted) return;
                     setState(() => _saving = false);
                     if (id != null) context.pop();
                   },
-            child: const Text('Use this roadmap'),
+            child: const Text('Follow this plan'),
           ),
         ),
       ),
@@ -527,16 +676,18 @@ class RoadmapDayScreen extends ConsumerWidget {
     }
 
     Future<void> addExercise() async {
-      final m = await pickMove(context);
-      if (m == null || !context.mounted) return;
+      final rowId = await pickExercise(context);
+      if (rowId == null || !context.mounted) return;
+      final row = await ref.read(workoutRepoProvider).exercise(rowId);
+      if (row == null || !context.mounted) return;
       final items = [...d.items];
       final at = items.lastIndexWhere((i) => i.kind != ItemKind.cooldown) + 1;
       items.insert(
         at,
         PlanItem(
           kind: ItemKind.accessory,
-          exerciseId: m.catalogId,
-          name: m.name,
+          exerciseId: row.catalogId ?? userRef(row.id),
+          name: row.name,
           sets: 3,
           repsLow: 10,
           repsHigh: 12,
@@ -571,13 +722,41 @@ class RoadmapDayScreen extends ConsumerWidget {
       appBar: AppBar(
         title: Text(d.name),
         actions: [
-          IconButton(
-            tooltip: 'Rename day',
-            icon: const Icon(LucideIcons.pencil),
-            onPressed: () async {
-              final name = await promptText(context, title: 'Rename day', label: 'Day name', initial: d.name);
-              if (name != null) await saveDay(d.copyWith(name: name));
+          PopupMenuButton<String>(
+            tooltip: 'Day options',
+            icon: const Icon(LucideIcons.ellipsisVertical),
+            onSelected: (v) async {
+              switch (v) {
+                case 'rename':
+                  final name = await promptText(context, title: 'Rename day', label: 'Day name', initial: d.name);
+                  if (name != null) await saveDay(d.copyWith(name: name));
+                case 'earlier' || 'later':
+                  final to = v == 'earlier' ? day - 1 : day + 1;
+                  final days = [...plan.days]..removeAt(day);
+                  days.insert(to, d);
+                  await guardedWrite(context, () => repo.save(programId, plan.copyWith(days: days)));
+                  if (context.mounted) context.pushReplacement('/workout/plan/$programId/day/$to');
+                case 'remove':
+                  final ok = await confirmAction(
+                    context,
+                    title: 'Remove ${d.name}?',
+                    body: 'Saved workouts from this day do not change.',
+                    confirmLabel: 'Remove',
+                    destructive: true,
+                  );
+                  if (!ok || !context.mounted) return;
+                  final days = [...plan.days]..removeAt(day);
+                  if (context.mounted) context.pop();
+                  await repo.save(programId, plan.copyWith(days: days));
+                  if (prog.nextDay >= days.length) await repo.setNextDay(programId, 0);
+              }
             },
+            itemBuilder: (_) => [
+              const PopupMenuItem(value: 'rename', child: Text('Rename day')),
+              if (day > 0) const PopupMenuItem(value: 'earlier', child: Text('Move day earlier')),
+              if (day < plan.days.length - 1) const PopupMenuItem(value: 'later', child: Text('Move day later')),
+              if (plan.days.length > 1) const PopupMenuItem(value: 'remove', child: Text('Remove day')),
+            ],
           ),
         ],
       ),
@@ -596,9 +775,15 @@ class RoadmapDayScreen extends ConsumerWidget {
         padding: const EdgeInsets.fromLTRB(Space.l, 0, Space.l, Space.xxl),
         children: [
           Text(
-            '${d.focus} · ${d.workSets} sets · about ${d.minutes} min',
+            [if (d.focus.isNotEmpty) d.focus, '${d.workSets} sets', 'about ${d.minutes} min'].join(' · '),
             style: t.bodyMedium?.copyWith(color: p.inkSoft),
           ),
+          if (d.items.isEmpty)
+            const EmptyState(
+              icon: LucideIcons.listPlus,
+              title: 'This day is empty',
+              body: 'Add exercises in the order you train them.',
+            ),
           if (plan.showWarmup && d.warmup.isNotEmpty) ...[
             section(
               '1. Warm-up (about ${d.warmupMinutes} min)',

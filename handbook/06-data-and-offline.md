@@ -68,6 +68,9 @@ Do not downgrade a database unless a tested recovery path exists.
 |---|---|---|
 | 1 | First local schema | — |
 | 2 | `exercises.catalog_id` links a built-in exercise. `meal_slots.kind` sets the meal icon and colour. | `app/test/migration_test.dart` upgrades a real v1 file and checks that no record is lost |
+| 3 | AI proposals and the health write-back ledger. | `app/test/migration_test.dart` |
+| 4 | Fibre, sugar, sodium; roadmaps (`programs`); body weight. | `app/test/migration_test.dart` |
+| 5 | Old plans (`workout_templates`) are copied into `programs` with the same IDs (handbook 4.12). Sessions get `program_id`. The old tables stay, unused, for one release. No column changes. | `app/test/migration_test.dart` upgrades a v4 file and checks every plan, item, target, and session link |
 
 ## 7.6 Backup, export, and delete
 

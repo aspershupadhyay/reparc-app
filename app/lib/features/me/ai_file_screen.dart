@@ -79,7 +79,7 @@ class _AiFileScreenState extends ConsumerState<AiFileScreen> {
         '{\n  "mcpServers": {\n    "reparc": {\n      "command": "/path/to/reparc-mcp",\n'
         '      "args": ["/path/to/reparc-ai-export.json"]\n    }\n  }\n}';
     final roadmapPrompt =
-        'Write a training roadmap for me in this exact JSON format, and nothing else. '
+        'Write a training plan for me in this exact JSON format, and nothing else. '
         'Start every day with warm-up items.\n\n'
         '${const JsonEncoder.withIndent(' ').convert(importFormats['roadmap'])}';
     final mealPrompt =
@@ -187,9 +187,9 @@ class _AiFileScreenState extends ConsumerState<AiFileScreen> {
                   spacing: Space.s,
                   children: [
                     TextButton.icon(
-                      onPressed: () => _copy(roadmapPrompt, 'Roadmap prompt'),
+                      onPressed: () => _copy(roadmapPrompt, 'Plan prompt'),
                       icon: const Icon(LucideIcons.copy, size: 18),
-                      label: const Text('Roadmap prompt'),
+                      label: const Text('Plan prompt'),
                     ),
                     TextButton.icon(
                       onPressed: () => _copy(mealPrompt, 'Meal plan prompt'),
@@ -293,9 +293,10 @@ class _ImportSheetState extends ConsumerState<_ImportSheet> {
     bool? ok;
     if (plan['kind'] == 'reparc-roadmap') {
       ok = await guardedWrite(context, () async {
-        await ref.read(programRepoProvider).adopt(roadmapFromProposal(plan));
+        // Saved, not followed. The user follows it from the plan page (handbook 4.12).
+        await ref.read(programRepoProvider).create(roadmapFromProposal(plan), name: 'Plan from AI');
         return true;
-      }, success: 'Roadmap saved. Find it in Workout → Roadmap.');
+      }, success: 'Plan saved. Find it in Workout → Plan, and tap Follow to use it.');
     } else {
       final repo = ref.read(mealRepoProvider);
       final slots = await repo.allSlots();
@@ -413,7 +414,7 @@ class _ImportSheetState extends ConsumerState<_ImportSheet> {
             FilledButton(
               onPressed: _saving ? null : _approve,
               child: Text(
-                plan['kind'] == 'reparc-roadmap' ? 'Approve and use this roadmap' : 'Approve and add as planned',
+                plan['kind'] == 'reparc-roadmap' ? 'Approve and save this plan' : 'Approve and add as planned',
               ),
             ),
           ],

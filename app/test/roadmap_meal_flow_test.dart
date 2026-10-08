@@ -59,7 +59,7 @@ void main() {
       expect(find.text(g, skipOffstage: false), findsOneWidget);
     }
     await unmount(tester);
-    await pumpApp(tester, at: '/workout/roadmap/new?goal=calisthenics');
+    await pumpApp(tester, at: '/workout/plan/new?goal=calisthenics');
     final builder = find.descendant(of: find.byType(RoadmapBuilderScreen), matching: find.byType(Scrollable)).first;
     await tester.scrollUntilVisible(find.text('Your week'), 100, scrollable: builder);
     await tester.pumpAndSettle();
@@ -67,10 +67,10 @@ void main() {
     await tester.pumpAndSettle();
     await tester.tap(find.text('Home, no weights'));
     await tester.pumpAndSettle();
-    await tester.tap(find.widgetWithText(FilledButton, 'Use this roadmap'));
+    await tester.tap(find.widgetWithText(FilledButton, 'Follow this plan'));
     await tester.pumpAndSettle();
 
-    expect(find.text('Next on your roadmap'), findsOneWidget);
+    expect(find.text('Next in your plan'), findsOneWidget);
     await tester.tap(find.text('See the day'));
     await tester.pumpAndSettle();
     expect(find.text('1. Warm-up (about 8 min)'), findsOneWidget);
@@ -161,11 +161,38 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('Preview'), findsOneWidget);
     expect(await db.select(db.programs).get(), isEmpty, reason: 'Nothing is saved before approval');
-    await tester.ensureVisible(find.text('Approve and use this roadmap'));
-    await tester.tap(find.text('Approve and use this roadmap'));
+    await tester.ensureVisible(find.text('Approve and save this plan'));
+    await tester.tap(find.text('Approve and save this plan'));
     await tester.pumpAndSettle();
     final rows = await db.select(db.programs).get();
-    expect(rows.single.active, isTrue);
+    expect(rows.single.active, isFalse, reason: 'Saved, not followed, until the user taps Follow');
+    await unmount(tester);
+  });
+
+  testWidgets('make my own plan, add a day, follow it, and start a day', (tester) async {
+    await pumpApp(tester, at: '/workout');
+    await tester.ensureVisible(find.text('Or make my own plan'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Or make my own plan'));
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byType(TextField), 'Arms');
+    await tester.tap(find.text('Create'));
+    await tester.pumpAndSettle();
+    expect(find.text('Arms'), findsWidgets);
+    expect(find.text('Day 1'), findsOneWidget);
+    await tester.ensureVisible(find.text('Add day'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Add day'));
+    await tester.pumpAndSettle();
+    expect(find.text('This day is empty'), findsOneWidget);
+    await tester.pageBack();
+    await tester.pumpAndSettle();
+    expect(find.text('Day 2'), findsOneWidget);
+    await tester.tap(find.text('Follow this plan'));
+    await tester.pumpAndSettle();
+    final row = (await db.select(db.programs).get()).single;
+    expect(row.active, isTrue);
+    expect(row.daysPerWeek, 2);
     await unmount(tester);
   });
 }

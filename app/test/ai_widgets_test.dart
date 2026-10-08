@@ -127,8 +127,9 @@ void main() {
     expect(find.text('3 × 8'), findsOneWidget);
     await tester.tap(find.text('Approve'));
     await tester.pumpAndSettle();
-    final templates = await db.select(db.workoutTemplates).get();
-    expect(templates.single.name, 'Push');
+    final plans = await db.select(db.programs).get();
+    expect(plans.single.name, 'Push');
+    expect(plans.single.active, isFalse, reason: 'An approved plan is followed only when the user taps Follow');
     expect((await db.select(db.aiProposals).getSingle()).status, ProposalStatus.approved);
     await unmount(tester);
   });

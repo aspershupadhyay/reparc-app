@@ -119,7 +119,7 @@ export const contract = {
       "name": "list_workout_plans",
       "scope": "gym",
       "title": "List workout plans",
-      "description": "The owner's saved workout plans with their exercises and targets.",
+      "description": "The owner's saved plans. Each plan has one or more days with exercises and targets. followed is true for the plan the owner follows now.",
       "annotations": {
         "readOnlyHint": true,
         "openWorldHint": false
@@ -256,7 +256,7 @@ export const contract = {
       "name": "propose_workout_plan",
       "scope": "plans",
       "title": "Propose workout plans",
-      "description": "Sends one to seven workout plans (for example a weekly split) to the owner's phone for review. Nothing is saved until the owner approves. Returns a proposal_id.",
+      "description": "Sends a plan of one to seven workout days (for example a weekly split) to the owner's phone for review. Each item in plans becomes one day of one plan. Nothing is saved until the owner approves, and the owner chooses whether to follow it. Returns a proposal_id.",
       "annotations": {
         "readOnlyHint": false,
         "destructiveHint": false,

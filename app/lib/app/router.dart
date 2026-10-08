@@ -51,22 +51,22 @@ GoRouter buildRouter({String initialLocation = '/home'}) => GoRouter(
               builder: (_, _) => const WorkoutScreen(),
               routes: [
                 GoRoute(
-                  path: 'plan/:id',
-                  builder: (_, s) => PlanScreen(id: s.pathParameters['id']!),
-                ),
-                GoRoute(
                   path: 'session/:id',
                   builder: (_, s) => SessionDetailScreen(id: s.pathParameters['id']!),
                 ),
                 GoRoute(path: 'library', builder: (_, _) => const LibraryScreen()),
                 GoRoute(path: 'calculator', builder: (_, _) => const CalculatorScreen()),
                 GoRoute(
-                  path: 'roadmap/new',
+                  path: 'plan/new',
                   builder: (_, s) =>
                       RoadmapBuilderScreen(goal: RoadmapGoal.values.asNameMap()[s.uri.queryParameters['goal']]),
                 ),
                 GoRoute(
-                  path: 'roadmap/:id/day/:day',
+                  path: 'plan/:id',
+                  builder: (_, s) => PlanScreen(id: s.pathParameters['id']!),
+                ),
+                GoRoute(
+                  path: 'plan/:id/day/:day',
                   builder: (_, s) => RoadmapDayScreen(
                     programId: s.pathParameters['id']!,
                     day: int.tryParse(s.pathParameters['day']!) ?? 0,

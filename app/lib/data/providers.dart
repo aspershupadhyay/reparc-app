@@ -54,12 +54,6 @@ final exerciseHistoryProvider = StreamProvider.autoDispose.family(
   (ref, String id) => ref.watch(workoutRepoProvider).watchExerciseHistory(id),
 );
 
-final templatesProvider = StreamProvider.autoDispose((ref) => ref.watch(workoutRepoProvider).watchTemplates());
-
-final templateProvider = StreamProvider.autoDispose.family(
-  (ref, String id) => ref.watch(workoutRepoProvider).watchTemplate(id),
-);
-
 final mealSlotsProvider = StreamProvider.autoDispose((ref) => ref.watch(mealRepoProvider).watchSlots());
 
 final mealDayProvider = StreamProvider.autoDispose.family(
@@ -95,6 +89,7 @@ final programRepoProvider = Provider(
 );
 
 final activeProgramProvider = StreamProvider((ref) => ref.watch(programRepoProvider).watchActive());
+final programsProvider = StreamProvider((ref) => ref.watch(programRepoProvider).watchAll());
 
 final programProvider = StreamProvider.autoDispose.family(
   (ref, String id) => ref.watch(programRepoProvider).watch(id),

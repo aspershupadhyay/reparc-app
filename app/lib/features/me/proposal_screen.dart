@@ -135,7 +135,9 @@ class _Body extends ConsumerWidget {
                     final ok = await guardedWrite(
                       context,
                       () => repo.approve(p.id),
-                      success: isPlan ? 'Plans saved in Workout.' : 'Meals added to your plan.',
+                      success: isPlan
+                          ? 'Plan saved in Workout → Plan. Tap Follow to use it.'
+                          : 'Meals added to your plan.',
                     );
                     if (ok != null && context.mounted) context.pop();
                   },

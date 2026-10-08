@@ -92,7 +92,7 @@ Supersets group exercises. They do not merge set records.
 
 A template contains an ordered list of exercises and optional targets. Starting a template creates a new session. Later edits to the template must not change a saved workout.
 
-In the app a template is called a **plan**. A plan is one workout the user repeats. A roadmap (4.11) is a whole training week. When a plan starts, each exercise gets one empty set for each target set, or one empty set when there is no target. The target shows as a note on the exercise, for example "Target: 3 sets × 5 reps". It is never saved as a done value.
+Since schema v5 a template is a **plan** with one or more days (4.12). When a day starts, each exercise gets one empty set for each target set, or one empty set when there is no target. The target shows as a note on the exercise, for example "Target: 3 × 5". It is never saved as a done value.
 
 Let the user rename, copy, edit, and delete templates. Do not require a weekly training split.
 
@@ -154,9 +154,9 @@ Built 2026-10-06 (D-024, D-025).
 
 **To confirm:** Coach review of the picks, roadmaps, warm-ups, and first-weight ratios.
 
-## 4.12 Proposed: one plan for roadmaps and plans
+## 4.12 One plan for roadmaps and plans
 
-**Status:** Proposed (D-030). Not built. Owner choices are listed at the end.
+**Status:** Accepted and built 2026-10-08 (D-030). The owner took the recommended choice for all four owner choices at the end of this section. Not yet tested on a real phone.
 
 ### Purpose
 
@@ -223,7 +223,7 @@ Run format, analysis, generated-code checks, and all tests after each step. Test
 - The Workout tab has three sections, and the user can reach every plan in two taps.
 - Screen readers name each plan, day, and Follow button. Large text does not cut off day names.
 
-### Owner choices (To confirm)
+### Owner choices (decided 2026-10-08: the first option of each)
 
 1. **Name.** Call the one thing a **plan** ("Build a plan for my goal"), or call everything a **roadmap**. Recommended: plan.
 2. **Old tables.** Keep `workout_templates` and `template_exercises` for one release, then remove them (recommended). Or remove them in v5.

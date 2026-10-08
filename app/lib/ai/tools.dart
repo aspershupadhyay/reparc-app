@@ -7,6 +7,7 @@ import '../core/dates.dart';
 import '../data/database.dart';
 import '../data/meal_repository.dart';
 import '../data/models.dart';
+import '../data/program_repository.dart';
 import '../data/settings_repository.dart';
 import '../data/workout_repository.dart';
 import '../domain/analytics.dart';
@@ -154,7 +155,7 @@ class ReparcTools {
       final saved = last.where((x) => !x.session.status.isLive).toList();
       out['gym'] = {
         'saved_workouts': saved.length,
-        'plans': await count(db.workoutTemplates),
+        'plans': await count(db.programs),
         'latest_workout': saved.isEmpty
             ? null
             : {
@@ -298,22 +299,37 @@ class ReparcTools {
     });
   }
 
+  /// Every plan with its days. The followed plan is marked.
   Future<ToolResult> _plans() async {
-    final list = await workouts.watchTemplates().first;
-    final out = <Map<String, Object?>>[];
-    for (final (t, _) in list) {
-      final d = await workouts.loadTemplate(t.id);
-      if (d == null) continue;
-      out.add({
-        'name': t.name,
-        if (t.note != null) 'note': t.note,
-        'exercises': [
-          for (final i in d.items)
-            {'name': i.exercise.name, 'target_sets': i.item.targetSets, 'target_reps': i.item.targetReps},
-        ],
-      });
-    }
-    return ToolResult({'plans': out});
+    final list = await ProgramRepository(db, clock).all();
+    return ToolResult({
+      'plans': [
+        for (final p in list)
+          {
+            'name': p.name,
+            'followed': p.followed,
+            'about': ?p.plan.about,
+            'days': [
+              for (final d in p.plan.days)
+                {
+                  'name': d.name,
+                  if (d.focus.isNotEmpty) 'focus': d.focus,
+                  'exercises': [
+                    for (final i in d.work)
+                      {
+                        'name': i.name,
+                        'sets': i.sets,
+                        'reps_low': i.repsLow,
+                        'reps_high': i.repsHigh,
+                        'seconds': i.seconds,
+                        'rest_sec': i.restSec,
+                      },
+                  ],
+                },
+            ],
+          },
+      ],
+    });
   }
 
   Future<ToolResult> _searchLibrary(Map<String, dynamic> a) async {

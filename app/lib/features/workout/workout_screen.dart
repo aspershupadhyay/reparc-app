@@ -16,10 +16,10 @@ import 'roadmap_screens.dart';
 import 'session_clock.dart';
 import 'start_workout.dart';
 
-enum _Section { roadmap, plans, exercises, history }
+enum _Section { plan, exercises, history }
 
-/// Workout tab: one start card, then the roadmap, plans, the exercise
-/// library, and history (decision D-008). Layout follows the second
+/// Workout tab: one start card, then plans, the exercise library, and
+/// history (decision D-008). Layout follows the second
 /// reference.
 class WorkoutScreen extends ConsumerStatefulWidget {
   const WorkoutScreen({super.key});
@@ -29,7 +29,7 @@ class WorkoutScreen extends ConsumerStatefulWidget {
 }
 
 class _WorkoutScreenState extends ConsumerState<WorkoutScreen> {
-  _Section _section = _Section.roadmap;
+  _Section _section = _Section.plan;
 
   @override
   Widget build(BuildContext context) {
@@ -46,8 +46,7 @@ class _WorkoutScreenState extends ConsumerState<WorkoutScreen> {
               values: _Section.values,
               selected: _section,
               label: (s) => switch (s) {
-                _Section.roadmap => 'Roadmap',
-                _Section.plans => 'Plans',
+                _Section.plan => 'Plan',
                 _Section.exercises => 'Exercises',
                 _Section.history => 'History',
               },
@@ -55,8 +54,7 @@ class _WorkoutScreenState extends ConsumerState<WorkoutScreen> {
             ),
             const SizedBox(height: Space.l),
             switch (_section) {
-              _Section.roadmap => const RoadmapSection(),
-              _Section.plans => const _Plans(),
+              _Section.plan => const PlanSection(),
               _Section.exercises => const LibraryBody(),
               _Section.history => const _History(),
             },
@@ -82,9 +80,9 @@ class _StartCard extends ConsumerWidget {
     final (String eyebrow, String? title, String? sub) = switch ((liveId, next)) {
       (_?, _) => ('Training now', null, null),
       (null, final d?) => (
-        'Next on your roadmap',
+        'Next in your plan',
         d.name,
-        '${d.focus} · ${d.work.length} exercises · ~${d.minutes} min',
+        [if (d.focus.isNotEmpty) d.focus, '${d.work.length} exercises', '~${d.minutes} min'].join(' · '),
       ),
       _ => ('Free workout', 'Add exercises as you go', null),
     };
@@ -132,7 +130,7 @@ class _StartCard extends ConsumerWidget {
               children: [
                 TextButton(
                   style: TextButton.styleFrom(foregroundColor: p.onPanel),
-                  onPressed: () => context.push('/workout/roadmap/${prog!.id}/day/${prog.nextDay}'),
+                  onPressed: () => context.push('/workout/plan/${prog!.id}/day/${prog.nextDay}'),
                   child: const Text('See the day'),
                 ),
                 TextButton(
@@ -143,90 +141,6 @@ class _StartCard extends ConsumerWidget {
               ],
             ),
           ],
-        ],
-      ),
-    );
-  }
-}
-
-class _Plans extends ConsumerWidget {
-  const _Plans();
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final t = Theme.of(context).textTheme;
-    final p = context.pal;
-    final colors = [
-      (p.energy, p.onEnergy),
-      (p.brandSoft, p.ink),
-      (p.orangeSoft, p.ink),
-      (p.greenSoft, p.ink),
-      (p.blueSoft, p.ink),
-    ];
-    return AsyncBody(
-      value: ref.watch(templatesProvider),
-      builder: (plans) => Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          if (plans.isEmpty)
-            const EmptyState(
-              icon: LucideIcons.clipboardList,
-              title: 'No plans yet',
-              body: 'A plan is one workout you repeat. Your roadmap plans the whole week.',
-            ),
-          for (final (i, (plan, count)) in plans.indexed) ...[
-            Builder(
-              builder: (context) {
-                final (bg, fg) = colors[i % colors.length];
-                return AppCard(
-                  color: bg,
-                  padding: const EdgeInsets.all(Space.xl),
-                  onTap: () => context.push('/workout/plan/${plan.id}'),
-                  semanticLabel: '${plan.name}, $count exercise${count == 1 ? '' : 's'}. Open plan',
-                  child: Row(
-                    children: [
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(plan.name, style: t.titleLarge?.copyWith(color: fg)),
-                            const SizedBox(height: Space.s),
-                            Tag(
-                              '$count exercise${count == 1 ? '' : 's'}',
-                              color: fg.withValues(alpha: 0.1),
-                              textColor: fg,
-                              icon: LucideIcons.dumbbell,
-                            ),
-                          ],
-                        ),
-                      ),
-                      IconButton.filled(
-                        tooltip: 'Start ${plan.name}',
-                        style: IconButton.styleFrom(
-                          backgroundColor: p.panel,
-                          foregroundColor: p.energy,
-                          fixedSize: const Size(56, 56),
-                        ),
-                        onPressed: count == 0 ? null : () => startWorkout(context, ref, templateId: plan.id),
-                        icon: const Icon(LucideIcons.play),
-                      ),
-                    ],
-                  ),
-                );
-              },
-            ),
-            const SizedBox(height: Space.m),
-          ],
-          OutlinedButton.icon(
-            onPressed: () async {
-              final name = await promptText(context, title: 'New plan', label: 'Plan name', confirmLabel: 'Create');
-              if (name == null || !context.mounted) return;
-              final id = await guardedWrite(context, () => ref.read(workoutRepoProvider).createTemplate(name));
-              if (id != null && context.mounted) await context.push('/workout/plan/$id');
-            },
-            icon: const Icon(LucideIcons.plus, size: IconSizes.s),
-            label: const Text('New plan'),
-          ),
         ],
       ),
     );

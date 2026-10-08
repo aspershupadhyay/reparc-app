@@ -9,7 +9,9 @@ import 'package:reparc/data/database.dart';
 import 'package:reparc/data/meal_repository.dart';
 import 'package:reparc/data/models.dart';
 import 'package:reparc/data/settings_repository.dart';
+import 'package:reparc/data/program_repository.dart';
 import 'package:reparc/data/workout_repository.dart';
+import 'package:reparc/domain/roadmap.dart';
 
 import 'helpers.dart';
 
@@ -17,9 +19,15 @@ import 'helpers.dart';
 Future<void> seed(AppDatabase db, FakeClock clock) async {
   final w = WorkoutRepository(db, clock.call);
   final ex = await w.createExercise(name: 'Deadlift', equipment: 'Barbell');
-  final t = await w.createTemplate('Pull day');
-  await w.addTemplateExercise(t, ex, targetSets: 3, targetReps: 5);
-  final s = await w.startSession(templateId: t);
+  final t = await ProgramRepository(db, clock.call).create(
+    ProgramPlan(
+      days: [
+        simpleDay('Pull day', [(exerciseId: userRef(ex), name: 'Deadlift', sets: 3, reps: 5)]),
+      ],
+    ),
+    name: 'Pull day',
+  );
+  final s = await w.startProgramDay(programId: t, dayIndex: 0);
   final se = await w.addSessionExercise(s, ex);
   final set = await w.addSet(se);
   await w.updateSet(set, const SetEntriesCompanion(reps: Value(5), load: Value(140), loadUnit: Value('kg')));
@@ -63,8 +71,7 @@ void main() {
     final before = tablesOf(original);
     for (final t in [
       'exercises',
-      'workoutTemplates',
-      'templateExercises',
+      'programs',
       'workoutSessions',
       'sessionExercises',
       'setEntries',

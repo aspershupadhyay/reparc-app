@@ -2,7 +2,9 @@ import 'package:drift/drift.dart' show Value;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:reparc/data/database.dart';
 import 'package:reparc/data/models.dart';
+import 'package:reparc/data/program_repository.dart';
 import 'package:reparc/data/workout_repository.dart';
+import 'package:reparc/domain/roadmap.dart';
 import 'package:reparc/domain/session_time.dart';
 
 import 'helpers.dart';
@@ -19,33 +21,33 @@ void main() {
   });
   tearDown(() => db.close());
 
-  test('starting a plan copies it; later plan edits do not change the session', () async {
+  test('starting a plan day copies it; later plan edits do not change the session', () async {
+    final programs = ProgramRepository(db, clock.call);
     final squat = await repo.createExercise(name: 'Squat', variation: 'Back');
-    final plan = await repo.createTemplate('Legs');
-    await repo.addTemplateExercise(plan, squat, targetSets: 3, targetReps: 5);
-
-    final sessionId = await repo.startSession(templateId: plan);
-    var detail = (await repo.loadSession(sessionId))!;
-    expect(detail.exercises, hasLength(1));
-    expect(detail.exercises.single.sets, hasLength(3));
-    // Template targets do not become recorded values.
-    expect(detail.exercises.single.sets.every((s) => s.reps == null && !s.completed), isTrue);
-
-    expect(detail.exercises.single.item.note, 'Target: 3 sets × 5 reps');
-
-    final item = (await repo.loadTemplate(plan))!.items.single.item;
-    await repo.removeTemplateExercise(item.id);
-    detail = (await repo.loadSession(sessionId))!;
-    expect(detail.exercises, hasLength(1));
-  });
-
-  test('a plan exercise without a target starts with one empty set', () async {
     final row = await repo.createExercise(name: 'Row');
-    final plan = await repo.createTemplate('Back');
-    await repo.addTemplateExercise(plan, row);
-    final detail = (await repo.loadSession(await repo.startSession(templateId: plan)))!;
-    expect(detail.exercises.single.sets, hasLength(1));
-    expect(detail.exercises.single.item.note, isNull);
+    final plan = ProgramPlan(
+      days: [
+        simpleDay('Legs', [
+          (exerciseId: userRef(squat), name: 'Squat', sets: 3, reps: 5),
+          (exerciseId: userRef(row), name: 'Row', sets: null, reps: null),
+        ]),
+      ],
+    );
+    final id = await programs.create(plan, name: 'Legs');
+    final sessionId = await repo.startProgramDay(programId: id, dayIndex: 0);
+    var detail = (await repo.loadSession(sessionId))!;
+    expect(detail.exercises.map((e) => e.exercise.id), [squat, row], reason: 'user: links to the own exercise');
+    expect(detail.exercises.first.sets, hasLength(3));
+    // Targets do not become recorded values.
+    expect(detail.exercises.first.sets.every((s) => s.reps == null && !s.completed), isTrue);
+    expect(detail.exercises.first.item.note, 'Target: 3 × 5');
+    // Without a target: one empty set and no note.
+    expect(detail.exercises.last.sets, hasLength(1));
+    expect(detail.exercises.last.item.note, isNull);
+
+    await programs.save(id, plan.copyWith(days: [simpleDay('Legs', const [])]));
+    detail = (await repo.loadSession(sessionId))!;
+    expect(detail.exercises, hasLength(2));
   });
 
   test('only one live session at a time', () async {
@@ -166,17 +168,19 @@ void main() {
     expect((await repo.loadSession(id))!.exercises.single.exercise.name, 'Dip');
   });
 
-  test('copying a plan keeps order and targets', () async {
-    final a = await repo.createExercise(name: 'A');
-    final b = await repo.createExercise(name: 'B');
-    final plan = await repo.createTemplate('Full body');
-    await repo.addTemplateExercise(plan, a, targetSets: 2);
-    await repo.addTemplateExercise(plan, b, targetSets: 4);
-    await repo.moveTemplateExercise(plan, 1, 0);
-    final copy = (await repo.loadTemplate(await repo.copyTemplate(plan)))!;
-    expect(copy.template.name, 'Full body (copy)');
-    expect(copy.items.map((i) => i.exercise.name), ['B', 'A']);
-    expect(copy.items.map((i) => i.item.targetSets), [4, 2]);
+  test('copying a plan keeps its days and is not followed', () async {
+    final programs = ProgramRepository(db, clock.call);
+    final id = await programs.adopt(
+      buildProgram(goal: RoadmapGoal.strength, level: RoadmapLevel.beginner, setup: GymSetup.fullGym, days: 2),
+      name: 'Strength',
+    );
+    final copy = await programs.copy(id);
+    final all = await programs.all();
+    final c = all.firstWhere((p) => p.id == copy);
+    expect(c.name, 'Strength (copy)');
+    expect(c.followed, isFalse);
+    expect(c.plan.encode(), all.firstWhere((p) => p.id == id).plan.encode());
+    expect((await programs.active())!.id, id);
   });
 
   test('a built-in exercise maps to one row and keeps its history', () async {

@@ -105,7 +105,8 @@ class PlanItem {
 
   final ItemKind kind;
 
-  /// Coached guide ID (`bench-press`) or library ID (`lib:Pushups`).
+  /// Coached guide ID (`bench-press`), library ID (`lib:Pushups`), or one
+  /// of the user's own exercises (`user:<exercise row id>`, see [userRef]).
   final String exerciseId;
   final String name;
 
@@ -251,16 +252,26 @@ class PlanDay {
   );
 }
 
-/// The whole roadmap. Stored as JSON in `programs.plan`.
+/// Plan item reference for an exercise the user made.
+String userRef(String exerciseRowId) => 'user:$exerciseRowId';
+
+/// The exercise row ID in a `user:` reference, or null for built-in IDs.
+String? userRefId(String exerciseId) => exerciseId.startsWith('user:') ? exerciseId.substring(5) : null;
+
+/// A plan: one or more training days. Stored as JSON in `programs.plan`.
+///
+/// A roadmap is a plan the builder made; it has a [goal], [level], and
+/// [setup]. A plan the user made, or one that came from an AI app or an
+/// older app version, has none of them (handbook 4.12).
 class ProgramPlan {
   const ProgramPlan({
-    required this.goal,
-    required this.level,
-    required this.setup,
+    this.goal,
+    this.level,
+    this.setup,
     required this.days,
-    required this.weekdays,
-    required this.progression,
-    required this.deload,
+    this.weekdays = const [],
+    this.progression = '',
+    this.deload = '',
     this.showWarmup = true,
     this.showCooldown = true,
     this.showNotes = true,
@@ -268,9 +279,9 @@ class ProgramPlan {
 
   static const formatVersion = 1;
 
-  final RoadmapGoal goal;
-  final RoadmapLevel level;
-  final GymSetup setup;
+  final RoadmapGoal? goal;
+  final RoadmapLevel? level;
+  final GymSetup? setup;
   final List<PlanDay> days;
 
   /// Suggested training weekdays, 1 = Monday. The user can change them.
@@ -287,7 +298,11 @@ class ProgramPlan {
   final bool showCooldown;
   final bool showNotes;
 
-  String get title => '${goal.label} · ${level.label}';
+  /// Default name for a built plan: "Strength · Beginner".
+  String get title => goal == null ? 'My plan' : [goal!.label, ?level?.label].join(' · ');
+
+  /// "Strength · Beginner · Full gym", or null for a plan without a goal.
+  String? get about => goal == null ? null : [title, ?setup?.label].join(' · ');
 
   ProgramPlan copyWith({
     List<PlanDay>? days,
@@ -310,9 +325,9 @@ class ProgramPlan {
 
   Map<String, Object?> toJson() => {
     'formatVersion': formatVersion,
-    'goal': goal.name,
-    'level': level.name,
-    'setup': setup.name,
+    'goal': ?goal?.name,
+    'level': ?level?.name,
+    'setup': ?setup?.name,
     'weekdays': weekdays,
     'progression': progression,
     'deload': deload,
@@ -325,9 +340,9 @@ class ProgramPlan {
   String encode() => jsonEncode(toJson());
 
   factory ProgramPlan.fromJson(Map<String, Object?> j) => ProgramPlan(
-    goal: RoadmapGoal.values.asNameMap()[j['goal']] ?? RoadmapGoal.leanFit,
-    level: RoadmapLevel.values.asNameMap()[j['level']] ?? RoadmapLevel.beginner,
-    setup: GymSetup.values.asNameMap()[j['setup']] ?? GymSetup.fullGym,
+    goal: RoadmapGoal.values.asNameMap()[j['goal']],
+    level: RoadmapLevel.values.asNameMap()[j['level']],
+    setup: GymSetup.values.asNameMap()[j['setup']],
     weekdays: [for (final d in (j['weekdays'] as List? ?? const [])) (d as num).toInt()],
     progression: j['progression'] as String? ?? '',
     deload: j['deload'] as String? ?? '',
@@ -1006,11 +1021,12 @@ List<Ex> alternativesFor(PlanItem item) {
 
 /// Warm-up sets before the first working set, as shares of the working
 /// weight: about 50% × 8, 70% × 5, 85% × 3. Beginners skip the heaviest.
-List<(double share, int reps)> rampUpSets(RoadmapLevel level) =>
+/// A plan without a level uses the full three.
+List<(double share, int reps)> rampUpSets(RoadmapLevel? level) =>
     level == RoadmapLevel.beginner ? const [(0.5, 8), (0.7, 5)] : const [(0.5, 8), (0.7, 5), (0.85, 3)];
 
 /// The ramp-up sets as text: "50% × 8, 70% × 5".
-String rampUpText(RoadmapLevel level) => rampUpSets(level).map((r) => '${(r.$1 * 100).round()}% × ${r.$2}').join(', ');
+String rampUpText(RoadmapLevel? level) => rampUpSets(level).map((r) => '${(r.$1 * 100).round()}% × ${r.$2}').join(', ');
 
 /// Rest as text: "45 s", "2 min", "1:30 min".
 String restText(int seconds) => seconds < 60
@@ -1030,3 +1046,30 @@ Map<String, int> weeklySetsByPattern(ProgramPlan plan) {
   }
   return m;
 }
+
+/// One exercise of a plan from an older app version (schema v4 and before),
+/// or from an AI proposal.
+typedef SimpleItem = ({String exerciseId, String name, int? sets, int? reps});
+
+/// A one-day plan made from a list of exercises with optional targets.
+///
+/// A missing target stays missing: the item gets one set and no reps, which
+/// starts as one empty set, as before.
+PlanDay simpleDay(String name, List<SimpleItem> items, {String focus = ''}) => PlanDay(
+  name: name,
+  focus: focus,
+  items: [
+    for (final i in items)
+      PlanItem(
+        kind: ItemKind.accessory,
+        exerciseId: i.exerciseId,
+        name: i.name,
+        sets: i.sets == null || i.sets! < 1 ? 1 : i.sets!,
+        repsLow: i.reps,
+        repsHigh: i.reps,
+      ),
+  ],
+);
+
+/// An empty day for a plan the user makes.
+PlanDay emptyDay(int number) => PlanDay(name: 'Day $number', focus: '', items: const []);

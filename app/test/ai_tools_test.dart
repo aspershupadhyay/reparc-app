@@ -12,6 +12,7 @@ import 'package:reparc/ai/tools.dart';
 import 'package:reparc/data/database.dart';
 import 'package:reparc/data/meal_repository.dart';
 import 'package:reparc/data/models.dart';
+import 'package:reparc/data/program_repository.dart';
 import 'package:reparc/data/settings_repository.dart';
 import 'package:reparc/data/workout_repository.dart';
 import 'package:reparc/features/exercises/library/library.dart';
@@ -180,18 +181,22 @@ void main() {
     });
     expect(r.isError, isFalse);
     final id = r.data['proposal_id'] as String;
-    expect(await f.db.select(f.db.workoutTemplates).get(), isEmpty);
+    expect(await f.db.select(f.db.programs).get(), isEmpty);
     expect((await f.call('get_proposal_status', {'proposal_id': id})).data['status'], 'pending');
 
     final created = await f.proposals.approve(id);
-    expect(created, hasLength(2));
-    final a = await f.workouts.loadTemplate(created.first);
-    expect(a!.template.name, 'Day A');
-    expect(a.template.note, 'Rest 2 min between sets.');
-    expect(a.items.map((i) => i.exercise.name), ['Back squat', 'Barbell Squat', 'Made-up move']);
-    expect(a.items.first.exercise.catalogId, 'back-squat');
-    expect(a.items[1].exercise.catalogId, 'lib:Barbell_Squat');
-    expect(a.items.first.item.targetSets, 3);
+    expect(created, hasLength(1), reason: 'Several proposed workouts become one plan with days');
+    final saved = (await ProgramRepository(f.db, f.clock.call).all()).single;
+    expect(saved.id, created.single);
+    expect(saved.followed, isFalse);
+    expect(saved.plan.days.map((d) => d.name), ['Day A', 'Day B']);
+    final a = saved.plan.days.first;
+    expect(a.focus, 'Rest 2 min between sets.');
+    expect(a.items.map((i) => i.name), ['Back squat', 'Barbell Squat', 'Made-up move']);
+    expect(a.items.first.exerciseId, 'back-squat');
+    expect(a.items[1].exerciseId, 'lib:Barbell_Squat');
+    expect(a.items.last.exerciseId, startsWith('user:'));
+    expect(a.items.first.sets, 3);
     expect((await f.call('get_proposal_status', {'proposal_id': id})).data['status'], 'approved');
     await expectLater(f.proposals.approve(id), throwsStateError);
   });
@@ -257,7 +262,7 @@ void main() {
       ],
     });
     await f.proposals.decline(r.data['proposal_id'] as String);
-    expect(await f.db.select(f.db.workoutTemplates).get(), isEmpty);
+    expect(await f.db.select(f.db.programs).get(), isEmpty);
     expect((await f.db.select(f.db.aiProposals).getSingle()).status, ProposalStatus.declined);
   });
 

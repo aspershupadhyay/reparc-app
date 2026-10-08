@@ -1,6 +1,7 @@
 import 'package:drift/drift.dart';
 import 'package:drift_flutter/drift_flutter.dart';
 
+import '../domain/roadmap.dart';
 import 'models.dart';
 
 part 'database.g.dart';
@@ -32,6 +33,9 @@ class Exercises extends Table with RecordColumns {
   BoolColumn get archived => boolean().withDefault(const Constant(false))();
 }
 
+/// Plans from schema v4 and before. Since v5 they are copied into
+/// [Programs] and the app no longer reads or writes them. A later version
+/// removes these two tables (handbook 4.12).
 class WorkoutTemplates extends Table with RecordColumns {
   TextColumn get name => text().withLength(min: 1, max: 120)();
   TextColumn get note => text().nullable()();
@@ -260,7 +264,7 @@ class AppDatabase extends _$AppDatabase {
   /// Current local data format. Every change needs a migration, a test from
   /// the last supported version, and a recovery plan (handbook 7.5).
   @override
-  int get schemaVersion => 4;
+  int get schemaVersion => 5;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -295,11 +299,58 @@ class AppDatabase extends _$AppDatabase {
         await m.createTable(programs);
         await m.createTable(bodyWeights);
       }
+      // v4 -> v5: plans and roadmaps become one kind of plan.
+      if (from < 5) await transaction(copyLegacyPlans);
     },
     beforeOpen: (details) async {
       await customStatement('PRAGMA foreign_keys = ON');
     },
   );
+
+  /// Copies plans from schema v4 and before into [programs] as one-day
+  /// plans with the same IDs. Plans copied before are skipped. Sessions
+  /// started from a copied plan get its ID and day 0. Returns the number of
+  /// plans copied (handbook 4.12).
+  Future<int> copyLegacyPlans() async {
+    var copied = 0;
+    for (final t in await select(workoutTemplates).get()) {
+      if (await (select(programs)..where((p) => p.id.equals(t.id))).getSingleOrNull() != null) continue;
+      final rows =
+          await (select(templateExercises).join([
+                  innerJoin(exercises, exercises.id.equalsExp(templateExercises.exerciseId)),
+                ])
+                ..where(templateExercises.templateId.equals(t.id))
+                ..orderBy([OrderingTerm.asc(templateExercises.position)]))
+              .get();
+      final day = simpleDay(t.name, focus: t.note ?? '', [
+        for (final r in rows)
+          (
+            exerciseId: r.readTable(exercises).catalogId ?? userRef(r.readTable(exercises).id),
+            name: r.readTable(exercises).name,
+            sets: r.readTable(templateExercises).targetSets,
+            reps: r.readTable(templateExercises).targetReps,
+          ),
+      ]);
+      await into(programs).insert(
+        ProgramsCompanion.insert(
+          id: t.id,
+          name: t.name,
+          goal: 'custom',
+          level: 'custom',
+          equipment: 'custom',
+          daysPerWeek: 1,
+          plan: ProgramPlan(days: [day]).encode(),
+          createdAt: t.createdAt,
+          updatedAt: t.updatedAt,
+        ),
+      );
+      await (update(workoutSessions)..where((s) => s.templateId.equals(t.id) & s.programId.isNull())).write(
+        WorkoutSessionsCompanion(programId: Value(t.id), programDay: const Value(0)),
+      );
+      copied++;
+    }
+    return copied;
+  }
 
   /// Default meal slots. The user can rename, reorder, or remove them.
   Future<void> seedMealSlots() async {

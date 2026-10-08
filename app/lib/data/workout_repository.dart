@@ -27,18 +27,6 @@ class SessionDetail {
   int get totalSets => exercises.fold(0, (a, e) => a + e.sets.length);
 }
 
-class TemplateItemView {
-  const TemplateItemView(this.item, this.exercise);
-  final TemplateExercise item;
-  final Exercise exercise;
-}
-
-class TemplateDetail {
-  const TemplateDetail(this.template, this.items);
-  final WorkoutTemplate template;
-  final List<TemplateItemView> items;
-}
-
 class SessionSummary {
   const SessionSummary(this.session, this.exerciseCount, this.completedSets);
   final WorkoutSession session;
@@ -75,6 +63,8 @@ class WorkoutRepository {
             ..where((e) => e.archived.equals(false))
             ..orderBy([(e) => OrderingTerm.asc(e.name.lower())]))
           .watch();
+
+  Future<Exercise?> exercise(String id) => (db.select(db.exercises)..where((e) => e.id.equals(id))).getSingleOrNull();
 
   Stream<Exercise?> watchExercise(String id) =>
       (db.select(db.exercises)..where((e) => e.id.equals(id))).watchSingleOrNull();
@@ -206,129 +196,6 @@ class WorkoutRepository {
     ];
   }
 
-  // -------------------------------------------------------------- Templates
-
-  Stream<List<(WorkoutTemplate, int)>> watchTemplates() {
-    return watchTables(db, [db.workoutTemplates, db.templateExercises], () async {
-      final templates = await (db.select(
-        db.workoutTemplates,
-      )..orderBy([(t) => OrderingTerm.asc(t.name.lower())])).get();
-      final count = db.templateExercises.id.count();
-      final counts = {
-        for (final r
-            in await (db.selectOnly(db.templateExercises)
-                  ..addColumns([db.templateExercises.templateId, count])
-                  ..groupBy([db.templateExercises.templateId]))
-                .get())
-          r.read(db.templateExercises.templateId)!: r.read(count)!,
-      };
-      return [for (final t in templates) (t, counts[t.id] ?? 0)];
-    });
-  }
-
-  Stream<TemplateDetail?> watchTemplate(String id) {
-    return watchTables(db, [db.workoutTemplates, db.templateExercises, db.exercises], () => loadTemplate(id));
-  }
-
-  Future<TemplateDetail?> loadTemplate(String id) async {
-    final t = await (db.select(db.workoutTemplates)..where((t) => t.id.equals(id))).getSingleOrNull();
-    if (t == null) return null;
-    final rows =
-        await (db.select(db.templateExercises).join([
-                innerJoin(db.exercises, db.exercises.id.equalsExp(db.templateExercises.exerciseId)),
-              ])
-              ..where(db.templateExercises.templateId.equals(id))
-              ..orderBy([OrderingTerm.asc(db.templateExercises.position)]))
-            .get();
-    return TemplateDetail(t, [
-      for (final r in rows) TemplateItemView(r.readTable(db.templateExercises), r.readTable(db.exercises)),
-    ]);
-  }
-
-  Future<String> createTemplate(String name) async {
-    final id = _uuid.v4();
-    final now = _now;
-    await db
-        .into(db.workoutTemplates)
-        .insert(
-          WorkoutTemplatesCompanion.insert(id: id, name: name.trim(), createdAt: now, updatedAt: now),
-        );
-    return id;
-  }
-
-  Future<void> renameTemplate(String id, String name) =>
-      (db.update(db.workoutTemplates)..where((t) => t.id.equals(id))).write(
-        WorkoutTemplatesCompanion(name: Value(name.trim()), updatedAt: Value(_now)),
-      );
-
-  Future<String> copyTemplate(String id) => db.transaction(() async {
-    final src = await loadTemplate(id);
-    if (src == null) throw StateError('Plan not found');
-    final newId = await createTemplate('${src.template.name} (copy)');
-    for (final i in src.items) {
-      await _insertTemplateItem(newId, i.exercise.id, i.item.position, i.item.targetSets, i.item.targetReps);
-    }
-    return newId;
-  });
-
-  /// Deletes a plan. Saved workouts started from it do not change.
-  Future<void> deleteTemplate(String id) => (db.delete(db.workoutTemplates)..where((t) => t.id.equals(id))).go();
-
-  Future<void> addTemplateExercise(String templateId, String exerciseId, {int? targetSets, int? targetReps}) async {
-    final pos = await _nextPosition(db.templateExercises, db.templateExercises.templateId, templateId);
-    await _insertTemplateItem(templateId, exerciseId, pos, targetSets, targetReps);
-    await _touchTemplate(templateId);
-  }
-
-  Future<void> updateTemplateTargets(String itemId, {int? targetSets, int? targetReps}) =>
-      (db.update(db.templateExercises)..where((t) => t.id.equals(itemId))).write(
-        TemplateExercisesCompanion(
-          targetSets: Value(targetSets),
-          targetReps: Value(targetReps),
-          updatedAt: Value(_now),
-        ),
-      );
-
-  Future<void> removeTemplateExercise(String itemId) =>
-      (db.delete(db.templateExercises)..where((t) => t.id.equals(itemId))).go();
-
-  Future<void> moveTemplateExercise(String templateId, int from, int to) => db.transaction(() async {
-    final items =
-        await (db.select(db.templateExercises)
-              ..where((t) => t.templateId.equals(templateId))
-              ..orderBy([(t) => OrderingTerm.asc(t.position)]))
-            .get();
-    final moved = items.removeAt(from);
-    items.insert(to, moved);
-    for (final (i, item) in items.indexed) {
-      await (db.update(db.templateExercises)..where((t) => t.id.equals(item.id))).write(
-        TemplateExercisesCompanion(position: Value(i), updatedAt: Value(_now)),
-      );
-    }
-  });
-
-  Future<void> _insertTemplateItem(String templateId, String exerciseId, int pos, int? sets, int? reps) {
-    final now = _now;
-    return db
-        .into(db.templateExercises)
-        .insert(
-          TemplateExercisesCompanion.insert(
-            id: _uuid.v4(),
-            templateId: templateId,
-            exerciseId: exerciseId,
-            position: pos,
-            targetSets: Value(sets),
-            targetReps: Value(reps),
-            createdAt: now,
-            updatedAt: now,
-          ),
-        );
-  }
-
-  Future<void> _touchTemplate(String id) => (db.update(
-    db.workoutTemplates,
-  )..where((t) => t.id.equals(id))).write(WorkoutTemplatesCompanion(updatedAt: Value(_now)));
-
   // --------------------------------------------------------------- Sessions
 
   /// The session that is in progress or paused, if any.
@@ -345,22 +212,19 @@ class WorkoutRepository {
             ..limit(1))
           .getSingleOrNull();
 
-  /// Starts a new session. A plan is copied, so later plan edits do not
-  /// change this session (handbook 4.6).
-  Future<String> startSession({String? templateId}) => db.transaction(() async {
+  /// Starts an empty session.
+  Future<String> startSession() => db.transaction(() async {
     final live = await liveSession();
     if (live != null) throw StateError('A workout is already in progress.');
     final local = clock();
     final now = local.toUtc();
-    final template = templateId == null ? null : await loadTemplate(templateId);
     final id = _uuid.v4();
     await db
         .into(db.workoutSessions)
         .insert(
           WorkoutSessionsCompanion.insert(
             id: id,
-            templateId: Value(template?.template.id),
-            name: template?.template.name ?? 'Workout',
+            name: 'Workout',
             status: SessionStatus.active,
             startedAt: now,
             utcOffsetMinutes: local.timeZoneOffset.inMinutes,
@@ -369,20 +233,23 @@ class WorkoutRepository {
             updatedAt: now,
           ),
         );
-    for (final item in template?.items ?? const <TemplateItemView>[]) {
-      final seId = await _insertSessionExercise(id, item.exercise.id, item.item.position);
-      final (sets, reps) = (item.item.targetSets, item.item.targetReps);
-      final target = [if (sets != null && sets > 0) '$sets sets', if (reps != null) '$reps reps'].join(' × ');
-      if (target.isNotEmpty) await _setNote(seId, 'Target: $target');
-      // Without a target, start with one empty set, as an added exercise does.
-      for (var i = 0; i < (sets == null || sets < 1 ? 1 : sets); i++) {
-        await _insertSet(seId, i, SetType.working);
-      }
-    }
     return id;
   });
 
-  /// Starts a session from one roadmap day. Warm-up moves come first, with
+  /// The exercise row a plan item logs to: the user's own exercise for a
+  /// `user:` reference, else the row for that built-in ID.
+  Future<String> _exerciseFor(PlanItem item) async {
+    final own = userRefId(item.exerciseId);
+    if (own != null) {
+      final row = await (db.select(db.exercises)..where((e) => e.id.equals(own))).getSingleOrNull();
+      if (row != null) return row.id;
+      // The exercise is gone: log under the plan's name instead.
+      return createExercise(name: item.name);
+    }
+    return ensureCatalogExercise(catalogId: item.exerciseId, name: item.name);
+  }
+
+  /// Starts a session from one day of a plan. Warm-up moves come first, with
   /// warm-up sets to tick off (warm-up sets never count toward volume, sets,
   /// or records). Then the working exercises, with lighter ramp-up sets
   /// before the first big lift and the day's target as a note. Cool-down
@@ -416,7 +283,7 @@ class WorkoutRepository {
     var pos = 0;
     if (plan.showWarmup) {
       for (final item in day.warmup) {
-        final exId = await ensureCatalogExercise(catalogId: item.exerciseId, name: item.name);
+        final exId = await _exerciseFor(item);
         final seId = await _insertSessionExercise(id, exId, pos++);
         await _setNote(seId, ['Warm-up', item.details, ?item.note].where((s) => s.isNotEmpty).join(' · '));
         for (var i = 0; i < item.sets; i++) {
@@ -429,16 +296,14 @@ class WorkoutRepository {
       }
     }
     for (final item in day.work) {
-      final exId = await ensureCatalogExercise(catalogId: item.exerciseId, name: item.name);
+      final exId = await _exerciseFor(item);
       final seId = await _insertSessionExercise(id, exId, pos++);
-      await _setNote(
-        seId,
-        [
-          'Target: ${item.details}',
-          if (item.rampUp) 'Ramp-up sets first: ${rampUpText(plan.level)} of your working weight',
-          ?item.note,
-        ].join('\n'),
-      );
+      final note = [
+        if (item.details.isNotEmpty) 'Target: ${item.details}',
+        if (item.rampUp) 'Ramp-up sets first: ${rampUpText(plan.level)} of your working weight',
+        ?item.note,
+      ];
+      if (note.isNotEmpty) await _setNote(seId, note.join('\n'));
       var setPos = 0;
       if (item.rampUp) {
         for (final _ in rampUpSets(plan.level)) {

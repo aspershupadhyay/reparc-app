@@ -8,7 +8,9 @@ import '../core/dates.dart';
 import '../data/database.dart';
 import '../data/meal_repository.dart';
 import '../data/models.dart';
+import '../data/program_repository.dart';
 import '../data/workout_repository.dart';
+import '../domain/roadmap.dart';
 import '../features/exercises/catalog/catalog.dart';
 import '../features/exercises/library/library.dart';
 
@@ -87,13 +89,13 @@ class ProposalRepository {
   Future<void> decline(String id) => _decide(id, ProposalStatus.declined);
 
   /// Applies a pending proposal in one transaction, then marks it approved.
-  /// Returns the IDs of created plans, or of created meal entries.
+  /// Returns the ID of the created plan, or of created meal entries.
   Future<List<String>> approve(String id) => db.transaction(() async {
     final p = await find(id);
     if (p == null || p.status != ProposalStatus.pending) throw StateError('This proposal is no longer waiting.');
     final payload = jsonDecode(p.payload) as Map<String, dynamic>;
     final created = switch (p.kind) {
-      ProposalKind.workoutPlan => await _applyPlans(payload),
+      ProposalKind.workoutPlan => await _applyPlans(payload, p.client),
       ProposalKind.mealPlan => await _applyMeals(payload, p.client),
     };
     await _decide(id, ProposalStatus.approved);
@@ -105,29 +107,28 @@ class ProposalRepository {
         AiProposalsCompanion(status: Value(status), decidedAt: Value(_now), updatedAt: Value(_now)),
       );
 
-  Future<List<String>> _applyPlans(Map<String, dynamic> payload) async {
+  /// Proposed workouts become one plan with one day for each workout. It is
+  /// saved, not followed; the user taps Follow (handbook 4.12).
+  Future<List<String>> _applyPlans(Map<String, dynamic> payload, String client) async {
     final lib = await library();
-    final ids = <String>[];
-    for (final plan in (payload['plans'] as List).cast<Map<String, dynamic>>()) {
-      final templateId = await workouts.createTemplate(plan['name'] as String);
-      final note = plan['note'] as String?;
-      if (note != null) {
-        await (db.update(db.workoutTemplates)..where((t) => t.id.equals(templateId))).write(
-          WorkoutTemplatesCompanion(note: Value(note)),
-        );
-      }
+    final plans = (payload['plans'] as List).cast<Map<String, dynamic>>();
+    final days = <PlanDay>[];
+    for (final plan in plans) {
+      final items = <SimpleItem>[];
       for (final e in (plan['exercises'] as List).cast<Map<String, dynamic>>()) {
-        final exerciseId = await resolveExercise(e['name'] as String, e['library_id'] as String?, lib);
-        await workouts.addTemplateExercise(
-          templateId,
-          exerciseId,
-          targetSets: e['sets'] as int?,
-          targetReps: e['reps'] as int?,
-        );
+        final rowId = await resolveExercise(e['name'] as String, e['library_id'] as String?, lib);
+        final row = await (db.select(db.exercises)..where((x) => x.id.equals(rowId))).getSingle();
+        items.add((
+          exerciseId: row.catalogId ?? userRef(row.id),
+          name: row.name,
+          sets: e['sets'] as int?,
+          reps: e['reps'] as int?,
+        ));
       }
-      ids.add(templateId);
+      days.add(simpleDay(plan['name'] as String, items, focus: plan['note'] as String? ?? ''));
     }
-    return ids;
+    final name = plans.length == 1 ? plans.single['name'] as String : 'Plan from $client';
+    return [await ProgramRepository(db, clock).create(ProgramPlan(days: days), name: name)];
   }
 
   /// Finds the exercise row a proposed exercise should use. A known library

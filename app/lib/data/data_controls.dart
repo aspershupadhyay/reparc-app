@@ -48,7 +48,8 @@ class DataControls {
         'Meal entry nutrient values are per source serving. amount and amountUnit are the amount eaten.',
         'null means the value was not recorded. It does not mean zero.',
         'sodiumMg is milligrams. fiberG and sugarG are grams.',
-        'programs.plan is a JSON document: the roadmap days, warm-ups, and exercise targets.',
+        'programs.plan is a JSON document: the plan days, warm-ups, and exercise targets. '
+            'An exerciseId of "user:<id>" points to a row in exercises.',
       ],
       'scopes': [
         for (final s in DataControls.allScopes)
@@ -56,8 +57,6 @@ class DataControls {
       ],
       'tables': {
         'exercises': workout ? await rows(db.exercises) : none,
-        'workoutTemplates': workout ? await rows(db.workoutTemplates) : none,
-        'templateExercises': workout ? await rows(db.templateExercises) : none,
         'workoutSessions': workout ? await rows(db.workoutSessions) : none,
         'sessionExercises': workout ? await rows(db.sessionExercises) : none,
         'setEntries': workout ? await rows(db.setEntries) : none,
@@ -105,6 +104,8 @@ class DataControls {
     await db.transaction(() async {
       await _clear();
       await put(db.exercises, 'exercises', (j) => Exercise.fromJson(j, serializer: ser));
+      // Files from schema v4 and before carry plans in these two tables.
+      // They are copied into programs below, as the v5 migration does.
       await put(db.workoutTemplates, 'workoutTemplates', (j) => WorkoutTemplate.fromJson(j, serializer: ser));
       await put(db.templateExercises, 'templateExercises', (j) => TemplateExercise.fromJson(j, serializer: ser));
       await put(db.workoutSessions, 'workoutSessions', (j) => WorkoutSession.fromJson(j, serializer: ser));
@@ -114,6 +115,7 @@ class DataControls {
       await put(db.mealSlots, 'mealSlots', (j) => MealSlot.fromJson(j, serializer: ser));
       await put(db.mealEntries, 'mealEntries', (j) => MealEntry.fromJson(j, serializer: ser));
       await put(db.programs, 'programs', (j) => Program.fromJson(j, serializer: ser));
+      await db.copyLegacyPlans();
       await put(db.bodyWeights, 'bodyWeights', (j) => BodyWeight.fromJson(j, serializer: ser));
       await put(db.aiProposals, 'aiProposals', (j) => AiProposal.fromJson(j, serializer: ser));
       for (final r in rows('settings')) {

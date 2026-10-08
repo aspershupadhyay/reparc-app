@@ -359,12 +359,12 @@ Keep major choices here. Update the related chapter when a decision changes.
 
 ## D-030: One plan model for roadmaps and plans
 
-**Status:** Proposed. Not approved.
+**Status:** Accepted by the user 2026-10-08. Built.
 **Date:** 2026-10-06.
 
 **Choice:** Merge workout plans (`workout_templates`) into roadmaps (`programs`). A plan has 1–7 days. The user follows one plan; any day of any plan can start at any time. Schema v5 copies old plans and keeps the old tables for one release. See [section 4.12](03-workouts.md#412-proposed-one-plan-for-roadmaps-and-plans).
 
 **Why:** Two planning systems confused users. AI suggestions and AI imports landed in different places.
 
-**To confirm:** The name, when to remove the old tables, how AI proposals map to days, and whether new plans are followed at once (section 4.12, owner choices).
+**Owner choices:** Call it a plan. Keep the old tables for one release. Several AI workouts become one plan with days. A new or approved plan is followed only when the user taps Follow; a plan built for a goal is followed when the user taps **Follow this plan** in the builder.
 

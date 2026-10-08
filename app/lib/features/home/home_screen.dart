@@ -343,9 +343,9 @@ class _Hero extends ConsumerWidget {
     final (String eyebrow, String title, String? sub, String label, VoidCallback onTap) = switch ((live, next)) {
       (final l?, _) => ('Training now', '', null, 'Continue workout', () => context.push('/live/${l.id}')),
       (null, final d?) => (
-        'Next on your roadmap',
+        'Next in your plan',
         d.name,
-        '${d.focus} · ${d.work.length} exercises · about ${d.minutes} min',
+        [if (d.focus.isNotEmpty) d.focus, '${d.work.length} exercises', 'about ${d.minutes} min'].join(' · '),
         'Start workout',
         () => startWorkout(context, ref, programId: program!.id, programDay: program.nextDay),
       ),
@@ -401,7 +401,7 @@ class _Hero extends ConsumerWidget {
                       TextButton(
                         onPressed: () => context.go('/workout'),
                         style: TextButton.styleFrom(foregroundColor: p.onPanelSoft),
-                        child: const Text('Pick a roadmap'),
+                        child: const Text('Pick a plan'),
                       ),
                   ],
                 ),
@@ -524,7 +524,7 @@ class _WeekCard extends StatelessWidget {
       onTap: () => context.go('/analytics'),
       semanticLabel:
           'This week: $count workouts on ${trained.length} days'
-          '${roadmapPlanned == null ? '' : ', ${roadmapDone ?? 0} of $roadmapPlanned roadmap days'}. Open Analytics',
+          '${roadmapPlanned == null ? '' : ', ${roadmapDone ?? 0} of $roadmapPlanned plan days'}. Open Analytics',
       child: ExcludeSemantics(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -537,7 +537,7 @@ class _WeekCard extends StatelessWidget {
                 if (roadmapPlanned != null) ...[
                   Text('${roadmapDone ?? 0}/$roadmapPlanned', style: t.headlineSmall?.tabular),
                   const SizedBox(width: 4),
-                  Text('roadmap', style: t.bodySmall),
+                  Text('plan', style: t.bodySmall),
                 ] else ...[
                   Text('$count', style: t.headlineSmall?.tabular),
                   const SizedBox(width: 4),

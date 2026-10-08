@@ -324,8 +324,8 @@ class _RoadmapAdherence extends StatelessWidget {
             size: 64,
             stroke: 7,
             semanticLabel: planned == 0
-                ? 'Roadmap: no planned days in this range yet'
-                : 'Roadmap: $done of $planned planned workouts',
+                ? 'Your plan: no planned days in this range yet'
+                : 'Your plan: $done of $planned planned workouts',
             child: Text(planned == 0 ? missingText : '$done/$planned', style: t.labelMedium?.tabular),
           ),
           const SizedBox(width: Space.m),
@@ -333,8 +333,8 @@ class _RoadmapAdherence extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('Roadmap', style: t.titleMedium),
-                Text(program.plan.title, style: t.bodySmall),
+                Text('Your plan', style: t.titleMedium),
+                Text(program.name, style: t.bodySmall),
                 Text(
                   planned == 0
                       ? 'No planned days in this range yet.'
