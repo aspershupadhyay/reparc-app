@@ -2,7 +2,7 @@
 title: Gym workout logging
 status: proposed
 owner: product-and-engineering
-updated: 2026-10-06
+updated: 2026-10-09
 ---
 
 # Section 4: Gym workout logging
@@ -139,7 +139,9 @@ Built 2026-10-06 (D-024, D-025).
 - Every exercise has a version for a full gym, dumbbells, and home. The user can swap to any of them or to any library exercise.
 - Each plan has a progression rule and an easy-week (deload) rule by level.
 
-**Starting.** The Workout tab has one start card at the top. It shows the live workout, else the next roadmap day, else an empty workout. With a roadmap, **Start** starts the next day at once, **See the day** opens the day page, and **Empty workout** starts a workout with no exercises. Home's main card starts the same next day. Any day in the week list opens its day page, which has its own **Start workout** button. All start buttons use one function (`app/lib/features/workout/start_workout.dart`). If a workout is already live, they open it instead.
+**Starting.** The Workout tab has one start card at the top. It shows the live workout, else the next roadmap day, else an empty workout. With a roadmap, **Start workout** starts the next day at once, **See the day** opens the day page, and **Empty workout** starts a workout with no exercises. Home's main card starts the same next day. Any day in the week list opens its day page, which has its own **Start workout** button. All start buttons use one function (`app/lib/features/workout/start_workout.dart`). If a workout is already live, they open it instead. On the Exercises and History views the start card folds to one row (D-032).
+
+**Day page (D-032).** The day name is the large title, with one summary line. Warm-up and cool-down fold to one summary row each; tap to open them and see the coaching notes. The main lift has a **Main lift** label and a larger name. Each row shows sets × reps only; rest and reps in reserve are in the edit sheet and the screen-reader label. One **How this day works** link holds the help text.
 
 **In the workout.** The day's warm-up moves come first. Each move gets one warm-up set for each set on the day page (a timed move shows its time). Then the working exercises. Each has a note with the same target line as the day page, for example "Target: 3 × 6–10 · 2:30 min rest · 2 reps left". The first loaded main lift also gets ramp-up sets, and its note gives their weights, for example "50% × 8, 70% × 5 of your working weight". Cool-down stretches show on the day page only; they are not logged. Warm-up sets never count toward volume, set counts, exercise counts in History, or records. Targets are never saved as done values.
 

@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:reparc/app/app.dart';
 import 'package:reparc/app/router.dart';
+import 'package:reparc/core/format.dart';
 import 'package:reparc/core/clock.dart';
 import 'package:reparc/data/database.dart';
 import 'package:reparc/data/models.dart';
@@ -61,7 +62,7 @@ void main() {
     await unmount(tester);
     await pumpApp(tester, at: '/workout/plan/new?goal=calisthenics');
     final builder = find.descendant(of: find.byType(RoadmapBuilderScreen), matching: find.byType(Scrollable)).first;
-    await tester.scrollUntilVisible(find.text('Your week'), 100, scrollable: builder);
+    await tester.scrollUntilVisible(find.text('YOUR WEEK'), 100, scrollable: builder);
     await tester.pumpAndSettle();
     await tester.ensureVisible(find.text('Home, no weights', skipOffstage: false));
     await tester.pumpAndSettle();
@@ -70,10 +71,12 @@ void main() {
     await tester.tap(find.widgetWithText(FilledButton, 'Follow this plan'));
     await tester.pumpAndSettle();
 
-    expect(find.text('Next in your plan'), findsOneWidget);
+    expect(find.text('NEXT IN YOUR PLAN'), findsOneWidget);
     await tester.tap(find.text('See the day'));
     await tester.pumpAndSettle();
-    expect(find.text('1. Warm-up (about 8 min)'), findsOneWidget);
+    // Warm-up is folded to one summary row (D-032).
+    expect(find.text('Warm-up'), findsOneWidget);
+    expect(find.text(metaLine(['5 moves', 'about 8 min'])), findsOneWidget);
     // Let the "Roadmap saved" message close.
     await tester.pump(const Duration(seconds: 5));
     await tester.pumpAndSettle();
@@ -151,7 +154,12 @@ void main() {
   testWidgets('import an AI roadmap only after preview and approval', (tester) async {
     await pumpApp(tester, at: '/me/ai/file');
     final list = find.descendant(of: find.byType(AiFileScreen), matching: find.byType(Scrollable)).first;
-    await tester.scrollUntilVisible(find.text('Import a plan'), 300, scrollable: list);
+    // Jump to the end: a drag from the centre can land on the selectable
+    // config text, which keeps the drag for itself.
+    final pos = tester.state<ScrollableState>(list).position;
+    pos.jumpTo(pos.maxScrollExtent);
+    await tester.pumpAndSettle();
+    await tester.scrollUntilVisible(find.text('Import a plan'), -300, scrollable: list);
     await tester.pumpAndSettle();
     await tester.tap(find.text('Import a plan', skipOffstage: false));
     await tester.pumpAndSettle();
@@ -159,7 +167,7 @@ void main() {
     await tester.enterText(find.widgetWithText(TextField, 'Plan JSON'), '```json\n$example\n```');
     await tester.tap(find.widgetWithText(OutlinedButton, 'Check'));
     await tester.pumpAndSettle();
-    expect(find.text('Preview'), findsOneWidget);
+    expect(find.text('PREVIEW'), findsOneWidget);
     expect(await db.select(db.programs).get(), isEmpty, reason: 'Nothing is saved before approval');
     await tester.ensureVisible(find.text('Approve and save this plan'));
     await tester.tap(find.text('Approve and save this plan'));

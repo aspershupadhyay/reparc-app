@@ -127,8 +127,10 @@ class Palette extends ThemeExtension<Palette> {
     energy: Color(0xFFC6F432),
     onEnergy: Color(0xFF000000),
     energyStrong: Color(0xFFC6F432),
-    panel: Color(0xFF1C1C1E),
-    panelRaised: Color(0xFF2C2C2E),
+    // A faint lime tint, so the training panel stands apart from the
+    // #1C1C1E cards around it (it was the same colour, 2026-10-09).
+    panel: Color(0xFF1A2010),
+    panelRaised: Color(0xFF29311D),
     onPanel: Color(0xFFFFFFFF),
     onPanelSoft: Color(0xFF98989F),
     success: Color(0xFF30D158),

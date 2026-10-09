@@ -53,6 +53,9 @@ class _EntrySheetState extends ConsumerState<_EntrySheet> {
   late MealStatus _status = _e?.status ?? _defaultStatus();
   late String _source = _e?.source ?? sourceManual;
   bool _saveFood = false;
+
+  /// The user chose to type a food in by hand.
+  bool _manual = false;
   final _search = TextEditingController();
   String? _error;
   bool _saving = false;
@@ -288,6 +291,9 @@ class _EntrySheetState extends ConsumerState<_EntrySheet> {
               .toList();
     final adding = _e == null;
     final settings = ref.watch(currentSettingsProvider);
+    // Search first. The long form shows once a food is picked, or when the
+    // user asks to type one in (visual review, 2026-10-09).
+    final showForm = !adding || _manual || _name.text.isNotEmpty;
 
     InputDecoration num(String label, String? suffix) =>
         InputDecoration(labelText: label, suffixText: suffix, helperText: null);
@@ -300,29 +306,34 @@ class _EntrySheetState extends ConsumerState<_EntrySheet> {
           Text(adding ? 'Add food' : 'Edit food', style: t.titleLarge),
           Text(fmtDayLong(parseDayKey(widget.day)), style: t.bodySmall),
           const SizedBox(height: Space.l),
-          Text('Meal', style: t.labelMedium),
+          // Up to four meals fit one segmented row; more fall back to chips.
+          if (slots.length <= 4 && slots.any((s) => s.id == _slotId))
+            PillTabs<String>(
+              values: [for (final s in slots) s.id],
+              selected: _slotId!,
+              label: (id) => slots.firstWhere((s) => s.id == id).name,
+              onChanged: (id) => setState(() => _slotId = id),
+            )
+          else
+            Wrap(
+              spacing: Space.s,
+              runSpacing: Space.s,
+              children: [
+                for (final s in slots)
+                  ChoiceChip(
+                    label: Text(s.name),
+                    selected: _slotId == s.id,
+                    onSelected: (_) => setState(() => _slotId = s.id),
+                  ),
+              ],
+            ),
           const SizedBox(height: Space.s),
-          Wrap(
-            spacing: Space.s,
-            runSpacing: Space.s,
-            children: [
-              for (final s in slots)
-                ChoiceChip(
-                  label: Text(s.name),
-                  selected: _slotId == s.id,
-                  onSelected: (_) => setState(() => _slotId = s.id),
-                ),
-            ],
-          ),
-          const SizedBox(height: Space.l),
-          SegmentedButton<MealStatus>(
-            showSelectedIcon: false,
-            segments: const [
-              ButtonSegment(value: MealStatus.eaten, label: Text('Eaten'), icon: Icon(LucideIcons.check)),
-              ButtonSegment(value: MealStatus.planned, label: Text('Planned'), icon: Icon(LucideIcons.clock)),
-            ],
-            selected: {_status},
-            onSelectionChanged: (s) => setState(() => _status = s.first),
+          PillTabs<MealStatus>(
+            values: const [MealStatus.eaten, MealStatus.planned],
+            selected: _status,
+            label: (s) => s == MealStatus.eaten ? 'Eaten' : 'Planned',
+            icon: (s) => s == MealStatus.eaten ? LucideIcons.check : LucideIcons.clock,
+            onChanged: (s) => setState(() => _status = s),
           ),
           if (adding) ...[
             const SizedBox(height: Space.l),
@@ -361,171 +372,185 @@ class _EntrySheetState extends ConsumerState<_EntrySheet> {
                 ),
                 onTap: () => _useFood(f),
               ),
+            if (!showForm) ...[
+              const SizedBox(height: Space.s),
+              Align(
+                alignment: Alignment.centerLeft,
+                child: TextButton.icon(
+                  onPressed: () => setState(() => _manual = true),
+                  icon: const Icon(LucideIcons.pencil, size: IconSizes.s),
+                  label: const Text('Can\'t find it? Enter it yourself'),
+                ),
+              ),
+            ],
           ],
-          const SizedBox(height: Space.l),
-          TextField(
-            controller: _name,
-            textCapitalization: TextCapitalization.sentences,
-            maxLength: 160,
-            decoration: const InputDecoration(labelText: 'Food name'),
-          ),
-          const SizedBox(height: Space.s),
-          TextField(
-            controller: _brand,
-            textCapitalization: TextCapitalization.words,
-            decoration: const InputDecoration(labelText: 'Brand (optional)'),
-          ),
-          const SizedBox(height: Space.l),
-          Text('Values for one serving (optional)', style: t.labelMedium),
-          const SizedBox(height: Space.xs),
-          Text('Leave a value empty if you do not know it. Empty is not zero.', style: t.bodySmall),
-          const SizedBox(height: Space.s),
-          Row(
-            children: [
-              Expanded(
-                child: TextField(
-                  controller: _serving,
-                  onChanged: (_) => setState(() {}),
-                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                  decoration: num('Serving size', null),
-                ),
-              ),
-              const SizedBox(width: Space.s),
-              DropdownButton<String>(
-                value: _servingUnit,
-                icon: pickerIcon(context),
-                underline: const SizedBox.shrink(),
-                items: [for (final u in _servingUnits) DropdownMenuItem(value: u, child: Text(u))],
-                onChanged: (v) => setState(() => _servingUnit = v!),
-              ),
-            ],
-          ),
-          const SizedBox(height: Space.m),
-          Row(
-            children: [
-              Expanded(
-                child: TextField(
-                  controller: _kcal,
-                  onChanged: (_) => setState(() {}),
-                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                  decoration: num('Energy', 'kcal'),
-                ),
-              ),
-              const SizedBox(width: Space.s),
-              Expanded(
-                child: TextField(
-                  controller: _protein,
-                  onChanged: (_) => setState(() {}),
-                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                  decoration: num('Protein', 'g'),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: Space.m),
-          Row(
-            children: [
-              Expanded(
-                child: TextField(
-                  controller: _carbs,
-                  onChanged: (_) => setState(() {}),
-                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                  decoration: num('Carbs', 'g'),
-                ),
-              ),
-              const SizedBox(width: Space.s),
-              Expanded(
-                child: TextField(
-                  controller: _fat,
-                  onChanged: (_) => setState(() {}),
-                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                  decoration: num('Fat', 'g'),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: Space.m),
-          Row(
-            children: [
-              Expanded(
-                child: TextField(
-                  controller: _fiber,
-                  onChanged: (_) => setState(() {}),
-                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                  decoration: num('Fibre', 'g'),
-                ),
-              ),
-              const SizedBox(width: Space.s),
-              Expanded(
-                child: TextField(
-                  controller: _sugar,
-                  onChanged: (_) => setState(() {}),
-                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                  decoration: num('Sugar', 'g'),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: Space.m),
-          TextField(
-            controller: _sodium,
-            onChanged: (_) => setState(() {}),
-            keyboardType: const TextInputType.numberWithOptions(decimal: true),
-            decoration: num('Sodium', 'mg'),
-          ),
-          SwitchListTile(
-            contentPadding: EdgeInsets.zero,
-            title: const Text('These values are estimates'),
-            value: _estimate,
-            onChanged: (v) => setState(() => _estimate = v),
-          ),
-          const SizedBox(height: Space.s),
-          Text('Amount eaten or planned', style: t.labelMedium),
-          const SizedBox(height: Space.s),
-          Row(
-            children: [
-              Expanded(
-                child: TextField(
-                  controller: _amount,
-                  onChanged: (_) => setState(() {}),
-                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                  decoration: num('Amount', null),
-                ),
-              ),
-              const SizedBox(width: Space.s),
-              DropdownButton<String>(
-                value: _amountUnit,
-                icon: pickerIcon(context),
-                underline: const SizedBox.shrink(),
-                items: [for (final u in Units.amountUnits) DropdownMenuItem(value: u, child: Text(u))],
-                onChanged: (v) => setState(() => _amountUnit = v!),
-              ),
-            ],
-          ),
-          const SizedBox(height: Space.m),
-          Semantics(
-            liveRegion: true,
-            child: StatusLine(icon: LucideIcons.info, text: _preview()),
-          ),
-          const SizedBox(height: Space.xs),
-          StatusLine(icon: LucideIcons.fileText, text: 'Source: $_source'),
-          if (adding && _foodId == null)
-            CheckboxListTile(
-              contentPadding: EdgeInsets.zero,
-              controlAffinity: ListTileControlAffinity.leading,
-              title: const Text('Save to my foods for next time'),
-              value: _saveFood,
-              onChanged: (v) => setState(() => _saveFood = v ?? false),
+          if (showForm) ...[
+            const SizedBox(height: Space.l),
+            TextField(
+              controller: _name,
+              textCapitalization: TextCapitalization.sentences,
+              maxLength: 160,
+              // The limit stays; the 0/160 counter is noise.
+              decoration: const InputDecoration(labelText: 'Food name', counterText: ''),
             ),
-          if (_error != null) ...[
             const SizedBox(height: Space.s),
+            TextField(
+              controller: _brand,
+              textCapitalization: TextCapitalization.words,
+              decoration: const InputDecoration(labelText: 'Brand (optional)'),
+            ),
+            const SizedBox(height: Space.l),
+            Text('Values for one serving (optional)', style: t.labelMedium),
+            const SizedBox(height: Space.xs),
+            Text('Leave a value empty if you do not know it. Empty is not zero.', style: t.bodySmall),
+            const SizedBox(height: Space.s),
+            Row(
+              children: [
+                Expanded(
+                  child: TextField(
+                    controller: _serving,
+                    onChanged: (_) => setState(() {}),
+                    keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                    decoration: num('Serving size', null),
+                  ),
+                ),
+                const SizedBox(width: Space.s),
+                DropdownButton<String>(
+                  value: _servingUnit,
+                  icon: pickerIcon(context),
+                  underline: const SizedBox.shrink(),
+                  items: [for (final u in _servingUnits) DropdownMenuItem(value: u, child: Text(u))],
+                  onChanged: (v) => setState(() => _servingUnit = v!),
+                ),
+              ],
+            ),
+            const SizedBox(height: Space.m),
+            Row(
+              children: [
+                Expanded(
+                  child: TextField(
+                    controller: _kcal,
+                    onChanged: (_) => setState(() {}),
+                    keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                    decoration: num('Energy', 'kcal'),
+                  ),
+                ),
+                const SizedBox(width: Space.s),
+                Expanded(
+                  child: TextField(
+                    controller: _protein,
+                    onChanged: (_) => setState(() {}),
+                    keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                    decoration: num('Protein', 'g'),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: Space.m),
+            Row(
+              children: [
+                Expanded(
+                  child: TextField(
+                    controller: _carbs,
+                    onChanged: (_) => setState(() {}),
+                    keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                    decoration: num('Carbs', 'g'),
+                  ),
+                ),
+                const SizedBox(width: Space.s),
+                Expanded(
+                  child: TextField(
+                    controller: _fat,
+                    onChanged: (_) => setState(() {}),
+                    keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                    decoration: num('Fat', 'g'),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: Space.m),
+            Row(
+              children: [
+                Expanded(
+                  child: TextField(
+                    controller: _fiber,
+                    onChanged: (_) => setState(() {}),
+                    keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                    decoration: num('Fibre', 'g'),
+                  ),
+                ),
+                const SizedBox(width: Space.s),
+                Expanded(
+                  child: TextField(
+                    controller: _sugar,
+                    onChanged: (_) => setState(() {}),
+                    keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                    decoration: num('Sugar', 'g'),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: Space.m),
+            TextField(
+              controller: _sodium,
+              onChanged: (_) => setState(() {}),
+              keyboardType: const TextInputType.numberWithOptions(decimal: true),
+              decoration: num('Sodium', 'mg'),
+            ),
+            SwitchListTile(
+              contentPadding: EdgeInsets.zero,
+              title: const Text('These values are estimates'),
+              value: _estimate,
+              onChanged: (v) => setState(() => _estimate = v),
+            ),
+            const SizedBox(height: Space.s),
+            Text('Amount eaten or planned', style: t.labelMedium),
+            const SizedBox(height: Space.s),
+            Row(
+              children: [
+                Expanded(
+                  child: TextField(
+                    controller: _amount,
+                    onChanged: (_) => setState(() {}),
+                    keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                    decoration: num('Amount', null),
+                  ),
+                ),
+                const SizedBox(width: Space.s),
+                DropdownButton<String>(
+                  value: _amountUnit,
+                  icon: pickerIcon(context),
+                  underline: const SizedBox.shrink(),
+                  items: [for (final u in Units.amountUnits) DropdownMenuItem(value: u, child: Text(u))],
+                  onChanged: (v) => setState(() => _amountUnit = v!),
+                ),
+              ],
+            ),
+            const SizedBox(height: Space.m),
             Semantics(
               liveRegion: true,
-              child: StatusLine(icon: LucideIcons.circleAlert, text: _error!, color: context.pal.error),
+              child: StatusLine(icon: LucideIcons.info, text: _preview()),
             ),
+            const SizedBox(height: Space.xs),
+            StatusLine(icon: LucideIcons.fileText, text: 'Source: $_source'),
+            if (adding && _foodId == null)
+              CheckboxListTile(
+                contentPadding: EdgeInsets.zero,
+                controlAffinity: ListTileControlAffinity.leading,
+                title: const Text('Save to my foods for next time'),
+                value: _saveFood,
+                onChanged: (v) => setState(() => _saveFood = v ?? false),
+              ),
+            if (_error != null) ...[
+              const SizedBox(height: Space.s),
+              Semantics(
+                liveRegion: true,
+                child: StatusLine(icon: LucideIcons.circleAlert, text: _error!, color: context.pal.error),
+              ),
+            ],
+            const SizedBox(height: Space.l),
+            FilledButton(onPressed: _saving ? null : _save, child: Text(_saving ? 'Saving' : 'Save')),
           ],
-          const SizedBox(height: Space.l),
-          FilledButton(onPressed: _saving ? null : _save, child: Text(_saving ? 'Saving' : 'Save')),
           if (!adding) ...[
             const SizedBox(height: Space.s),
             TextButton.icon(

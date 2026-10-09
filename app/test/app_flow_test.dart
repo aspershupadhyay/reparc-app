@@ -58,7 +58,7 @@ void main() {
     }
     await tester.tap(find.bySemanticsLabel('Workout, tab 2 of 5'));
     await tester.pumpAndSettle();
-    expect(find.text('Free workout'), findsOneWidget);
+    expect(find.text('FREE WORKOUT'), findsOneWidget);
     await tester.tap(find.bySemanticsLabel('Meal, tab 3 of 5'));
     await tester.pumpAndSettle();
     expect(find.text('Eaten'), findsOneWidget);
@@ -83,7 +83,7 @@ void main() {
   testWidgets('log a workout set from start to saved history', (tester) async {
     await pumpApp(tester, at: '/workout');
 
-    await tester.tap(find.widgetWithText(FilledButton, 'Start'));
+    await tester.tap(find.widgetWithText(FilledButton, 'Start workout'));
     await tester.pumpAndSettle();
     expect(find.text('Add an exercise to start'), findsOneWidget);
     expect(await db.select(db.workoutSessions).get(), hasLength(1));
@@ -121,8 +121,8 @@ void main() {
     // Leaving the screen keeps the session live.
     await tester.tap(find.byTooltip('Leave screen. The workout keeps running.'));
     await tester.pumpAndSettle();
-    expect(find.text('Training now'), findsWidgets);
-    await tester.tap(find.widgetWithText(FilledButton, 'Open'));
+    expect(find.text('TRAINING NOW'), findsWidgets);
+    await tester.tap(find.widgetWithText(FilledButton, 'Continue workout'));
     await tester.pumpAndSettle();
 
     // The sets scroll under the pinned clock panel.
@@ -156,7 +156,7 @@ void main() {
 
     await tester.tap(find.text('Exercises'));
     await tester.pumpAndSettle();
-    expect(find.text('Pick a body part'), findsOneWidget);
+    expect(find.text('PICK A BODY PART'), findsOneWidget);
 
     // Arms splits into biceps, triceps, and forearms, with picks to start.
     await tester.tap(find.bySemanticsLabel(RegExp('^Arms: Biceps, Triceps, Forearms')));
@@ -164,7 +164,7 @@ void main() {
     expect(find.bySemanticsLabel('Biceps'), findsOneWidget);
     expect(find.bySemanticsLabel('Triceps'), findsOneWidget);
     expect(find.bySemanticsLabel('Forearms'), findsOneWidget);
-    expect(find.text('Start here'), findsOneWidget);
+    expect(find.text('START HERE'), findsOneWidget);
     expect(find.textContaining('Barbell curl'), findsWidgets);
     await tester.tap(find.bySemanticsLabel('Triceps'));
     await tester.pumpAndSettle();
@@ -178,17 +178,18 @@ void main() {
     await tester.enterText(find.byType(TextField), 'air bike');
     await tester.pumpAndSettle();
     expect(find.text('1 exercise'), findsOneWidget);
-    await tester.tap(find.text('Air Bike'));
+    await tester.tap(find.text('Air bike'));
     await tester.pumpAndSettle();
     expect(find.text('End'), findsOneWidget);
-    await tester.scrollUntilVisible(find.text('How to do it'), 300, scrollable: find.byType(Scrollable).last);
-    expect(find.text('How to do it'), findsOneWidget);
+    await tester.scrollUntilVisible(find.text('HOW TO DO IT'), 300, scrollable: find.byType(Scrollable).last);
+    expect(find.text('HOW TO DO IT'), findsOneWidget);
 
     await tester.tap(find.widgetWithText(FilledButton, 'Start workout with this'));
     await tester.pumpAndSettle();
     final ex = (await db.select(db.exercises).get()).single;
     expect(ex.catalogId, 'lib:Air_Bike');
-    expect(ex.name, 'Air Bike');
+    // Library names are shown and saved in sentence case (D-032).
+    expect(ex.name, 'Air bike');
     await unmount(tester);
   });
 
@@ -197,7 +198,7 @@ void main() {
     addTearDown(tester.platformDispatcher.clearAccessibilityFeaturesTestValue);
     await pumpApp(tester, at: '/workout');
 
-    await tester.tap(find.widgetWithText(FilledButton, 'Start'));
+    await tester.tap(find.widgetWithText(FilledButton, 'Start workout'));
     await tester.pumpAndSettle();
     await tester.tap(find.widgetWithText(OutlinedButton, 'Add exercise'));
     await tester.pumpAndSettle();
@@ -222,6 +223,9 @@ void main() {
   testWidgets('log a meal; missing values stay missing', (tester) async {
     await pumpApp(tester, at: '/meal');
     await tester.tap(find.text('Add food'));
+    await tester.pumpAndSettle();
+    // Search comes first; the manual form opens on request.
+    await tester.tap(find.text('Can\'t find it? Enter it yourself'));
     await tester.pumpAndSettle();
     await tester.enterText(find.widgetWithText(TextField, 'Food name'), 'Oats');
     await tester.enterText(find.widgetWithText(TextField, 'Serving size'), '40');

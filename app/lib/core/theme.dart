@@ -185,9 +185,12 @@ ThemeData buildTheme(Palette p) {
       secondarySelectedColor: p.ink,
       side: BorderSide(color: p.line),
       // Selected chips are ink-filled, so their label flips to the surface
-      // colour. FilterChip reads only labelStyle, so it must be state-aware.
-      labelStyle: WidgetStateTextStyle.resolveWith(
-        (s) => t.labelMedium!.copyWith(color: s.contains(WidgetState.selected) ? p.surface : p.ink),
+      // colour. Chips resolve only the label *colour* by state; a
+      // WidgetStateTextStyle reads as an empty style and drops the font and
+      // colour (blank selected chips, 2026-10-09). So the style is plain and
+      // only its colour is state-aware.
+      labelStyle: t.labelMedium!.copyWith(
+        color: WidgetStateColor.resolveWith((s) => s.contains(WidgetState.selected) ? p.surface : p.ink),
       ),
       secondaryLabelStyle: t.labelMedium?.copyWith(color: p.surface),
       shape: const StadiumBorder(),

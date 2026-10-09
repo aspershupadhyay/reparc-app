@@ -4,6 +4,7 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../../../core/motion.dart';
 import '../../../core/palette.dart';
 import '../../../core/tokens.dart';
+import '../../../core/widgets.dart';
 
 /// One phase of a demo rep.
 class _Phase {
@@ -156,7 +157,9 @@ class _PhotoMotionState extends State<PhotoMotion> with SingleTickerProviderStat
                           child: LinearProgressIndicator(
                             value: _c.value,
                             minHeight: 3,
-                            color: p.energy,
+                            // White on the photo: lime is kept for the one
+                            // main action on the page.
+                            color: Colors.white70,
                             backgroundColor: Colors.black26,
                           ),
                         ),
@@ -171,6 +174,8 @@ class _PhotoMotionState extends State<PhotoMotion> with SingleTickerProviderStat
                 Text('Start', style: t.labelSmall),
                 Expanded(
                   child: Slider(
+                    activeColor: p.brand,
+                    inactiveColor: p.line,
                     value: blend.clamp(0.0, 1.0),
                     semanticFormatterCallback: (v) => v < 0.5 ? 'Near start position' : 'Near end position',
                     onChangeStart: (_) => _c.stop(),
@@ -181,19 +186,19 @@ class _PhotoMotionState extends State<PhotoMotion> with SingleTickerProviderStat
               ],
             ),
             if (!reduced)
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  for (final s in const [0.5, 1.0])
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 4),
-                      child: ChoiceChip(
-                        label: Text(s == 1 ? 'Normal speed' : 'Half speed'),
-                        selected: _speed == s,
-                        onSelected: (_) => _setSpeed(s),
-                      ),
-                    ),
-                ],
+              // A small, quiet control: playback speed is secondary to the
+              // exercise name below it.
+              Center(
+                child: SizedBox(
+                  width: 240,
+                  child: PillTabs<double>(
+                    compact: true,
+                    values: const [0.5, 1.0],
+                    selected: _speed,
+                    label: (s) => s == 1 ? 'Normal speed' : 'Half speed',
+                    onChanged: _setSpeed,
+                  ),
+                ),
               )
             else
               Text('Drag the slider to see the movement.', style: t.bodySmall, textAlign: TextAlign.center),
@@ -237,7 +242,7 @@ class _Badge extends StatelessWidget {
                     Text(
                       sub!,
                       style: t.labelSmall?.copyWith(color: Colors.white70, fontSize: 11),
-                      maxLines: 1,
+                      maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                     ),
                 ],

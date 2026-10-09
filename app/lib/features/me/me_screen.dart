@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../../ai/ai_controller.dart';
 import '../../core/palette.dart';
@@ -41,7 +42,9 @@ class MeScreen extends ConsumerWidget {
       ],
     );
 
-    Widget lead(IconData icon, Color c, Color soft) => IconBadge(icon, color: soft, glyph: c, size: 40);
+    // Neutral row icons: settings rows are navigation, not data, so they
+    // carry no category colour (visual review, 2026-10-09).
+    Widget lead(IconData icon) => IconBadge(icon, color: p.surfaceAlt, glyph: p.ink, size: 36);
 
     Widget link(Widget leading, String title, String subtitle, String path) => ListTile(
       leading: leading,
@@ -49,13 +52,6 @@ class MeScreen extends ConsumerWidget {
       subtitle: Text(subtitle),
       trailing: Icon(LucideIcons.chevronRight, size: IconSizes.s, color: p.inkSoft),
       onTap: () => context.push(path),
-    );
-
-    Widget info(Widget leading, String title, String subtitle, {String? tag}) => ListTile(
-      leading: leading,
-      title: Text(title),
-      subtitle: Text(subtitle),
-      trailing: tag == null ? null : Tag(tag),
     );
 
     Widget dropdown<T>(T value, List<(T, String)> items, ValueChanged<T?> onChanged) => DropdownButton<T>(
@@ -73,6 +69,16 @@ class MeScreen extends ConsumerWidget {
           padding: const EdgeInsets.fromLTRB(Space.l, Space.l, Space.l, Space.xxl),
           children: [
             const ScreenTitle('Me'),
+            group('You', [
+              link(
+                lead(LucideIcons.personStanding),
+                'Body and goals',
+                s.targetsOn ? 'Targets on' : 'Weight, goal, diet, and daily targets',
+                '/me/body',
+              ),
+            ]),
+            // Rarely changed, so it sits below the user's own settings.
+            const SectionHeader('Appearance', top: Space.l),
             PillTabs<String>(
               values: const ['system', 'light', 'dark'],
               selected: s.themeMode,
@@ -88,22 +94,14 @@ class MeScreen extends ConsumerWidget {
               },
               onChanged: repo.setThemeMode,
             ),
-            group('You', [
-              link(
-                lead(LucideIcons.personStanding, p.coral, p.coralSoft),
-                'Body and goals',
-                s.targetsOn ? 'Targets on' : 'Weight, goal, diet, and daily targets',
-                '/me/body',
-              ),
-            ]),
             group('Units', [
               ListTile(
-                leading: lead(LucideIcons.weight, p.blue, p.blueSoft),
+                leading: lead(LucideIcons.weight),
                 title: const Text('Weight'),
                 trailing: dropdown(s.loadUnit, [for (final u in Units.loadUnits) (u, u)], (v) => repo.setLoadUnit(v!)),
               ),
               ListTile(
-                leading: lead(LucideIcons.ruler, p.green, p.greenSoft),
+                leading: lead(LucideIcons.ruler),
                 title: const Text('Distance'),
                 trailing: dropdown(s.distanceUnit, [
                   for (final u in Units.distanceUnits) (u, u),
@@ -112,7 +110,7 @@ class MeScreen extends ConsumerWidget {
             ]),
             group('Training', [
               SwitchListTile(
-                secondary: lead(LucideIcons.audioLines, p.green, p.greenSoft),
+                secondary: lead(LucideIcons.audioLines),
                 title: const Text('Guided workout'),
                 subtitle: const Text('Timers and a voice run your workout. The screen stays on'),
                 value: s.guideOn,
@@ -120,7 +118,7 @@ class MeScreen extends ConsumerWidget {
               ),
               if (s.guideOn)
                 link(
-                  lead(LucideIcons.slidersHorizontal, p.orange, p.orangeSoft),
+                  lead(LucideIcons.slidersHorizontal),
                   'Times and voice',
                   [
                     s.finishRepSets && s.autoStartSets ? 'Runs on its own' : 'You start or end sets',
@@ -130,7 +128,7 @@ class MeScreen extends ConsumerWidget {
                 )
               else
                 ListTile(
-                  leading: lead(LucideIcons.timer, p.orange, p.orangeSoft),
+                  leading: lead(LucideIcons.timer),
                   title: const Text('Auto rest timer'),
                   subtitle: const Text('Starts when a set is done'),
                   trailing: dropdown<int?>(s.restAfterSetSec, [
@@ -142,7 +140,7 @@ class MeScreen extends ConsumerWidget {
                   ], repo.setRestAfterSet),
                 ),
               SwitchListTile(
-                secondary: lead(LucideIcons.flame, p.coral, p.coralSoft),
+                secondary: lead(LucideIcons.flame),
                 title: const Text('Show calories'),
                 value: s.showEnergy,
                 onChanged: repo.setShowEnergy,
@@ -150,7 +148,7 @@ class MeScreen extends ConsumerWidget {
             ]),
             group('Connections', [
               link(
-                lead(LucideIcons.cloudUpload, p.brand, p.brandSoft),
+                lead(LucideIcons.cloudUpload),
                 'Backup and restore',
                 s.lastBackupAt == null
                     ? 'Phone backup and encrypted backup files'
@@ -158,7 +156,7 @@ class MeScreen extends ConsumerWidget {
                 '/me/backup',
               ),
               link(
-                lead(LucideIcons.heartPulse, p.coral, p.coralSoft),
+                lead(LucideIcons.heartPulse),
                 'Health apps',
                 s.health.isEmpty
                     ? 'Apple Health, Health Connect. Off.'
@@ -166,7 +164,7 @@ class MeScreen extends ConsumerWidget {
                 '/me/health',
               ),
               link(
-                lead(LucideIcons.sparkles, p.orange, p.orangeSoft),
+                lead(LucideIcons.sparkles),
                 'AI connections',
                 ai.anyOn
                     ? 'On${ai.wifiOn ? ' · Wi-Fi' : ''}${ai.onlineOn ? ' · online' : ''}'
@@ -178,22 +176,22 @@ class MeScreen extends ConsumerWidget {
             ]),
             group('Your data', [
               link(
-                lead(LucideIcons.download, p.green, p.greenSoft),
+                lead(LucideIcons.download),
                 'Export or delete',
                 'Back up all records',
                 '/me/data',
               ),
-              link(lead(LucideIcons.shield, p.blue, p.blueSoft), 'Privacy', 'What is stored and where', '/me/privacy'),
+              link(lead(LucideIcons.shield), 'Privacy', 'What is stored and where', '/me/privacy'),
             ]),
             group('App', [
               link(
-                lead(LucideIcons.refreshCw, p.brand, p.brandSoft),
+                lead(LucideIcons.refreshCw),
                 'App updates',
                 'Version and updates',
                 '/me/updates',
               ),
               ListTile(
-                leading: lead(LucideIcons.fileText, p.inkSoft, p.surfaceAlt),
+                leading: lead(LucideIcons.fileText),
                 title: const Text('Licenses'),
                 subtitle: const Text('GNU AGPL v3.0 and notices'),
                 trailing: Icon(LucideIcons.chevronRight, size: IconSizes.s, color: p.inkSoft),
@@ -203,7 +201,16 @@ class MeScreen extends ConsumerWidget {
                   applicationLegalese: 'Copyright the Reparc contributors.\nLicensed under GNU AGPL v3.0 only.',
                 ),
               ),
-              info(lead(LucideIcons.lifeBuoy, p.inkSoft, p.surfaceAlt), 'Support', 'github.com/aspershupadhyay/reparc'),
+              ListTile(
+                leading: lead(LucideIcons.lifeBuoy),
+                title: const Text('Support'),
+                subtitle: const Text('github.com/aspershupadhyay/reparc'),
+                trailing: Icon(LucideIcons.externalLink, size: IconSizes.s, color: p.inkSoft),
+                onTap: () => launchUrl(
+                  Uri.parse('https://github.com/aspershupadhyay/reparc'),
+                  mode: LaunchMode.externalApplication,
+                ),
+              ),
             ]),
           ],
         ),

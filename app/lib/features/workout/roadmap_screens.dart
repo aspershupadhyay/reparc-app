@@ -3,7 +3,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
+import '../../core/format.dart';
+import '../../core/motion.dart';
 import '../../core/palette.dart';
+import '../../core/theme.dart';
 import '../../core/tokens.dart';
 import '../../core/widgets.dart';
 import '../../data/program_repository.dart';
@@ -234,7 +237,7 @@ class _ActiveRoadmap extends ConsumerWidget {
                     children: [
                       Text('Following', style: t.labelSmall?.copyWith(color: p.brand)),
                       Text(prog.name, style: t.titleMedium),
-                      if (plan.about case final about?) Text(about, style: t.bodySmall),
+                      if (_aboutWithoutName(plan.about, prog.name) case final about?) Text(about, style: t.bodySmall),
                     ],
                   ),
                 ),
@@ -273,7 +276,7 @@ class _ActiveRoadmap extends ConsumerWidget {
                   ),
                   title: Text(i == prog.nextDay ? '${d.name} · next' : d.name),
                   subtitle: Text(
-                    [if (d.focus.isNotEmpty) d.focus, '${d.workSets} sets', '~${d.minutes} min'].join(' · '),
+                    metaLine([if (d.focus.isNotEmpty) d.focus, '${d.workSets} sets', '~${d.minutes} min']),
                   ),
                   trailing: Icon(LucideIcons.chevronRight, size: IconSizes.s, color: p.inkSoft),
                   onTap: () => context.push('/workout/plan/${prog.id}/day/$i'),
@@ -307,6 +310,15 @@ class _ActiveRoadmap extends ConsumerWidget {
   }
 }
 
+/// The plan's summary without the words its name already says, so the card
+/// does not read "Aesthetic · Beginner / Aesthetic · Beginner · Full gym".
+String? _aboutWithoutName(String? about, String name) {
+  if (about == null || about.isEmpty) return null;
+  if (!about.startsWith(name)) return about;
+  final rest = about.substring(name.length).replaceFirst(RegExp(r'^\s*·\s*'), '').trim();
+  return rest.isEmpty ? null : rest;
+}
+
 /// Weekday picker. Changes are kept here until the number of days matches
 /// the roadmap, then saved, so the roadmap never has fewer days than it needs.
 class _TrainingDays extends StatefulWidget {
@@ -333,15 +345,47 @@ class _TrainingDaysState extends State<_TrainingDays> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Wrap(
-          spacing: Space.s,
-          runSpacing: Space.s,
+        // Seven equal day buttons on one row, Monday first, like the Home
+        // week strip. No wrapping onto a second ragged row.
+        Row(
           children: [
             for (var d = 1; d <= 7; d++)
-              FilterChip(
-                label: Text(_dayNames[d - 1]),
-                selected: _picked.contains(d),
-                onSelected: (on) => _toggle(d, on),
+              Expanded(
+                child: Builder(
+                  builder: (context) {
+                    final p = context.pal;
+                    final on = _picked.contains(d);
+                    return Semantics(
+                      button: true,
+                      toggled: on,
+                      label: _dayNames[d - 1],
+                      excludeSemantics: true,
+                      child: InkWell(
+                        customBorder: const CircleBorder(),
+                        onTap: () => _toggle(d, !on),
+                        child: SizedBox(
+                          height: minTarget,
+                          child: Center(
+                            child: Container(
+                              width: 40,
+                              height: 40,
+                              alignment: Alignment.center,
+                              decoration: BoxDecoration(
+                                color: on ? p.ink : Colors.transparent,
+                                shape: BoxShape.circle,
+                                border: on ? null : Border.all(color: p.line, width: 1.5),
+                              ),
+                              child: Text(
+                                _dayNames[d - 1].substring(0, 2),
+                                style: Theme.of(context).textTheme.labelMedium?.copyWith(color: on ? p.surface : p.ink),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                    );
+                  },
+                ),
               ),
           ],
         ),
@@ -380,8 +424,8 @@ class _RoadmapSettings extends ConsumerWidget {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Text('Customize plan', style: t.titleLarge),
-          const SizedBox(height: Space.m),
-          Text('Show on each day', style: t.labelMedium),
+          const SizedBox(height: Space.l),
+          Text('SHOW ON EACH DAY', style: sectionLabelStyle(context)),
           SwitchListTile(
             contentPadding: EdgeInsets.zero,
             title: const Text('Warm-up'),
@@ -400,29 +444,46 @@ class _RoadmapSettings extends ConsumerWidget {
             value: plan.showNotes,
             onChanged: (v) => save(plan.copyWith(showNotes: v)),
           ),
-          const SizedBox(height: Space.s),
-          Text('Training days (${plan.days.length} a week)', style: t.labelMedium),
-          const SizedBox(height: Space.s),
+          const SizedBox(height: Space.xl),
+          Text('TRAINING DAYS · ${plan.days.length} A WEEK', style: sectionLabelStyle(context)),
+          const SizedBox(height: Space.xs),
           _TrainingDays(
             key: ValueKey(plan.weekdays.join(',')),
             saved: plan.weekdays,
             needed: plan.days.length,
             onSave: (days) => save(plan.copyWith(weekdays: days)),
           ),
-          const SizedBox(height: Space.l),
-          Text('Next day to train', style: t.labelMedium),
+          const SizedBox(height: Space.xl),
+          Text('NEXT DAY TO TRAIN', style: sectionLabelStyle(context)),
           const SizedBox(height: Space.s),
-          Wrap(
-            spacing: Space.s,
-            runSpacing: Space.s,
-            children: [
-              for (final (i, d) in plan.days.indexed)
-                ChoiceChip(
-                  label: Text(d.name),
-                  selected: live.nextDay == i,
-                  onSelected: (_) => guardedWrite(context, () => repo.setNextDay(prog.id, i)),
-                ),
-            ],
+          // A short check list reads better than six chips on three rows.
+          AppCard(
+            padding: EdgeInsets.zero,
+            child: Column(
+              children: [
+                for (final (i, d) in plan.days.indexed) ...[
+                  if (i > 0) const Divider(indent: Space.l),
+                  Semantics(
+                    selected: live.nextDay == i,
+                    button: true,
+                    label: d.name,
+                    excludeSemantics: true,
+                    child: InkWell(
+                      onTap: () => guardedWrite(context, () => repo.setNextDay(prog.id, i)),
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: Space.l, vertical: Space.m),
+                        child: Row(
+                          children: [
+                            Expanded(child: Text(d.name, style: t.bodyLarge)),
+                            if (live.nextDay == i) Icon(LucideIcons.check, size: IconSizes.s, color: context.pal.brand),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ],
+            ),
           ),
           const SizedBox(height: Space.xl),
           OutlinedButton.icon(
@@ -433,6 +494,10 @@ class _RoadmapSettings extends ConsumerWidget {
             icon: const Icon(LucideIcons.refreshCw, size: IconSizes.s),
             label: const Text('Build a new plan'),
           ),
+          // The destructive action sits apart, below a rule, so it is not
+          // tapped by mistake for the button above.
+          const SizedBox(height: Space.xl),
+          const Divider(),
           const SizedBox(height: Space.s),
           TextButton(
             onPressed: () async {
@@ -698,29 +763,17 @@ class RoadmapDayScreen extends ConsumerWidget {
       await saveDay(d.copyWith(items: items));
     }
 
-    Widget section(String title, Iterable<(int, PlanItem)> rows) => Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        SectionHeader(title),
-        AppCard(
-          padding: EdgeInsets.zero,
-          child: Column(
-            children: [
-              for (final (n, (i, it)) in rows.indexed) ...[
-                if (n > 0) const Divider(indent: Space.l),
-                _ItemRow(item: it, onTap: () => editItem(i)),
-              ],
-            ],
-          ),
-        ),
+    List<Widget> rowsOf(Iterable<(int, PlanItem)> rows) => [
+      for (final (n, (i, it)) in rows.indexed) ...[
+        if (n > 0) const Divider(indent: Space.l),
+        _ItemRow(item: it, onTap: () => editItem(i)),
       ],
-    );
+    ];
 
     final indexed = d.items.indexed.toList();
     final rampUp = d.work.where((i) => i.rampUp).firstOrNull;
     return Scaffold(
       appBar: AppBar(
-        title: Text(d.name),
         actions: [
           PopupMenuButton<String>(
             tooltip: 'Day options',
@@ -760,24 +813,31 @@ class RoadmapDayScreen extends ConsumerWidget {
           ),
         ],
       ),
-      bottomNavigationBar: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(Space.l, Space.s, Space.l, Space.s),
-          child: FilledButton.icon(
-            style: FilledButton.styleFrom(backgroundColor: p.energy, foregroundColor: p.onEnergy),
-            onPressed: d.work.isEmpty ? null : () => startWorkout(context, ref, programId: programId, programDay: day),
-            icon: const Icon(LucideIcons.play, size: 20),
-            label: Text(ref.watch(liveSessionProvider).value == null ? 'Start workout' : 'Continue workout'),
-          ),
+      bottomNavigationBar: BottomActionBar(
+        child: FilledButton.icon(
+          style: FilledButton.styleFrom(backgroundColor: p.energy, foregroundColor: p.onEnergy),
+          onPressed: d.work.isEmpty ? null : () => startWorkout(context, ref, programId: programId, programDay: day),
+          icon: const Icon(LucideIcons.play, size: 20),
+          label: Text(ref.watch(liveSessionProvider).value == null ? 'Start workout' : 'Continue workout'),
         ),
       ),
       body: ListView(
         padding: const EdgeInsets.fromLTRB(Space.l, 0, Space.l, Space.xxl),
         children: [
+          // The day is the subject of the page, so it gets the large title
+          // (visual review, 2026-10-09).
+          Semantics(header: true, child: Text(d.name, style: t.displaySmall)),
+          const SizedBox(height: Space.xs),
           Text(
-            [if (d.focus.isNotEmpty) d.focus, '${d.workSets} sets', 'about ${d.minutes} min'].join(' · '),
+            metaLine([
+              if (d.focus.isNotEmpty) d.focus,
+              '${d.work.length} exercises',
+              '${d.workSets} sets',
+              'about ${d.minutes} min',
+            ]),
             style: t.bodyMedium?.copyWith(color: p.inkSoft),
           ),
+          const SizedBox(height: Space.l),
           if (d.items.isEmpty)
             const EmptyState(
               icon: LucideIcons.listPlus,
@@ -785,25 +845,23 @@ class RoadmapDayScreen extends ConsumerWidget {
               body: 'Add exercises in the order you train them.',
             ),
           if (plan.showWarmup && d.warmup.isNotEmpty) ...[
-            section(
-              '1. Warm-up (about ${d.warmupMinutes} min)',
-              indexed.where((e) => e.$2.kind == ItemKind.warmup),
-            ),
-            const SizedBox(height: Space.s),
-            StatusLine(
+            _FoldedSection(
               icon: LucideIcons.flame,
-              text: [
-                'Each move is a warm-up set to tick off in your workout.',
-                if (rampUp != null)
-                  '${rampUp.name} starts with lighter ramp-up sets: ${rampUpText(plan.level)} of your working weight.',
-                'Warm-up sets never count toward volume or records.',
-              ].join(' '),
+              title: 'Warm-up',
+              summary: metaLine(['${d.warmup.length} moves', 'about ${d.warmupMinutes} min']),
+              children: rowsOf(indexed.where((e) => e.$2.kind == ItemKind.warmup)),
             ),
+            const SizedBox(height: Space.m),
           ],
-          section(
-            plan.showWarmup ? '2. Workout' : 'Workout',
-            indexed.where((e) => e.$2.kind != ItemKind.warmup && e.$2.kind != ItemKind.cooldown),
-          ),
+          if (d.work.isNotEmpty)
+            AppCard(
+              padding: EdgeInsets.zero,
+              child: Column(
+                children: rowsOf(
+                  indexed.where((e) => e.$2.kind != ItemKind.warmup && e.$2.kind != ItemKind.cooldown),
+                ),
+              ),
+            ),
           Align(
             alignment: Alignment.centerLeft,
             child: TextButton.icon(
@@ -813,19 +871,130 @@ class RoadmapDayScreen extends ConsumerWidget {
             ),
           ),
           if (plan.showCooldown && d.cooldown.isNotEmpty) ...[
-            section('3. Cool-down', indexed.where((e) => e.$2.kind == ItemKind.cooldown)),
-            const SizedBox(height: Space.s),
-            const StatusLine(
-              icon: LucideIcons.info,
-              text: 'Stretch after you finish. Cool-down stretches are not logged in the workout.',
+            _FoldedSection(
+              icon: LucideIcons.wind,
+              title: 'Cool-down',
+              summary: metaLine(['${d.cooldown.length} stretches', 'not logged']),
+              children: rowsOf(indexed.where((e) => e.$2.kind == ItemKind.cooldown)),
             ),
+            const SizedBox(height: Space.m),
           ],
-          const SizedBox(height: Space.m),
-          const StatusLine(
-            icon: LucideIcons.info,
-            text: 'Tap any exercise to change sets, reps, rest, or swap it for one that fits your gym.',
+          // One link instead of three paragraphs between the sections.
+          Align(
+            alignment: Alignment.centerLeft,
+            child: TextButton.icon(
+              style: TextButton.styleFrom(foregroundColor: p.inkSoft),
+              onPressed: () => showAppSheet<void>(
+                context,
+                (context) => _DayHelp(
+                  lines: [
+                    if (plan.showWarmup && d.warmup.isNotEmpty) ...[
+                      'Each warm-up move is a warm-up set to tick off in your workout.',
+                      if (rampUp != null)
+                        '${rampUp.name} starts with lighter ramp-up sets: ${rampUpText(plan.level)} of your working weight.',
+                      'Warm-up sets never count toward volume or records.',
+                    ],
+                    if (plan.showCooldown && d.cooldown.isNotEmpty)
+                      'Stretch after you finish. Cool-down stretches are not logged in the workout.',
+                    'Tap any exercise to change sets, reps, rest, or swap it for one that fits your gym.',
+                  ],
+                ),
+              ),
+              icon: const Icon(LucideIcons.info, size: IconSizes.s),
+              label: const Text('How this day works'),
+            ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+/// A warm-up or cool-down block, folded to one summary row by default, so
+/// the main work is on the first screen. Opens in place.
+class _FoldedSection extends StatefulWidget {
+  const _FoldedSection({required this.icon, required this.title, required this.summary, required this.children});
+  final IconData icon;
+  final String title;
+  final String summary;
+  final List<Widget> children;
+
+  @override
+  State<_FoldedSection> createState() => _FoldedSectionState();
+}
+
+class _FoldedSectionState extends State<_FoldedSection> {
+  bool _open = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final p = context.pal;
+    final t = Theme.of(context).textTheme;
+    return AppCard(
+      padding: EdgeInsets.zero,
+      child: Column(
+        children: [
+          Semantics(
+            button: true,
+            expanded: _open,
+            label: '${widget.title}. ${widget.summary}',
+            excludeSemantics: true,
+            child: InkWell(
+              onTap: () => setState(() => _open = !_open),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: Space.l, vertical: Space.m),
+                child: Row(
+                  children: [
+                    Icon(widget.icon, size: IconSizes.s, color: p.inkSoft),
+                    const SizedBox(width: Space.m),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(widget.title, style: t.titleSmall),
+                          Text(widget.summary, style: t.bodySmall),
+                        ],
+                      ),
+                    ),
+                    AnimatedRotation(
+                      turns: _open ? 0.25 : 0,
+                      duration: motionOf(context, Motion.quick),
+                      child: Icon(LucideIcons.chevronRight, size: IconSizes.s, color: p.inkSoft),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+          if (_open) ...[const Divider(indent: Space.l), ...widget.children],
+        ],
+      ),
+    );
+  }
+}
+
+class _DayHelp extends StatelessWidget {
+  const _DayHelp({required this.lines});
+  final List<String> lines;
+
+  @override
+  Widget build(BuildContext context) {
+    final t = Theme.of(context).textTheme;
+    return SafeArea(
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(Space.l, 0, Space.l, Space.xl),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('How this day works', style: t.titleLarge),
+            const SizedBox(height: Space.m),
+            for (final l in lines) ...[
+              StatusLine(icon: LucideIcons.dot, text: l, color: context.pal.ink),
+              const SizedBox(height: Space.s),
+            ],
+          ],
+        ),
       ),
     );
   }
@@ -841,6 +1010,11 @@ class _ItemRow extends StatelessWidget {
     final p = context.pal;
     final t = Theme.of(context).textTheme;
     final details = item.details;
+    final main = item.kind == ItemKind.main;
+    // The main lift is the big item on the page: a lime label and a larger
+    // name. The rest share one quieter row. Each row shows only sets × reps;
+    // rest and reps in reserve are in the edit sheet and the screen-reader
+    // label (visual review, 2026-10-09).
     return Semantics(
       button: true,
       label: '${item.name}. ${item.kind.label}. $details. Edit',
@@ -848,27 +1022,37 @@ class _ItemRow extends StatelessWidget {
       child: InkWell(
         onTap: onTap,
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: Space.l, vertical: Space.m),
+          padding: EdgeInsets.symmetric(horizontal: Space.l, vertical: main ? Space.l : Space.m),
           child: Row(
             children: [
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
+                    if (main)
+                      Text(
+                        'MAIN LIFT',
+                        style: t.labelSmall?.copyWith(color: p.energyStrong, letterSpacing: 0.6).w(FontWeight.w700),
+                      ),
                     Row(
                       children: [
-                        Flexible(child: Text(item.name, style: t.titleSmall)),
+                        Flexible(child: Text(item.name, style: main ? t.titleLarge : t.bodyLarge)),
                         if (item.rampUp) ...[
                           const SizedBox(width: Space.s),
-                          Tag('Ramp up', color: p.orangeSoft),
+                          Tag('Ramp up', color: p.surfaceAlt),
                         ],
                       ],
                     ),
-                    if (details.isNotEmpty) Text(details, style: t.bodySmall),
-                    if (item.note != null) Text(item.note!, style: t.bodySmall?.copyWith(color: p.brand)),
+                    if (item.note != null && item.kind == ItemKind.warmup) Text(item.note!, style: t.bodySmall),
                   ],
                 ),
               ),
+              const SizedBox(width: Space.m),
+              Text(
+                item.target,
+                style: (main ? t.titleSmall : t.bodyMedium)?.tabular.copyWith(color: main ? p.ink : p.inkSoft),
+              ),
+              const SizedBox(width: Space.xs),
               Icon(LucideIcons.chevronRight, size: IconSizes.s, color: p.inkSoft),
             ],
           ),

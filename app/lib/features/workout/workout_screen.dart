@@ -40,7 +40,7 @@ class _WorkoutScreenState extends ConsumerState<WorkoutScreen> {
           padding: const EdgeInsets.fromLTRB(Space.l, Space.l, Space.l, Space.xxl),
           children: [
             const ScreenTitle('Workout'),
-            _StartCard(liveId: live?.id),
+            _StartCard(liveId: live?.id, compact: _section != _Section.plan),
             const SizedBox(height: Space.l),
             PillTabs<_Section>(
               values: _Section.values,
@@ -66,10 +66,13 @@ class _WorkoutScreenState extends ConsumerState<WorkoutScreen> {
 }
 
 /// The one way to start: continue the live workout, start the next roadmap
-/// day, or start an empty workout.
+/// day, or start an empty workout. Laid out like the Home hero, so the same
+/// action looks the same on both tabs. [compact] keeps it to one row while
+/// the user browses exercises or history.
 class _StartCard extends ConsumerWidget {
-  const _StartCard({required this.liveId});
+  const _StartCard({required this.liveId, this.compact = false});
   final String? liveId;
+  final bool compact;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -86,65 +89,84 @@ class _StartCard extends ConsumerWidget {
       (null, final d?) => (
         'Next in your plan',
         d.name,
-        [if (d.focus.isNotEmpty) d.focus, '${d.work.length} exercises', '~${d.minutes} min'].join(' · '),
+        metaLine([if (d.focus.isNotEmpty) d.focus, '${d.work.length} exercises', '~${d.minutes} min']),
       ),
       _ => ('Free workout', 'Add exercises as you go', null),
     };
+    final onStart = switch ((liveId, next)) {
+      (final id?, _) => () => context.push('/live/$id'),
+      (null, _?) => () => startWorkout(context, ref, programId: prog!.id, programDay: prog.nextDay),
+      _ => () => startWorkout(context, ref),
+    };
+    final label = liveId == null ? 'Start workout' : 'Continue workout';
+    final button = FilledButton.icon(
+      style: FilledButton.styleFrom(backgroundColor: p.energy, foregroundColor: p.onEnergy),
+      onPressed: onStart,
+      icon: Icon(liveId == null ? LucideIcons.play : LucideIcons.arrowRight, size: 20),
+      label: Text(compact ? (liveId == null ? 'Start' : 'Open') : label),
+    );
+    final heading = liveId != null
+        ? SessionClock(
+            sessionId: liveId!,
+            style: (compact ? t.titleLarge : t.displaySmall)!.tabular.copyWith(color: p.energy),
+          )
+        : OneLine(title!, style: (compact ? t.titleMedium : t.headlineSmall)?.copyWith(color: p.onPanel));
+
+    if (compact) {
+      return Container(
+        padding: const EdgeInsets.fromLTRB(Space.l, Space.m, Space.m, Space.m),
+        decoration: BoxDecoration(color: p.panel, borderRadius: Radii.large),
+        child: Row(
+          children: [
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(eyebrow.toUpperCase(), style: t.labelSmall?.copyWith(color: p.energy, letterSpacing: 0.6)),
+                  heading,
+                ],
+              ),
+            ),
+            const SizedBox(width: Space.m),
+            Semantics(label: label, button: true, excludeSemantics: true, child: button),
+          ],
+        ),
+      );
+    }
+
     return Container(
       padding: const EdgeInsets.all(Space.xl),
       decoration: BoxDecoration(color: p.panel, borderRadius: Radii.large),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            children: [
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(eyebrow, style: t.bodySmall?.copyWith(color: p.onPanelSoft)),
-                    const SizedBox(height: Space.xs),
-                    if (liveId != null)
-                      SessionClock(
-                        sessionId: liveId!,
-                        style: t.displaySmall!.tabular.copyWith(color: p.energy),
-                      )
-                    else
-                      OneLine(title!, style: t.titleMedium?.copyWith(color: p.onPanel)),
-                    if (sub != null) Text(sub, style: t.bodySmall?.copyWith(color: p.onPanelSoft)),
-                  ],
-                ),
+          Text(eyebrow.toUpperCase(), style: t.labelSmall?.copyWith(color: p.energy, letterSpacing: 0.6)),
+          const SizedBox(height: Space.xs),
+          heading,
+          if (sub != null) Text(sub, style: t.bodySmall?.copyWith(color: p.onPanelSoft)),
+          const SizedBox(height: Space.l),
+          button,
+          if (next != null)
+            // Two equal links under the button, on their own row, so the
+            // card keeps one clean left edge.
+            Transform.translate(
+              offset: const Offset(-Space.s, Space.xs),
+              // Wraps with large text instead of overflowing.
+              child: Wrap(
+                children: [
+                  TextButton(
+                    style: TextButton.styleFrom(foregroundColor: p.onPanel),
+                    onPressed: () => context.push('/workout/plan/${prog!.id}/day/${prog.nextDay}'),
+                    child: const Text('See the day'),
+                  ),
+                  TextButton(
+                    style: TextButton.styleFrom(foregroundColor: p.onPanel),
+                    onPressed: () => startWorkout(context, ref),
+                    child: const Text('Empty workout'),
+                  ),
+                ],
               ),
-              FilledButton.icon(
-                style: FilledButton.styleFrom(backgroundColor: p.energy, foregroundColor: p.onEnergy),
-                onPressed: switch ((liveId, next)) {
-                  (final id?, _) => () => context.push('/live/$id'),
-                  (null, _?) => () => startWorkout(context, ref, programId: prog!.id, programDay: prog.nextDay),
-                  _ => () => startWorkout(context, ref),
-                },
-                icon: Icon(liveId == null ? LucideIcons.play : LucideIcons.arrowRight, size: 20),
-                label: Text(liveId == null ? 'Start' : 'Open'),
-              ),
-            ],
-          ),
-          if (next != null) ...[
-            const SizedBox(height: Space.s),
-            Wrap(
-              spacing: Space.s,
-              children: [
-                TextButton(
-                  style: TextButton.styleFrom(foregroundColor: p.onPanel),
-                  onPressed: () => context.push('/workout/plan/${prog!.id}/day/${prog.nextDay}'),
-                  child: const Text('See the day'),
-                ),
-                TextButton(
-                  style: TextButton.styleFrom(foregroundColor: p.onPanelSoft),
-                  onPressed: () => startWorkout(context, ref),
-                  child: const Text('Empty workout'),
-                ),
-              ],
             ),
-          ],
         ],
       ),
     );

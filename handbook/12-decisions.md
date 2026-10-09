@@ -2,7 +2,7 @@
 title: Decision record
 status: active-plan
 owner: maintainers
-updated: 2026-10-06
+updated: 2026-10-09
 ---
 
 # Decision record
@@ -388,4 +388,21 @@ Keep major choices here. Update the related chapter when a decision changes.
 **Update (2026-10-08, owner request, v0.4.2):** Every cue has its own switch, all on by default. With the phone locked, the same cues come as local notifications that play the bundled voice clips, and Android shows a quiet lock-screen card with the live clock. The live voice and the alerts never speak at once: on screen the voice speaks; off screen the alerts do.
 
 **License (To confirm):** The clips were made on the owner's free ElevenLabs plan, which allows non-commercial use with credit to ElevenLabs. The credit is in the app's licenses page (`app/assets/licenses/elevenlabs-voice.txt`). Before a paid or store release, upgrade the plan and make the clips again, or record new ones.
+
+## D-032: Visual hierarchy rules
+
+**Status:** Accepted by the user (owner request, 2026-10-09). Built.
+**Date:** 2026-10-09.
+
+**Choice:** After a visual hierarchy review of every tab on a real phone (against a 14-rule design checklist), the owner asked for all fixes in one change. The app now follows these rules (handbook 3.8, "Hierarchy rules"):
+
+- **One focal point per screen.** The hero card or the one main button is the largest, highest-contrast thing. Screen titles stay smaller than it on Home.
+- **Colour roles.** Lime is the one main training action. Teal is links and selection. Category colours (green, blue, orange, coral) show data only: nutrients, muscles, and meal icons. Settings rows, shortcuts, tiles, and card icons are neutral.
+- **Type roles.** Large title for the page subject; small grey capitals for group labels; rows below them.
+- **One selector style.** The grey segmented control for two to four choices; ink-filled chips for longer option lists.
+- **Rhythm.** The same idea looks the same everywhere: one hero layout on Home and Workout, one week strip shape, one detail format, sentence-case exercise names.
+
+**Changes to earlier choices:** The dark-mode training panel now has a faint lime tint (#1A2010) so it stands apart from #1C1C1E cards. The Meal timeline keeps tinted pills for logged foods, but empty "add" pills are neutral, so the four meal colours no longer fill the screen. Analytics ranges are named "7 days", "30 days", and "90 days" because they are rolling windows; the numbers did not change.
+
+**Fixed with it:** Selected and unselected chips in the theme lost their label font and colour (blank chips in Customize plan), because chips read only a colour from a state-aware text style.
 

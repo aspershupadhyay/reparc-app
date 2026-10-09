@@ -39,33 +39,31 @@ class MoveScreen extends ConsumerWidget {
     final t = Theme.of(context).textTheme;
     final (_, areaSoft) = areaColors(p, e.area);
     return Scaffold(
-      appBar: AppBar(title: Text(e.target.label)),
+      // The large title below names the page; the bar repeats nothing.
+      appBar: AppBar(),
       bottomNavigationBar: fromWorkout
           ? null
-          : SafeArea(
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(Space.l, Space.s, Space.l, Space.s),
-                child: FilledButton.icon(
-                  onPressed: () => useMove(
-                    context,
-                    ref,
-                    catalogId: e.catalogId,
-                    name: e.name,
-                    equipment: e.equipment == 'No equipment' ? null : e.equipment,
-                    muscles: e.primary.join(', '),
-                    liveId: live?.id,
-                  ),
-                  icon: Icon(live == null ? LucideIcons.play : LucideIcons.plus, size: 20),
-                  label: Text(live == null ? 'Start workout with this' : 'Add to workout'),
+          : BottomActionBar(
+              child: FilledButton.icon(
+                onPressed: () => useMove(
+                  context,
+                  ref,
+                  catalogId: e.catalogId,
+                  name: sentenceCase(e.name),
+                  equipment: e.equipment == 'No equipment' ? null : e.equipment,
+                  muscles: e.primary.join(', '),
+                  liveId: live?.id,
                 ),
+                icon: Icon(live == null ? LucideIcons.play : LucideIcons.plus, size: 20),
+                label: Text(live == null ? 'Start workout with this' : 'Add to workout'),
               ),
             ),
       body: ListView(
         padding: const EdgeInsets.fromLTRB(Space.l, 0, Space.l, Space.xxl),
         children: [
-          PhotoMotion(photos: (e.startPhoto, e.endPhoto), name: e.name),
+          PhotoMotion(photos: (e.startPhoto, e.endPhoto), name: sentenceCase(e.name)),
           const SizedBox(height: Space.l),
-          Semantics(header: true, child: Text(e.name, style: t.headlineSmall)),
+          Semantics(header: true, child: Text(sentenceCase(e.name), style: t.headlineSmall)),
           const SizedBox(height: Space.s),
           Wrap(
             spacing: Space.s,

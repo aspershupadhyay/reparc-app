@@ -52,6 +52,12 @@ String speakDuration(Duration d) {
   return parts.join(' ');
 }
 
+/// Joins short facts with " · " so a line never starts with the dot, and a
+/// short fact such as "15 sets" or "~48 min" never splits across lines.
+/// Longer parts (a muscle list) can still wrap at their own spaces.
+String metaLine(Iterable<String> parts) =>
+    parts.where((x) => x.isNotEmpty).map((x) => x.length <= 14 ? x.replaceAll(' ', '\u00A0') : x).join('\u00A0· ');
+
 String fmtDayLong(DateTime d) => DateFormat('EEEE, d MMMM y').format(d);
 String fmtDayShort(DateTime d) => DateFormat('EEE d MMM').format(d);
 String fmtDayMonth(DateTime d) => DateFormat('d MMM').format(d);

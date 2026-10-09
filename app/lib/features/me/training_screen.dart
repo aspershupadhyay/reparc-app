@@ -44,7 +44,9 @@ class TrainingScreen extends ConsumerWidget {
       ],
     );
 
-    Widget lead(IconData icon, Color c, Color soft) => IconBadge(icon, color: soft, glyph: c, size: 40);
+    // Neutral row icons: settings rows are navigation, not data, so they
+    // carry no category colour (visual review, 2026-10-09).
+    Widget lead(IconData icon) => IconBadge(icon, color: p.surfaceAlt, glyph: p.ink, size: 36);
 
     Widget dropdown<T>(T value, List<(T, String)> items, ValueChanged<T?> onChanged) => DropdownButton<T>(
       // A value no longer offered shows as the first choice, not an error.
@@ -64,7 +66,7 @@ class TrainingScreen extends ConsumerWidget {
       List<(int?, String)> items,
       ValueChanged<int?> on,
     ) => ListTile(
-      leading: lead(icon, p.orange, p.orangeSoft),
+      leading: lead(icon),
       title: Text(title),
       subtitle: Text(subtitle),
       trailing: dropdown<int?>(value, items, on),
@@ -123,7 +125,7 @@ class TrainingScreen extends ConsumerWidget {
                 repo.setRestAfterSet,
               ),
               ListTile(
-                leading: lead(LucideIcons.trendingUp, p.green, p.greenSoft),
+                leading: lead(LucideIcons.trendingUp),
                 title: const Text('Next set'),
                 subtitle: Text(
                   s.loadStyle == LoadStyle.pyramid
@@ -140,14 +142,14 @@ class TrainingScreen extends ConsumerWidget {
           ),
           group('Run on its own', [
             SwitchListTile(
-              secondary: lead(LucideIcons.timerReset, p.brand, p.brandSoft),
+              secondary: lead(LucideIcons.timerReset),
               title: const Text('End each set on time'),
               subtitle: const Text('Off: tap Set done'),
               value: s.finishRepSets,
               onChanged: repo.setFinishRepSets,
             ),
             SwitchListTile(
-              secondary: lead(LucideIcons.play, p.brand, p.brandSoft),
+              secondary: lead(LucideIcons.play),
               title: const Text('Start the next set on its own'),
               subtitle: const Text('After a 3-2-1. Off: tap Start set'),
               value: s.autoStartSets,
@@ -156,7 +158,7 @@ class TrainingScreen extends ConsumerWidget {
           ]),
           group('Voice', [
             ListTile(
-              leading: lead(LucideIcons.volume2, p.blue, p.blueSoft),
+              leading: lead(LucideIcons.volume2),
               title: const Text('Voice'),
               subtitle: const Text('Says when a set or rest starts and ends'),
               trailing: dropdown(
@@ -173,7 +175,7 @@ class TrainingScreen extends ConsumerWidget {
               ),
             ),
             SwitchListTile(
-              secondary: lead(LucideIcons.lockKeyhole, p.green, p.greenSoft),
+              secondary: lead(LucideIcons.lockKeyhole),
               title: const Text('Speak when locked'),
               subtitle: const Text('The same voice as notifications. Android also shows the clock'),
               value: s.lockAlerts,
@@ -187,7 +189,7 @@ class TrainingScreen extends ConsumerWidget {
               (Cue.end, LucideIcons.bellRing, 'End of rest and set', '"Rest is up" and "Time! Good set."'),
             ])
               SwitchListTile(
-                secondary: lead(icon, p.blue, p.blueSoft),
+                secondary: lead(icon),
                 title: Text(title),
                 subtitle: Text(sub),
                 value: s.cues.contains(cue),

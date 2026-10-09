@@ -2,7 +2,7 @@
 title: Screens, design system, and motion
 status: proposed
 owner: product-design
-updated: 2026-10-06
+updated: 2026-10-09
 ---
 
 # Section 3: Screens, design system, and motion
@@ -55,6 +55,8 @@ Show a day selector, daily energy and nutrient summary, meal timeline, meal card
 
 Do not use the image's sample values as default user records.
 
+Logged foods keep their tinted meal pill. Empty "add" pills use a neutral outline with only the small meal icon in colour (D-032). Add food opens on search; the manual form opens when the user picks a food or taps **Can't find it? Enter it yourself**.
+
 ## 3.4 Workout tab
 
 Use the second supplied image as a layout reference. The handbook keeps a copy below and at [Workout UI reference](references/workout-ui-reference.png).
@@ -69,7 +71,7 @@ Do not copy names, logos, people, or branded assets from a reference image.
 
 ## 3.5 Analytics screen
 
-Show a range selector, data summaries, and charts. Let the user open a summary to see the saved records behind it. Explain missing values and estimates.
+Show a range selector, data summaries, and charts. The ranges are rolling windows that end today, so they are named "7 days", "30 days", and "90 days" (D-032). Home's week card shows the calendar week, Monday first. Let the user open a summary to see the saved records behind it. Explain missing values and estimates.
 
 ## 3.6 Me tab and data controls
 
@@ -128,6 +130,20 @@ Colours live in `app/lib/core/palette.dart`. Screens read colours only from ther
 **Contrast fix (2026-10-08, owner request):** In light mode, lime on white was about 1.3:1, and green and orange icons on their soft tints were about 2:1. Light green, orange, and coral now use Apple's "Increase Contrast" shades, so every category icon is at least 3:1 on its soft tint and on white. Lime stays on the dark panel and on fills with a black glyph; on light surfaces the app uses Energy strong. `app/test/palette_test.dart` checks these pairs.
 
 The category colours are the iOS system colours (D-023).
+
+**Dark panel (2026-10-09, D-032):** In dark mode the training panel is #1A2010 (raised #29311D), a faint lime tint. Before, it was #1C1C1E, the same as every card, so the hero card did not stand out.
+
+### Hierarchy rules (D-032)
+
+These rules came from a visual review of every tab on a real phone (2026-10-09). Check new screens against them.
+
+- **One focal point.** Each screen has one thing that is seen first: the hero card or the one main button. Make it the largest and highest-contrast element. On Home the greeting is Title 2 size (28), smaller than the hero title.
+- **Large, medium, small.** The page subject gets the large title. Group labels are small grey capitals (`SectionHeader`, Footnote 13, semibold), lined up with the text in the card below. Rows sit between. A group label is never larger than the rows it labels. In a list where one item matters most, such as the main lift of a plan day, give it a label and a larger name.
+- **Colour roles.** Lime: the one main training action, and done states on the dark panel. Teal: links, selection, and the selected tab. Category colours: data only (nutrients, muscles, meal icons, charts). Everything else is neutral: settings row icons, Home shortcuts (teal glyph, as links), Analytics tiles and card icons, health tiles. Do not use a category colour to decorate.
+- **One selector style.** `PillTabs` (grey segmented control) for two to four choices, with `compact: true` for a secondary choice under a main one. Ink-filled chips for longer option lists. Do not use Material `SegmentedButton`.
+- **Less text at once.** Show the short fact in a row (sets × reps) and keep detail (rest, reps in reserve, coaching notes) in the sheet or the screen-reader label. Fold warm-up and cool-down to one summary row. Use one help link instead of several paragraphs.
+- **Rhythm.** Use one layout for the same idea: the same hero on Home and Workout, the same week strip shapes (done: filled with a check; planned: outlined ring; rest: small dot), `metaLine()` for "a · b · c" lines so a line never starts with a dot, and sentence case for exercise names.
+- **Bottom buttons.** A page's one main button sits in `BottomActionBar`, which draws a hairline where the list ends.
 
 `app/test/palette_test.dart` checks that every main text pair is at least 4.5:1 and every icon glyph on a category colour is at least 3:1. This is a calculated check. A rendered review on devices is still required.
 

@@ -25,9 +25,11 @@ import '../exercises/rig/anatomy.dart';
 import 'charts.dart';
 
 enum _Range {
-  week(7, 'Week'),
-  month(30, 'Month'),
-  quarter(90, '3 months');
+  // Rolling windows that end today, named by their length so they are not
+  // read as a calendar week or month (Home shows the calendar week).
+  week(7, '7 days'),
+  month(30, '30 days'),
+  quarter(90, '90 days');
 
   const _Range(this.days, this.label);
   final int days;
@@ -74,6 +76,7 @@ class _AnalyticsScreenState extends ConsumerState<AnalyticsScreen> {
             ),
             const SizedBox(height: Space.s),
             PillTabs<_Range>(
+              compact: true,
               values: _Range.values,
               selected: _range,
               label: (r) => r.label,
@@ -163,14 +166,18 @@ class _Consistency extends StatelessWidget {
                       children: [
                         Text('Workouts', style: t.bodySmall?.copyWith(color: p.onPanelSoft)),
                         Text('${s.sessions.length}', style: t.displayLarge?.tabular.copyWith(color: p.onPanel)),
+                        // Lime and an up arrow only for a real rise; no change
+                        // is a neutral dash.
                         if (before != null)
                           Tag(
                             deltaText(s.sessions.length, before!.sessions.length),
                             color: p.panelRaised,
-                            textColor: p.energy,
-                            icon: s.sessions.length >= before!.sessions.length
+                            textColor: s.sessions.length > before!.sessions.length ? p.energy : p.onPanelSoft,
+                            icon: s.sessions.length > before!.sessions.length
                                 ? LucideIcons.trendingUp
-                                : LucideIcons.trendingDown,
+                                : s.sessions.length < before!.sessions.length
+                                ? LucideIcons.trendingDown
+                                : LucideIcons.minus,
                           ),
                       ],
                     ),
@@ -245,60 +252,56 @@ class _LoadRow extends StatelessWidget {
     final reps = working.fold<int>(0, (a, r) => a + (r.set.reps ?? 0));
     final times = [for (final x in s.sessions) activeTime(x.session)].whereType<Duration>().toList();
     final avg = times.isEmpty ? null : Duration(seconds: times.fold<int>(0, (a, d) => a + d.inSeconds) ~/ times.length);
-    Widget tile(IconData icon, Color c, Color soft, String label, String value, String? unitText, String note) =>
-        Expanded(
-          child: AppCard(
-            color: soft,
-            padding: const EdgeInsets.all(Space.m),
-            onTap: () => _openRecords(context, 'workouts', s),
-            semanticLabel: '$label $value ${unitText ?? ''}. $note',
-            child: ExcludeSemantics(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  IconBadge(icon, color: c, size: 32),
-                  const SizedBox(height: Space.s),
-                  Metric(label: label, value: value, unit: unitText, note: note),
-                ],
-              ),
-            ),
+    // Neutral tiles of equal height: the numbers carry the meaning, not a
+    // colour (visual review, 2026-10-09).
+    Widget tile(IconData icon, String label, String value, String? unitText, String note) => Expanded(
+      child: AppCard(
+        padding: const EdgeInsets.all(Space.m),
+        onTap: () => _openRecords(context, 'workouts', s),
+        semanticLabel: '$label $value ${unitText ?? ''}. $note',
+        child: ExcludeSemantics(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Icon(icon, size: 18, color: p.inkSoft),
+              const SizedBox(height: Space.s),
+              Metric(label: label, value: value, unit: unitText, note: note),
+            ],
           ),
-        );
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        tile(
-          LucideIcons.weight,
-          p.blue,
-          p.blueSoft,
-          'Volume',
-          fmtCompact(vol.inUnit(unit)),
-          unit,
-          vol.skipped > 0
-              ? '${vol.skipped} sets without weight'
-              : (prev == null ? 'weight × reps' : deltaText(vol.kg, prev.kg)),
         ),
-        const SizedBox(width: Space.s),
-        tile(
-          LucideIcons.layers,
-          p.green,
-          p.greenSoft,
-          'Working sets',
-          '${working.length}',
-          null,
-          '${fmtNum(reps)} reps',
-        ),
-        const SizedBox(width: Space.s),
-        tile(
-          LucideIcons.timer,
-          p.orange,
-          p.orangeSoft,
-          'Avg session',
-          avg == null ? missingText : '${avg.inMinutes}',
-          avg == null ? null : 'min',
-          'excludes pauses',
-        ),
-      ],
+      ),
+    );
+    return IntrinsicHeight(
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          tile(
+            LucideIcons.weight,
+            'Volume',
+            fmtCompact(vol.inUnit(unit)),
+            unit,
+            vol.skipped > 0
+                ? '${vol.skipped} sets without weight'
+                : (prev == null ? 'weight × reps' : deltaText(vol.kg, prev.kg)),
+          ),
+          const SizedBox(width: Space.s),
+          tile(
+            LucideIcons.layers,
+            'Working sets',
+            '${working.length}',
+            null,
+            '${fmtNum(reps)} reps',
+          ),
+          const SizedBox(width: Space.s),
+          tile(
+            LucideIcons.timer,
+            'Avg session',
+            avg == null ? missingText : '${avg.inMinutes}',
+            avg == null ? null : 'min',
+            'excludes pauses',
+          ),
+        ],
+      ),
     );
   }
 }
@@ -338,7 +341,7 @@ class _RoadmapAdherence extends StatelessWidget {
                 Text(
                   planned == 0
                       ? 'No planned days in this range yet.'
-                      : '$done of $planned planned workouts done in this range.',
+                      : '$done of $planned planned workouts done in the last ${s.dayCount} days.',
                   style: t.bodyMedium,
                 ),
               ],
@@ -376,7 +379,7 @@ class _Muscles extends ConsumerWidget {
         children: [
           Row(
             children: [
-              IconBadge(LucideIcons.personStanding, color: p.coral, size: 36),
+              IconBadge(LucideIcons.personStanding, color: p.surfaceAlt, size: 36, glyph: p.ink),
               const SizedBox(width: Space.m),
               Expanded(child: Text('Sets per muscle', style: t.titleMedium)),
               Text('per week', style: t.labelSmall),
@@ -465,7 +468,7 @@ class _StrengthTrendState extends ConsumerState<_StrengthTrend> {
         children: [
           Row(
             children: [
-              IconBadge(LucideIcons.trendingUp, color: p.blue, size: 36),
+              IconBadge(LucideIcons.trendingUp, color: p.surfaceAlt, size: 36, glyph: p.ink),
               const SizedBox(width: Space.m),
               Expanded(child: Text('Strength', style: t.titleMedium)),
             ],
@@ -583,9 +586,13 @@ class _BodyWeight extends StatelessWidget {
         children: [
           Row(
             children: [
-              IconBadge(LucideIcons.scale, color: p.green, size: 36),
+              IconBadge(LucideIcons.scale, color: p.surfaceAlt, size: 36, glyph: p.ink),
               const SizedBox(width: Space.m),
               Expanded(child: Text('Body weight', style: t.titleMedium)),
+              // The latest value is the number people look for.
+              if (inRange.isNotEmpty)
+                Text('${fmtNum(inRange.last.$2, maxDecimals: 1)} $unit', style: t.titleMedium?.tabular),
+              if (inRange.length > 1) const SizedBox(width: Space.s),
               if (inRange.length > 1)
                 Text(
                   '${inRange.last.$2 >= inRange.first.$2 ? '+' : ''}'
@@ -635,11 +642,11 @@ class _MealTab extends StatelessWidget {
       (Nutrient.sodium, p.inkSoft),
     ];
     List<double?> daily(Nutrient n) => [for (final d in s.days) byDay[dayKey(d)]?.of(n).value];
+    final noValues = rows.every((r) => dailyAverage(byDay, r.$1).days == 0);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         AppCard(
-          color: p.panel,
           onTap: () => _openRecords(context, 'meals', s),
           semanticLabel: 'Food logged on $logged of ${s.dayCount} days. Open meal records',
           child: ExcludeSemantics(
@@ -651,21 +658,18 @@ class _MealTab extends StatelessWidget {
                     value: '$logged',
                     unit: 'of ${s.dayCount}',
                     large: true,
-                    color: p.onPanel,
-                    labelColor: p.onPanelSoft,
                     note: 'Eaten foods only. Planned foods do not count.',
                   ),
                 ),
                 Ring(
                   value: logged / s.dayCount,
-                  color: p.energy,
-                  track: p.panelRaised,
+                  color: p.brand,
                   size: 72,
                   stroke: 8,
                   semanticLabel: '',
                   child: Text(
                     '${(logged / s.dayCount * 100).round()}%',
-                    style: t.labelMedium?.tabular.copyWith(color: p.onPanel),
+                    style: t.labelMedium?.tabular,
                   ),
                 ),
               ],
@@ -681,6 +685,16 @@ class _MealTab extends StatelessWidget {
               Text('Daily average', style: t.titleMedium),
               Text('Over days that have a value. Empty days are not counted as zero.', style: t.bodySmall),
               const SizedBox(height: Space.m),
+              // One message when nothing has a value, not one per row.
+              if (noValues) ...[
+                StatusLine(
+                  icon: LucideIcons.info,
+                  text: logged == 0
+                      ? 'Log food you ate to see daily averages.'
+                      : 'The foods you logged have no nutrient values. Add values to a food to see averages here.',
+                ),
+                const SizedBox(height: Space.s),
+              ],
               for (final (n, color) in rows)
                 Builder(
                   builder: (context) {
@@ -702,14 +716,15 @@ class _MealTab extends StatelessWidget {
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Text(n.label, style: t.labelMedium),
-                                Text(
-                                  hit == null
-                                      ? (avg.days == 0 ? 'No values yet' : 'on ${avg.days} days')
-                                      : hit.$2 == 0
-                                      ? 'No days with a value yet'
-                                      : '${target!.isLimit ? 'Under' : 'Reached'} on ${hit.$1} of ${hit.$2} days',
-                                  style: t.labelSmall,
-                                ),
+                                if (!noValues)
+                                  Text(
+                                    hit == null
+                                        ? (avg.days == 0 ? 'No values yet' : 'on ${avg.days} days')
+                                        : hit.$2 == 0
+                                        ? 'No days with a value yet'
+                                        : '${target!.isLimit ? 'Under' : 'Reached'} on ${hit.$1} of ${hit.$2} days',
+                                    style: t.labelSmall,
+                                  ),
                               ],
                             ),
                           ),
@@ -860,13 +875,13 @@ class _Records extends StatelessWidget {
     final t = Theme.of(context).textTheme;
     final sorted = [...records]..sort((a, b) => b.source.session.startedAt.compareTo(a.source.session.startedAt));
     return AppCard(
-      padding: const EdgeInsets.all(Space.xl),
+      padding: const EdgeInsets.all(Space.l),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Row(
             children: [
-              IconBadge(LucideIcons.trophy, color: p.orange, size: 36),
+              IconBadge(LucideIcons.trophy, color: p.surfaceAlt, size: 36, glyph: p.ink),
               const SizedBox(width: Space.m),
               Expanded(child: Text('Best lifts', style: t.titleMedium)),
             ],

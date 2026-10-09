@@ -287,15 +287,12 @@ class _AreaScreenState extends ConsumerState<AreaScreen> {
                         ],
                       )
                     else
-                      Center(child: MuscleIcon.muscle(_muscle, size: 96, color: color)),
-                    const SizedBox(height: Space.m),
-                    Text(
-                      _muscle.hint,
-                      style: t.bodyMedium?.copyWith(color: p.inkSoft),
-                      textAlign: TextAlign.center,
-                    ),
-                    const SizedBox(height: Space.m),
+                      Center(child: MuscleIcon.muscle(_muscle, size: 72, color: color)),
+                    const SizedBox(height: Space.s),
+                    // A quieter second-level control: the muscle above is the
+                    // main choice (visual review, 2026-10-09).
                     PillTabs<MoveKind>(
+                      compact: true,
                       values: MoveKind.values,
                       selected: _kind,
                       label: (k) => k.label,
@@ -323,9 +320,13 @@ class _AreaScreenState extends ConsumerState<AreaScreen> {
                     ),
                     if (starts.isNotEmpty) ...[
                       SectionHeader('Start here', top: Space.l),
-                      Text(
-                        'The best moves for ${_muscle.label.toLowerCase()}. Pick one or two that fit your gym.',
-                        style: t.bodySmall,
+                      Padding(
+                        padding: const EdgeInsets.only(left: Space.l),
+                        child: Text(
+                          '${_muscle.hint}. The best moves for ${_muscle.label.toLowerCase()}: pick one or two '
+                          'that fit your gym.',
+                          style: t.bodySmall,
+                        ),
                       ),
                       const SizedBox(height: Space.s),
                       for (final m in starts)
@@ -381,20 +382,23 @@ class _MuscleChoice extends StatelessWidget {
           onTap: onTap,
           child: AnimatedContainer(
             duration: Motion.quick,
-            padding: const EdgeInsets.symmetric(vertical: Space.s, horizontal: 4),
+            padding: const EdgeInsets.symmetric(vertical: 6, horizontal: Space.s),
             decoration: BoxDecoration(
               borderRadius: Radii.medium,
               border: Border.all(color: selected ? color : Colors.transparent, width: 2),
             ),
-            child: Column(
+            // One compact row per muscle: icon, then name. Half the height
+            // of the old stacked tile.
+            child: Row(
               children: [
-                MuscleIcon.muscle(muscle, size: 56, color: selected ? color : p.inkSoft),
-                const SizedBox(height: 6),
-                Text(
-                  muscle.label,
-                  style: t.labelSmall?.copyWith(color: selected ? p.ink : p.inkSoft),
-                  textAlign: TextAlign.center,
-                  maxLines: 2,
+                MuscleIcon.muscle(muscle, size: 36, color: selected ? color : p.inkSoft),
+                const SizedBox(width: Space.s),
+                Expanded(
+                  child: Text(
+                    muscle.label,
+                    style: (selected ? t.labelMedium : t.bodyMedium)?.copyWith(color: selected ? p.ink : p.inkSoft),
+                    maxLines: 2,
+                  ),
                 ),
               ],
             ),

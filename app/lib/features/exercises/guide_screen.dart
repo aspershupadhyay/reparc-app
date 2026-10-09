@@ -43,17 +43,15 @@ class GuideScreen extends ConsumerWidget {
     final (areaColor, areaSoft) = areaColors(p, e.area);
     final live = ref.watch(liveSessionProvider).value;
     return Scaffold(
-      appBar: AppBar(title: Text(e.area.label)),
+      // The large title below names the page; the bar repeats nothing.
+      appBar: AppBar(),
       bottomNavigationBar: fromWorkout
           ? null
-          : SafeArea(
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(Space.l, Space.s, Space.l, Space.s),
-                child: FilledButton.icon(
-                  onPressed: () => _use(context, ref, e, liveId: live?.id),
-                  icon: Icon(live == null ? LucideIcons.play : LucideIcons.plus, size: 20),
-                  label: Text(live == null ? 'Start workout with this' : 'Add to workout'),
-                ),
+          : BottomActionBar(
+              child: FilledButton.icon(
+                onPressed: () => _use(context, ref, e, liveId: live?.id),
+                icon: Icon(live == null ? LucideIcons.play : LucideIcons.plus, size: 20),
+                label: Text(live == null ? 'Start workout with this' : 'Add to workout'),
               ),
             ),
       body: ListView(
@@ -80,24 +78,28 @@ class GuideScreen extends ConsumerWidget {
           const SizedBox(height: Space.l),
           _Muscles(e: e, areaColor: areaColor),
           const SizedBox(height: Space.m),
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Expanded(
-                child: _InfoTile(
-                  icon: LucideIcons.repeat,
-                  label: e.timed ? 'Hold' : 'Sets × reps',
-                  text: e.dose.replaceAll(' · ', '\n'),
+          // Equal heights, and a range such as "8–12" never splits.
+          IntrinsicHeight(
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Expanded(
+                  child: _InfoTile(
+                    icon: LucideIcons.repeat,
+                    label: e.timed ? 'Hold' : 'Sets × reps',
+                    text: e.dose.split(' · ').map((x) => x.replaceAll(' ', '\u00A0')).join('\n'),
+                  ),
                 ),
-              ),
-              const SizedBox(width: Space.m),
-              Expanded(
-                child: _InfoTile(icon: LucideIcons.timer, label: 'Tempo', text: e.tempo),
-              ),
-            ],
+                const SizedBox(width: Space.m),
+                Expanded(
+                  child: _InfoTile(icon: LucideIcons.timer, label: 'Tempo', text: e.tempo),
+                ),
+              ],
+            ),
           ),
           SectionHeader('Set up', top: Space.xl),
-          _Bullets(items: e.setup, icon: LucideIcons.chevronRight, color: p.brand),
+          // Plain dots: a teal chevron reads as a link.
+          _Bullets(items: e.setup, icon: LucideIcons.dot, color: p.inkSoft),
           const SectionHeader('How to do it'),
           StepsCard(items: e.steps),
           const SectionHeader('Breathing'),

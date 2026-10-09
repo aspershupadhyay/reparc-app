@@ -18,6 +18,7 @@ import '../../data/providers.dart';
 import '../../domain/nutrition.dart';
 import '../../health/health_service.dart';
 import '../../updates/update_controller.dart';
+import '../me/body_screen.dart';
 import '../me/health_screen.dart';
 import '../meal/meal_entry_sheet.dart';
 import '../workout/session_clock.dart';
@@ -35,7 +36,6 @@ class HomeScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final p = context.pal;
-    final t = Theme.of(context).textTheme;
     final now = ref.watch(clockProvider)();
     final today = dayOf(now);
     final weekStart = addDays(today, -(today.weekday - 1));
@@ -52,7 +52,9 @@ class HomeScreen extends ConsumerWidget {
         child: ListView(
           padding: const EdgeInsets.fromLTRB(Space.l, Space.l, Space.l, Space.xxl),
           children: [
-            ScreenTitle(greeting, subtitle: fmtDayLong(today)),
+            // The greeting stays smaller than the hero title, so the next
+            // action is the first thing seen (visual review, 2026-10-09).
+            ScreenTitle(greeting, subtitle: fmtDayLong(today), compact: true),
             if (ref.watch(settingsProvider).hasValue && !settings.storageNoticeSeen) ...[
               const _StorageNote(),
               const SizedBox(height: Space.m),
@@ -80,34 +82,33 @@ class HomeScreen extends ConsumerWidget {
               const SizedBox(height: Space.m),
               const _HealthRow(),
             ],
-            const SizedBox(height: Space.l),
-            Text('Shortcuts', style: t.titleMedium),
-            const SizedBox(height: Space.s),
+            const SectionHeader('Shortcuts', top: Space.l),
             Row(
               children: [
                 _Shortcut(
                   icon: LucideIcons.plus,
                   label: 'Log food',
-                  color: p.green,
+                  color: p.brand,
                   onTap: () => showMealEntrySheet(context, day: dayKey(today)),
                 ),
                 _Shortcut(
                   icon: LucideIcons.bookOpen,
                   label: 'Exercises',
-                  color: p.blue,
+                  color: p.brand,
                   onTap: () => context.go('/workout/library'),
                 ),
                 _Shortcut(
                   icon: LucideIcons.calculator,
                   label: 'Weight calc',
-                  color: p.orange,
+                  color: p.brand,
                   onTap: () => context.go('/workout/calculator'),
                 ),
                 _Shortcut(
                   icon: LucideIcons.scale,
                   label: 'Body',
-                  color: p.coral,
-                  onTap: () => context.go('/me/body'),
+                  color: p.brand,
+                  // Opens over Home, so Back returns here, not to the Me tab.
+                  onTap: () => Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => const BodyScreen())),
                 ),
               ],
             ),
@@ -204,7 +205,6 @@ class _HealthRow extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final p = context.pal;
     final s = ref.watch(currentSettingsProvider);
     final v = ref.watch(healthTodayProvider).value;
     return Row(
@@ -213,8 +213,6 @@ class _HealthRow extends ConsumerWidget {
           Expanded(
             child: _Tile(
               icon: LucideIcons.footprints,
-              color: p.green,
-              soft: p.greenSoft,
               label: 'Steps',
               value: v?.steps == null ? '–' : NumberFormat.decimalPattern().format(v!.steps),
               caption: v?.steps == null ? 'No data' : 'today',
@@ -227,8 +225,6 @@ class _HealthRow extends ConsumerWidget {
           Expanded(
             child: _Tile(
               icon: LucideIcons.zap,
-              color: p.orange,
-              soft: p.orangeSoft,
               label: 'Active',
               value: v?.energy == null ? '–' : '${v!.energy!.round()}',
               caption: v?.energy == null ? 'No data' : 'kcal burned',
@@ -243,8 +239,6 @@ class _HealthRow extends ConsumerWidget {
 class _Tile extends StatelessWidget {
   const _Tile({
     required this.icon,
-    required this.color,
-    required this.soft,
     required this.label,
     required this.value,
     required this.caption,
@@ -252,8 +246,6 @@ class _Tile extends StatelessWidget {
   });
 
   final IconData icon;
-  final Color color;
-  final Color soft;
   final String label;
   final String value;
   final String caption;
@@ -263,19 +255,34 @@ class _Tile extends StatelessWidget {
   Widget build(BuildContext context) {
     final t = Theme.of(context).textTheme;
     final p = context.pal;
+    // A neutral, compact tile. It supports the hero; it does not compete
+    // with it (visual review, 2026-10-09).
     return AppCard(
-      color: soft,
       onTap: onTap,
+      padding: const EdgeInsets.symmetric(horizontal: Space.l, vertical: Space.m),
       semanticLabel: '$label: $value $caption',
       child: ExcludeSemantics(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            IconBadge(icon, color: color, size: 40),
-            const SizedBox(height: Space.l),
-            Text(label, style: t.labelMedium?.copyWith(color: p.ink)),
-            Text(value, style: t.headlineSmall?.tabular, maxLines: 1, overflow: TextOverflow.ellipsis),
-            Text(caption, style: t.bodySmall, maxLines: 1, overflow: TextOverflow.ellipsis),
+            Row(
+              children: [
+                Icon(icon, size: 16, color: p.inkSoft),
+                const SizedBox(width: 6),
+                Text(label, style: t.bodySmall),
+              ],
+            ),
+            const SizedBox(height: Space.xs),
+            Text.rich(
+              TextSpan(
+                children: [
+                  TextSpan(text: value, style: t.titleLarge?.tabular),
+                  TextSpan(text: '  $caption', style: t.bodySmall),
+                ],
+              ),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
           ],
         ),
       ),
@@ -351,7 +358,7 @@ class _Hero extends ConsumerWidget {
       (null, final d?) => (
         'Next in your plan',
         d.name,
-        [if (d.focus.isNotEmpty) d.focus, '${d.work.length} exercises', 'about ${d.minutes} min'].join(' · '),
+        metaLine([if (d.focus.isNotEmpty) d.focus, '${d.work.length} exercises', 'about ${d.minutes} min']),
         'Start workout',
         () => startWorkout(context, ref, programId: program!.id, programDay: program.nextDay),
       ),
@@ -381,7 +388,7 @@ class _Hero extends ConsumerWidget {
                     style: t.displaySmall!.tabular.copyWith(color: p.onPanel),
                   )
                 else
-                  Text(title, style: t.headlineSmall?.copyWith(color: p.onPanel)),
+                  Text(title, style: t.displaySmall?.copyWith(color: p.onPanel)),
                 if (sub != null) Text(sub, style: t.bodySmall?.copyWith(color: p.onPanelSoft)),
                 const SizedBox(height: Space.l),
                 Wrap(
@@ -537,8 +544,6 @@ class _WeekCard extends StatelessWidget {
           children: [
             Row(
               children: [
-                IconBadge(LucideIcons.calendarCheck, color: p.green, size: 40),
-                const SizedBox(width: Space.m),
                 Expanded(child: Text('This week', style: t.titleMedium)),
                 if (roadmapPlanned != null) ...[
                   Text('${roadmapDone ?? 0}/$roadmapPlanned', style: t.headlineSmall?.tabular),
@@ -562,20 +567,54 @@ class _WeekCard extends StatelessWidget {
                       final done = trained.contains(dayKey(d));
                       final isToday = d == today;
                       final planned = plannedWeekdays.contains(d.weekday);
+                      // Three shapes, not three shades: done is filled with a
+                      // check, planned is an outlined ring, rest is a small
+                      // dot. Today has a heavier ring and a bold letter.
+                      final Widget mark;
+                      if (done) {
+                        mark = Container(
+                          width: 36,
+                          height: 36,
+                          decoration: BoxDecoration(
+                            color: p.energyStrong,
+                            shape: BoxShape.circle,
+                            border: isToday ? Border.all(color: p.ink, width: 2) : null,
+                          ),
+                          child: Icon(LucideIcons.check, size: 18, color: p.on(p.energyStrong)),
+                        );
+                      } else if (planned || isToday) {
+                        mark = Container(
+                          width: 36,
+                          height: 36,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            border: Border.all(
+                              color: isToday ? p.ink : p.inkSoft.withValues(alpha: 0.6),
+                              width: isToday ? 2 : 1.5,
+                            ),
+                          ),
+                        );
+                      } else {
+                        mark = SizedBox(
+                          width: 36,
+                          height: 36,
+                          child: Center(
+                            child: Container(
+                              width: 6,
+                              height: 6,
+                              decoration: BoxDecoration(color: p.line, shape: BoxShape.circle),
+                            ),
+                          ),
+                        );
+                      }
                       return Column(
                         children: [
-                          Text('MTWTFSS'[i], style: t.labelSmall?.copyWith(color: isToday ? p.ink : p.inkSoft)),
-                          const SizedBox(height: 6),
-                          Container(
-                            width: 36,
-                            height: 36,
-                            decoration: BoxDecoration(
-                              color: done ? p.energyStrong : (planned ? p.brandSoft : p.surfaceAlt),
-                              shape: BoxShape.circle,
-                              border: isToday ? Border.all(color: p.ink, width: 2) : null,
-                            ),
-                            child: done ? Icon(LucideIcons.check, size: 18, color: p.on(p.energyStrong)) : null,
+                          Text(
+                            'MTWTFSS'[i],
+                            style: isToday ? t.labelSmall?.copyWith(color: p.ink).w(FontWeight.w700) : t.labelSmall,
                           ),
+                          const SizedBox(height: 6),
+                          mark,
                         ],
                       );
                     },

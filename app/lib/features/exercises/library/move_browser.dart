@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
+import '../../../core/format.dart';
 import '../../../core/palette.dart';
 import '../../../core/tokens.dart';
 import '../../../core/widgets.dart';
@@ -224,10 +225,11 @@ class MoveTile extends StatelessWidget {
                         ),
                         const SizedBox(width: 6),
                         Expanded(
+                          // Two lines, so "Beginner" is not cut to "Begin…".
                           child: Text(
-                            '${m.target.label} · ${m.equipment} · ${m.level.label}',
+                            metaLine([m.target.label, m.equipment, m.level.label]),
                             style: t.bodySmall,
-                            maxLines: 1,
+                            maxLines: 2,
                             overflow: TextOverflow.ellipsis,
                           ),
                         ),
@@ -240,7 +242,9 @@ class MoveTile extends StatelessWidget {
                   ],
                 ),
               ),
-              Icon(icon, color: p.brand, size: IconSizes.s),
+              // A chevron only opens a page, so it is grey like every other
+              // chevron. An add icon is an action, so it keeps the tint.
+              Icon(icon, color: icon == LucideIcons.chevronRight ? p.inkSoft : p.brand, size: IconSizes.s),
               const SizedBox(width: Space.s),
             ],
           ),

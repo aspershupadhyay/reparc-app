@@ -104,7 +104,8 @@ class _BodyScreenState extends ConsumerState<BodyScreen> {
     final weights = ref.watch(weightsProvider).value ?? const [];
     Widget label(String s) => Padding(
       padding: const EdgeInsets.only(top: Space.l, bottom: Space.s),
-      child: Text(s, style: t.labelMedium),
+      // Questions lead; the answers under them are regular weight.
+      child: Text(s, style: t.titleMedium),
     );
     return Scaffold(
       appBar: AppBar(title: const Text('Body and goals')),
@@ -150,12 +151,12 @@ class _BodyScreenState extends ConsumerState<BodyScreen> {
             ),
           ),
           label('Sex (for the energy formula)'),
-          SegmentedButton<Sex>(
-            showSelectedIcon: false,
-            segments: [for (final s in Sex.values) ButtonSegment(value: s, label: Text(s.label))],
-            emptySelectionAllowed: true,
-            selected: {?_p.sex},
-            onSelectionChanged: (s) => s.isEmpty ? null : _save(_copy(sex: s.first)),
+          // Nullable: before the user picks, no segment is selected.
+          PillTabs<Sex?>(
+            values: Sex.values,
+            selected: _p.sex,
+            label: (s) => s!.label,
+            onChanged: (s) => _save(_copy(sex: s)),
           ),
           label('Age and height'),
           Row(
@@ -195,7 +196,7 @@ class _BodyScreenState extends ConsumerState<BodyScreen> {
                   RadioListTile<Activity>(
                     contentPadding: EdgeInsets.zero,
                     value: a,
-                    title: Text(a.label),
+                    title: Text(a.label, style: t.bodyLarge),
                     subtitle: Text(a.hint),
                   ),
               ],

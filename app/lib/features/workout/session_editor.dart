@@ -526,6 +526,8 @@ class _SetRowState extends ConsumerState<SetRow> {
       constraints: const BoxConstraints(minHeight: minTarget),
       errorMaxLines: 1,
       hintText: hint,
+      // A target is slanted, so an aim of "10" never reads as a typed 10.
+      hintStyle: t.bodyLarge?.copyWith(color: pal.inkSoft, fontStyle: FontStyle.italic),
       // The unit stays in view, also on an empty field.
       suffixIcon: suffix == null
           ? null
@@ -582,7 +584,9 @@ class _SetRowState extends ConsumerState<SetRow> {
                           child: Text(
                             warm ? 'W' : '${widget.number}',
                             style: t.labelMedium?.tabular.copyWith(
-                              color: now ? pal.onBrand : pal.ink,
+                              // Orange on its soft tint reads as "warm-up" and
+                              // keeps 3:1 in both modes.
+                              color: now ? pal.onBrand : (warm ? pal.orange : pal.ink),
                               fontWeight: FontWeight.w600,
                             ),
                           ),
@@ -647,11 +651,14 @@ class _SetRowState extends ConsumerState<SetRow> {
                   child: IconButton(
                     onPressed: _toggleDone,
                     tooltip: done ? 'Mark set not complete' : 'Mark set complete',
+                    // Done is a status, not an action: a tinted circle with a
+                    // green tick, so it does not compete with "Skip rest" or
+                    // the next set (visual review, 2026-10-09).
                     style: IconButton.styleFrom(
-                      backgroundColor: done ? pal.energyStrong : pal.surface,
+                      backgroundColor: done ? pal.energyStrong.withValues(alpha: 0.2) : pal.surface,
                       side: BorderSide(color: done ? pal.energyStrong : pal.inkSoft, width: 1.5),
                     ),
-                    icon: Icon(LucideIcons.check, color: done ? pal.on(pal.energyStrong) : pal.inkSoft),
+                    icon: Icon(LucideIcons.check, color: done ? pal.energyStrong : pal.inkSoft),
                   ),
                 ),
               ],

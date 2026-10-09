@@ -126,6 +126,42 @@ enum EquipKind {
   }
 }
 
+const _keepCase = {
+  'Arnold',
+  'Bulgarian',
+  'Jefferson',
+  'Pallof',
+  'Romanian',
+  'Russian',
+  'Scott',
+  'Smith',
+  'Turkish',
+  'Zottman',
+  'Olympic',
+};
+
+/// "Barbell Incline Bench Press - Medium Grip" → "Barbell incline bench
+/// press – medium grip". Keeps proper names (Romanian, Smith), short
+/// capitals (DB, EZ), and words with digits.
+String sentenceCase(String name) {
+  bool keep(String w) =>
+      w.isEmpty ||
+      _keepCase.contains(w.replaceAll(RegExp(r'[^A-Za-z]'), '')) ||
+      RegExp(r'\d').hasMatch(w) ||
+      (w.length <= 4 && w == w.toUpperCase() && RegExp(r'[A-Z]').hasMatch(w));
+  String part(String w) => keep(w) ? w : w.toLowerCase();
+  final words = name.replaceAll(' - ', ' – ').split(' ');
+  return [
+    for (final (i, w) in words.indexed)
+      if (i == 0)
+        // "Push-Ups" → "Push-ups": the first letter stays, inner parts follow
+        // the same rule as other words.
+        [for (final (j, x) in w.split('-').indexed) j == 0 ? x : part(x)].join('-')
+      else
+        [for (final x in w.split('-')) part(x)].join('-'),
+  ].join(' ');
+}
+
 /// Maps a library muscle name and exercise name to one target muscle.
 Muscle targetMuscle(String primary, String name) {
   final n = name.toLowerCase();
@@ -323,7 +359,10 @@ class Move {
   final ExerciseDef? coached;
   final LibraryExercise? library;
 
-  String get name => coached?.name ?? library!.name;
+  /// Coached names are written in sentence case. Library names come in
+  /// Title Case, so they are shown in the same case (visual review,
+  /// 2026-10-09).
+  String get name => coached?.name ?? sentenceCase(library!.name);
 
   /// The muscle this movement mainly trains. Browse groups by it.
   Muscle get target => coached?.primary.first ?? library!.target;

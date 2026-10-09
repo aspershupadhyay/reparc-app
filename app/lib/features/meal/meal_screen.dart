@@ -315,16 +315,18 @@ class _Summary extends StatelessWidget {
           bar(Nutrient.carbs, p.orange),
           bar(Nutrient.fiber, p.green),
           bar(Nutrient.fat, p.blue),
-          Row(
-            children: [
-              Expanded(
-                child: Text('Sugar: ${limitText(Nutrient.sugar)}', style: t.bodySmall),
+          // Label left, value right, like the bars above, so the two
+          // limits line up instead of wrapping into each other.
+          for (final n in [Nutrient.sugar, Nutrient.sodium])
+            Padding(
+              padding: const EdgeInsets.only(top: 2),
+              child: Row(
+                children: [
+                  Expanded(child: Text(n == Nutrient.sugar ? 'Sugar' : 'Sodium', style: t.bodySmall)),
+                  Text(limitText(n), style: t.bodySmall?.tabular),
+                ],
               ),
-              Expanded(
-                child: Text('Sodium: ${limitText(Nutrient.sodium)}', style: t.bodySmall, textAlign: TextAlign.end),
-              ),
-            ],
-          ),
+            ),
           if (plannedProtein != null && plannedProtein > 0) ...[
             const SizedBox(height: Space.s),
             StatusLine(
@@ -353,9 +355,9 @@ class _Summary extends StatelessWidget {
                 ),
               ),
               const SizedBox(width: Space.s),
+              // A quiet link: setting targets is rarer than planning a day.
               Expanded(
-                child: OutlinedButton.icon(
-                  style: _compact,
+                child: TextButton.icon(
                   onPressed: () => context.push('/me/body'),
                   icon: Icon(targets.isEmpty ? LucideIcons.target : LucideIcons.slidersHorizontal, size: 18),
                   label: OneLine(targets.isEmpty ? 'Set targets' : 'Targets'),
@@ -580,7 +582,9 @@ class _AddPill extends StatelessWidget {
       padding: const EdgeInsets.only(bottom: Space.s),
       child: Material(
         color: Colors.transparent,
-        shape: StadiumBorder(side: BorderSide(color: look.color.withValues(alpha: 0.45), width: 1.5)),
+        // A neutral outline: the meal colour stays on the small icon only,
+        // so the empty timeline is not a band of four colours.
+        shape: StadiumBorder(side: BorderSide(color: p.line, width: 1.5)),
         child: InkWell(
           customBorder: const StadiumBorder(),
           onTap: () => showMealEntrySheet(context, day: day, slotId: slot.id),
@@ -589,8 +593,8 @@ class _AddPill extends StatelessWidget {
             child: Row(
               children: [
                 compact
-                    ? SizedBox.square(dimension: 36, child: Icon(LucideIcons.plus, size: 18, color: look.color))
-                    : IconBadge(look.icon, color: look.soft, glyph: look.color, size: 44),
+                    ? SizedBox.square(dimension: 36, child: Icon(LucideIcons.plus, size: 18, color: p.inkSoft))
+                    : IconBadge(look.icon, color: look.soft, glyph: look.color, size: 40),
                 const SizedBox(width: Space.m),
                 Expanded(
                   child: Text(
@@ -601,7 +605,7 @@ class _AddPill extends StatelessWidget {
                 if (!compact)
                   Padding(
                     padding: const EdgeInsets.only(right: Space.m),
-                    child: Icon(LucideIcons.plus, color: look.color),
+                    child: Icon(LucideIcons.plus, color: p.inkSoft),
                   ),
               ],
             ),

@@ -44,6 +44,9 @@ class AppCard extends StatelessWidget {
   }
 }
 
+/// Group label above a card, in the iOS grouped-list style: small grey
+/// capitals, lined up with the text inside the card. It stays quieter than
+/// the page title and the rows it labels (handbook 3.8, type roles).
 class SectionHeader extends StatelessWidget {
   const SectionHeader(this.title, {super.key, this.action, this.top = Space.xl});
   final String title;
@@ -53,11 +56,16 @@ class SectionHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: EdgeInsets.only(top: top, bottom: Space.m),
+      padding: EdgeInsets.only(top: top, bottom: action == null ? Space.s : 0, left: Space.l),
       child: Row(
         children: [
           Expanded(
-            child: Semantics(header: true, child: Text(title, style: Theme.of(context).textTheme.titleLarge)),
+            child: Semantics(
+              header: true,
+              label: title,
+              excludeSemantics: true,
+              child: Text(title.toUpperCase(), style: sectionLabelStyle(context)),
+            ),
           ),
           ?action,
         ],
@@ -66,10 +74,38 @@ class SectionHeader extends StatelessWidget {
   }
 }
 
+/// Small grey capitals for group labels (iOS footnote style).
+TextStyle? sectionLabelStyle(BuildContext context) =>
+    Theme.of(context).textTheme.bodySmall?.copyWith(color: context.pal.inkSoft, letterSpacing: 0.4).w(FontWeight.w600);
+
+/// The bar under a page that holds its one main button. A hairline marks
+/// where the list ends, so content never looks cut off under the button.
+class BottomActionBar extends StatelessWidget {
+  const BottomActionBar({super.key, required this.child});
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    final p = context.pal;
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: p.bg,
+        border: Border(top: BorderSide(color: p.line, width: 0.5)),
+      ),
+      child: SafeArea(
+        child: Padding(padding: const EdgeInsets.fromLTRB(Space.l, Space.s, Space.l, Space.s), child: child),
+      ),
+    );
+  }
+}
+
 /// Screen title row used at the top of each tab.
 class ScreenTitle extends StatelessWidget {
-  const ScreenTitle(this.title, {super.key, this.subtitle, this.actions = const []});
+  const ScreenTitle(this.title, {super.key, this.subtitle, this.actions = const [], this.compact = false});
   final String title;
+
+  /// A smaller title, for a screen whose first card must lead (Home).
+  final bool compact;
   final String? subtitle;
   final List<Widget> actions;
 
@@ -89,7 +125,7 @@ class ScreenTitle extends StatelessWidget {
                     subtitle!.toUpperCase(),
                     style: t.bodySmall?.copyWith(fontWeight: FontWeight.w600, letterSpacing: 0.2),
                   ),
-                Semantics(header: true, child: Text(title, style: t.displaySmall)),
+                Semantics(header: true, child: Text(title, style: compact ? t.headlineSmall : t.displaySmall)),
               ],
             ),
           ),
@@ -301,7 +337,12 @@ class PillTabs<T> extends StatelessWidget {
     required this.label,
     required this.onChanged,
     this.icon,
+    this.compact = false,
   });
+
+  /// A smaller, quieter control for a secondary choice under a main one,
+  /// such as a time range under a section switch.
+  final bool compact;
   final List<T> values;
   final T selected;
   final String Function(T) label;
@@ -316,7 +357,7 @@ class PillTabs<T> extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(2),
       decoration: BoxDecoration(
-        color: p.ink.withValues(alpha: dark ? 0.16 : 0.07),
+        color: compact ? Colors.transparent : p.ink.withValues(alpha: dark ? 0.16 : 0.07),
         borderRadius: BorderRadius.circular(10),
       ),
       child: Row(
@@ -342,9 +383,13 @@ class PillTabs<T> extends StatelessWidget {
                     alignment: Alignment.center,
                     padding: const EdgeInsets.symmetric(horizontal: Space.s),
                     decoration: BoxDecoration(
-                      color: v == selected ? (dark ? const Color(0xFF636366) : p.surface) : Colors.transparent,
+                      color: v != selected
+                          ? Colors.transparent
+                          : compact
+                          ? p.ink.withValues(alpha: dark ? 0.16 : 0.07)
+                          : (dark ? const Color(0xFF636366) : p.surface),
                       borderRadius: BorderRadius.circular(8),
-                      boxShadow: v == selected && !dark
+                      boxShadow: v == selected && !dark && !compact
                           ? [
                               BoxShadow(
                                 color: Colors.black.withValues(alpha: 0.10),
@@ -365,7 +410,10 @@ class PillTabs<T> extends StatelessWidget {
                         Flexible(
                           child: OneLine(
                             label(v),
-                            style: (v == selected ? t.labelMedium : t.bodyMedium)?.copyWith(color: p.ink, fontSize: 14),
+                            style: (v == selected ? t.labelMedium : t.bodyMedium)?.copyWith(
+                              color: compact && v != selected ? p.inkSoft : p.ink,
+                              fontSize: compact ? 13 : 14,
+                            ),
                           ),
                         ),
                       ],
