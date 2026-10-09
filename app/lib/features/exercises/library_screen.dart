@@ -12,6 +12,7 @@ import 'area_style.dart';
 import 'catalog/model.dart';
 import 'library/library.dart';
 import 'library/move_browser.dart';
+import 'library/move_groups.dart';
 import 'muscle_map.dart';
 import 'rig/anatomy.dart';
 
@@ -239,6 +240,10 @@ class _AreaScreenState extends ConsumerState<AreaScreen> {
   EquipKind? _equip;
   MoveKind _kind = MoveKind.strength;
 
+  /// Third step: one part of the muscle, for example the triceps long head.
+  /// Null shows every group, each under its own heading.
+  MoveGroup? _focus;
+
   @override
   Widget build(BuildContext context) {
     final p = context.pal;
@@ -258,8 +263,26 @@ class _AreaScreenState extends ConsumerState<AreaScreen> {
           final starts = _kind == MoveKind.strength
               ? lib.essentialsFor(_muscle).where((m) => _equip == null || m.equipKind == _equip).toList()
               : const <Move>[];
-          final startIds = {for (final m in starts) m.catalogId};
-          final rest = shown.where((m) => !startIds.contains(m.catalogId)).toList();
+          // Groups only split strength moves: stretches and jumps are short
+          // lists already.
+          final groups = _kind == MoveKind.strength
+              ? [
+                  for (final g in groupMoves(_muscle, shown))
+                    if (muscleGroups[_muscle]!.contains(g.$1)) g.$1,
+                ]
+              : const <MoveGroup>[];
+          final focus = groups.length >= 2 && groups.contains(_focus) ? _focus : null;
+          bool inFocus(Move m) => focus == null || groupOf(m) == focus;
+          final picks = starts.where(inFocus).toList();
+          final startIds = {for (final m in picks) m.catalogId};
+          final rest = shown.where((m) => !startIds.contains(m.catalogId) && inFocus(m)).toList();
+          // Rows below the header: a group heading, then its moves.
+          final rows = <Object>[
+            if (focus == null && groups.length >= 2)
+              for (final (g, moves) in groupMoves(_muscle, rest)) ...[g, ...moves]
+            else
+              ...rest,
+          ];
           return CustomScrollView(
             slivers: [
               SliverPadding(
@@ -284,6 +307,7 @@ class _AreaScreenState extends ConsumerState<AreaScreen> {
                                     onTap: () => setState(() {
                                       _muscle = m;
                                       _equip = null;
+                                      _focus = null;
                                     }),
                                   ),
                                 ),
@@ -304,6 +328,7 @@ class _AreaScreenState extends ConsumerState<AreaScreen> {
                       onChanged: (k) => setState(() {
                         _kind = k;
                         _equip = null;
+                        _focus = null;
                       }),
                     ),
                     const SizedBox(height: Space.s),
@@ -323,7 +348,31 @@ class _AreaScreenState extends ConsumerState<AreaScreen> {
                         ],
                       ),
                     ),
-                    if (starts.isNotEmpty) ...[
+                    if (groups.length >= 2) ...[
+                      const SizedBox(height: Space.s),
+                      Semantics(
+                        container: true,
+                        label: 'Focus on one part of the ${_muscle.label.toLowerCase()}',
+                        child: Wrap(
+                          spacing: Space.s,
+                          runSpacing: Space.s,
+                          children: [
+                            for (final g in [null, ...groups])
+                              ChoiceChip(
+                                label: Text(g?.label ?? 'All ${_muscle.label.toLowerCase()}'),
+                                selected: focus == g,
+                                onSelected: (_) => setState(() => _focus = g),
+                              ),
+                          ],
+                        ),
+                      ),
+                    ],
+                    if (focus != null)
+                      Padding(
+                        padding: const EdgeInsets.only(top: Space.s, left: Space.xs),
+                        child: Text(focus.hint, style: t.bodySmall),
+                      ),
+                    if (picks.isNotEmpty) ...[
                       SectionHeader('Start here', top: Space.l),
                       Padding(
                         padding: const EdgeInsets.only(left: Space.l),
@@ -334,14 +383,20 @@ class _AreaScreenState extends ConsumerState<AreaScreen> {
                         ),
                       ),
                       const SizedBox(height: Space.s),
-                      for (final m in starts)
+                      for (final m in picks)
                         MoveTile(m, onTap: () => open(m), icon: widget.pickIcon ?? LucideIcons.chevronRight),
                     ],
-                    SectionHeader(
-                      starts.isEmpty ? 'All ${_kind.label.toLowerCase()} moves' : 'More options',
-                      top: Space.l,
-                      action: Text('${rest.length}', style: t.bodySmall),
-                    ),
+                    // With groups shown, each group has its own heading below.
+                    if (focus != null || groups.length < 2)
+                      SectionHeader(
+                        focus != null
+                            ? (picks.isEmpty ? focus.label : 'More ${focus.label.toLowerCase()}')
+                            : picks.isEmpty
+                            ? 'All ${_kind.label.toLowerCase()} moves'
+                            : 'More options',
+                        top: Space.l,
+                        action: Text('${rest.length}', style: t.bodySmall),
+                      ),
                     if (rest.isEmpty)
                       Text('Nothing else here. Try "Any equipment".', style: t.bodyMedium?.copyWith(color: p.inkSoft)),
                   ],
@@ -350,15 +405,48 @@ class _AreaScreenState extends ConsumerState<AreaScreen> {
               SliverPadding(
                 padding: const EdgeInsets.fromLTRB(Space.l, 0, Space.l, Space.xxl),
                 sliver: SliverList.builder(
-                  itemCount: rest.length,
-                  itemBuilder: (_, i) =>
-                      MoveTile(rest[i], onTap: () => open(rest[i]), icon: widget.pickIcon ?? LucideIcons.chevronRight),
+                  itemCount: rows.length,
+                  itemBuilder: (_, i) => switch (rows[i]) {
+                    final MoveGroup g => _GroupHeader(g, count: rows.skip(i + 1).takeWhile((r) => r is Move).length),
+                    final Move m => MoveTile(
+                      m,
+                      onTap: () => open(m),
+                      icon: widget.pickIcon ?? LucideIcons.chevronRight,
+                    ),
+                    _ => const SizedBox.shrink(),
+                  },
                 ),
               ),
             ],
           );
         },
       ),
+    );
+  }
+}
+
+/// Heading for one group of moves inside a muscle, with what it trains.
+class _GroupHeader extends StatelessWidget {
+  const _GroupHeader(this.group, {required this.count});
+  final MoveGroup group;
+  final int count;
+
+  @override
+  Widget build(BuildContext context) {
+    final t = Theme.of(context).textTheme;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        SectionHeader(
+          group.label,
+          top: Space.l,
+          action: Text('$count', style: t.bodySmall),
+        ),
+        Padding(
+          padding: const EdgeInsets.only(left: Space.l, bottom: Space.s),
+          child: Text(group.hint, style: t.bodySmall),
+        ),
+      ],
     );
   }
 }

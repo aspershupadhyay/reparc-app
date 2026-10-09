@@ -7,6 +7,7 @@ import '../catalog/catalog.dart';
 import '../catalog/model.dart';
 import '../muscle_map.dart';
 import '../rig/anatomy.dart';
+import 'move_groups.dart';
 
 /// Prefix for library exercise IDs saved in `exercises.catalogId`.
 const libraryPrefix = 'lib:';
@@ -34,11 +35,14 @@ class LibraryExercise {
     name: j['name'] as String,
     category: j['category'] as String,
     level: switch (j['level']) {
+      // The source marks a few plain static stretches "expert" (for
+      // example Overhead Triceps). Holding a stretch is beginner work.
+      'expert' when j['category'] == 'stretching' => Level.beginner,
       'intermediate' => Level.intermediate,
       'expert' => Level.advanced,
       _ => Level.beginner,
     },
-    equipment: _equipmentLabel(j['equipment'] as String?),
+    equipment: _equipmentLabel(j['equipment'] as String?, j['id'] as String, j['category'] as String),
     force: j['force'] as String?,
     mechanic: j['mechanic'] as String?,
     primary: [for (final m in j['primary'] as List) _cap(m as String)],
@@ -101,6 +105,8 @@ enum EquipKind {
   cable('Cable'),
   kettlebell('Kettlebell'),
   band('Band'),
+  ball('Ball'),
+  foamRoll('Foam roll'),
   other('Other');
 
   const EquipKind(this.label);
@@ -111,17 +117,20 @@ enum EquipKind {
     if (e.startsWith('bodyweight') ||
         e.startsWith('no equipment') ||
         e.startsWith('pull-up') ||
+        e.startsWith('dip bars') ||
         e.startsWith('parallel')) {
       return EquipKind.bodyweight;
     }
     if (e.startsWith('dumbbell') || e.startsWith('one dumbbell') || e.startsWith('plate or dumbbell')) {
       return EquipKind.dumbbell;
     }
-    if (e.startsWith('barbell') || e.startsWith('ez bar')) return EquipKind.barbell;
+    if (e.startsWith('barbell') || e.startsWith('ez bar') || e.startsWith('trap bar')) return EquipKind.barbell;
     if (e.startsWith('machine')) return EquipKind.machine;
     if (e.startsWith('cable')) return EquipKind.cable;
     if (e.startsWith('kettlebell')) return EquipKind.kettlebell;
     if (e.startsWith('band')) return EquipKind.band;
+    if (e.startsWith('medicine ball') || e.startsWith('exercise ball')) return EquipKind.ball;
+    if (e.startsWith('foam roll')) return EquipKind.foamRoll;
     return EquipKind.other;
   }
 }
@@ -148,7 +157,9 @@ String sentenceCase(String name) {
       w.isEmpty ||
       _keepCase.contains(w.replaceAll(RegExp(r'[^A-Za-z]'), '')) ||
       RegExp(r'\d').hasMatch(w) ||
-      (w.length <= 4 && w == w.toUpperCase() && RegExp(r'[A-Z]').hasMatch(w));
+      // Short capitals such as DB and EZ stay. A single "A" is the article:
+      // "Over A Bench" → "over a bench".
+      (w != 'A' && w.length <= 4 && w == w.toUpperCase() && RegExp(r'[A-Z]').hasMatch(w));
   String part(String w) => keep(w) ? w : w.toLowerCase();
   final words = name.replaceAll(' - ', ' – ').split(' ');
   return [
@@ -167,9 +178,15 @@ Muscle targetMuscle(String primary, String name) {
   final n = name.toLowerCase();
   bool has(List<String> words) => words.any(n.contains);
   return switch (primary.toLowerCase()) {
-    'chest' => has(['incline']) && !has(['decline']) ? Muscle.upperChest : Muscle.chest,
+    'chest' =>
+      has(['decline', 'dip'])
+          ? Muscle.lowerChest
+          : has(['incline'])
+          ? Muscle.upperChest
+          : Muscle.chest,
     'lats' => Muscle.lats,
-    'middle back' || 'traps' || 'neck' => Muscle.upperBack,
+    'middle back' => Muscle.upperBack,
+    'traps' || 'neck' => Muscle.traps,
     'lower back' => Muscle.lowerBack,
     'shoulders' =>
       has([
@@ -187,14 +204,16 @@ Muscle targetMuscle(String primary, String name) {
           : has(['lateral', 'side', 'upright', 'deltoid raise', 'scaption', 'iron cross', 'cuban'])
           ? Muscle.sideDelts
           : Muscle.frontDelts,
-    'biceps' => Muscle.biceps,
+    // Palms-down curls load the forearm (brachioradialis) more than the biceps.
+    'biceps' => has(['reverse']) && has(['curl']) ? Muscle.forearms : Muscle.biceps,
     'triceps' => Muscle.triceps,
     'forearms' => Muscle.forearms,
     'quadriceps' => Muscle.quads,
     'hamstrings' => Muscle.hamstrings,
     'calves' => Muscle.calves,
     'adductors' => Muscle.adductors,
-    'glutes' || 'abductors' => Muscle.glutes,
+    'glutes' => Muscle.glutes,
+    'abductors' => Muscle.abductors,
     _ =>
       has([
             'oblique',
@@ -209,6 +228,20 @@ Muscle targetMuscle(String primary, String name) {
             'pallof',
           ])
           ? Muscle.obliques
+          : has([
+              'leg raise',
+              'knee raise',
+              'knee/hip raise',
+              'hip raise',
+              'reverse crunch',
+              'scissor',
+              'leg tuck',
+              'tuck crunch',
+              'hanging',
+              'flutter',
+              'leg lift',
+            ])
+          ? Muscle.lowerAbs
           : Muscle.abs,
   };
 }
@@ -222,15 +255,21 @@ const essentials = <Muscle, List<String>>{
     'lib:Incline_Cable_Flye',
     'lib:Push-Ups_With_Feet_Elevated',
   ],
-  Muscle.chest: ['bench-press', 'push-up', 'lib:Dumbbell_Bench_Press', 'dip-chest', 'cable-crossover', 'db-fly'],
+  Muscle.chest: ['bench-press', 'push-up', 'lib:Dumbbell_Bench_Press', 'cable-crossover', 'db-fly'],
+  Muscle.lowerChest: [
+    'dip-chest',
+    'lib:Decline_Barbell_Bench_Press',
+    'lib:Decline_Dumbbell_Bench_Press',
+    'lib:Decline_Dumbbell_Flyes',
+  ],
   Muscle.lats: ['pull-up', 'lat-pulldown', 'lib:Chin-Up', 'lib:Straight-Arm_Pulldown', 'lib:Band_Assisted_Pull-Up'],
   Muscle.upperBack: [
     'barbell-row',
     'seated-cable-row',
     'lib:One-Arm_Dumbbell_Row',
     'lib:Inverted_Row',
-    'lib:Dumbbell_Shrug',
   ],
+  Muscle.traps: ['lib:Dumbbell_Shrug', 'lib:Barbell_Shrug', 'lib:Cable_Shrugs', 'lib:Standing_Dumbbell_Upright_Row'],
   Muscle.lowerBack: [
     'lib:Hyperextensions_Back_Extensions',
     'lib:Hyperextensions_With_No_Hyperextension_Bench',
@@ -278,28 +317,138 @@ const essentials = <Muscle, List<String>>{
     'glute-bridge',
     'kettlebell-swing',
     'lib:Single_Leg_Glute_Bridge',
-    'lib:Thigh_Abductor',
   ],
-  Muscle.abs: [
-    'plank',
-    'dead-bug',
+  Muscle.abductors: ['lib:Thigh_Abductor', 'lib:Monster_Walk'],
+  Muscle.abs: ['plank', 'dead-bug', 'lib:Cable_Crunch', 'lib:Barbell_Ab_Rollout_-_On_Knees', 'lib:Crunches'],
+  Muscle.lowerAbs: [
     'hanging-knee-raise',
-    'lib:Cable_Crunch',
-    'lib:Barbell_Ab_Rollout_-_On_Knees',
     'lib:Reverse_Crunch',
+    'lib:Flat_Bench_Lying_Leg_Raise',
+    'lib:Bent-Knee_Hip_Raise',
   ],
   Muscle.obliques: ['pallof-press', 'russian-twist', 'lib:Side_Bridge', 'lib:Oblique_Crunches_-_On_The_Floor'],
 };
 
+/// Gym shorthand and plain words, and what they mean in the library.
+const searchAliases = <String, List<String>>{
+  'bi': ['bicep'],
+  'bis': ['bicep'],
+  'tri': ['tricep'],
+  'tris': ['tricep'],
+  'pec': ['chest'],
+  'pecs': ['chest'],
+  'delt': ['shoulder', 'delt'],
+  'delts': ['shoulder', 'delt'],
+  'quad': ['quad'],
+  'ham': ['hamstring'],
+  'hammy': ['hamstring'],
+  'hammies': ['hamstring'],
+  'bum': ['glute'],
+  'butt': ['glute'],
+  'booty': ['glute'],
+  'six': ['abs', 'abdominal'],
+  'sixpack': ['abs', 'abdominal'],
+  'stomach': ['abs', 'abdominal', 'oblique'],
+  'belly': ['abs', 'abdominal', 'oblique'],
+  'core': ['abs', 'abdominal', 'oblique', 'core'],
+  'trap': ['traps', 'shrug'],
+  'neck': ['neck', 'traps'],
+  'lat': ['lats'],
+  'lats': ['lats'],
+  'wing': ['lats'],
+  'grip': ['forearm', 'grip'],
+  'db': ['dumbbell'],
+  'dbs': ['dumbbell'],
+  'bb': ['barbell'],
+  'kb': ['kettlebell'],
+  'kbs': ['kettlebell'],
+  'ez': ['ez bar', 'ez-bar'],
+  'bw': ['bodyweight'],
+  'rdl': ['romanian deadlift'],
+  'ohp': ['overhead press', 'military press', 'shoulder press'],
+  'skullcrusher': ['skull'],
+  'skullcrushers': ['skull'],
+  'pushup': ['push-up', 'pushup'],
+  'pushups': ['push-up', 'pushup'],
+  'pullup': ['pull-up', 'pullup'],
+  'pullups': ['pull-up', 'pullup'],
+  'chinup': ['chin-up', 'chin'],
+  'situp': ['sit-up', 'situp'],
+};
+
+/// The words of [query], each with the texts that can match it. A plural
+/// "s" is dropped so "curls" also finds "curl".
+List<List<String>> searchTerms(String query) => [
+  for (final w in query.toLowerCase().split(RegExp(r'\s+')))
+    if (w.isNotEmpty) searchAliases[w] ?? [if (w.length > 3 && w.endsWith('s')) w.substring(0, w.length - 1) else w],
+];
+
 String _cap(String s) => s.isEmpty ? s : s[0].toUpperCase() + s.substring(1);
 
-String _equipmentLabel(String? e) => switch (e) {
-  null => 'No equipment',
-  'body only' => 'Bodyweight',
-  'e-z curl bar' => 'EZ bar',
-  'kettlebells' => 'Kettlebell',
-  _ => _cap(e),
-};
+/// One word for "no equipment": the source uses both "body only" and none.
+/// Its "other" label covers 122 moves; most need a known item, so the name
+/// picks it. What stays "Other" is rare kit.
+String _equipmentLabel(String? e, String id, String category) {
+  switch (e) {
+    case null || 'body only':
+      return 'Bodyweight';
+    case 'e-z curl bar':
+      return 'EZ bar';
+    case 'kettlebells':
+      return 'Kettlebell';
+    case 'other':
+      return _otherEquipment(id.toLowerCase(), category);
+    default:
+      return _cap(e);
+  }
+}
+
+String _otherEquipment(String id, String category) {
+  bool has(List<String> words) => words.any(id.contains);
+  if (has(['smr'])) return 'Foam roll';
+  if (has(['ab_roller'])) return 'Ab wheel';
+  if (has(['farmers'])) return 'Farmer handles or dumbbells';
+  if (has(['trap_bar'])) return 'Trap bar';
+  if (has(['sledgehammer'])) return 'Sledgehammer, tyre';
+  if (has(['sled', 'prowler'])) return 'Sled';
+  if (has(['suspended', 'straps'])) return 'Suspension straps';
+  if (has(['ring_dips'])) return 'Rings';
+  if (has(['dips', 'parallel_bar'])) return 'Dip bars';
+  if (has(['chin', 'pull-up', 'pull_up', 'muscle_up', 'hang', 'otis', 'rocky'])) return 'Pull-up bar';
+  if (has(['plate', 'svend'])) return 'Weight plate';
+  if (has(['chain'])) return 'Chains';
+  if (has(['battling_ropes'])) return 'Battle ropes';
+  if (has(['rope_climb'])) return 'Climbing rope';
+  if (has(['rope_jumping'])) return 'Jump rope';
+  if (has(['box'])) return 'Box';
+  if (has(['cone', 'hurdle'])) return 'Cones or hurdles';
+  if (has(['hyperextensions'])) return 'Back extension bench';
+  if (has(['wrist_roller'])) return 'Wrist roller';
+  if (has(['band'])) return 'Band';
+  if (has(['harness'])) return 'Neck harness';
+  if (has(['heavy_bag'])) return 'Heavy bag';
+  if (has(['balance_board'])) return 'Balance board';
+  if (has(['bicycling'])) return 'Bike';
+  if (has([
+    'atlas',
+    'axle',
+    'car_deadlift',
+    'circus',
+    'conans',
+    'keg',
+    'log_lift',
+    'rickshaw',
+    'sandbag',
+    'tire',
+    'yoke',
+  ])) {
+    return 'Strongman gear';
+  }
+  if (has(['chair'])) return 'Chair';
+  if (has(['bench', 'platform', 'stairs', 'weighted'])) return 'Other';
+  // Stretches, hops, and sprints left here need only the body.
+  return category == 'stretching' || category == 'plyometrics' || category == 'cardio' ? 'Bodyweight' : 'Other';
+}
 
 /// Library photos for coached exercises. Coached text stays our own; only
 /// the photos come from the library.
@@ -386,9 +535,11 @@ class Move {
   String get route => coached != null ? '/workout/guide/${coached!.id}' : '/workout/move/${library!.id}';
   String get muscles => coached != null ? coached!.primary.map((m) => m.label).join(', ') : library!.primary.join(', ');
 
-  /// Lower-case text used for search.
+  /// Lower-case text used for search: name, equipment, area, target muscle,
+  /// its group (for example "long head"), and the source muscle names.
   String get searchText =>
-      '$name $equipment ${area.label} ${coached?.primary.map((m) => m.label).join(' ') ?? library!.primary.join(' ')}'
+      '$name $equipment ${equipKind.label} ${area.label} ${target.label} ${groupOf(this).label} '
+              '${coached?.primary.map((m) => m.label).join(' ') ?? library!.primary.join(' ')}'
           .toLowerCase();
 }
 
@@ -422,19 +573,47 @@ class ExerciseLibrary {
   /// Every movement by the ID a plan or a saved exercise uses.
   late final Map<String, Move> byCatalogId;
 
+  /// Every hand-picked "start here" move, for search ranking.
+  late final Set<String> essentialIds = {for (final ids in essentials.values) ...ids};
+
+  /// Moves that match every word of [query], best first.
+  ///
+  /// Gym shorthand works ("bi", "tris", "db", "rdl"). Best first means: the
+  /// name holds every word, then coached guides and "start here" picks, then
+  /// names that start with the first word, then shorter names, which are
+  /// usually the basic form of a movement.
+  List<Move> search(String query, {Iterable<Move>? within}) {
+    final words = searchTerms(query);
+    if (words.isEmpty) return [...within ?? moves];
+    final hits = [
+      for (final m in within ?? moves)
+        if (words.every((alts) => alts.any(m.searchText.contains))) m,
+    ];
+    int rank(Move m) {
+      final name = m.name.toLowerCase();
+      final inName = words.every((alts) => alts.any(name.contains));
+      final starts = words.first.any(name.startsWith);
+      final picked = m.coached != null || essentialIds.contains(m.catalogId);
+      return (inName ? 0 : 4) + (picked ? 0 : 2) + (starts ? 0 : 1);
+    }
+
+    final ranks = {for (final m in hits) m: rank(m)};
+    return hits..sort((a, b) {
+      final r = ranks[a]!.compareTo(ranks[b]!);
+      return r != 0 ? r : a.name.length.compareTo(b.name.length);
+    });
+  }
+
   /// Hand-picked starting exercises for [m] that exist in this build.
   List<Move> essentialsFor(Muscle m) => [
     for (final id in essentials[m] ?? const <String>[]) ?byCatalogId[id],
   ];
 
-  /// Equipment labels in use, most common first.
-  late final List<String> equipment = () {
-    final count = <String, int>{};
-    for (final m in moves) {
-      count[m.equipment] = (count[m.equipment] ?? 0) + 1;
-    }
-    return count.keys.toList()..sort((a, b) => count[b]!.compareTo(count[a]!));
-  }();
+  /// Equipment groups in use, in filter order.
+  late final List<EquipKind> equipKinds = [
+    for (final k in EquipKind.values)
+      if (moves.any((m) => m.equipKind == k)) k,
+  ];
 
   /// Library entry for a saved `catalogId`, if it is a library ID.
   LibraryExercise? forCatalogId(String? catalogId) =>

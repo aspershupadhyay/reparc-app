@@ -13,6 +13,7 @@ import '../library_screen.dart';
 import '../muscle_map.dart';
 import '../rig/anatomy.dart';
 import 'library.dart';
+import 'move_groups.dart';
 import 'photo_motion.dart';
 
 /// Search, filter, and scroll every movement. The list builds rows lazily,
@@ -51,7 +52,7 @@ class _MoveBrowserState extends ConsumerState<MoveBrowser> {
 
   /// One muscle inside [_area], or null for the whole area.
   Muscle? _muscle;
-  String? _equipment;
+  EquipKind? _equip;
 
   @override
   void dispose() {
@@ -69,31 +70,46 @@ class _MoveBrowserState extends ConsumerState<MoveBrowser> {
       loading: () => const Center(child: CircularProgressIndicator(semanticsLabel: 'Loading exercises')),
       error: (e, _) => Center(child: Text('Could not load the exercise library. $e')),
       data: (lib) {
-        final words = q.split(RegExp(r'\s+')).where((w) => w.isNotEmpty).toList();
-        final matches = [
+        final muscles = _area == null ? const <Muscle>[] : areaMuscles[_area]!;
+        final filtered = [
           for (final m in lib.moves)
             if ((_area == null || m.area == _area) &&
                 (_muscle == null || m.target == _muscle) &&
-                (_equipment == null || m.equipment == _equipment) &&
-                words.every(m.searchText.contains))
+                (_equip == null || m.equipKind == _equip))
               m,
         ];
-        // Body part, then muscle, then exercises: with a body part chosen and
-        // no search, the hand-picked moves for each muscle lead the list.
-        final muscles = _area == null ? const <Muscle>[] : areaMuscles[_area]!;
-        final results = matches;
-        if (_area != null && words.isEmpty) {
-          final inMatches = {for (final m in matches) m.catalogId};
-          final starts = <Move>[
-            for (final mu in _muscle == null ? muscles : [_muscle!])
+        // A search ranks the best matches first. With no search and a body
+        // part chosen, the list follows the tree: each muscle (or each group
+        // inside one muscle) under its own heading, hand-picked moves first.
+        final rows = <Object>[];
+        if (q.isNotEmpty || _area == null) {
+          rows.addAll(lib.search(q, within: filtered));
+        } else {
+          final ids = {for (final m in filtered) m.catalogId};
+          for (final mu in _muscle == null ? muscles : [_muscle!]) {
+            final picks = [
               for (final m in lib.essentialsFor(mu))
-                if (inMatches.contains(m.catalogId)) m,
-          ];
-          final startIds = {for (final m in starts) m.catalogId};
-          results
-            ..removeWhere((m) => startIds.contains(m.catalogId))
-            ..insertAll(0, starts);
+                if (ids.contains(m.catalogId)) m,
+            ];
+            final pickIds = {for (final m in picks) m.catalogId};
+            final rest = filtered.where((m) => m.target == mu && !pickIds.contains(m.catalogId)).toList();
+            if (_muscle == null) {
+              if (picks.isEmpty && rest.isEmpty) continue;
+              rows
+                ..add(_Heading(mu.label, mu.hint, picks.length + rest.length))
+                ..addAll(picks)
+                ..addAll(rest);
+            } else {
+              if (picks.isNotEmpty) {
+                rows.addAll([_Heading('Start here', 'The best moves to begin with', picks.length), ...picks]);
+              }
+              for (final (g, moves) in groupMoves(mu, rest)) {
+                rows.addAll([_Heading(g.label, g.hint, moves.length), ...moves]);
+              }
+            }
+          }
         }
+        final count = rows.whereType<Move>().length;
         final typing = MediaQuery.viewInsetsOf(context).bottom > 0;
         final extra = [...widget.leading, ...?widget.leadingWhen?.call(_q.text.trim(), _area)];
         return Column(
@@ -149,9 +165,9 @@ class _MoveBrowserState extends ConsumerState<MoveBrowser> {
               Padding(
                 padding: EdgeInsets.only(left: widget.padding.left),
                 child: _EquipmentChips(
-                  options: lib.equipment,
-                  selected: _equipment,
-                  onChanged: (e) => setState(() => _equipment = e),
+                  options: lib.equipKinds,
+                  selected: _equip,
+                  onChanged: (e) => setState(() => _equip = e),
                 ),
               ),
             ],
@@ -160,7 +176,7 @@ class _MoveBrowserState extends ConsumerState<MoveBrowser> {
               child: Semantics(
                 liveRegion: true,
                 child: Text(
-                  results.length == 1 ? '1 exercise' : '${results.length} exercises',
+                  count == 1 ? '1 exercise' : '$count exercises',
                   style: t.bodySmall,
                 ),
               ),
@@ -168,10 +184,10 @@ class _MoveBrowserState extends ConsumerState<MoveBrowser> {
             Expanded(
               child: ListView.builder(
                 padding: EdgeInsets.fromLTRB(widget.padding.left, Space.s, widget.padding.right, Space.xxl),
-                itemCount: extra.length + (results.isEmpty ? 1 : results.length),
+                itemCount: extra.length + (rows.isEmpty ? 1 : rows.length),
                 itemBuilder: (context, i) {
                   if (i < extra.length) return extra[i];
-                  if (results.isEmpty) {
+                  if (rows.isEmpty) {
                     return Padding(
                       padding: const EdgeInsets.all(Space.xl),
                       child: Text(
@@ -181,14 +197,52 @@ class _MoveBrowserState extends ConsumerState<MoveBrowser> {
                       ),
                     );
                   }
-                  final m = results[i - extra.length];
-                  return MoveTile(m, icon: widget.trailingIcon, onTap: () => widget.onTap(m));
+                  return switch (rows[i - extra.length]) {
+                    final _Heading h => _HeadingRow(h),
+                    final Move m => MoveTile(m, icon: widget.trailingIcon, onTap: () => widget.onTap(m)),
+                    _ => const SizedBox.shrink(),
+                  };
                 },
               ),
             ),
           ],
         );
       },
+    );
+  }
+}
+
+/// A heading inside the list: a muscle, a group, or "Start here".
+class _Heading {
+  const _Heading(this.title, this.hint, this.count);
+  final String title;
+  final String hint;
+  final int count;
+}
+
+class _HeadingRow extends StatelessWidget {
+  const _HeadingRow(this.h);
+  final _Heading h;
+
+  @override
+  Widget build(BuildContext context) {
+    final t = Theme.of(context).textTheme;
+    return Padding(
+      padding: const EdgeInsets.only(bottom: Space.s),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          SectionHeader(
+            h.title,
+            top: Space.m,
+            action: Text('${h.count}', style: t.bodySmall),
+          ),
+          Padding(
+            padding: const EdgeInsets.only(left: Space.l),
+            child: Text(h.hint, style: t.bodySmall),
+          ),
+        ],
+      ),
     );
   }
 }
@@ -222,9 +276,9 @@ class _MuscleChips extends StatelessWidget {
 
 class _EquipmentChips extends StatelessWidget {
   const _EquipmentChips({required this.options, required this.selected, required this.onChanged});
-  final List<String> options;
-  final String? selected;
-  final ValueChanged<String?> onChanged;
+  final List<EquipKind> options;
+  final EquipKind? selected;
+  final ValueChanged<EquipKind?> onChanged;
 
   @override
   Widget build(BuildContext context) {
@@ -236,7 +290,7 @@ class _EquipmentChips extends StatelessWidget {
             Padding(
               padding: const EdgeInsets.only(right: Space.s),
               child: ChoiceChip(
-                label: Text(o ?? 'Any equipment'),
+                label: Text(o?.label ?? 'Any equipment'),
                 selected: selected == o,
                 onSelected: (_) => onChanged(o),
               ),

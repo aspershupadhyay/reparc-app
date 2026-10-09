@@ -4,6 +4,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:reparc/features/exercises/catalog/catalog.dart';
 import 'package:reparc/features/exercises/catalog/model.dart';
 import 'package:reparc/features/exercises/library/library.dart';
+import 'package:reparc/features/exercises/library/move_groups.dart';
 import 'package:reparc/features/exercises/muscle_map.dart';
 import 'package:reparc/features/exercises/rig/anatomy.dart';
 
@@ -72,11 +73,56 @@ void main() {
     expect(targetMuscle('shoulders', 'Seated Bent-Over Rear Delt Raise'), Muscle.rearDelts);
     expect(targetMuscle('shoulders', 'Standing Military Press'), Muscle.frontDelts);
     expect(targetMuscle('chest', 'Incline Dumbbell Press'), Muscle.upperChest);
-    expect(targetMuscle('chest', 'Decline Barbell Bench Press'), Muscle.chest);
+    expect(targetMuscle('chest', 'Decline Barbell Bench Press'), Muscle.lowerChest);
+    expect(targetMuscle('chest', 'Dumbbell Bench Press'), Muscle.chest);
+    expect(targetMuscle('traps', 'Barbell Shrug'), Muscle.traps);
+    expect(targetMuscle('abductors', 'Thigh Abductor'), Muscle.abductors);
+    expect(targetMuscle('abdominals', 'Hanging Leg Raise'), Muscle.lowerAbs);
+    expect(targetMuscle('biceps', 'Reverse Barbell Curl'), Muscle.forearms);
     expect(targetMuscle('abdominals', 'Russian Twist'), Muscle.obliques);
     expect(targetMuscle('abdominals', 'Plank'), Muscle.abs);
     expect(targetMuscle('hamstrings', 'Lying Leg Curls').area, BodyArea.legs);
     expect(EquipKind.of('Barbell, flat bench'), EquipKind.barbell);
     expect(EquipKind.of('No equipment'), EquipKind.bodyweight);
+  });
+
+  test('library cleanup: one word for no equipment, no stray capitals, fixed levels', () {
+    expect(lib.moves.where((m) => m.equipment == 'No equipment'), isEmpty);
+    expect(lib.byId['Overhead_Triceps']!.level, Level.beginner);
+    expect(sentenceCase('Palms-Down Dumbbell Wrist Curl Over A Bench'), 'Palms-down dumbbell wrist curl over a bench');
+    expect(sentenceCase('EZ-Bar Skullcrusher'), 'EZ-bar skullcrusher');
+    expect(lib.byId['Farmers_Walk']!.equipment, 'Farmer handles or dumbbells');
+    expect(EquipKind.of(lib.byId['Supine_Chest_Throw']!.equipment), EquipKind.ball);
+    // "Other" is now rare kit only.
+    expect(lib.moves.where((m) => m.equipment == 'Other').length, lessThan(15));
+  });
+
+  test('each muscle splits into groups; every move shows once and few are left over', () {
+    for (final muscle in areaMuscles.values.expand((m) => m)) {
+      final moves = lib.moves.where((m) => m.target == muscle).toList();
+      final groups = groupMoves(muscle, moves);
+      expect(groups.expand((g) => g.$2).length, moves.length, reason: muscle.label);
+      final strength = moves.where((m) => m.kind == MoveKind.strength).length;
+      final leftover = groups.where((g) => g.$1 == otherStrength).expand((g) => g.$2).length;
+      expect(leftover, lessThanOrEqualTo((strength * 0.3).ceil()), reason: '${muscle.label}: $leftover of $strength');
+    }
+    final triceps = {for (final g in groupMoves(Muscle.triceps, lib.moves)) g.$1.label};
+    expect(triceps, containsAll(['Long head', 'Lateral head', 'Heavy presses']));
+    expect(groupOf(lib.byCatalogId['triceps-pushdown']!).label, 'Lateral head');
+    expect(groupOf(lib.byCatalogId['skull-crusher']!).label, 'Long head');
+    expect(groupOf(lib.byCatalogId['hammer-curl']!).label, 'Brachialis');
+  });
+
+  test('search understands gym shorthand and ranks the best moves first', () {
+    final bi = lib.search('bi');
+    expect(bi, isNotEmpty);
+    expect(bi.take(10).every((m) => m.target == Muscle.biceps || m.searchText.contains('bicep')), isTrue);
+    expect(bi.first.coached != null || lib.essentialIds.contains(bi.first.catalogId), isTrue);
+    expect(lib.search('tris').first.target, Muscle.triceps);
+    expect(lib.search('db curl').first.equipKind, EquipKind.dumbbell);
+    expect(lib.search('rdl').map((m) => m.catalogId), contains('romanian-deadlift'));
+    expect(lib.search('lats').every((m) => !m.name.toLowerCase().startsWith('lateral')), isTrue);
+    expect(lib.search('long head').every((m) => m.target == Muscle.triceps || m.target == Muscle.biceps), isTrue);
+    expect(lib.search('squat').first.coached, isNotNull);
   });
 }

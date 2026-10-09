@@ -41,7 +41,7 @@ class _PickerState extends ConsumerState<_Picker> {
           .ensureCatalogExercise(
             catalogId: m.catalogId,
             name: m.name,
-            equipment: m.equipment == 'No equipment' ? null : m.equipment,
+            equipment: m.equipment,
             targetMuscles: m.muscles,
           ),
     );

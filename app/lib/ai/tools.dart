@@ -334,23 +334,17 @@ class ReparcTools {
 
   Future<ToolResult> _searchLibrary(Map<String, dynamic> a) async {
     final lib = await library();
-    final words = ((a['query'] as String?) ?? '').toLowerCase().split(RegExp(r'\s+')).where((w) => w.isNotEmpty);
     final area = BodyArea.values.asNameMap()[a['body_area']];
     final equipment = (a['equipment'] as String?)?.toLowerCase();
     final limit = (a['limit'] as int?) ?? 15;
-    final hits = lib.moves.where((m) {
-      if (area != null && m.area != area) return false;
-      if (equipment != null && !m.equipment.toLowerCase().contains(equipment)) return false;
-      final text = m.searchText;
-      return words.every(text.contains);
-    }).toList();
-    // Name matches first, then coached guides (full coaching in the app),
-    // then shorter names, which are usually the basic form of a movement.
-    int rank(Move m) => (words.every(m.name.toLowerCase().contains) ? 0 : 2) + (m.coached != null ? 0 : 1);
-    hits.sort((x, y) {
-      final r = rank(x).compareTo(rank(y));
-      return r != 0 ? r : x.name.length.compareTo(y.name.length);
-    });
+    // Same matching and order as the app's search: name matches first, then
+    // coached guides and hand-picked moves, then shorter names.
+    final hits = lib.search(
+      (a['query'] as String?) ?? '',
+      within: lib.moves.where(
+        (m) => (area == null || m.area == area) && (equipment == null || m.equipment.toLowerCase().contains(equipment)),
+      ),
+    );
     return ToolResult({
       'total': hits.length,
       'results': [

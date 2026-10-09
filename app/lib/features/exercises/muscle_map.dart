@@ -10,23 +10,25 @@ import 'rig/anatomy.dart';
 /// shows it.
 extension MuscleGroups on Muscle {
   BodyArea get area => switch (this) {
-    Muscle.chest || Muscle.upperChest => BodyArea.chest,
-    Muscle.lats || Muscle.upperBack || Muscle.lowerBack => BodyArea.back,
+    Muscle.chest || Muscle.upperChest || Muscle.lowerChest => BodyArea.chest,
+    Muscle.lats || Muscle.upperBack || Muscle.traps || Muscle.lowerBack => BodyArea.back,
     Muscle.frontDelts || Muscle.sideDelts || Muscle.rearDelts => BodyArea.shoulders,
     Muscle.biceps || Muscle.triceps || Muscle.forearms => BodyArea.arms,
     Muscle.quads || Muscle.hamstrings || Muscle.calves || Muscle.adductors || Muscle.hipFlexors => BodyArea.legs,
-    Muscle.glutes => BodyArea.glutes,
-    Muscle.abs || Muscle.obliques => BodyArea.core,
+    Muscle.glutes || Muscle.abductors => BodyArea.glutes,
+    Muscle.abs || Muscle.lowerAbs || Muscle.obliques => BodyArea.core,
   };
 
   /// True when the muscle is drawn on the back view.
   bool get onBack => const {
     Muscle.lats,
     Muscle.upperBack,
+    Muscle.traps,
     Muscle.lowerBack,
     Muscle.rearDelts,
     Muscle.triceps,
     Muscle.glutes,
+    Muscle.abductors,
     Muscle.hamstrings,
     Muscle.calves,
   }.contains(this);
@@ -34,9 +36,11 @@ extension MuscleGroups on Muscle {
   /// Short words for the browse list.
   String get hint => switch (this) {
     Muscle.upperChest => 'Top of the chest, below the collarbone',
-    Muscle.chest => 'Middle and lower chest',
+    Muscle.chest => 'Middle of the chest: most of its size',
+    Muscle.lowerChest => 'Lower edge of the chest',
     Muscle.lats => 'Width: the wings under your arms',
-    Muscle.upperBack => 'Thickness: traps and between the shoulder blades',
+    Muscle.upperBack => 'Thickness: between the shoulder blades',
+    Muscle.traps => 'Top of the back, from the neck to the shoulders',
     Muscle.lowerBack => 'Muscles beside the spine, low down',
     Muscle.frontDelts => 'Front of the shoulder',
     Muscle.sideDelts => 'Side of the shoulder: makes shoulders look wider',
@@ -50,31 +54,33 @@ extension MuscleGroups on Muscle {
     Muscle.adductors => 'Inside of the thigh',
     Muscle.hipFlexors => 'Front of the hip',
     Muscle.glutes => 'Your bum: hip power',
+    Muscle.abductors => 'Side of the hip: keeps knees and pelvis steady',
     Muscle.abs => 'Six-pack, front of the stomach',
+    Muscle.lowerAbs => 'Below the navel: lift the legs or curl the hips',
     Muscle.obliques => 'Sides of the waist',
   };
 }
 
 /// Muscles shown under each body area, in the order a coach would teach.
 const areaMuscles = <BodyArea, List<Muscle>>{
-  BodyArea.chest: [Muscle.upperChest, Muscle.chest],
-  BodyArea.back: [Muscle.lats, Muscle.upperBack, Muscle.lowerBack],
+  BodyArea.chest: [Muscle.upperChest, Muscle.chest, Muscle.lowerChest],
+  BodyArea.back: [Muscle.lats, Muscle.upperBack, Muscle.traps, Muscle.lowerBack],
   BodyArea.shoulders: [Muscle.frontDelts, Muscle.sideDelts, Muscle.rearDelts],
   BodyArea.arms: [Muscle.biceps, Muscle.triceps, Muscle.forearms],
   BodyArea.legs: [Muscle.quads, Muscle.hamstrings, Muscle.calves, Muscle.adductors],
-  BodyArea.glutes: [Muscle.glutes],
-  BodyArea.core: [Muscle.abs, Muscle.obliques],
+  BodyArea.glutes: [Muscle.glutes, Muscle.abductors],
+  BodyArea.core: [Muscle.abs, Muscle.lowerAbs, Muscle.obliques],
 };
 
 /// Muscles coloured on the area's own icon.
 const _areaIconMuscles = <BodyArea, Set<Muscle>>{
-  BodyArea.chest: {Muscle.chest, Muscle.upperChest},
-  BodyArea.back: {Muscle.lats, Muscle.upperBack, Muscle.lowerBack},
+  BodyArea.chest: {Muscle.chest, Muscle.upperChest, Muscle.lowerChest},
+  BodyArea.back: {Muscle.lats, Muscle.upperBack, Muscle.traps, Muscle.lowerBack},
   BodyArea.shoulders: {Muscle.frontDelts, Muscle.sideDelts},
   BodyArea.arms: {Muscle.biceps, Muscle.forearms},
   BodyArea.legs: {Muscle.quads, Muscle.adductors},
-  BodyArea.glutes: {Muscle.glutes},
-  BodyArea.core: {Muscle.abs, Muscle.obliques},
+  BodyArea.glutes: {Muscle.glutes, Muscle.abductors},
+  BodyArea.core: {Muscle.abs, Muscle.lowerAbs, Muscle.obliques},
 };
 
 /// Part of the figure each icon zooms to, in figure units (100 × 200).
@@ -291,6 +297,8 @@ class _FigurePainter extends CustomPainter {
         _oval(c, const Offset(41.8, 39.5), 8, 3.8, p);
       case Muscle.chest:
         _oval(c, const Offset(41.8, 46.5), 8.6, 6.4, p);
+      case Muscle.lowerChest:
+        _oval(c, const Offset(41.8, 51), 8.2, 3.4, p);
       case Muscle.frontDelts:
         _oval(c, const Offset(32.5, 37), 4.6, 5.6, p);
       case Muscle.sideDelts:
@@ -301,6 +309,8 @@ class _FigurePainter extends CustomPainter {
         _cap(c, const Offset(23.8, 80), const Offset(21.2, 100), 3.8, p);
       case Muscle.abs:
         c.drawRRect(RRect.fromLTRBR(44.5, 55, 55.5, 90, const Radius.circular(4)), p);
+      case Muscle.lowerAbs:
+        c.drawRRect(RRect.fromLTRBR(44.5, 76, 55.5, 92, const Radius.circular(4)), p);
       case Muscle.obliques:
         _cap(c, const Offset(39, 61), const Offset(39.5, 86), 3.2, p);
       case Muscle.quads:
@@ -310,13 +320,25 @@ class _FigurePainter extends CustomPainter {
       case Muscle.hipFlexors:
         _cap(c, const Offset(40, 100), const Offset(44, 108), 3, p);
       case Muscle.upperBack:
+        // Rhomboids and mid traps, between the shoulder blades.
+        final mid = Path()
+          ..moveTo(50, 34)
+          ..lineTo(60, 38)
+          ..quadraticBezierTo(57, 52, 50, 62)
+          ..quadraticBezierTo(43, 52, 40, 38)
+          ..close();
+        c.drawPath(mid, p);
+      case Muscle.traps:
+        // Upper traps: neck to the tops of the shoulders.
         final traps = Path()
-          ..moveTo(50, 24)
-          ..lineTo(57, 30)
-          ..lineTo(66, 35)
-          ..quadraticBezierTo(58, 52, 50, 62)
-          ..quadraticBezierTo(42, 52, 34, 35)
-          ..lineTo(43, 30)
+          ..moveTo(50, 22)
+          ..lineTo(56, 28)
+          ..lineTo(66, 33)
+          ..lineTo(58, 36)
+          ..lineTo(50, 38)
+          ..lineTo(42, 36)
+          ..lineTo(34, 33)
+          ..lineTo(44, 28)
           ..close();
         c.drawPath(traps, p);
       case Muscle.lats:
@@ -337,6 +359,8 @@ class _FigurePainter extends CustomPainter {
         _cap(c, const Offset(27.5, 46), const Offset(25.5, 68), 4.6, p);
       case Muscle.glutes:
         _oval(c, const Offset(43.5, 102), 7.6, 7.8, p);
+      case Muscle.abductors:
+        _oval(c, const Offset(35.5, 97), 3.4, 6.5, p);
       case Muscle.hamstrings:
         _cap(c, const Offset(42, 118), const Offset(42.3, 144), 7, p);
       case Muscle.calves:
