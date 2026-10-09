@@ -17,6 +17,8 @@ void main() {
     yield LicenseEntryWithLineBreaks(['Lucide icons'], lucide);
     final voice = await rootBundle.loadString('assets/licenses/elevenlabs-voice.txt');
     yield LicenseEntryWithLineBreaks(['Voice cues (ElevenLabs)'], voice);
+    final body = await rootBundle.loadString('assets/licenses/makehuman-CC0.txt');
+    yield LicenseEntryWithLineBreaks(['Body map mesh (MakeHuman, CC0)'], body);
   });
 
   final db = AppDatabase.open();
