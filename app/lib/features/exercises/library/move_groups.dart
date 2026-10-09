@@ -247,3 +247,24 @@ List<(MoveGroup, List<Move>)> groupMoves(Muscle muscle, Iterable<Move> moves) {
       if (by[g] case final list?) (g, list),
   ];
 }
+
+/// Moves that can stand in for [current]: same target muscle and kind,
+/// best first. Best means the same group (the same job for the muscle),
+/// then different equipment (the usual reason to swap: the rack is taken),
+/// then hand-picked moves, then shorter names.
+List<Move> swapsFor(ExerciseLibrary lib, Move current) {
+  final group = groupOf(current);
+  final list = [
+    for (final m in lib.moves)
+      if (m.target == current.target && m.kind == current.kind && m.catalogId != current.catalogId) m,
+  ];
+  int rank(Move m) =>
+      (groupOf(m) == group ? 0 : 4) +
+      (m.equipKind != current.equipKind ? 0 : 2) +
+      (m.coached != null || lib.essentialIds.contains(m.catalogId) ? 0 : 1);
+  final ranks = {for (final m in list) m: rank(m)};
+  return list..sort((a, b) {
+    final r = ranks[a]!.compareTo(ranks[b]!);
+    return r != 0 ? r : a.name.length.compareTo(b.name.length);
+  });
+}

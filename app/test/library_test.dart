@@ -125,4 +125,16 @@ void main() {
     expect(lib.search('long head').every((m) => m.target == Muscle.triceps || m.target == Muscle.biceps), isTrue);
     expect(lib.search('squat').first.coached, isNotNull);
   });
+
+  test('swaps stay on the same muscle and lead with the same job on other equipment', () {
+    final curl = lib.byCatalogId['barbell-curl']!;
+    final swaps = swapsFor(lib, curl);
+    expect(swaps, isNotEmpty);
+    expect(swaps.every((m) => m.target == Muscle.biceps && m.kind == MoveKind.strength), isTrue);
+    expect(swaps.map((m) => m.catalogId), isNot(contains('barbell-curl')));
+    expect(groupOf(swaps.first), groupOf(curl));
+    expect(swaps.first.equipKind, isNot(EquipKind.barbell));
+    final pushdown = swapsFor(lib, lib.byCatalogId['triceps-pushdown']!);
+    expect(groupOf(pushdown.first).label, 'Lateral head');
+  });
 }
