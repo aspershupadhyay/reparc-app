@@ -52,7 +52,7 @@ The app ships 36 coached exercises in seven body areas: chest, back, shoulders, 
 
 The app also bundles 873 exercises from Free Exercise DB (public domain, D-017). Data and photos live in `app/assets/exercises/`. Rebuild them with `app/tool/exercise_library/build.py`.
 
-- **Browse:** Workout → Exercises shows a search field, body-area tiles with counts, the coached guides, and the user's own exercises. The full list filters by text, body area, and equipment. Each movement shows once; a coached guide replaces its library twin.
+- **Browse:** Workout → Exercises shows a search field, body-area tiles with counts, the coached guides, and the user's own exercises. The full list and the **Add exercise** sheet filter by text, body area, muscle, and equipment. After the user picks a body area, a second chip row shows its muscles (for example All arms, Biceps, Triceps, Forearms). With a body area chosen and no search text, the "Start here" picks come first. Each movement shows once; a coached guide replaces its library twin.
 - **Detail:** Start and end photos as a cross-fade loop, muscles, level, equipment, and steps. Tap to pause. With reduced motion the loop does not run; the user switches between the start and end photo.
 - **Logging:** A library exercise links by `catalogId` = `lib:<source id>`. The add-exercise sheet in a workout searches the same list. A new exercise in a workout starts with three empty sets. Guide links in a workout open above the live screen (`/learn/guide/:id`, `/learn/move/:id`).
 - **Offline:** Everything is in the app bundle. The library makes no network requests.

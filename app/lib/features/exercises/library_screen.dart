@@ -267,24 +267,29 @@ class _AreaScreenState extends ConsumerState<AreaScreen> {
                 sliver: SliverList.list(
                   children: [
                     if (muscles.length > 1)
-                      Row(
-                        children: [
-                          for (final m in muscles)
-                            Expanded(
-                              child: Padding(
-                                padding: const EdgeInsets.symmetric(horizontal: 3),
-                                child: _MuscleChoice(
-                                  muscle: m,
-                                  color: color,
-                                  selected: m == _muscle,
-                                  onTap: () => setState(() {
-                                    _muscle = m;
-                                    _equip = null;
-                                  }),
+                      // Same height for every tile, even when one name takes
+                      // two lines at large text sizes.
+                      IntrinsicHeight(
+                        child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            for (final m in muscles)
+                              Expanded(
+                                child: Padding(
+                                  padding: const EdgeInsets.symmetric(horizontal: 3),
+                                  child: _MuscleChoice(
+                                    muscle: m,
+                                    color: color,
+                                    selected: m == _muscle,
+                                    onTap: () => setState(() {
+                                      _muscle = m;
+                                      _equip = null;
+                                    }),
+                                  ),
                                 ),
                               ),
-                            ),
-                        ],
+                          ],
+                        ),
                       )
                     else
                       Center(child: MuscleIcon.muscle(_muscle, size: 72, color: color)),
@@ -382,23 +387,26 @@ class _MuscleChoice extends StatelessWidget {
           onTap: onTap,
           child: AnimatedContainer(
             duration: Motion.quick,
-            padding: const EdgeInsets.symmetric(vertical: 6, horizontal: Space.s),
+            alignment: Alignment.center,
+            padding: const EdgeInsets.symmetric(vertical: 6, horizontal: Space.xs),
             decoration: BoxDecoration(
               borderRadius: Radii.medium,
               border: Border.all(color: selected ? color : Colors.transparent, width: 2),
             ),
-            // One compact row per muscle: icon, then name. Half the height
-            // of the old stacked tile.
-            child: Row(
+            // Icon above the name. Side by side, four tiles left too little
+            // width and names broke mid-word ("Qu ad", "Forearm s"; phone
+            // test, 2026-10-10).
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
               children: [
-                MuscleIcon.muscle(muscle, size: 36, color: selected ? color : p.inkSoft),
-                const SizedBox(width: Space.s),
-                Expanded(
-                  child: Text(
-                    muscle.label,
-                    style: (selected ? t.labelMedium : t.bodyMedium)?.copyWith(color: selected ? p.ink : p.inkSoft),
-                    maxLines: 2,
-                  ),
+                MuscleIcon.muscle(muscle, size: 32, color: selected ? color : p.inkSoft),
+                const SizedBox(height: 2),
+                Text(
+                  muscle.label,
+                  textAlign: TextAlign.center,
+                  style: (selected ? t.labelMedium : t.bodyMedium)?.copyWith(color: selected ? p.ink : p.inkSoft),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
                 ),
               ],
             ),

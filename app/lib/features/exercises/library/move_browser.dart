@@ -10,6 +10,8 @@ import '../../../core/widgets.dart';
 import '../area_style.dart';
 import '../catalog/model.dart';
 import '../library_screen.dart';
+import '../muscle_map.dart';
+import '../rig/anatomy.dart';
 import 'library.dart';
 import 'photo_motion.dart';
 
@@ -46,6 +48,9 @@ class MoveBrowser extends ConsumerStatefulWidget {
 class _MoveBrowserState extends ConsumerState<MoveBrowser> {
   final _q = TextEditingController();
   late BodyArea? _area = widget.initialArea;
+
+  /// One muscle inside [_area], or null for the whole area.
+  Muscle? _muscle;
   String? _equipment;
 
   @override
@@ -65,13 +70,30 @@ class _MoveBrowserState extends ConsumerState<MoveBrowser> {
       error: (e, _) => Center(child: Text('Could not load the exercise library. $e')),
       data: (lib) {
         final words = q.split(RegExp(r'\s+')).where((w) => w.isNotEmpty).toList();
-        final results = [
+        final matches = [
           for (final m in lib.moves)
             if ((_area == null || m.area == _area) &&
+                (_muscle == null || m.target == _muscle) &&
                 (_equipment == null || m.equipment == _equipment) &&
                 words.every(m.searchText.contains))
               m,
         ];
+        // Body part, then muscle, then exercises: with a body part chosen and
+        // no search, the hand-picked moves for each muscle lead the list.
+        final muscles = _area == null ? const <Muscle>[] : areaMuscles[_area]!;
+        final results = matches;
+        if (_area != null && words.isEmpty) {
+          final inMatches = {for (final m in matches) m.catalogId};
+          final starts = <Move>[
+            for (final mu in _muscle == null ? muscles : [_muscle!])
+              for (final m in lib.essentialsFor(mu))
+                if (inMatches.contains(m.catalogId)) m,
+          ];
+          final startIds = {for (final m in starts) m.catalogId};
+          results
+            ..removeWhere((m) => startIds.contains(m.catalogId))
+            ..insertAll(0, starts);
+        }
         final typing = MediaQuery.viewInsetsOf(context).bottom > 0;
         final extra = [...widget.leading, ...?widget.leadingWhen?.call(_q.text.trim(), _area)];
         return Column(
@@ -103,8 +125,26 @@ class _MoveBrowserState extends ConsumerState<MoveBrowser> {
               const SizedBox(height: Space.m),
               Padding(
                 padding: EdgeInsets.only(left: widget.padding.left),
-                child: AreaChips(selected: _area, onChanged: (a) => setState(() => _area = a)),
+                child: AreaChips(
+                  selected: _area,
+                  onChanged: (a) => setState(() {
+                    _area = a;
+                    _muscle = null;
+                  }),
+                ),
               ),
+              if (muscles.length > 1) ...[
+                const SizedBox(height: Space.s),
+                Padding(
+                  padding: widget.padding,
+                  child: _MuscleChips(
+                    area: _area!,
+                    muscles: muscles,
+                    selected: _muscle,
+                    onChanged: (m) => setState(() => _muscle = m),
+                  ),
+                ),
+              ],
               const SizedBox(height: Space.s),
               Padding(
                 padding: EdgeInsets.only(left: widget.padding.left),
@@ -149,6 +189,33 @@ class _MoveBrowserState extends ConsumerState<MoveBrowser> {
           ],
         );
       },
+    );
+  }
+}
+
+/// Second step under a body part: the whole area, or one muscle in it.
+class _MuscleChips extends StatelessWidget {
+  const _MuscleChips({required this.area, required this.muscles, required this.selected, required this.onChanged});
+  final BodyArea area;
+  final List<Muscle> muscles;
+  final Muscle? selected;
+  final ValueChanged<Muscle?> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    // A wrap, not a side scroll: at most five chips, and every muscle
+    // stays in view.
+    return Wrap(
+      spacing: Space.s,
+      runSpacing: Space.s,
+      children: [
+        for (final m in [null, ...muscles])
+          ChoiceChip(
+            label: Text(m?.label ?? 'All ${area.short.toLowerCase()}'),
+            selected: selected == m,
+            onSelected: (_) => onChanged(m),
+          ),
+      ],
     );
   }
 }
