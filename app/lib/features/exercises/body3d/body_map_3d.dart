@@ -98,6 +98,7 @@ class _BodyMap3DState extends ConsumerState<BodyMap3D> with SingleTickerProvider
     final p = context.pal;
     final t = Theme.of(context).textTheme;
     final lib = ref.watch(libraryProvider).value;
+    final mesh = ref.watch(bodyMeshProvider).value;
     final sel = _selected;
     final count = sel == null || lib == null
         ? null
@@ -122,6 +123,7 @@ class _BodyMap3DState extends ConsumerState<BodyMap3D> with SingleTickerProvider
                   isComplex: true,
                   willChange: _turn.isAnimating,
                   painter: _BodyPainter(
+                    mesh: mesh,
                     yaw: _yaw,
                     pitch: _pitch,
                     colors: BodyPaint(skin: _skin, muscle: colors, rim: p.brand),
@@ -196,6 +198,7 @@ class _FrameHolder {
 
 class _BodyPainter extends CustomPainter {
   _BodyPainter({
+    required this.mesh,
     required this.yaw,
     required this.pitch,
     required this.colors,
@@ -203,6 +206,8 @@ class _BodyPainter extends CustomPainter {
     required this.frame,
   });
 
+  /// Null while the mesh loads; then only the backdrop is drawn.
+  final BodyMesh? mesh;
   final double yaw;
   final double pitch;
   final BodyPaint colors;
@@ -222,17 +227,22 @@ class _BodyPainter extends CustomPainter {
     );
     // Room at the top for the view buttons and at the bottom for the
     // selection card.
+    final mesh = this.mesh;
+    if (mesh == null) {
+      frame.value = null;
+      return;
+    }
     final body = Size(size.width, size.height - bodyMapInsets.vertical);
     frame.offset = bodyMapInsets.topLeft;
     canvas.save();
     canvas.translate(0, bodyMapInsets.top);
-    frame.value = paintBody(canvas, body, BodyMesh.instance, yaw: yaw, pitch: pitch, paint: colors, zoom: bodyMapZoom);
+    frame.value = paintBody(canvas, body, mesh, yaw: yaw, pitch: pitch, paint: colors, zoom: bodyMapZoom);
     canvas.restore();
   }
 
   @override
   bool shouldRepaint(_BodyPainter o) =>
-      o.yaw != yaw || o.pitch != pitch || o.selected != selected || o.colors.rim != colors.rim;
+      o.mesh != mesh || o.yaw != yaw || o.pitch != pitch || o.selected != selected || o.colors.rim != colors.rim;
 }
 
 class _Views extends StatelessWidget {

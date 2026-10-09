@@ -406,3 +406,25 @@ Keep major choices here. Update the related chapter when a decision changes.
 
 **Fixed with it:** Selected and unselected chips in the theme lost their label font and colour (blank chips in Customize plan), because chips read only a colour from a state-aware text style.
 
+## D-033: Realistic body map mesh from MakeHuman (CC0)
+
+**Status:** Accepted by the user (owner request, 2026-10-10). Built.
+**Date:** 2026-10-10.
+
+**Context:** The body map in v0.4.6 was a mannequin built in code from smooth tubes. The owner asked for a "fitness-app realistic" body with no compromise on body quality. They chose a CC0 MakeHuman body over a CC BY-SA anatomy model, and over photo-real game quality, which is too heavy for a phone.
+
+**Choice:** Build the body from MakeHuman's hm08 base mesh, shape targets, skeleton, and skin weights. These are CC0 since September 2020. We do not use MakeHuman's program code, which is AGPL. `app/tool/body/build.py` shapes an athletic young man with MakeHuman's own sliders, lowers the arms by skinning, and adds detail on the trunk and limbs. It then marks 22 muscle regions with their heads, and bakes grooves and soft shadow into one binary asset. The app keeps its own renderer: Flutter `drawVertices`, with no WebView, no three.js, and no new package. Taps, views, colours, and reduced motion work as before.
+
+**Rules:** The asset is rebuilt only with the script, never edited by hand. The muscle order in `tool/body/muscles.py` matches `mapMuscles` in Dart. The CC0 notice ships on the licences page as a courtesy (CC0 does not require it).
+
+**Evidence:** `app/test/body_map_test.dart` checks these points:
+
+- The mesh is closed, with one winding.
+- Its volume is about that of an adult.
+- Its size and symmetry are correct.
+- All 22 muscles are on both sides.
+- A tap picks each muscle from every view where it shows.
+
+The renders from `app/tool/body/render_body_test.dart` were checked from the front, side, back, and three-quarter views. On the Linux test host, a frame takes about 5.9 ms with the new mesh and about 7.7 ms with the old one. This is not a phone measurement.
+
+**To confirm:** Frame time and look on a real phone, TalkBack, and large text.
