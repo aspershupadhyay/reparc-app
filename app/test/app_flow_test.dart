@@ -116,7 +116,7 @@ void main() {
     await tester.tap(find.bySemanticsLabel('Set 1 complete'));
     await tester.pumpAndSettle();
     expect((await db.select(db.setEntries).get()).where((s) => s.completed), hasLength(1));
-    expect(find.text('1 / 3 sets'), findsOneWidget);
+    expect(find.bySemanticsLabel(RegExp('^Rest left')), findsOneWidget, reason: 'The ring clock times the rest');
 
     // Leaving the screen keeps the session live.
     await tester.tap(find.byTooltip('Leave screen. The workout keeps running.'));
@@ -131,7 +131,7 @@ void main() {
       300,
       scrollable: find
           .descendant(
-            of: find.descendant(of: find.byType(LiveSessionScreen), matching: find.byType(ListView)),
+            of: find.descendant(of: find.byType(LiveSessionScreen), matching: find.byType(CustomScrollView)),
             matching: find.byType(Scrollable),
           )
           .first,

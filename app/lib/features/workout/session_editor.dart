@@ -270,20 +270,23 @@ class _ExerciseCard extends ConsumerWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(view.exercise.name, style: t.titleMedium),
-                    Text(
-                      [
-                        ?view.exercise.variation,
-                        if (skipped)
-                          'Skipped'
-                        else
-                          '${view.completedSets} of ${view.sets.length} set${view.sets.length == 1 ? '' : 's'} done',
-                      ].join(' · '),
-                      style: t.bodySmall,
-                    ),
+                    // In a live workout the ticks show what is done, so the
+                    // count is left out.
+                    if (view.exercise.variation != null || skipped || !live)
+                      Text(
+                        [
+                          ?view.exercise.variation,
+                          if (skipped)
+                            'Skipped'
+                          else if (!live)
+                            '${view.completedSets} of ${view.sets.length} set${view.sets.length == 1 ? '' : 's'} done',
+                        ].join(' · '),
+                        style: t.bodySmall,
+                      ),
                     if (view.item.note case final note?)
                       Padding(
-                        padding: const EdgeInsets.only(top: 2),
-                        child: Text(note, style: t.bodySmall?.copyWith(color: context.pal.brand)),
+                        padding: const EdgeInsets.only(top: Space.xs),
+                        child: NoteChips(note: note),
                       ),
                   ],
                 ),
@@ -310,10 +313,7 @@ class _ExerciseCard extends ConsumerWidget {
             ],
           ),
           if (!skipped) ...[
-            if (view.sets.isNotEmpty) ...[
-              const SizedBox(height: Space.s),
-              _SetHeader(unit: settings.loadUnit, cols: cols),
-            ],
+            if (view.sets.isNotEmpty) const SizedBox(height: Space.s),
             for (final (i, s) in view.sets.indexed)
               SetRow(
                 key: ValueKey(s.id),
@@ -354,39 +354,6 @@ enum SetColumns {
     if (v.sets.isNotEmpty && v.sets.every(isTimedSet)) return time;
     if (isWarmupMove(v)) return reps;
     return loadReps;
-  }
-}
-
-class _SetHeader extends StatelessWidget {
-  const _SetHeader({required this.unit, required this.cols});
-  final String unit;
-  final SetColumns cols;
-
-  @override
-  Widget build(BuildContext context) {
-    final s = Theme.of(context).textTheme.labelSmall?.copyWith(color: context.pal.inkSoft);
-    return ExcludeSemantics(
-      child: Padding(
-        padding: const EdgeInsets.only(right: Space.s, bottom: Space.xs),
-        child: Row(
-          children: [
-            SizedBox(width: 40, child: Text('Set', style: s)),
-            const SizedBox(width: Space.xs),
-            if (cols == SetColumns.loadReps) ...[
-              Expanded(child: Text(unit, style: s)),
-              const SizedBox(width: Space.xs),
-            ],
-            if (cols != SetColumns.time) Expanded(child: Text('Reps', style: s)),
-            if (cols == SetColumns.time) Expanded(child: Text('Time', style: s)),
-            const SizedBox(width: Space.xs),
-            SizedBox(
-              width: 48,
-              child: Text('Done', style: s, textAlign: TextAlign.center),
-            ),
-          ],
-        ),
-      ),
-    );
   }
 }
 
@@ -552,13 +519,21 @@ class _SetRowState extends ConsumerState<SetRow> {
         : widget.settings.guideOn && widget.settings.finishRepSets
         ? _dur(widget.settings.setSec ?? estimateSetSec(s.reps ?? p?.reps))
         : 'm:ss';
+    final suffixStyle = t.labelSmall?.copyWith(color: pal.inkSoft);
     InputDecoration field({String? hint, String? suffix, String? error}) => InputDecoration(
       isDense: true,
       contentPadding: const EdgeInsets.symmetric(horizontal: Space.s, vertical: Space.m),
       constraints: const BoxConstraints(minHeight: minTarget),
       errorMaxLines: 1,
       hintText: hint,
-      suffixText: suffix,
+      // The unit stays in view, also on an empty field.
+      suffixIcon: suffix == null
+          ? null
+          : Padding(
+              padding: const EdgeInsets.only(right: Space.s),
+              child: Text(suffix, style: suffixStyle),
+            ),
+      suffixIconConstraints: const BoxConstraints(minWidth: 0, minHeight: 0),
       errorText: error,
       filled: true,
       fillColor: done ? pal.surface : pal.surfaceAlt,
@@ -626,7 +601,11 @@ class _SetRowState extends ConsumerState<SetRow> {
                       textInputAction: TextInputAction.next,
                       style: t.bodyLarge?.tabular,
                       onChanged: _onLoad,
-                      decoration: field(hint: done || p?.load == null ? null : _num(p!.load), error: _loadError),
+                      decoration: field(
+                        hint: done || p?.load == null ? null : _num(p!.load),
+                        suffix: _unit,
+                        error: _loadError,
+                      ),
                     ),
                   ),
                   const SizedBox(width: Space.xs),
@@ -643,6 +622,7 @@ class _SetRowState extends ConsumerState<SetRow> {
                       // A done set shows only what was saved, never a guess.
                       decoration: field(
                         hint: done ? null : (p?.reps ?? widget.targetReps)?.toString(),
+                        suffix: 'reps',
                         error: _repsError,
                       ),
                     ),
@@ -688,6 +668,58 @@ class _SetRowState extends ConsumerState<SetRow> {
                   'Same as last set: ${[if (p.load != null) '${_num(p.load)} ${p.loadUnit ?? _unit}', if (p.reps != null) '${p.reps} reps'].join(' × ')}',
                 ),
               ),
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+/// An exercise note as a few quiet chips: "2 × 8–12", "1:15 min rest",
+/// "3 reps left", then any coaching cue as one short line. The ramp-up
+/// line is left out: the ramp-up rows and the clock already show it.
+class NoteChips extends StatelessWidget {
+  const NoteChips({super.key, required this.note});
+  final String note;
+
+  @override
+  Widget build(BuildContext context) {
+    final t = Theme.of(context).textTheme;
+    final p = context.pal;
+    final chips = <String>[];
+    final cues = <String>[];
+    for (final line in note.split('\n')) {
+      if (line.startsWith('Ramp-up sets first:')) continue;
+      final parts = line.replaceFirst('Target: ', '').split(' · ');
+      for (final part in parts) {
+        if (part == 'Warm-up') continue;
+        // Short facts are chips; a sentence is a cue.
+        (part.length <= 16 && !part.endsWith('.') ? chips : cues).add(part);
+      }
+    }
+    return Semantics(
+      label: note.replaceAll('\n', '. '),
+      excludeSemantics: true,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          if (chips.isNotEmpty)
+            Wrap(
+              spacing: Space.xs,
+              runSpacing: Space.xs,
+              children: [
+                for (final c in chips)
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: Space.s, vertical: 2),
+                    decoration: BoxDecoration(color: p.surfaceAlt, borderRadius: Radii.small),
+                    child: Text(c, style: t.labelSmall?.copyWith(color: p.inkSoft)),
+                  ),
+              ],
+            ),
+          if (cues.isNotEmpty)
+            Padding(
+              padding: const EdgeInsets.only(top: Space.xs),
+              child: Text(cues.join(' '), style: t.bodySmall?.copyWith(color: p.inkSoft)),
             ),
         ],
       ),
