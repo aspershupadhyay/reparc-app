@@ -33,6 +33,7 @@ Before you change code, data, design, or project rules:
 - Treat **To confirm** items as unresolved.
 - Never present a planned feature as built.
 - Never claim a security, privacy, performance, or policy result without evidence.
+- **Owner instruction (2026-10-10):** Ship production-ready work only. Do not make dev, debug, or test variants of the app (no "Reparc dev", no separate application ID). Every change goes to `main` in a state that can be released, and reaches the owner's phone as a normal release (a version bump, release notes, and a `v*` tag) through the in-app update flow. Test on the phone with that release build.
 - Never make the app install an update by itself, and never download one without the user's tap. Before store release, the app checks GitHub Releases for a newer build. On Android, when the user taps **Download and install**, the app downloads the APK, checks its SHA-256 against the release's `SHA256SUMS.txt`, and hands it to Android's installer, which asks the user to confirm. A file that fails the check is deleted. iPhone opens the release page (owner decisions D-029, 2026-10-06, and its update of 2026-10-08). Use App Store or Google Play flows once the app is in a store, and remove `REQUEST_INSTALL_PACKAGES` from a Play build.
 
 ## Before implementation

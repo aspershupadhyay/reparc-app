@@ -268,6 +268,8 @@ Updated 2026-10-06. This records what exists in code. It is not evidence of devi
 
 **Visual hierarchy, v0.4.5 (2026-10-09, owner request, D-032):** A review of every tab on a real phone against a 14-rule design checklist led to one pass over all screens: one focal point per screen, small-caps group labels, colour roles (lime action, teal link, category colours for data only), one selector style, folded warm-up and cool-down on the day page, a search-first Add food, and honest Analytics range names. Fixed blank chip labels in the theme. Checked: format, analyze, `flutter test` (360 passed), and rendered light and dark screenshots of every tab before and after. **Not checked:** a real phone build, TalkBack, and large text on a device.
 
+**Workout library and body map, v0.4.6 (2026-10-10, owner request):** A phone test of the Workout tab led to a three-step exercise tree (body area, muscle, group such as triceps long head), new muscles (lower chest, traps, outer hips, lower abs), a tappable 3D body map at the top of Exercises, cleaner equipment and level labels, gym-shorthand search, Swap for a similar move in a workout, and History cards with time, total weight, and a PR badge. Empty workouts are no longer saved. Checked: format, analyze, `flutter test` (369 passed), CI on the pull request (Android release build and iOS build included), and rendered screenshots of Exercises, the body map, and the area pages. **Not checked:** this build on a real phone, TalkBack, and large text on a device.
+
 ## 16.12 AI context
 
 - **Purpose:** Give every contributor the current, evidence-based build order.

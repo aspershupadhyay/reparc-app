@@ -53,20 +53,7 @@ android {
         }
     }
 
-    defaultConfig.manifestPlaceholders["appLabel"] = "Reparc"
-
     buildTypes {
-        // Debug and profile builds install beside the release app, so a test
-        // build on a real phone never replaces it or its data.
-        debug {
-            applicationIdSuffix = ".dev"
-            manifestPlaceholders["appLabel"] = "Reparc dev"
-        }
-        getByName("profile") {
-            initWith(getByName("debug"))
-            applicationIdSuffix = ".dev"
-            manifestPlaceholders["appLabel"] = "Reparc dev"
-        }
         release {
             // Without key.properties, a local release build uses the debug key.
             // Google Play rejects debug-signed uploads, so it cannot ship by mistake.
