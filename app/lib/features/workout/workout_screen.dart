@@ -180,6 +180,7 @@ class _History extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final t = Theme.of(context).textTheme;
     final p = context.pal;
+    final unit = ref.watch(currentSettingsProvider).loadUnit;
     return AsyncBody(
       value: ref.watch(historyProvider),
       builder: (list) {
@@ -198,11 +199,22 @@ class _History extends ConsumerWidget {
                 builder: (context) {
                   final d = localDayOfInstant(h.session.startedAt, h.session.utcOffsetMinutes);
                   final incomplete = h.session.status == SessionStatus.incomplete;
+                  final duration = h.duration;
+                  final volume = h.volume?.inUnit(unit);
+                  final records = h.records == 1 ? '1 personal record' : '${h.records} personal records';
                   return AppCard(
                     padding: const EdgeInsets.all(Space.m),
                     onTap: () => context.push('/workout/session/${h.session.id}'),
-                    semanticLabel:
-                        '${h.session.name}, ${fmtDayLong(d)}, ${h.completedSets} sets${incomplete ? ', incomplete' : ''}',
+                    semanticLabel: [
+                      h.session.name,
+                      fmtDayLong(d),
+                      if (duration != null) speakDuration(duration),
+                      '${h.exerciseCount} exercises',
+                      '${h.completedSets} sets',
+                      if (volume != null) '${speakWithUnit(volume.round(), unit)} lifted',
+                      if (h.records > 0) records,
+                      if (incomplete) 'incomplete',
+                    ].join(', '),
                     child: ExcludeSemantics(
                       child: Row(
                         children: [
@@ -226,16 +238,39 @@ class _History extends ConsumerWidget {
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                Text(h.session.name, style: t.titleSmall),
-                                const SizedBox(height: 4),
-                                Wrap(
-                                  spacing: 6,
+                                Row(
                                   children: [
-                                    Tag('${h.exerciseCount} exercises'),
-                                    Tag('${h.completedSets} sets'),
-                                    if (incomplete) Tag('Incomplete', color: p.orangeSoft),
+                                    Expanded(
+                                      child: Text(
+                                        h.session.name,
+                                        style: t.titleSmall,
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                    ),
+                                    if (h.records > 0)
+                                      Tag(
+                                        h.records == 1 ? 'PR' : '${h.records} PRs',
+                                        color: p.action,
+                                        textColor: p.onAction,
+                                        icon: LucideIcons.trophy,
+                                      ),
                                   ],
                                 ),
+                                const SizedBox(height: 4),
+                                Text(
+                                  metaLine([
+                                    if (duration != null) _minutes(duration),
+                                    '${h.exerciseCount} exercises',
+                                    '${h.completedSets} sets',
+                                    if (volume != null) fmtWithUnit(volume.round(), unit),
+                                  ]),
+                                  style: t.bodySmall,
+                                ),
+                                if (incomplete) ...[
+                                  const SizedBox(height: 4),
+                                  Tag('Incomplete', color: p.orangeSoft),
+                                ],
                               ],
                             ),
                           ),
@@ -253,4 +288,11 @@ class _History extends ConsumerWidget {
       },
     );
   }
+}
+
+/// "48 min" or "1 h 05 min".
+String _minutes(Duration d) {
+  final m = d.inMinutes;
+  if (m < 60) return '${m < 1 ? '<1' : m} min';
+  return '${m ~/ 60} h ${(m % 60).toString().padLeft(2, '0')} min';
 }

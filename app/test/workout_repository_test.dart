@@ -149,6 +149,36 @@ void main() {
     expect(summaries.single.session.status, SessionStatus.incomplete);
   });
 
+  test('history cards carry duration, volume, and the records a session holds', () async {
+    final ex = await repo.createExercise(name: 'Bench press');
+    Future<String> session(double load, {int reps = 5}) async {
+      final id = await repo.startSession();
+      final se = await repo.addSessionExercise(id, ex);
+      final set = await repo.addSet(se);
+      await repo.updateSet(set, SetEntriesCompanion(load: Value(load), loadUnit: const Value('kg'), reps: Value(reps)));
+      await repo.setCompleted(set, true);
+      clock.advance(const Duration(minutes: 40));
+      await repo.end(id, finished: true);
+      clock.advance(const Duration(days: 1));
+      return id;
+    }
+
+    final first = await session(60);
+    final second = await session(70);
+    // A session with no load recorded has no volume, not zero volume.
+    final id = await repo.startSession();
+    await repo.addSet(await repo.addSessionExercise(id, ex));
+    await repo.end(id, finished: true);
+
+    final cards = {for (final h in await repo.watchHistory().first) h.session.id: h};
+    expect(cards[first]!.duration, const Duration(minutes: 40));
+    expect(cards[first]!.volume!.kg, 300);
+    expect(cards[first]!.records, 0, reason: 'the 70 kg set beat it');
+    expect(cards[second]!.records, 1);
+    expect(cards[second]!.volume!.kg, 350);
+    expect(cards[id]!.volume, isNull);
+  });
+
   test('deleting a session removes its sets', () async {
     final ex = await repo.createExercise(name: 'Curl');
     final id = await repo.startSession();
