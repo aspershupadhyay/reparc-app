@@ -156,10 +156,14 @@ void main() {
 
     await tester.tap(find.text('Exercises'));
     await tester.pumpAndSettle();
-    expect(find.text('PICK A BODY PART'), findsOneWidget);
+    expect(find.text('TAP A MUSCLE'), findsOneWidget);
+    expect(find.text('OR PICK A BODY PART'), findsOneWidget);
 
     // Arms splits into biceps, triceps, and forearms, with picks to start.
-    await tester.tap(find.bySemanticsLabel(RegExp('^Arms: Biceps, Triceps, Forearms')));
+    final arms = find.bySemanticsLabel(RegExp('^Arms: Biceps, Triceps, Forearms'));
+    await tester.ensureVisible(arms);
+    await tester.pumpAndSettle();
+    await tester.tap(arms);
     await tester.pumpAndSettle();
     expect(find.bySemanticsLabel('Biceps'), findsOneWidget);
     expect(find.bySemanticsLabel('Triceps'), findsOneWidget);
@@ -172,7 +176,10 @@ void main() {
     await tester.tap(find.byTooltip('Back'));
     await tester.pumpAndSettle();
 
-    await tester.tap(find.textContaining('Search ${library.moves.length} exercises'));
+    final search = find.textContaining('Search ${library.moves.length} exercises');
+    await tester.ensureVisible(search);
+    await tester.pumpAndSettle();
+    await tester.tap(search);
     await tester.pumpAndSettle();
 
     await tester.enterText(find.byType(TextField), 'air bike');

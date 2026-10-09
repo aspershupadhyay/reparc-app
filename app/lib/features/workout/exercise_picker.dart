@@ -8,6 +8,7 @@ import '../../core/widgets.dart';
 import '../../data/providers.dart';
 import '../exercises/library/library.dart';
 import '../exercises/library/move_browser.dart';
+import '../exercises/library/move_groups.dart';
 import 'exercise_form.dart';
 
 /// Picks a built-in or custom exercise, or creates one without leaving
@@ -34,17 +35,7 @@ class _PickerState extends ConsumerState<_Picker> {
   }
 
   Future<void> _pickMove(Move m) async {
-    final id = await guardedWrite(
-      context,
-      () => ref
-          .read(workoutRepoProvider)
-          .ensureCatalogExercise(
-            catalogId: m.catalogId,
-            name: m.name,
-            equipment: m.equipment == 'No equipment' ? null : m.equipment,
-            targetMuscles: m.muscles,
-          ),
-    );
+    final id = await _exerciseRowFor(context, ref, m);
     if (id != null && mounted) Navigator.pop(context, id);
   }
 
@@ -82,6 +73,105 @@ class _PickerState extends ConsumerState<_Picker> {
                 ];
               },
             ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// The exercise row that logs [m]. Creates it the first time.
+Future<String?> _exerciseRowFor(BuildContext context, WidgetRef ref, Move m) => guardedWrite(
+  context,
+  () => ref
+      .read(workoutRepoProvider)
+      .ensureCatalogExercise(catalogId: m.catalogId, name: m.name, equipment: m.equipment, targetMuscles: m.muscles),
+);
+
+/// Offers moves for the same muscle to stand in for the exercise linked
+/// to [catalogId], for example when the equipment is taken. Returns the new
+/// exercise row id. Exercises outside the library open the full picker.
+Future<String?> swapExercise(BuildContext context, WidgetRef ref, String? catalogId) async {
+  final lib = await ref.read(libraryProvider.future);
+  if (!context.mounted) return null;
+  final current = catalogId == null ? null : lib.byCatalogId[catalogId];
+  if (current == null) return pickExercise(context, title: 'Replace exercise');
+  return showAppSheet<String>(context, (_) => _SwapSheet(current: current));
+}
+
+class _SwapSheet extends ConsumerStatefulWidget {
+  const _SwapSheet({required this.current});
+  final Move current;
+
+  @override
+  ConsumerState<_SwapSheet> createState() => _SwapSheetState();
+}
+
+class _SwapSheetState extends ConsumerState<_SwapSheet> {
+  EquipKind? _equip;
+
+  Future<void> _pick(Move m) async {
+    final id = await _exerciseRowFor(context, ref, m);
+    if (id != null && mounted) Navigator.pop(context, id);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final t = Theme.of(context).textTheme;
+    final lib = ref.watch(libraryProvider).value;
+    final c = widget.current;
+    final all = lib == null ? const <Move>[] : swapsFor(lib, c);
+    final kinds = [
+      for (final k in EquipKind.values)
+        if (all.any((m) => m.equipKind == k)) k,
+    ];
+    final shown = _equip == null ? all : all.where((m) => m.equipKind == _equip).toList();
+    final group = groupOf(c);
+    return SizedBox(
+      height: MediaQuery.sizeOf(context).height * 0.88,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(Space.l, 0, Space.l, Space.xs),
+            child: Text('Swap ${c.name}', style: t.titleLarge, maxLines: 2, overflow: TextOverflow.ellipsis),
+          ),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: Space.l),
+            child: Text(
+              'Same muscle: ${c.target.label.toLowerCase()}'
+              '${muscleGroups[c.target]?.contains(group) ?? false ? ', ${group.label.toLowerCase()}' : ''}. '
+              'Closest matches first. Sets you logged stay.',
+              style: t.bodySmall,
+            ),
+          ),
+          const SizedBox(height: Space.m),
+          SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            padding: const EdgeInsets.symmetric(horizontal: Space.l),
+            child: Row(
+              children: [
+                for (final k in [null, ...kinds])
+                  Padding(
+                    padding: const EdgeInsets.only(right: Space.s),
+                    child: ChoiceChip(
+                      label: Text(k?.label ?? 'Any equipment'),
+                      selected: _equip == k,
+                      onSelected: (_) => setState(() => _equip = k),
+                    ),
+                  ),
+              ],
+            ),
+          ),
+          const SizedBox(height: Space.s),
+          Expanded(
+            child: shown.isEmpty
+                ? Center(child: Text('No other moves here. Try "Any equipment".', style: t.bodyMedium))
+                : ListView.builder(
+                    padding: const EdgeInsets.fromLTRB(Space.l, Space.s, Space.l, Space.xxl),
+                    itemCount: shown.length,
+                    itemBuilder: (_, i) => MoveTile(shown[i], icon: LucideIcons.repeat, onTap: () => _pick(shown[i])),
+                  ),
           ),
         ],
       ),

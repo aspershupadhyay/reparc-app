@@ -52,7 +52,10 @@ The app ships 36 coached exercises in seven body areas: chest, back, shoulders, 
 
 The app also bundles 873 exercises from Free Exercise DB (public domain, D-017). Data and photos live in `app/assets/exercises/`. Rebuild them with `app/tool/exercise_library/build.py`.
 
-- **Browse:** Workout → Exercises shows a search field, body-area tiles with counts, the coached guides, and the user's own exercises. The full list filters by text, body area, and equipment. Each movement shows once; a coached guide replaces its library twin.
+- **Browse:** Workout → Exercises shows a search field, a 3D body map, body-area tiles with counts, the coached guides, and the user's own exercises. The full list and the **Add exercise** sheet filter by text, body area, muscle, and equipment. After the user picks a body area, a second chip row shows its muscles (for example All arms, Biceps, Triceps, Forearms). With a body area chosen and no search text, the list follows the tree: each muscle, or each group inside one muscle, under its own heading, with the "Start here" picks first. Each movement shows once; a coached guide replaces its library twin.
+- **Body map (built 2026-10-10):** A shaded 3D body at the top of Exercises. A sideways drag turns it; **Front**, **Side**, and **Back** snap to a view. A tap selects a muscle and shows its name, what it is, and its number of strength moves; **N exercises**, or a second tap, opens the body area at that muscle (`/workout/area/:area?muscle=:muscle`). Only sideways drags turn it, so the page still scrolls. Reduced motion turns off the fling and snap animations. The body is built in code from smooth surfaces with raised muscle regions; there are no 3D asset files. Code: `app/lib/features/exercises/body3d/`. Screen readers use the body-area list below the map; the map itself has a label only.
+- **Search:** Gym shorthand works (bi, tris, delts, db, kb, rdl, ohp), plural forms match, and group names match (for example "long head"). Results put name matches first, then coached guides and "Start here" picks, then names that start with the first word, then shorter names. The AI library tool uses the same search (`ExerciseLibrary.search`).
+- **Equipment labels:** "Bodyweight" is the one word for no equipment. The source's "other" label is replaced by the kit the name shows (for example Pull-up bar, Weight plate, Sled, Box); what stays "Other" is rare kit. Filters group labels into Bodyweight, Dumbbell, Barbell, Machine, Cable, Kettlebell, Band, Ball, Foam roll, and Other. Plain stretches that the source marks "expert" show as Beginner.
 - **Detail:** Start and end photos as a cross-fade loop, muscles, level, equipment, and steps. Tap to pause. With reduced motion the loop does not run; the user switches between the start and end photo.
 - **Logging:** A library exercise links by `catalogId` = `lib:<source id>`. The add-exercise sheet in a workout searches the same list. A new exercise in a workout starts with three empty sets. Guide links in a workout open above the live screen (`/learn/guide/:id`, `/learn/move/:id`).
 - **Offline:** Everything is in the app bundle. The library makes no network requests.
@@ -85,6 +88,10 @@ Do not require every field. A timed set may not have load or repetitions. Keep z
 - Keep session time and rest time separate.
 - Let the user skip an exercise without creating a result.
 - Let the user finish a session with incomplete exercises.
+- Do not save a session with no done sets. **Finish workout** with no ticked set offers **Keep going** or **End without saving** (built 2026-10-10).
+- **Swap for a similar move** (exercise options in a live or saved session, built 2026-10-10): moves for the same target muscle and kind. The same group comes first, then other equipment, then hand-picked moves; an equipment filter narrows the list. Logged sets stay, and **Undo** puts the old exercise back. Exercises the user made opens the full picker instead.
+
+**History cards** show the date, name, time without pauses, exercise and set counts, total weight in the user's load unit, and a **PR** badge for each heaviest-load record the session still holds. Total weight is missing, not zero, when no set has a load and reps.
 
 Supersets group exercises. They do not merge set records.
 
@@ -128,7 +135,12 @@ Do not infer exercise form, injury, or medical status. Do not estimate calories 
 
 Built 2026-10-06 (D-024, D-025).
 
-**Browse.** Workout → Exercises shows search, then seven body areas. An area opens its muscles: Chest (upper chest, mid and lower chest), Back (lats, upper back, lower back), Shoulders (front, side, rear), Arms (biceps, triceps, forearms), Legs (quads, hamstrings, calves, inner thighs), Glutes, and Core (abs, obliques). Each muscle shows "Start here" picks first, then more options. Filters: Strength, Stretch, or Power & cardio, and one equipment type. The target muscle of a library exercise comes from its main muscle; delt heads, upper chest, and obliques come from the exercise name. Picks live in `app/lib/features/exercises/library/library.dart` (`essentials`).
+**Browse.** Workout → Exercises shows search, the body map, then seven body areas. The tree has three steps: body area, then muscle, then group.
+
+- Areas and muscles: Chest (upper, mid, lower chest), Back (lats, upper back, traps, lower back), Shoulders (front, side, rear), Arms (biceps, triceps, forearms), Legs (quads, hamstrings, calves, inner thighs), Glutes (glutes, outer hips), and Core (abs, lower abs, obliques).
+- Groups split a muscle by what the move stresses most, for example Triceps: Lateral head (pushdowns, kickbacks), Long head (overhead and lying extensions), Heavy presses (close-grip presses, dips); Biceps: Brachialis, Long head, Short head, Standard curls. Moves that fit no group are under "More moves". A move joins the first group whose words are in its name. Groups live in `app/lib/features/exercises/library/move_groups.dart`.
+- On an area page, each muscle shows "Start here" picks first. Focus chips pick one group; with "All", each group has its own heading. Filters: Strength, Stretch, or Power & cardio, and one equipment type.
+- The target muscle of a library exercise comes from its main muscle; delt heads, upper, mid, and lower chest, lower abs, and obliques come from the exercise name. Reverse (palms-down) curls count as forearms. Picks live in `app/lib/features/exercises/library/library.dart` (`essentials`).
 
 **Roadmaps.** Workout → Roadmap. The user picks a goal, level, days a week, and where they train. The generator is `app/lib/domain/roadmap.dart`. Rules it follows:
 

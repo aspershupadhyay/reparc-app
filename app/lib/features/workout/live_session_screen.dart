@@ -102,13 +102,16 @@ class LiveSessionScreen extends ConsumerWidget {
     if (choice == null || !context.mounted) return;
     final repo = ref.read(workoutRepoProvider);
     if (choice == 'discard') {
-      final ok = await confirmAction(
-        context,
-        title: 'Discard this workout?',
-        body: 'This deletes the workout and all ${d.totalSets} sets. You cannot undo this.',
-        confirmLabel: 'Discard',
-        destructive: true,
-      );
+      // Nothing logged means nothing to lose: no second question.
+      final ok =
+          d.completedSets == 0 ||
+          await confirmAction(
+            context,
+            title: 'Discard this workout?',
+            body: 'This deletes the workout and all ${d.totalSets} sets. You cannot undo this.',
+            confirmLabel: 'Discard',
+            destructive: true,
+          );
       if (!ok || !context.mounted) return;
       final done = await guardedWrite(context, () async {
         await repo.deleteSession(d.session.id);
@@ -116,7 +119,7 @@ class LiveSessionScreen extends ConsumerWidget {
       });
       if (done == true && context.mounted) {
         context.go('/workout');
-        showMessage(context, 'Workout discarded.');
+        showMessage(context, d.completedSets == 0 ? 'Workout ended. Nothing was saved.' : 'Workout discarded.');
       }
       return;
     }
@@ -361,6 +364,33 @@ class _FinishSheet extends StatelessWidget {
   Widget build(BuildContext context) {
     final t = Theme.of(context).textTheme;
     final open = detail.totalSets - detail.completedSets;
+    // A workout with no done sets is not saved: it would only add an empty
+    // card to History (phone test, 2026-10-10).
+    if (detail.completedSets == 0) {
+      return Padding(
+        padding: const EdgeInsets.fromLTRB(Space.l, 0, Space.l, Space.xl),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Text('No sets done yet', style: t.titleLarge),
+            const SizedBox(height: Space.s),
+            Text(
+              'Tick a set when you finish it. A workout with no done sets is not saved to History.',
+              style: t.bodyMedium,
+            ),
+            const SizedBox(height: Space.l),
+            FilledButton(onPressed: () => Navigator.pop(context), child: const Text('Keep going')),
+            const SizedBox(height: Space.s),
+            TextButton(
+              onPressed: () => Navigator.pop(context, 'discard'),
+              style: TextButton.styleFrom(foregroundColor: context.pal.error),
+              child: const Text('End without saving'),
+            ),
+          ],
+        ),
+      );
+    }
     return Padding(
       padding: const EdgeInsets.fromLTRB(Space.l, 0, Space.l, Space.xl),
       child: Column(

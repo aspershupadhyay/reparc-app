@@ -2,6 +2,7 @@ import 'package:drift/drift.dart';
 import 'package:uuid/uuid.dart';
 
 import '../core/clock.dart';
+import '../domain/analytics.dart';
 import '../domain/guide.dart';
 import 'database.dart';
 import '../domain/roadmap.dart';
@@ -29,8 +30,23 @@ class SessionDetail {
 }
 
 class SessionSummary {
-  const SessionSummary(this.session, this.exerciseCount, this.completedSets);
+  const SessionSummary(this.session, this.exerciseCount, this.completedSets, {this.volume, this.records = 0});
   final WorkoutSession session;
+
+  /// Load × reps over working sets. Null when no set has a load and reps:
+  /// missing is not zero.
+  final Volume? volume;
+
+  /// Personal records (heaviest completed load) this session still holds.
+  final int records;
+
+  /// Time from start to end, without pauses. Null while there is no end.
+  Duration? get duration {
+    final end = session.endedAt;
+    if (end == null) return null;
+    final d = end.difference(session.startedAt) - Duration(milliseconds: session.pausedMs);
+    return d.isNegative ? null : d;
+  }
 
   /// Exercises with at least one working set. Warm-up moves are not counted.
   final int exerciseCount;
@@ -359,10 +375,36 @@ class WorkoutRepository {
     ]);
   }
 
+  /// Saved sessions, newest first, with volume and the records each holds.
   Stream<List<SessionSummary>> watchHistory() => watchTables(
     db,
-    [db.workoutSessions, db.sessionExercises, db.setEntries],
-    () => sessionSummaries(),
+    [db.workoutSessions, db.sessionExercises, db.setEntries, db.exercises],
+    () async {
+      final list = await sessionSummaries();
+      if (list.isEmpty) return list;
+      final sets = await completedSets();
+      final bySession = <String, List<SetRecord>>{};
+      for (final r in sets) {
+        (bySession[r.session.id] ??= []).add(r);
+      }
+      final records = <String, int>{};
+      for (final pr in heaviestLoads(sets)) {
+        records[pr.source.session.id] = (records[pr.source.session.id] ?? 0) + 1;
+      }
+      return [
+        for (final s in list)
+          SessionSummary(
+            s.session,
+            s.exerciseCount,
+            s.completedSets,
+            volume: switch (volumeOf(bySession[s.session.id] ?? const [])) {
+              final v when v.counted > 0 => v,
+              _ => null,
+            },
+            records: records[s.session.id] ?? 0,
+          ),
+      ];
+    },
   );
 
   Future<List<SessionSummary>> sessionSummaries({DateTime? fromUtc, DateTime? toUtc}) async {

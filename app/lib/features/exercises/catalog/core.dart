@@ -97,7 +97,7 @@ final coreExercises = <ExerciseDef>[
     area: BodyArea.core,
     equipment: 'Pull-up bar',
     level: Level.intermediate,
-    primary: {Muscle.abs, Muscle.hipFlexors},
+    primary: {Muscle.lowerAbs, Muscle.hipFlexors},
     secondary: {Muscle.forearms, Muscle.lats},
     anchor: const HandsAnchor(V3(0, 2.25, 0)),
     equip: const [PullUpBar(2.25)],

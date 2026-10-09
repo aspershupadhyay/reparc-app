@@ -198,7 +198,7 @@ class _CollapsibleState extends State<_Collapsible> {
   }
 }
 
-enum _ExerciseAction { up, down, replace, skip, edit, remove }
+enum _ExerciseAction { up, down, swap, replace, skip, edit, remove }
 
 class _ExerciseCard extends ConsumerWidget {
   const _ExerciseCard({
@@ -222,8 +222,10 @@ class _ExerciseCard extends ConsumerWidget {
         await guardedWrite(context, () => repo.moveSessionExercise(sessionId, index, index - 1));
       case _ExerciseAction.down:
         await guardedWrite(context, () => repo.moveSessionExercise(sessionId, index, index + 1));
-      case _ExerciseAction.replace:
-        final id = await pickExercise(context, title: 'Replace exercise');
+      case _ExerciseAction.swap || _ExerciseAction.replace:
+        final id = a == _ExerciseAction.swap
+            ? await swapExercise(context, ref, view.exercise.catalogId)
+            : await pickExercise(context, title: 'Replace exercise');
         if (id == null || !context.mounted) return;
         final old = view.item.exerciseId;
         await guardedWrite(context, () => repo.replaceSessionExercise(view.item.id, id));
@@ -298,12 +300,14 @@ class _ExerciseCard extends ConsumerWidget {
                   icon: Icon(LucideIcons.bookOpen, color: context.pal.brand),
                 ),
               PopupMenuButton<_ExerciseAction>(
-                tooltip: 'Exercise options',
+                tooltip: 'Options for ${view.exercise.name}',
                 icon: const Icon(LucideIcons.ellipsisVertical),
                 onSelected: (a) => _onAction(context, ref, a),
                 itemBuilder: (_) => [
                   if (index > 0) const PopupMenuItem(value: _ExerciseAction.up, child: Text('Move up')),
                   if (index < count - 1) const PopupMenuItem(value: _ExerciseAction.down, child: Text('Move down')),
+                  if (view.exercise.catalogId != null)
+                    const PopupMenuItem(value: _ExerciseAction.swap, child: Text('Swap for a similar move')),
                   const PopupMenuItem(value: _ExerciseAction.replace, child: Text('Replace exercise')),
                   PopupMenuItem(value: _ExerciseAction.skip, child: Text(skipped ? 'Do not skip' : 'Skip exercise')),
                   const PopupMenuItem(value: _ExerciseAction.edit, child: Text('Edit exercise details')),

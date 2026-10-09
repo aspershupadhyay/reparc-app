@@ -50,7 +50,7 @@ class MoveScreen extends ConsumerWidget {
                   ref,
                   catalogId: e.catalogId,
                   name: sentenceCase(e.name),
-                  equipment: e.equipment == 'No equipment' ? null : e.equipment,
+                  equipment: e.equipment,
                   muscles: e.primary.join(', '),
                   liveId: live?.id,
                 ),

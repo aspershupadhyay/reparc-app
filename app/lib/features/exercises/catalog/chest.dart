@@ -186,7 +186,7 @@ final chestExercises = <ExerciseDef>[
     area: BodyArea.chest,
     equipment: 'Parallel bars',
     level: Level.advanced,
-    primary: {Muscle.chest, Muscle.triceps},
+    primary: {Muscle.lowerChest, Muscle.triceps},
     secondary: {Muscle.frontDelts},
     anchor: const HandsAnchor(V3(0, 1.2, 0.05)),
     equip: const [DipBars(1.2)],
