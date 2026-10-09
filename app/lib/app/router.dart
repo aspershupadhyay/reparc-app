@@ -8,6 +8,7 @@ import '../features/exercises/guide_screen.dart';
 import '../features/exercises/library/move_browser.dart';
 import '../features/exercises/library/move_screen.dart';
 import '../features/exercises/library_screen.dart';
+import '../features/exercises/rig/anatomy.dart';
 import '../features/home/home_screen.dart';
 import '../features/me/ai_connections_screen.dart';
 import '../features/me/ai_file_screen.dart';
@@ -75,7 +76,10 @@ GoRouter buildRouter({String initialLocation = '/home'}) => GoRouter(
                 ),
                 GoRoute(
                   path: 'area/:area',
-                  builder: (_, s) => AreaScreen(area: BodyArea.values.byName(s.pathParameters['area']!)),
+                  builder: (_, s) => AreaScreen(
+                    area: BodyArea.values.byName(s.pathParameters['area']!),
+                    muscle: Muscle.values.asNameMap()[s.uri.queryParameters['muscle']],
+                  ),
                 ),
                 GoRoute(
                   path: 'browse',

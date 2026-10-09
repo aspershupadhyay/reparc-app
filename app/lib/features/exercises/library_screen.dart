@@ -9,6 +9,7 @@ import '../../core/widgets.dart';
 import '../../data/providers.dart';
 import '../workout/exercise_form.dart';
 import 'area_style.dart';
+import 'body3d/body_map_3d.dart';
 import 'catalog/model.dart';
 import 'library/library.dart';
 import 'library/move_browser.dart';
@@ -108,7 +109,9 @@ class LibraryBody extends ConsumerWidget {
             ),
           ),
         ),
-        const SectionHeader('Pick a body part'),
+        const SectionHeader('Tap a muscle'),
+        const BodyMap3D(),
+        const SectionHeader('Or pick a body part'),
         AppCard(
           padding: EdgeInsets.zero,
           child: Column(
@@ -224,8 +227,12 @@ class _AreaRow extends StatelessWidget {
 
 /// One body area: choose a muscle, see where to start, then the rest.
 class AreaScreen extends ConsumerStatefulWidget {
-  const AreaScreen({super.key, required this.area, this.onPick, this.pickIcon});
+  const AreaScreen({super.key, required this.area, this.muscle, this.onPick, this.pickIcon});
   final BodyArea area;
+
+  /// Muscle to open with, for example from a tap on the body map. Null, or
+  /// a muscle from another area, opens the first muscle.
+  final Muscle? muscle;
 
   /// When set, tapping a move picks it (for example, to add to a workout).
   final void Function(Move)? onPick;
@@ -236,7 +243,9 @@ class AreaScreen extends ConsumerStatefulWidget {
 }
 
 class _AreaScreenState extends ConsumerState<AreaScreen> {
-  late Muscle _muscle = areaMuscles[widget.area]!.first;
+  late Muscle _muscle = areaMuscles[widget.area]!.contains(widget.muscle)
+      ? widget.muscle!
+      : areaMuscles[widget.area]!.first;
   EquipKind? _equip;
   MoveKind _kind = MoveKind.strength;
 
@@ -489,12 +498,19 @@ class _MuscleChoice extends StatelessWidget {
               children: [
                 MuscleIcon.muscle(muscle, size: 32, color: selected ? color : p.inkSoft),
                 const SizedBox(height: 2),
-                Text(
-                  muscle.label,
-                  textAlign: TextAlign.center,
-                  style: (selected ? t.labelMedium : t.bodyMedium)?.copyWith(color: selected ? p.ink : p.inkSoft),
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
+                // One word per line, scaled down when a word is wider than
+                // the tile, so a name never breaks inside a word
+                // ("Hamstring s"; phone test, 2026-10-10).
+                FittedBox(
+                  fit: BoxFit.scaleDown,
+                  child: Text(
+                    muscle.label.replaceAll(' ', '\n'),
+                    textAlign: TextAlign.center,
+                    style: (selected ? t.labelMedium : t.bodyMedium)?.copyWith(
+                      color: selected ? p.ink : p.inkSoft,
+                      height: 1.15,
+                    ),
+                  ),
                 ),
               ],
             ),
