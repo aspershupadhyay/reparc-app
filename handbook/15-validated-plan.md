@@ -266,6 +266,8 @@ Updated 2026-10-06. This records what exists in code. It is not evidence of devi
 
 **Ring clock, v0.4.4 (2026-10-09, owner request):** The live header became a two-ring clock that folds to a slim row on scroll; less text on the panel and the exercise cards; the Finish button is ink, not lime. Checked: format, analyze, `flutter test`, and rendered previews of ready, warm-up, rest, and folded states (`screens-review/v044-design/`). **Not checked:** a real phone, TalkBack, and large text on a device.
 
+**Visual hierarchy, v0.4.5 (2026-10-09, owner request, D-032):** A review of every tab on a real phone against a 14-rule design checklist led to one pass over all screens: one focal point per screen, small-caps group labels, colour roles (lime action, teal link, category colours for data only), one selector style, folded warm-up and cool-down on the day page, a search-first Add food, and honest Analytics range names. Fixed blank chip labels in the theme. Checked: format, analyze, `flutter test` (360 passed), and rendered light and dark screenshots of every tab before and after. **Not checked:** a real phone build, TalkBack, and large text on a device.
+
 ## 16.12 AI context
 
 - **Purpose:** Give every contributor the current, evidence-based build order.
