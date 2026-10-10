@@ -507,6 +507,8 @@ class _SetRowState extends ConsumerState<SetRow> {
   Future<void> _toggleDone() async {
     final repo = ref.read(workoutRepoProvider);
     final done = !widget.set.completed;
+    if (done) await _fillFromHints();
+    if (!mounted) return;
     await guardedWrite(context, () async {
       if (done && widget.live && widget.settings.guideOn) {
         // The guide saves the measured time and starts the right rest.
@@ -518,6 +520,38 @@ class _SetRowState extends ConsumerState<SetRow> {
       if (done && widget.live && rest != null) await repo.startRest(widget.sessionId, rest);
     });
     if (done) unawaited(HapticFeedback.lightImpact());
+  }
+
+  /// One-tap set (launch review Block 3): ticking a set with empty fields
+  /// saves the values shown as hints, the set before or the plan's target
+  /// reps, so ✓ means "I did what was planned". Only on the user's tap; a
+  /// set that ends on its timer saves nothing it was not given. A field
+  /// with no hint stays empty.
+  Future<void> _fillFromHints() async {
+    final s = widget.set;
+    final p = widget.previous;
+    if (widget.cols == SetColumns.time) return;
+    final load = widget.cols == SetColumns.loadReps && s.load == null && parseDecimal(_load.text) == null
+        ? p?.load
+        : null;
+    final reps = s.reps == null && parseWhole(_reps.text) == null ? (p?.reps ?? widget.targetReps) : null;
+    if (load == null && reps == null) return;
+    if (load != null) _load.text = _num(load);
+    if (reps != null) _reps.text = '$reps';
+    try {
+      await ref
+          .read(workoutRepoProvider)
+          .updateSet(
+            s.id,
+            SetEntriesCompanion(
+              load: load == null ? const Value.absent() : Value(load),
+              loadUnit: load == null ? const Value.absent() : Value(p?.loadUnit ?? _unit),
+              reps: reps == null ? const Value.absent() : Value(reps),
+            ),
+          );
+    } catch (_) {
+      if (mounted) showMessage(context, 'Not saved. Try again.');
+    }
   }
 
   /// Fills load and reps from the last set, on the user's tap. The set is

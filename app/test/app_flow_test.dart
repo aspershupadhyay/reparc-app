@@ -224,6 +224,36 @@ void main() {
     await unmount(tester);
   });
 
+  testWidgets('one tap on an empty set saves the weight and reps shown as hints', (tester) async {
+    await pumpApp(tester, at: '/workout');
+    await tester.tap(find.widgetWithText(FilledButton, 'Start workout'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.widgetWithText(OutlinedButton, 'Add exercise'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.widgetWithText(OutlinedButton, 'Create your own'));
+    await tester.pumpAndSettle();
+    await tester.enterText(find.widgetWithText(TextField, 'Name'), 'Squat');
+    await tester.tap(find.widgetWithText(FilledButton, 'Save exercise'));
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byType(TextField).at(0), '100');
+    await tester.enterText(find.byType(TextField).at(1), '5');
+    await tester.pumpAndSettle();
+    await tester.tap(find.bySemanticsLabel('Set 1 complete'));
+    await tester.pumpAndSettle();
+    // The guide fills set 2 from set 1; empty it, so its fields show
+    // only the hints (100 and 5 from set 1).
+    var sets = await (db.select(db.setEntries)..orderBy([(s) => OrderingTerm.asc(s.position)])).get();
+    await (db.update(db.setEntries)..where((s) => s.id.equals(sets[1].id))).write(
+      const SetEntriesCompanion(load: Value(null), loadUnit: Value(null), reps: Value(null)),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(find.bySemanticsLabel('Set 2 complete'));
+    await tester.pumpAndSettle();
+    sets = await (db.select(db.setEntries)..orderBy([(s) => OrderingTerm.asc(s.position)])).get();
+    expect((sets[1].completed, sets[1].load, sets[1].loadUnit, sets[1].reps), (true, 100.0, 'kg', 5));
+    await unmount(tester);
+  });
+
   testWidgets('browse the library, open a library exercise, and log it', (tester) async {
     // Reduced motion keeps the photo loop still so the test can settle.
     tester.platformDispatcher.accessibilityFeaturesTestValue = const FakeAccessibilityFeatures(disableAnimations: true);
