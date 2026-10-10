@@ -63,7 +63,12 @@ test("sealed relay values cannot be read with another key or moved to another sl
   assert.equal(a.open(sealed, "result:c_1"), '{"meal":"oats"}');
   assert.equal(a.open(sealed, "result:c_2"), undefined);
   assert.equal(new Sealer(`${OWNER}x`).open(sealed, "result:c_1"), undefined);
-  const tampered = sealed.slice(0, -2) + (sealed.endsWith("A") ? "BB" : "AA");
+  // Flip one bit of the tag in the decoded bytes. Editing the base64url text
+  // can change only the unused low bits of the last character, which decode
+  // to the same bytes and made this test fail now and then.
+  const raw = Buffer.from(sealed, "base64url");
+  raw.writeUInt8(raw.readUInt8(raw.length - 1) ^ 1, raw.length - 1);
+  const tampered = raw.toString("base64url");
   assert.equal(a.open(tampered, "result:c_1"), undefined);
 });
 

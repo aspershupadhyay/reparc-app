@@ -14,6 +14,7 @@ import '../../data/models.dart';
 import '../../data/providers.dart';
 import '../workout/guide_controller.dart';
 import '../../health/health_sync.dart';
+import '../../core/distribution.dart';
 import '../../updates/update_controller.dart';
 import '../workout/session_clock.dart';
 
@@ -42,7 +43,8 @@ class AppShell extends ConsumerWidget {
     // Health write-back runs only while a write feature is on (D-020).
     if (ref.watch(currentSettingsProvider).health.any((h) => h.startsWith('write'))) ref.watch(healthSyncProvider);
     // The once-a-day update check (D-029). It only reads release data.
-    ref.watch(autoUpdateCheckProvider);
+    // Google Play delivers its own updates (handbook 17.10).
+    if (!playBuild) ref.watch(autoUpdateCheckProvider);
     // The guided workout ticks while a workout is live (handbook 4.13).
     if (live != null) ref.read(guideProvider.notifier).attach();
     return Scaffold(

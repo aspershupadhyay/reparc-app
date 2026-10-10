@@ -1,6 +1,6 @@
 import 'dart:io';
 
-import 'package:drift/drift.dart' show OrderingTerm;
+import 'package:drift/drift.dart' show OrderingTerm, Value;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -145,6 +145,44 @@ void main() {
     expect(session.status, SessionStatus.finished);
     expect(find.byType(SessionDetailScreen), findsOneWidget);
     expect(find.text('Finished'), findsOneWidget);
+    await unmount(tester);
+  });
+
+  testWidgets('a set that becomes done keeps a weight typed on screen', (tester) async {
+    await pumpApp(tester, at: '/workout');
+    await tester.tap(find.widgetWithText(FilledButton, 'Start workout'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.widgetWithText(OutlinedButton, 'Add exercise'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.widgetWithText(OutlinedButton, 'Create your own'));
+    await tester.pumpAndSettle();
+    await tester.enterText(find.widgetWithText(TextField, 'Name'), 'Squat');
+    await tester.tap(find.widgetWithText(FilledButton, 'Save exercise'));
+    await tester.pumpAndSettle();
+
+    // A value on screen that did not reach the database, as when text
+    // comes in without a key press (launch review, 2026-10-10).
+    final load = tester.widget<TextField>(find.byType(TextField).at(0)).controller!;
+    load.text = '30';
+    var first = (await (db.select(db.setEntries)..orderBy([(s) => OrderingTerm.asc(s.position)])).get()).first;
+    expect(first.load, isNull);
+
+    // Another change to the set rebuilds the row; the text stays.
+    await (db.update(db.setEntries)..where((s) => s.id.equals(first.id))).write(
+      const SetEntriesCompanion(note: Value('felt easy')),
+    );
+    await tester.pumpAndSettle();
+    expect(load.text, '30');
+
+    // The set ends (as the guide's set time running out does).
+    await (db.update(db.setEntries)..where((s) => s.id.equals(first.id))).write(
+      const SetEntriesCompanion(completed: Value(true)),
+    );
+    await tester.pumpAndSettle();
+    first = (await (db.select(db.setEntries)..where((s) => s.id.equals(first.id))).getSingle());
+    expect(first.load, 30);
+    expect(first.loadUnit, 'kg');
+    expect(first.reps, isNull, reason: 'Nothing is invented for an empty field');
     await unmount(tester);
   });
 

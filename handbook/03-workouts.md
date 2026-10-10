@@ -258,13 +258,15 @@ Built 2026-10-08 (D-031). Owner request: less typing, timers that run on their o
 
 The user can still tap **Set done**, **Start now** (ends the rest early), **+15 s**, **Stop timer**, or **End rest** at any time.
 
+**Taps at a change (launch review, 2026-10-10).** The main button changes in place: "Skip rest" becomes "Set done" when the next set starts on its own, and "Set done" becomes "Skip rest" when a rest starts. A tap on the main button in the first 1.5 s after a set or rest starts is ignored, because it was meant for the button before. This stops one late tap from ticking a new set with no weight or reps, or skipping a rest by a double tap. The tick in the set list is not affected (`GuideController.tapSetDone`, `tapSkipRest`).
+
 **Switches.** Me → Workout guide → **Run on its own**: **End each set on time** and **Start the next set on its own**. Both are on by default. With them off, the user starts each set and taps **Set done**, as in the first review. A set that ended on a set time (not a timed set) saves no duration, because the time is a setting, not a measurement.
 
 **Pause.** Pause stops the set clock and the rest. "Paused." and "Back to it." cut off any cue that still plays. On resume the rest goes on from where it was (`WorkoutRepository.resume` moves the rest start by the paused time).
 
 **Stop.** **Stop timer** (set) and **End rest** (rest) are quiet text buttons, away from **+15 s**. They cut off the voice. **+15 s** adds time to a timed set or to the rest.
 
-**What is saved.** Only measured values. The duration of a rep set is the time from **Start set** to **Set done**. A timed set that ran to its time saves that time. A rep set that ended on a guessed time saves none. A time the user typed on a rep set is kept. The rest really taken is saved on the set before, when the next set starts. The guide never saves reps or load; the user types those. Ticking a set in the list also starts the right rest.
+**What is saved.** Only measured values. The duration of a rep set is the time from **Start set** to **Set done**. A timed set that ran to its time saves that time. A rep set that ended on a guessed time saves none. A time the user typed on a rep set is kept. The rest really taken is saved on the set before, when the next set starts. The guide never saves reps or load; the user types those. When a set becomes done (its time ran out, or a tap), a weight, reps, or time that is on screen but not saved yet is saved first, so nothing the user typed is lost. A value the app wrote, such as a measured time, is never overwritten (`SetRow._saveTyped`, launch review 2026-10-10). Ticking a set in the list also starts the right rest.
 
 **Screen.** While the guide runs a live workout the screen stays on, so cues play on time (`core/screen_awake.dart`, shared with AI connections). It goes off when the workout ends or the guide is off.
 

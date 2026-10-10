@@ -1,12 +1,19 @@
 import 'package:flutter/material.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
+import 'package:url_launcher/url_launcher.dart';
 
+import '../../core/distribution.dart';
 import '../../core/tokens.dart';
 import '../../core/widgets.dart';
 
+/// The full privacy policy. Google Play and Health Connect link to the same
+/// address (handbook 17.10).
+const privacyPolicyUrl = 'https://aspershupadhyay.github.io/reparc/privacy.html';
+
 /// Plain summary of the data flows in this version.
 ///
-/// Keep this text true to the code. Update it when a data flow changes.
+/// Keep this text true to the code and to site/privacy.html. Update both
+/// when a data flow changes.
 class PrivacyScreen extends StatelessWidget {
   const PrivacyScreen({super.key});
 
@@ -39,11 +46,14 @@ class PrivacyScreen extends StatelessWidget {
         'Backups go to your own iCloud or Google account: through the phone\'s backup, or as a file encrypted with '
             'your passphrase. AI and health switches are not restored on a new phone.',
       ),
-      (
-        LucideIcons.refreshCw,
-        'Update check: once a day (you can turn it off in Me → App updates), RepArc asks GitHub for the latest '
-            'release. It sends no records, account, or device data. GitHub sees your IP address, as with any website.',
-      ),
+      if (playBuild)
+        (LucideIcons.refreshCw, 'Updates come from Google Play. RepArc does not check for updates itself.')
+      else
+        (
+          LucideIcons.refreshCw,
+          'Update check: once a day (you can turn it off in Me → App updates), RepArc asks GitHub for the latest '
+              'release. It sends no records, account, or device data. GitHub sees your IP address, as with any website.',
+        ),
       (LucideIcons.download, 'Records leave the phone only through the choices above or a file you export yourself.'),
       (
         LucideIcons.lock,
@@ -74,6 +84,12 @@ class PrivacyScreen extends StatelessWidget {
                   ),
               ],
             ),
+          ),
+          const SizedBox(height: Space.m),
+          OutlinedButton.icon(
+            onPressed: () => launchUrl(Uri.parse(privacyPolicyUrl), mode: LaunchMode.externalApplication),
+            icon: const Icon(LucideIcons.externalLink, size: IconSizes.s),
+            label: const Text('Read the full privacy policy'),
           ),
           const SizedBox(height: Space.l),
           Text(

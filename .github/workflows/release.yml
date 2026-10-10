@@ -10,7 +10,11 @@
 # - iPhone: not signed by Apple. It is ad-hoc signed with its entitlements so
 #   AltStore or Sideloadly can re-sign it with the user's own Apple ID.
 #   App Store and TestFlight delivery need the owner's Apple developer account.
-# The app never downloads or installs these files itself (AGENTS.md).
+# The app never installs these files by itself (AGENTS.md).
+#
+# It also makes the Google Play App Bundle (handbook 17.10) and keeps it as
+# a private workflow artifact named play-bundle. It is never published to
+# the public repository.
 name: Release
 
 on:
@@ -115,6 +119,33 @@ jobs:
           path: app/build/apk/*.apk
           if-no-files-found: error
           retention-days: 7
+      # The Google Play build (handbook 17.10): the same app ID and version
+      # code, without the in-app installer. It stays a private workflow
+      # artifact; the owner uploads it in the Play Console. Play rejects a
+      # debug-signed bundle, so it is only made with the upload key.
+      - name: Google Play App Bundle
+        id: aab
+        run: |
+          if [ ! -f android/key.properties ]; then
+            echo "::warning::No release key secrets: no Play bundle was made."
+            exit 0
+          fi
+          flutter build appbundle --release --dart-define=REPARC_STORE=play
+          m=$(find build/app/intermediates -path '*release*' -name AndroidManifest.xml -path '*merged_manifest*' | head -1)
+          if grep -q 'REQUEST_INSTALL_PACKAGES' "$m"; then
+            echo "::error::The Play bundle still asks to install packages."
+            exit 1
+          fi
+          mkdir -p build/play
+          mv build/app/outputs/bundle/release/app-release.aab "build/play/reparc-play-${TAG}.aab"
+          echo "made=true" >> "$GITHUB_OUTPUT"
+      - if: steps.aab.outputs.made == 'true'
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: play-bundle
+          path: app/build/play/*.aab
+          if-no-files-found: error
+          retention-days: 30
 
   ios:
     name: iPhone IPA
@@ -158,6 +189,8 @@ jobs:
       - uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7
         with:
           path: dist
+          # The Play bundle stays private: only the APKs and the IPA.
+          pattern: '{android,ios}'
           merge-multiple: true
       - name: Checksums
         run: cd dist && sha256sum reparc-android*.apk reparc-ios-unsigned.ipa > SHA256SUMS.txt && cat SHA256SUMS.txt

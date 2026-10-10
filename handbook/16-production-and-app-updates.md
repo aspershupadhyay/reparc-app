@@ -178,7 +178,69 @@ The release owner must confirm the current Apple and Google requirements before 
 
 **Limits.** Anyone can unpack an APK or IPA and read the compiled code; private source makes copying harder, not impossible. Code that was public under AGPL-3.0 stays available under AGPL-3.0 to anyone who copied it.
 
-**To confirm (owner):** the license for new versions. The app still ships under AGPL-3.0 (12.2), which lets anyone who gets the app ask for its source. Keeping the source private for new releases needs a different license, for example "all rights reserved". The owner is the only human author in the history, so the owner can choose this.
+**License:** Settled on 2026-10-10 (D-035). From 0.4.11 the app is all rights reserved; the gateway stays AGPL-3.0-only.
+
+## 17.10 Google Play build
+
+**Status:** Build set up 2026-10-10 (D-036). Not uploaded to Play yet. The Play Console steps below are the owner's.
+
+### Two builds, one app
+
+| | GitHub APK | Google Play App Bundle |
+|---|---|---|
+| Made by | `release.yml`, every `v*` release | `release.yml`, same run, only with the upload key |
+| Flag | none | `--dart-define=REPARC_STORE=play` |
+| Where | public `reparc` releases | private workflow artifact `play-bundle` (30 days) |
+| Updates | in-app check and **Download and install** (D-029) | Google Play |
+| `REQUEST_INSTALL_PACKAGES`, update file provider, installer channel | yes | removed |
+| Application ID, version code | `app.reparc.reparc`, pubspec build number | the same |
+
+- The switch is one define. Dart reads it in `lib/core/distribution.dart`. Gradle reads the same define and merges `android/app/src/play/AndroidManifest.xml`, which removes the permission and the provider, and sets `BuildConfig.PLAY_BUILD`, which leaves out the installer channel in `MainActivity`.
+- In the Play build, Me shows **Version** with "Updates come from Google Play" instead of App updates, Home shows no update banner, and Me → Privacy says updates come from Play.
+- CI (`ci.yml`, Android job) builds both on every pull request and checks each merged manifest.
+- **Signing:** use Play App Signing. Upload the bundle signed with the existing upload key (`ANDROID_KEYSTORE_*` secrets). Google then signs what users install with its own key. So a phone with the GitHub APK cannot update to the Play version in place: Android sees a different signature. Before switching a phone to the Play version, make a backup file (Me → Backup and restore), uninstall, install from Play, and restore.
+- **Version codes:** Play needs a higher version code for each upload. Raise the `+N` in `app/pubspec.yaml` with every release, as now.
+
+### Exact alarms
+
+The app keeps `SCHEDULE_EXACT_ALARM` (decided 2026-10-10). Android's guide says apps that need precisely timed, user-facing actions and are not alarm, timer, or calendar apps should use `SCHEDULE_EXACT_ALARM`, which the user grants in Android settings. `USE_EXACT_ALARM`, which Play restricts, is not used. RepArc uses it only for the rest and set cues of a guided workout on the lock screen. Without it, those cues can come late, and only the start and end cues are set (handbook 4.13). The launch review called this a risk. Check the current Play policy page before the first upload.
+
+### Play Console answers (draft, from the code on 2026-10-10)
+
+Check each answer against the app before submitting. If a data flow changes, update these, `site/privacy.html`, and Me → Privacy together.
+
+**Privacy policy URL:** https://aspershupadhyay.github.io/reparc/privacy.html. The app links to it from Me → Privacy (`privacyPolicyUrl`).
+
+**Data safety:**
+
+- Does the app collect or share user data? **No.** Google's definition counts data sent off the device by the developer. RepArc has no server, no analytics, and no SDK that sends data. Health Connect reads and writes stay on the phone.
+- Data sent off the phone only by the user's own action is outside "collection": a backup to their Google account, a file they export, and an AI connection they turn on, which sends answers to the AI app they chose. Describe these in the privacy policy (done).
+- Encrypted in transit: the gateway relay uses HTTPS, and messages are sealed with the user's key.
+- Users can ask for deletion: data lives only on the phone. Me → Export or delete removes it.
+
+**Health apps declaration and Health Connect permissions:** one reason per permission.
+
+| Permission | Feature | Reason to enter |
+|---|---|---|
+| `READ_STEPS` | Me → Health apps → Steps | Shows the user's daily steps next to their workouts and meals. |
+| `READ_ACTIVE_CALORIES_BURNED` | Active energy | Shows energy burned next to energy eaten. |
+| `READ_WEIGHT` | Body weight | Shows body weight in the user's progress charts. |
+| `WRITE_EXERCISE` | Save workouts to Health Connect | Saves finished workouts so the user's other health apps see them. |
+| `WRITE_NUTRITION` | Save meals to Health Connect | Saves eaten meals so the user's other health apps see them. |
+
+Each is asked for only when the user switches that feature on. Health data is not sent to any server, not used for ads, and not sold.
+
+**Content rating and audience:** fitness, no user-generated content shared with others, no ads, no purchases. Target 18+ (16+ at the youngest), as the launch review proposes. **To confirm (owner).**
+
+### Owner steps before the first upload
+
+1. Pick the developer account type: personal (needs a closed test with 12 testers for 14 days) or organisation (needs a D-U-N-S number). Start the closed test early.
+2. Decide the company or legal name and the support email (open since 2026-10-10). Then add the email to the store listing, the privacy policy, and a Help row in Me.
+3. Re-make the voice clips on an ElevenLabs plan that allows commercial use, or record new ones. The current clips come from the free plan, which allows non-commercial use only. The owner chose to keep them until then (2026-10-10). **This must be done before a public Play release.**
+4. Run a release. Download `play-bundle` from the Release run (Actions → Release → the run → Artifacts) and upload it to the closed-test track.
+5. Fill in Data safety, the health apps declaration, the content rating, and the store listing (icon 512 px, feature graphic 1024 × 500, 4–8 phone screenshots, short and full description).
+
+**To confirm:** a qualified coach review of the coaching text and plans (D-016, D-025); TalkBack, large text, and a low-cost phone on a real device.
 
 ## AI context
 

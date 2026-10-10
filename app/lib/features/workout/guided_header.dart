@@ -498,14 +498,14 @@ class _PrimaryButton extends ConsumerWidget {
     final guide = ref.read(guideProvider.notifier);
     final next = nextSet(detail);
     final (String label, IconData icon, VoidCallback? onTap) = switch (g.phase) {
-      GuidePhase.set => ('Set done', LucideIcons.check, () => guardedWrite(context, guide.finishSet)),
+      GuidePhase.set => ('Set done', LucideIcons.check, () => guardedWrite(context, guide.tapSetDone)),
       _ when next == null => ('Start', LucideIcons.play, null),
       _ when detail.session.restStartedAt != null => (
         'Skip rest',
         LucideIcons.skipForward,
-        () {
-          unawaited(HapticFeedback.mediumImpact());
-          guardedWrite(context, guide.startSet);
+        () async {
+          final done = await guardedWrite(context, guide.tapSkipRest);
+          if (done ?? false) unawaited(HapticFeedback.mediumImpact());
         },
       ),
       _ => (

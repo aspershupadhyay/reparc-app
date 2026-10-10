@@ -6,6 +6,7 @@ import 'package:package_info_plus/package_info_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../core/clock.dart';
+import '../core/distribution.dart';
 import '../data/providers.dart';
 import 'apk_installer.dart';
 import 'update_check.dart';
@@ -23,6 +24,8 @@ final fetchJsonProvider = Provider<FetchJson>((ref) => httpGetJson);
 /// The newest release seen by the last check, when it is newer than the
 /// installed build. Null when the app is up to date or never checked.
 final availableUpdateProvider = Provider<ReleaseInfo?>((ref) {
+  // Google Play delivers its own updates (handbook 17.10).
+  if (playBuild) return null;
   final latest = ReleaseInfo.fromJson(ref.watch(currentSettingsProvider).updatesLatest);
   final installed = ref.watch(installedVersionProvider).value;
   if (latest == null || installed == null) return null;

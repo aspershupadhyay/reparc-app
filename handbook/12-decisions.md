@@ -185,7 +185,7 @@ Keep major choices here. Update the related chapter when a decision changes.
 
 ## D-014: License the project under GNU AGPL v3.0
 
-**Status:** Accepted by the user.
+**Status:** Superseded by D-035 on 2026-10-10 for the app. The gateway keeps this license.
 **Date:** 2026-10-05.
 
 **Choice:** Use GNU Affero General Public License version 3.0 only (SPDX: AGPL-3.0-only).
@@ -464,3 +464,39 @@ The renders from `app/tool/body/render_body_test.dart` were checked from the fro
 - A trademark search for "RepArc".
 - The website, README, and handbook prose still say "Reparc".
 - A test on a real phone after the next release, covering the opening's timing, the splash in both themes, and the launcher icon.
+
+## D-035: The app is closed source
+
+**Status:** Accepted by the user (owner answer, 2026-10-10: "remove the license as it's closed source").
+**Date:** 2026-10-10.
+
+**Context:** The source repository has been private since 2026-10-08 (17.9), but the app still said GNU AGPL v3.0. Under AGPL, anyone who installs the app can ask for its source. The launch review (2026-10-10) marked this as a decision that can block a Play launch.
+
+**Choice:**
+
+- From version 0.4.11, the app and its assets are proprietary: "© 2026 RepArc. All rights reserved." The root `LICENSE` says so.
+- `gateway/` stays AGPL-3.0-only (`gateway/LICENSE`), because parts of it are adapted from Latch under that license. Users deploy the gateway to their own Vercel account; it is not part of the store app.
+- Third-party parts keep their own licenses and stay in Me → Licenses: Inter (OFL 1.1), Lucide (ISC), Free Exercise DB (Unlicense), the MakeHuman mesh (CC0 1.0), and the USDA food data (CC0 1.0).
+- Me → Licenses no longer says AGPL. The website no longer says "open source" for the app.
+- Versions before 0.4.11 were published under AGPL-3.0-only. Copies of those versions keep that license.
+
+**Supersedes:** D-014 for the app.
+
+**To confirm:** The copyright holder's legal name (a person or a company). The owner will decide this with the support email (17.10).
+
+## D-036: A Google Play build beside the GitHub test build
+
+**Status:** Accepted by the user (owner answer, 2026-10-10: "separate APK so we can test it before we publish, and a Play Store build so we can publish it").
+**Date:** 2026-10-10.
+
+**Context:** Google Play does not allow an app to install its own updates. The owner tests each release on a phone through the in-app update flow (D-029).
+
+**Choice:** Each release makes two builds from the same code, with the same application ID and version code:
+
+- **GitHub APKs** (public `reparc` releases), for testing on the owner's phone. They keep the update check and **Download and install** (D-029).
+- **Google Play App Bundle** (`--dart-define=REPARC_STORE=play`), uploaded by hand in the Play Console. It has no update check, no download, no installer channel, no update file provider, and no `REQUEST_INSTALL_PACKAGES`. Play delivers its updates. It is kept as a private workflow artifact, never published.
+
+This is one app, not a separate dev variant. See 17.10.
+
+**Rule:** CI builds the Play bundle on every pull request and fails if its merged manifest still has `REQUEST_INSTALL_PACKAGES` or the update file provider.
+

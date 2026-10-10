@@ -1,3 +1,4 @@
+import java.util.Base64
 import java.util.Properties
 
 plugins {
@@ -13,6 +14,14 @@ val keystoreProperties = Properties().apply {
     if (file.exists()) file.inputStream().use { load(it) }
 }
 val hasReleaseKey = keystoreProperties.getProperty("storeFile") != null
+
+// The Google Play build (handbook 17.10): `flutter build appbundle
+// --dart-define=REPARC_STORE=play`. Flutter hands the defines to Gradle as
+// base64 text, so the Dart code and this file read the same one switch.
+val isPlayBuild: Boolean = (project.findProperty("dart-defines") as String?)
+    .orEmpty()
+    .split(",")
+    .any { define -> String(Base64.getDecoder().decode(define), Charsets.UTF_8) == "REPARC_STORE=play" }
 
 android {
     namespace = "app.reparc.reparc"
@@ -40,6 +49,12 @@ android {
         // flag during build.
         versionCode = flutter.versionCode
         versionName = flutter.versionName
+        // MainActivity leaves out the installer channel in the Play build.
+        buildConfigField("boolean", "PLAY_BUILD", isPlayBuild.toString())
+    }
+
+    buildFeatures {
+        buildConfig = true
     }
 
     signingConfigs {
@@ -59,6 +74,11 @@ android {
     // 0.4.9 download it (handbook 17.3). The Flutter plugin turns it off.
     if (project.hasProperty("split-per-abi")) {
         splits.abi.isUniversalApk = true
+    }
+
+    // The Play build drops the in-app installer and REQUEST_INSTALL_PACKAGES.
+    if (isPlayBuild) {
+        sourceSets.getByName("release").manifest.srcFile("src/play/AndroidManifest.xml")
     }
 
     buildTypes {

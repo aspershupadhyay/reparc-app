@@ -1,0 +1,15 @@
+<!-- Google Play build only (handbook 17.10): Play delivers updates, so the
+     in-app installer and its permission are removed. Merged over the main
+     manifest when the build has REPARC_STORE=play (app/build.gradle.kts). -->
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
+    <uses-permission
+        android:name="android.permission.REQUEST_INSTALL_PACKAGES"
+        tools:node="remove" />
+    <application>
+        <provider
+            android:name=".UpdateFileProvider"
+            android:authorities="${applicationId}.updates"
+            tools:node="remove" />
+    </application>
+</manifest>

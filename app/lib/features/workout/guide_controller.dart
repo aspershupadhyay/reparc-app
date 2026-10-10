@@ -176,6 +176,13 @@ class GuideController extends Notifier<GuideState> {
   bool _away = false;
   AppLifecycleListener? _life;
 
+  /// When a set or a rest last began. The main button changes there ("Skip
+  /// rest" becomes "Set done"), so a tap that lands just after was meant for
+  /// the old button and is ignored (launch review, 2026-10-10).
+  DateTime? _changedAt;
+  static const tapGuard = Duration(milliseconds: 1500);
+  bool get _justChanged => _changedAt != null && _now.difference(_changedAt!) < tapGuard;
+
   WorkoutRepository get _repo => ref.read(workoutRepoProvider);
   DateTime get _now => ref.read(clockProvider)().toUtc();
 
@@ -320,6 +327,7 @@ class GuideController extends Notifier<GuideState> {
     _toldNext = false;
     _lastSet = 0;
     _lastRest = -1;
+    _changedAt = _now;
     state = GuideState(
       phase: GuidePhase.set,
       setId: s.id,
@@ -370,6 +378,22 @@ class GuideController extends Notifier<GuideState> {
 
   /// Skips the rest and starts the next set now.
   Future<void> skipRest() => startSet();
+
+  /// "Set done" on the main button. Returns false when the tap came just
+  /// after the button changed, and nothing was done.
+  Future<bool> tapSetDone() async {
+    if (_justChanged) return false;
+    await finishSet();
+    return true;
+  }
+
+  /// "Skip rest" on the main button. Returns false when the tap came just
+  /// after the button changed, and nothing was done.
+  Future<bool> tapSkipRest() async {
+    if (_justChanged) return false;
+    await startSet();
+    return true;
+  }
 
   /// Gives the set being done more time.
   void addTime(int seconds) {
@@ -447,6 +471,7 @@ class GuideController extends Notifier<GuideState> {
       return;
     }
     await _repo.startRest(sessionId, rest, from: from);
+    _changedAt = _now;
     if (!quiet) _say(Clips.rest(rest));
     // Ask once, in context: the first guided rest is when the alerts help.
     if (settings.lockAlerts && !settings.restAlertAsked) {

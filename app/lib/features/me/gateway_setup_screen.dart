@@ -193,7 +193,7 @@ class _GatewaySetupScreenState extends ConsumerState<GatewaySetupScreen> {
             icon: LucideIcons.shieldCheck,
             text:
                 'The gateway stores no workouts, meals, or health data. Questions and answers wait there for a few '
-                'seconds, encrypted with your key, then expire. It is open source in the RepArc repository.',
+                'seconds, encrypted with your key, then expire.',
           ),
         ],
       ),

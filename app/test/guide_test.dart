@@ -631,6 +631,42 @@ void main() {
       expect(set.durationSec, 45);
     });
 
+    test('a tap just after the main button changes is ignored', () async {
+      final sessionId = await startDay();
+      final guide = c.read(guideProvider.notifier);
+      final repo = WorkoutRepository(db, clock.call);
+      await guide.startSet();
+      await ticks(24);
+      expect(c.read(guideProvider).phase, GuidePhase.rest);
+      // The rest ends and the next set starts on its own. A tap meant for
+      // "Skip rest" lands on "Set done" at 0:00.
+      await ticks(60);
+      expect(c.read(guideProvider).phase, GuidePhase.set);
+      expect(await guide.tapSetDone(), isFalse);
+      var sets = (await repo.loadSession(sessionId))!.exercises.single.sets;
+      expect(sets.last.completed, isFalse, reason: 'The new set is not ticked by a late tap');
+
+      clock.advance(const Duration(seconds: 2));
+      expect(await guide.tapSetDone(), isTrue);
+      sets = (await repo.loadSession(sessionId))!.exercises.single.sets;
+      expect(sets.last.completed, isTrue);
+    });
+
+    test('a tap just after the rest starts does not skip it', () async {
+      await manual();
+      await startDay();
+      final guide = c.read(guideProvider.notifier);
+      await guide.startSet();
+      clock.advance(const Duration(seconds: 20));
+      expect(await guide.tapSetDone(), isTrue);
+      expect(c.read(guideProvider).phase, GuidePhase.rest);
+      expect(await guide.tapSkipRest(), isFalse, reason: 'A double tap on Set done');
+      expect(c.read(guideProvider).phase, GuidePhase.rest);
+      clock.advance(const Duration(seconds: 2));
+      expect(await guide.tapSkipRest(), isTrue);
+      expect(c.read(guideProvider).phase, GuidePhase.set);
+    });
+
     test('the v6 upgrade moves plan targets out of the measured time', () async {
       final sessionId = await startDay();
       final repo = WorkoutRepository(db, clock.call);
