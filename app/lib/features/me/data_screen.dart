@@ -39,7 +39,7 @@ class _DataScreenState extends ConsumerState<DataScreen> {
       await SharePlus.instance.share(
         ShareParams(
           files: [XFile(file.path, mimeType: 'application/json')],
-          subject: 'Reparc export $day',
+          subject: 'RepArc export $day',
           sharePositionOrigin: box == null ? null : box.localToGlobal(Offset.zero) & box.size,
         ),
       );
@@ -56,7 +56,7 @@ class _DataScreenState extends ConsumerState<DataScreen> {
       title: 'Delete all records?',
       body:
           'This deletes every workout, plan, exercise, meal, food, and setting on this phone. '
-          'Reparc has no other copy. Export first if you want to keep them.',
+          'RepArc has no other copy. Export first if you want to keep them.',
       confirmLabel: 'Continue',
       destructive: true,
     );
@@ -112,8 +112,8 @@ class _DataScreenState extends ConsumerState<DataScreen> {
                 Text('Phone backups', style: t.titleMedium),
                 const SizedBox(height: Space.s),
                 Text(
-                  'Reparc does not run its own backup. Your phone\'s system backup may or may not include '
-                  'Reparc records. Do not rely on it. Export a copy to be sure.',
+                  'RepArc does not run its own backup. Your phone\'s system backup may or may not include '
+                  'RepArc records. Do not rely on it. Export a copy to be sure.',
                   style: t.bodyMedium,
                 ),
               ],

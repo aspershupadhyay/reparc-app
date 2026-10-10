@@ -1,6 +1,6 @@
-/// Reparc data tools for AI clients (MCP).
+/// RepArc data tools for AI clients (MCP).
 ///
-/// These tools read a Reparc export file: the JSON the user creates in
+/// These tools read a RepArc export file: the JSON the user creates in
 /// Me → AI connections (or Me → Export). They never change records. Tools
 /// that "propose" a roadmap or meal plan only check an AI's plan against
 /// the import format, so the user can review it and import it in the app.
@@ -26,7 +26,7 @@ class ReparcSnapshot {
         for (final s in (export['scopes'] as List? ?? const ['workout', 'meal', 'body'])) s as String,
       ],
       _t = (export['tables'] as Map? ?? const {}).cast<String, Object?>() {
-    if (export['format'] != 'reparc-export') throw const FormatException('Not a Reparc export file.');
+    if (export['format'] != 'reparc-export') throw const FormatException('Not a RepArc export file.');
   }
 
   final String? exportedAt;
@@ -76,7 +76,7 @@ const reparcTools = <ReparcTool>[
   ReparcTool(
     'get_profile_and_targets',
     'The user\'s profile (sex, age, height, weight, activity, goal, diet) and the daily nutrition targets '
-        'Reparc calculates from it, each with its rule and source. Missing fields are null.',
+        'RepArc calculates from it, each with its rule and source. Missing fields are null.',
     {'type': 'object', 'properties': {}},
     'body',
   ),
@@ -143,14 +143,14 @@ const reparcTools = <ReparcTool>[
   ),
   ReparcTool(
     'get_import_formats',
-    'The JSON formats Reparc can import: a roadmap and a day meal plan. Use them to write a plan the user can '
-        'paste into Me → AI connections → Import a plan. Reparc shows a preview and asks before saving.',
+    'The JSON formats RepArc can import: a roadmap and a day meal plan. Use them to write a plan the user can '
+        'paste into Me → AI connections → Import a plan. RepArc shows a preview and asks before saving.',
     {'type': 'object', 'properties': {}},
     null,
   ),
   ReparcTool(
     'check_roadmap_proposal',
-    'Checks a roadmap written in the Reparc import format and returns problems, if any. It does not save '
+    'Checks a roadmap written in the RepArc import format and returns problems, if any. It does not save '
         'anything.',
     {
       'type': 'object',
@@ -163,7 +163,7 @@ const reparcTools = <ReparcTool>[
   ),
   ReparcTool(
     'check_meal_plan_proposal',
-    'Checks a day meal plan written in the Reparc import format, adds up its nutrients, and compares them '
+    'Checks a day meal plan written in the RepArc import format, adds up its nutrients, and compares them '
         'with the user\'s targets. It does not save anything.',
     {
       'type': 'object',
@@ -560,7 +560,7 @@ const importFormats = <String, Object?>{
     'kind': 'reparc-roadmap',
     'description':
         'A weekly training roadmap. Days in order. Every day should start with warm-up items. '
-        'exerciseId: a Reparc ID when known (for example "bench-press" or "lib:Pushups"), else any short '
+        'exerciseId: a RepArc ID when known (for example "bench-press" or "lib:Pushups"), else any short '
         'ID starting with "ai:". sets, repsLow, repsHigh, seconds, restSec, and rir are whole numbers.',
     'example': {
       'kind': 'reparc-roadmap',
@@ -602,7 +602,7 @@ const importFormats = <String, Object?>{
     'kind': 'reparc-meal-plan',
     'description':
         'One day of meals. Values are per 100 g of each food. Leave a value out if you do not know it; do not '
-        'write 0 for unknown. Reparc adds the foods as planned, not eaten, after the user approves.',
+        'write 0 for unknown. RepArc adds the foods as planned, not eaten, after the user approves.',
     'example': {
       'kind': 'reparc-meal-plan',
       'day': '2026-03-02',

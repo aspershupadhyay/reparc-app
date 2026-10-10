@@ -15,11 +15,11 @@ class PrivacyScreen extends StatelessWidget {
     final t = Theme.of(context).textTheme;
     const facts = [
       (LucideIcons.smartphone, 'Your workouts, meals, foods, and settings are saved in a database on this phone.'),
-      (LucideIcons.cloudOff, 'Reparc has no account and no Reparc server. Nothing is sent to the Reparc project.'),
-      (LucideIcons.eyeOff, 'Reparc does not send product-use analytics or crash reports.'),
+      (LucideIcons.cloudOff, 'RepArc has no account and no RepArc server. Nothing is sent to the RepArc project.'),
+      (LucideIcons.eyeOff, 'RepArc does not send product-use analytics or crash reports.'),
       (
         LucideIcons.heartPulse,
-        'Apple Health or Health Connect: Reparc asks for one data type at a time, only when you switch it on in '
+        'Apple Health or Health Connect: RepArc asks for one data type at a time, only when you switch it on in '
             'Me → Health apps. It reads steps, active energy, or weight, and writes finished workouts and eaten meals. '
             'Health values are not copied to any server and are never used for ads.',
       ),
@@ -41,7 +41,7 @@ class PrivacyScreen extends StatelessWidget {
       ),
       (
         LucideIcons.refreshCw,
-        'Update check: once a day (you can turn it off in Me → App updates), Reparc asks GitHub for the latest '
+        'Update check: once a day (you can turn it off in Me → App updates), RepArc asks GitHub for the latest '
             'release. It sends no records, account, or device data. GitHub sees your IP address, as with any website.',
       ),
       (LucideIcons.download, 'Records leave the phone only through the choices above or a file you export yourself.'),
@@ -77,7 +77,7 @@ class PrivacyScreen extends StatelessWidget {
           ),
           const SizedBox(height: Space.l),
           Text(
-            'Reparc records fitness and food information. It is not a medical service and does not give '
+            'RepArc records fitness and food information. It is not a medical service and does not give '
             'medical or diet treatment advice.',
             style: t.bodySmall,
           ),

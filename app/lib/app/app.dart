@@ -25,7 +25,7 @@ class ReparcApp extends ConsumerWidget {
       _ => ThemeMode.system,
     };
     return MaterialApp.router(
-      title: 'Reparc',
+      title: 'RepArc',
       debugShowCheckedModeBanner: false,
       theme: _light,
       darkTheme: _dark,

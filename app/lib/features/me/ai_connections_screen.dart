@@ -198,7 +198,7 @@ class _AiConnectionsScreenState extends ConsumerState<AiConnectionsScreen> {
               padding: const EdgeInsets.only(top: Space.s),
               child: StatusLine(
                 icon: LucideIcons.eyeOff,
-                text: 'Only tool names and times are kept, in memory, until you close Reparc. Requests and answers are never logged.',
+                text: 'Only tool names and times are kept, in memory, until you close RepArc. Requests and answers are never logged.',
               ),
             ),
           ],
@@ -295,7 +295,7 @@ class _WifiCard extends ConsumerWidget {
             StatusLine(
               icon: LucideIcons.info,
               text:
-                  'Keep Reparc open; the screen stays on while access is on. Cloud apps such as claude.ai and ChatGPT '
+                  'Keep RepArc open; the screen stays on while access is on. Cloud apps such as claude.ai and ChatGPT '
                   'cannot reach a phone on your Wi-Fi; use the online gateway for those.',
             ),
             const SizedBox(height: Space.s),
@@ -489,7 +489,7 @@ class _OnlineCard extends ConsumerWidget {
                 icon: LucideIcons.info,
                 text:
                     'In your AI app, add a custom connector or remote MCP server with this address. A browser page shows a '
-                    '4-letter code; approve the same code here. Keep Reparc open while the AI works.',
+                    '4-letter code; approve the same code here. Keep RepArc open while the AI works.',
               ),
             ],
           ),
@@ -646,7 +646,7 @@ class _OnlineCard extends ConsumerWidget {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text('Reparc shows it only once. Give your AI app the address and this header:'),
+          const Text('RepArc shows it only once. Give your AI app the address and this header:'),
           const SizedBox(height: Space.s),
           SelectableText(
             '$mcp\nAuthorization: Bearer $key',

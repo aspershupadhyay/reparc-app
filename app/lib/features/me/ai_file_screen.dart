@@ -24,7 +24,7 @@ import 'app_updates_screen.dart';
 
 /// Me → AI connections → Share a file (handbook 10.10).
 ///
-/// Reparc has no background AI access. The user chooses what to share,
+/// RepArc has no background AI access. The user chooses what to share,
 /// makes an export, and gives it to an AI app: either through the local MCP
 /// server (tool/mcp/server.dart) or by attaching the file to a chat. Plans
 /// an AI writes come back through Import, with a preview and approval.
@@ -55,7 +55,7 @@ class _AiFileScreenState extends ConsumerState<AiFileScreen> {
       await SharePlus.instance.share(
         ShareParams(
           files: [XFile(file.path, mimeType: 'application/json')],
-          subject: 'Reparc data for AI ($day)',
+          subject: 'RepArc data for AI ($day)',
           sharePositionOrigin: box == null ? null : box.localToGlobal(Offset.zero) & box.size,
         ),
       );
@@ -108,7 +108,7 @@ class _AiFileScreenState extends ConsumerState<AiFileScreen> {
                 const SizedBox(width: Space.m),
                 Expanded(
                   child: Text(
-                    'No live connection. Reparc never sends your records to an AI by itself. You choose what to '
+                    'No live connection. RepArc never sends your records to an AI by itself. You choose what to '
                     'share, make a file, and give it to the AI app you trust. Your data stays yours, for free.',
                     style: t.bodyMedium,
                   ),
@@ -146,7 +146,7 @@ class _AiFileScreenState extends ConsumerState<AiFileScreen> {
                 Text('With MCP (Claude Desktop, and other MCP apps)', style: t.titleSmall),
                 const SizedBox(height: Space.xs),
                 Text(
-                  'Build the Reparc MCP server once on your computer: in the project\'s app folder, run\n'
+                  'Build the RepArc MCP server once on your computer: in the project\'s app folder, run\n'
                   'dart compile exe tool/mcp/server.dart -o reparc-mcp\n'
                   'Then add it to your AI app\'s MCP settings with the path to your export file:',
                   style: t.bodySmall,
@@ -179,7 +179,7 @@ class _AiFileScreenState extends ConsumerState<AiFileScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Copy a prompt that tells the AI the exact format Reparc can import. Paste the answer back with '
+                  'Copy a prompt that tells the AI the exact format RepArc can import. Paste the answer back with '
                   'Import a plan.',
                   style: t.bodySmall,
                 ),

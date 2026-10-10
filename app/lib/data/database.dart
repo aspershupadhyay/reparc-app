@@ -213,10 +213,10 @@ class AiProposals extends Table with RecordColumns {
   DateTimeColumn get decidedAt => dateTime().nullable()();
 }
 
-/// Records Reparc wrote to Apple Health or Health Connect, so a record is
+/// Records RepArc wrote to Apple Health or Health Connect, so a record is
 /// never written twice (handbook 9.5). Added in v3.
 class HealthWrites extends Table {
-  /// ID of the Reparc record, for example a workout session ID.
+  /// ID of the RepArc record, for example a workout session ID.
   TextColumn get recordId => text()();
 
   /// 'workout' or 'meal'.

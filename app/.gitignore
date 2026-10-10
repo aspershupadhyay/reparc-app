@@ -49,4 +49,5 @@ app.*.map.json
 /tool/icons/out/
 /tool/screens/out/
 /tool/body/out/
+/tool/brand/out/
 __pycache__/

@@ -5,8 +5,8 @@ import 'package:health/health.dart';
 
 /// One health feature the user can switch on by itself (handbook 9.2).
 ///
-/// Each feature names one data type, whether Reparc reads or writes it, and
-/// why. Reparc asks the operating system for that type only when the user
+/// Each feature names one data type, whether RepArc reads or writes it, and
+/// why. RepArc asks the operating system for that type only when the user
 /// switches the feature on. Heart rate, sleep, location, and clinical records
 /// are not requested (handbook 9.3).
 enum HealthFeature {
@@ -27,14 +27,14 @@ enum HealthFeature {
   weight(
     'Body weight',
     'Read',
-    'Shows your latest weight so meal targets can use it. Reparc does not write weight.',
+    'Shows your latest weight so meal targets can use it. RepArc does not write weight.',
     HealthDataType.WEIGHT,
     HealthDataAccess.READ,
   ),
   writeWorkouts(
     'Workouts',
     'Write',
-    'Saves each finished Reparc workout as a strength training workout, with its start and end time.',
+    'Saves each finished RepArc workout as a strength training workout, with its start and end time.',
     HealthDataType.WORKOUT,
     HealthDataAccess.WRITE,
   ),

@@ -74,7 +74,7 @@ Future<void> openAndroidInstaller(String path) async {
 
 HttpClient _client() => HttpClient()
   ..connectionTimeout = const Duration(seconds: 15)
-  ..userAgent = 'Reparc-update';
+  ..userAgent = 'RepArc-update';
 
 Future<String> httpGetText(Uri url) async {
   final client = _client();

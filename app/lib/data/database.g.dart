@@ -9137,7 +9137,7 @@ class $HealthWritesTable extends HealthWrites
 }
 
 class HealthWrite extends DataClass implements Insertable<HealthWrite> {
-  /// ID of the Reparc record, for example a workout session ID.
+  /// ID of the RepArc record, for example a workout session ID.
   final String recordId;
 
   /// 'workout' or 'meal'.

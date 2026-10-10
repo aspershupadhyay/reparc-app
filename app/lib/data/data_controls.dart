@@ -81,9 +81,9 @@ class DataControls {
   /// Returns the number of records restored.
   Future<int> importJson(String json) async {
     final root = jsonDecode(json) as Map<String, dynamic>;
-    if (root['format'] != 'reparc-export') throw const FormatException('Not a Reparc export');
+    if (root['format'] != 'reparc-export') throw const FormatException('Not a RepArc export');
     final schema = root['schemaVersion'] as int? ?? 0;
-    if (schema > db.schemaVersion) throw const FormatException('Made by a newer version of Reparc');
+    if (schema > db.schemaVersion) throw const FormatException('Made by a newer version of RepArc');
     final tables = (root['tables'] as Map).cast<String, dynamic>();
     final ser = _IsoSerializer();
     List<Map<String, dynamic>> rows(String name) => [

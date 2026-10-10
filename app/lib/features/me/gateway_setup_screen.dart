@@ -12,9 +12,9 @@ import '../../core/widgets.dart';
 
 /// Guided setup of the owner's own gateway on Vercel (D-018).
 ///
-/// 1. Reparc makes an owner key; the user copies it.
+/// 1. RepArc makes an owner key; the user copies it.
 /// 2. Vercel's deploy page asks for it (REPARC_OWNER_KEY) and adds Upstash.
-/// 3. The user pastes the new address back here, and Reparc checks it.
+/// 3. The user pastes the new address back here, and RepArc checks it.
 class GatewaySetupScreen extends ConsumerStatefulWidget {
   const GatewaySetupScreen({super.key});
 
@@ -96,7 +96,7 @@ class _GatewaySetupScreenState extends ConsumerState<GatewaySetupScreen> {
         children: [
           Text(
             'The gateway is a small web service in your own free Vercel account. Your AI app talks to it over HTTPS, '
-            'and it passes each question to Reparc on this phone. Nobody else runs it or holds its key.',
+            'and it passes each question to RepArc on this phone. Nobody else runs it or holds its key.',
             style: t.bodyMedium?.copyWith(color: p.inkSoft),
           ),
           const SizedBox(height: Space.l),
@@ -125,7 +125,7 @@ class _GatewaySetupScreenState extends ConsumerState<GatewaySetupScreen> {
               StatusLine(
                 icon: LucideIcons.keyRound,
                 text:
-                    'This key is the master key of your gateway. Paste it only into Vercel. Reparc keeps it in this '
+                    'This key is the master key of your gateway. Paste it only into Vercel. RepArc keeps it in this '
                     'phone\'s secure storage.',
                 color: p.warning,
               ),
@@ -193,7 +193,7 @@ class _GatewaySetupScreenState extends ConsumerState<GatewaySetupScreen> {
             icon: LucideIcons.shieldCheck,
             text:
                 'The gateway stores no workouts, meals, or health data. Questions and answers wait there for a few '
-                'seconds, encrypted with your key, then expire. It is open source in the Reparc repository.',
+                'seconds, encrypted with your key, then expire. It is open source in the RepArc repository.',
           ),
         ],
       ),

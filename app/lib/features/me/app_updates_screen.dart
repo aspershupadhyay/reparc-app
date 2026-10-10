@@ -165,9 +165,9 @@ class _AppUpdatesScreenState extends ConsumerState<AppUpdatesScreen> {
           const SectionHeader('How updates work'),
           Text(
             android
-                ? 'Tap Download and install. Reparc downloads the new version, checks that the file is exactly '
+                ? 'Tap Download and install. RepArc downloads the new version, checks that the file is exactly '
                       'the published one, and opens Android\'s installer. Tap Update there. The first time, Android '
-                      'asks you to allow installs from Reparc. Your workouts and meals stay, because every build is '
+                      'asks you to allow installs from RepArc. Your workouts and meals stay, because every build is '
                       'signed with the same key.'
                 : 'Tap Download to open the release page. Save the IPA and install it with AltStore or Sideloadly, '
                       'like the first time. Your workouts and meals stay on the phone.',

@@ -27,7 +27,7 @@ class ToolContract {
   Map<String, String> get scopes => (raw['scopes'] as Map<String, dynamic>).cast<String, String>();
 
   /// Tool definitions as MCP `tools/list` returns them. The `scope` field
-  /// is Reparc's own and is left out.
+  /// is RepArc's own and is left out.
   List<Map<String, dynamic>> get listed => [
     for (final t in tools.values)
       {
