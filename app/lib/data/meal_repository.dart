@@ -238,6 +238,38 @@ class MealRepository {
     ),
   );
 
+  /// "Same as yesterday" (launch review Block 3): copies every food of
+  /// [fromDay] into [toDay] as planned, with the same meal, amount, values,
+  /// and source. The user ticks each food when it is eaten, so nothing is
+  /// marked eaten ahead of time. Returns the new entry IDs, for Undo.
+  Future<List<String>> copyDayAsPlanned(String fromDay, String toDay) => db.transaction(() async {
+    final from = await entriesInRange(fromDay, fromDay);
+    final local = clock();
+    final now = local.toUtc();
+    final ids = <String>[];
+    for (final e in from) {
+      final id = _uuid.v4();
+      await db
+          .into(db.mealEntries)
+          .insert(
+            e.copyWith(
+              id: id,
+              day: toDay,
+              status: MealStatus.planned,
+              eatenAt: const Value(null),
+              timeZoneName: local.timeZoneName,
+              createdAt: now,
+              updatedAt: now,
+            ),
+          );
+      ids.add(id);
+    }
+    return ids;
+  });
+
+  /// Removes the entries made by [copyDayAsPlanned] (Undo).
+  Future<void> deleteEntries(List<String> ids) => (db.delete(db.mealEntries)..where((e) => e.id.isIn(ids))).go();
+
   /// Marks a planned entry as eaten, or an eaten entry as planned.
   Future<void> setStatus(String id, MealStatus status) =>
       (db.update(db.mealEntries)..where((e) => e.id.equals(id))).write(
