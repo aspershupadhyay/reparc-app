@@ -17,7 +17,9 @@ import '../../data/models.dart';
 import '../../data/providers.dart';
 import '../../data/workout_repository.dart';
 import '../../domain/session_time.dart';
+import '../../domain/analytics.dart' show newRecordsIn;
 import 'guide_controller.dart';
+import 'record_moment.dart';
 import 'session_clock.dart';
 import 'guided_header.dart';
 import 'session_editor.dart';
@@ -132,7 +134,12 @@ class LiveSessionScreen extends ConsumerWidget {
       ref.read(guideProvider.notifier).workoutSaved();
     }
     if (done == true && context.mounted) {
-      unawaited(HapticFeedback.mediumImpact());
+      // The PR moment comes before the saved workout (launch review).
+      final records = newRecordsIn(d.session.id, await repo.completedSets());
+      if (!context.mounted) return;
+      if (records.isEmpty) unawaited(HapticFeedback.mediumImpact());
+      await showRecordMoment(context, records);
+      if (!context.mounted) return;
       context.go('/workout/session/${d.session.id}');
       showMessage(context, finished ? 'Workout saved.' : 'Workout saved as incomplete.');
     }

@@ -227,6 +227,38 @@ class _BodyScreenState extends ConsumerState<BodyScreen> {
                 ),
             ],
           ),
+          // Foods by country (handbook 5.10): the phone's region by default.
+          label('Foods from'),
+          Builder(
+            builder: (context) {
+              final region = ref.watch(phoneRegionProvider);
+              final chosen = settings.foodCountry;
+              String name(String? code) => foodCountries[code] ?? 'No country';
+              return Wrap(
+                spacing: Space.s,
+                runSpacing: Space.s,
+                children: [
+                  ChoiceChip(
+                    label: Text('Phone region (${name(region)})'),
+                    selected: chosen == null,
+                    onSelected: (_) => ref.read(settingsRepoProvider).setFoodCountry(null),
+                  ),
+                  for (final e in foodCountries.entries)
+                    ChoiceChip(
+                      label: Text(e.value),
+                      selected: chosen == e.key,
+                      onSelected: (_) => ref.read(settingsRepoProvider).setFoodCountry(e.key),
+                    ),
+                  ChoiceChip(
+                    label: const Text('No country'),
+                    selected: chosen == 'ALL',
+                    onSelected: (_) => ref.read(settingsRepoProvider).setFoodCountry('ALL'),
+                  ),
+                ],
+              );
+            },
+          ),
+          Text('Food search shows these foods first. You can still find every food.', style: t.bodySmall),
           label('Protein per kg of body weight: ${proteinRatio(_p).toStringAsFixed(1)} g'),
           Slider(
             value: proteinRatio(_p).clamp(1.2, 2.4),

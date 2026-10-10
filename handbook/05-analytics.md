@@ -71,3 +71,10 @@ Built 2026-10-06. Analytics has two tabs so each reads on its own. Both use the 
 **Meal:** days with eaten food; daily averages for each nutrient over days that have a value (an empty day is not a zero day); days on target when targets are on; protein and fibre per day with the target line; and the energy split (4 kcal/g protein and carbs, 9 kcal/g fat).
 
 Calculations live in `app/lib/domain/analytics.dart` and have unit tests.
+
+## PR moment and weekly streak (2026-10-10, launch review Block 3)
+
+**PR moment.** When a finished workout beats an earlier best (the heaviest completed load for the same exercise and unit, as in Best lifts), a card says "New best" with the lift, before the saved workout opens, with a strong haptic. A first time on an exercise is not a record, and a tie keeps the earlier record. **Share** makes an image of the card and opens the phone's share sheet; the image holds only the lifts shown. Code: `newRecordsIn` in `app/lib/domain/analytics.dart`, `app/lib/features/workout/record_moment.dart`.
+
+**Weekly streak.** Home's This week card shows "N weeks in a row" when weeks Monday to Sunday reached the target: the plan's days a week minus one (one missed day is forgiven), at least one, and one without a plan. The current week never breaks the streak before it ends. Code: `app/lib/domain/streak.dart`.
+

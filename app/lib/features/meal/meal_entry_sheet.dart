@@ -52,6 +52,9 @@ class _EntrySheetState extends ConsumerState<_EntrySheet> {
   late bool _estimate = _e?.isEstimate ?? false;
   late MealStatus _status = _e?.status ?? _defaultStatus();
   late String _source = _e?.source ?? sourceManual;
+
+  /// Household portions of the picked list food ("1 katori", "1 roti").
+  List<Portion> _portions = const [];
   bool _saveFood = false;
 
   /// The user chose to type a food in by hand.
@@ -104,6 +107,7 @@ class _EntrySheetState extends ConsumerState<_EntrySheet> {
       _sodium.text = _n(f.sodiumMg);
       _estimate = f.isEstimate;
       _source = f.source;
+      _portions = const [];
       _search.clear();
       _saveFood = false;
     });
@@ -126,9 +130,10 @@ class _EntrySheetState extends ConsumerState<_EntrySheet> {
       _fiber.text = v('fiber');
       _sugar.text = v('sugar');
       _sodium.text = v('sodium');
-      _estimate = false;
+      _estimate = f.estimate;
       _source = f.source;
-      _amount.text = _n(f.portionG);
+      _portions = f.allPortions;
+      _amount.text = _n(_portions.first.grams);
       _amountUnit = 'g';
       _search.clear();
       _saveFood = false;
@@ -283,12 +288,10 @@ class _EntrySheetState extends ConsumerState<_EntrySheet> {
         ? const <Food>[]
         : foods.where((f) => '${f.name} ${f.brand ?? ''}'.toLowerCase().contains(q)).take(6).toList();
     final diet = ref.watch(currentSettingsProvider).profile.diet;
-    final usda = q.isEmpty
-        ? const <FoodItem>[]
-        : (ref.watch(foodLibraryProvider).value?.foods ?? const <FoodItem>[])
-              .where((f) => (diet == null || diet.allows(f.diet)) && f.name.toLowerCase().contains(q))
-              .take(8)
-              .toList();
+    // The user's country first, then common foods, then other countries.
+    final usda =
+        ref.watch(foodLibraryProvider).value?.search(q, country: ref.watch(foodCountryProvider), diet: diet) ??
+        const <FoodItem>[];
     final adding = _e == null;
     final settings = ref.watch(currentSettingsProvider);
     // Search first. The long form shows once a food is picked, or when the
@@ -343,7 +346,7 @@ class _EntrySheetState extends ConsumerState<_EntrySheet> {
               decoration: const InputDecoration(
                 prefixIcon: Icon(LucideIcons.search, size: IconSizes.s),
                 labelText: 'Find a food',
-                helperText: 'Your foods and a USDA list of common foods',
+                helperText: 'Your foods and a list of common foods, your country first',
               ),
             ),
             for (final f in usda)
@@ -357,7 +360,7 @@ class _EntrySheetState extends ConsumerState<_EntrySheet> {
                     if (f.per100g['protein'] != null) '${fmtNum(f.per100g['protein']! * f.portionG / 100)} g protein',
                   ].join(' · '),
                 ),
-                trailing: const Tag('USDA'),
+                trailing: Tag(f.estimate ? 'Estimate' : 'USDA'),
                 onTap: () => _useUsda(f),
               ),
             for (final f in matches)
@@ -526,6 +529,26 @@ class _EntrySheetState extends ConsumerState<_EntrySheet> {
                 ),
               ],
             ),
+            // Household sizes of a list food: one tap sets the grams.
+            if (_portions.length > 1 || (_portions.length == 1 && _portions.first.label != '100 g'))
+              Padding(
+                padding: const EdgeInsets.only(top: Space.s),
+                child: Wrap(
+                  spacing: Space.s,
+                  runSpacing: Space.s,
+                  children: [
+                    for (final p in _portions)
+                      ChoiceChip(
+                        label: Text('${p.label} · ${fmtNum(p.grams)} g'),
+                        selected: _amountUnit == 'g' && parseDecimal(_amount.text) == p.grams,
+                        onSelected: (_) => setState(() {
+                          _amount.text = _n(p.grams);
+                          _amountUnit = 'g';
+                        }),
+                      ),
+                  ],
+                ),
+              ),
             const SizedBox(height: Space.m),
             Semantics(
               liveRegion: true,

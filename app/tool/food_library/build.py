@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
-"""Builds the bundled food list from USDA FoodData Central (SR Legacy).
+"""Builds the bundled food list from USDA FoodData Central (SR Legacy and
+FNDDS), with India foods from india.py (handbook 5.10).
 
 Source: U.S. Department of Agriculture, Agricultural Research Service.
 FoodData Central, SR Legacy, April 2018 release.
@@ -11,8 +12,8 @@ https://fdc.nal.usda.gov/food-details/<fdcId>/nutrients
 Output:
   assets/foods/foods.json   values per 100 g and a usual portion in grams
 
-Run from the app/ folder:
-  python3 tool/food_library/build.py
+Run from the app/ folder (an optional folder caches the two downloads):
+  python3 tool/food_library/build.py [cache-folder]
 """
 import csv
 import io
@@ -34,6 +35,17 @@ NUTRIENTS = {
     "fat": "1004",
     "sugar": "2000",
     "sodium": "1093",
+}
+
+# FNDDS files the same nutrients by their older numbers.
+FNDDS_NUTRIENTS = {
+    "kcal": "208",
+    "protein": "203",
+    "carbs": "205",
+    "fiber": "291",
+    "fat": "204",
+    "sugar": "269",
+    "sodium": "307",
 }
 
 # (key, FDC ID, name shown in the app, diet tag, group, usual portion g, portion words)
@@ -132,31 +144,74 @@ FOODS = [
 ]
 
 
-def main():
-    print("Downloading", URL)
-    data = urllib.request.urlopen(URL).read()
-    z = zipfile.ZipFile(io.BytesIO(data))
+SURVEY_URL = "https://fdc.nal.usda.gov/fdc-datasets/FoodData_Central_survey_food_csv_2024-10-31.zip"
+
+
+def _zip(url, cache):
+    """The dataset zip, from [cache] when it holds a copy."""
+    name = url.rsplit("/", 1)[1]
+    if cache:
+        path = pathlib.Path(cache) / name
+        if path.exists():
+            return zipfile.ZipFile(path)
+    print("Downloading", url)
+    data = urllib.request.urlopen(url).read()
+    if cache:
+        (pathlib.Path(cache) / name).write_bytes(data)
+    return zipfile.ZipFile(io.BytesIO(data))
+
+
+def _load(z, wanted, nutrients):
+    """Descriptions and per-100 g values for [wanted] FDC IDs in one dataset."""
     root = next(n.split("/")[0] for n in z.namelist() if n.endswith("food.csv"))
 
     def rows(name):
         return csv.DictReader(io.TextIOWrapper(z.open(f"{root}/{name}"), encoding="utf-8"))
 
-    wanted = {str(f[1]) for f in FOODS}
     desc = {r["fdc_id"]: r["description"] for r in rows("food.csv") if r["fdc_id"] in wanted}
-    missing = wanted - desc.keys()
-    if missing:
-        raise SystemExit(f"FDC IDs not found: {sorted(missing)}")
-    by_id = {v: k for k, v in NUTRIENTS.items()}
+    by_id = {v: k for k, v in nutrients.items()}
     values = {}
     for r in rows("food_nutrient.csv"):
-        if r["fdc_id"] in wanted and r["nutrient_id"] in by_id:
+        if r["fdc_id"] in desc and r["nutrient_id"] in by_id and r["amount"]:
             values.setdefault(r["fdc_id"], {})[by_id[r["nutrient_id"]]] = round(float(r["amount"]), 2)
+    return desc, values
+
+
+def main():
+    import sys
+
+    sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
+    import india
+
+    cache = sys.argv[1] if len(sys.argv) > 1 else None
+    sr_ids = {str(f[1]) for f in FOODS}
+    fndds_ids = set()
+    for f in india.FOODS:
+        src = f[1]
+        if src[0] == "sr":
+            sr_ids.add(str(src[1]))
+        elif src[0] == "fndds":
+            fndds_ids.add(str(src[1]))
+        else:
+            for fdc, _ in src[1]:
+                # Recipe parts can come from either dataset; FNDDS IDs are 27xxxxx.
+                (fndds_ids if fdc >= 2_000_000 else sr_ids).add(str(fdc))
+    sr_desc, sr_values = _load(_zip(URL, cache), sr_ids, NUTRIENTS)
+    fn_desc, fn_values = _load(_zip(SURVEY_URL, cache), fndds_ids, FNDDS_NUTRIENTS)
+    desc = {**sr_desc, **fn_desc}
+    values = {**sr_values, **fn_values}
+    missing = (sr_ids | fndds_ids) - desc.keys()
+    if missing:
+        raise SystemExit(f"FDC IDs not found: {sorted(missing)}")
+
+    def per100(fdc, key):
+        v = values.get(str(fdc), {})
+        if "kcal" not in v or "protein" not in v:
+            raise SystemExit(f"{key}: energy or protein missing for {fdc}")
+        return {k: v[k] for k in NUTRIENTS if k in v}
 
     foods = []
     for key, fdc, name, diet, group, grams, words in FOODS:
-        v = values.get(str(fdc), {})
-        if "kcal" not in v or "protein" not in v:
-            raise SystemExit(f"{key}: energy or protein missing")
         foods.append(
             {
                 "id": key,
@@ -168,14 +223,54 @@ def main():
                 "portionG": grams,
                 "portion": words,
                 # Per 100 g. A missing nutrient is left out, never written as 0.
-                "per100g": {k: v[k] for k in NUTRIENTS if k in v},
+                "per100g": per100(fdc, key),
             }
         )
+
+    for key, src, name, diet, group, portions in india.FOODS:
+        src = tuple(src)
+        entry = {
+            "id": f"in-{key}",
+            "name": name,
+            "countries": ["IN"],
+            "diet": diet,
+            "group": group,
+            "portionG": portions[0][1],
+            "portion": portions[0][0],
+            "portions": [{"label": w, "g": g} for w, g in portions],
+        }
+        if src[0] in ("sr", "fndds"):
+            entry["fdcId"] = src[1]
+            entry["usdaName"] = desc[str(src[1])]
+            entry["dataset"] = "FNDDS 2021-2023" if src[0] == "fndds" else "SR Legacy"
+            entry["per100g"] = per100(src[1], key)
+            if len(src) >= 3:
+                entry["estimate"] = True
+                entry["basis"] = src[2]
+                for k in src[3] if len(src) > 3 else ():
+                    entry["per100g"].pop(k, None)
+        else:
+            parts, cooked = src[1], src[2]
+            totals = {}
+            # A nutrient counts only when every part has it: a gap stays a gap.
+            # Recipes add no salt, so sodium is left out rather than understated.
+            for k in (k for k in NUTRIENTS if k != "sodium"):
+                vals = [values.get(str(fdc), {}).get(k) for fdc, _ in parts]
+                if all(v is not None for v in vals):
+                    totals[k] = round(sum(v * g / 100 for v, (_, g) in zip(vals, parts)) * 100 / cooked, 2)
+            if "kcal" not in totals or "protein" not in totals:
+                raise SystemExit(f"{key}: energy or protein missing in a recipe part")
+            entry["estimate"] = True
+            entry["recipe"] = [{"fdcId": fdc, "usdaName": desc[str(fdc)], "g": g} for fdc, g in parts]
+            entry["cookedG"] = cooked
+            entry["per100g"] = totals
+        foods.append(entry)
+
     OUT.parent.mkdir(parents=True, exist_ok=True)
     OUT.write_text(
         json.dumps(
             {
-                "source": "USDA FoodData Central, SR Legacy (April 2018)",
+                "source": "USDA FoodData Central: SR Legacy (April 2018) and FNDDS (October 2024 release)",
                 "sourceUrl": "https://fdc.nal.usda.gov/",
                 "license": "Public domain (CC0 1.0)",
                 "foods": foods,

@@ -37,6 +37,26 @@ void main() {
     await w.end(id, finished: true);
   }
 
+  test('a PR moment needs an earlier best to beat', () async {
+    final bench = await w.createExercise(name: 'Bench press');
+    await workout(bench, [(80, 'kg', 6)]);
+    var all = await w.completedSets();
+    expect(newRecordsIn(all.first.session.id, all), isEmpty, reason: 'A first time is not a record');
+
+    clock.advance(const Duration(days: 2));
+    await workout(bench, [(82.5, 'kg', 6), (80, 'kg', 8)]);
+    all = await w.completedSets();
+    final latest = all.map((r) => r.session).reduce((a, b) => a.startedAt.isAfter(b.startedAt) ? a : b);
+    final records = newRecordsIn(latest.id, all);
+    expect(records.map((r) => (r.source.set.load, r.source.set.reps)), [(82.5, 6)]);
+
+    clock.advance(const Duration(days: 2));
+    await workout(bench, [(82.5, 'kg', 5)]);
+    all = await w.completedSets();
+    final tie = all.map((r) => r.session).reduce((a, b) => a.startedAt.isAfter(b.startedAt) ? a : b);
+    expect(newRecordsIn(tie.id, all), isEmpty, reason: 'A tie keeps the earlier record');
+  });
+
   test('summary is traced to saved records and keeps reps gaps visible', () async {
     final squat = await w.createExercise(name: 'Squat');
     await workout(squat, [(100, 'kg', 5), (100, 'kg', null)]);

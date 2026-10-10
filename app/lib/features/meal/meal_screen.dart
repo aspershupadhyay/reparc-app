@@ -99,6 +99,7 @@ class _MealScreenState extends ConsumerState<MealScreen> {
               builder: (list) =>
                   _Summary(entries: list, showEnergy: settings.showEnergy, targets: settings.targets, day: key),
             ),
+            _SameAsYesterday(day: key),
             const SizedBox(height: Space.l),
             AsyncBody(
               value: slots,
@@ -612,3 +613,36 @@ class _AddPill extends StatelessWidget {
 final _compact = OutlinedButton.styleFrom(
   padding: const EdgeInsets.symmetric(horizontal: Space.m, vertical: Space.m),
 );
+
+/// "Same as yesterday" (launch review Block 3): on an empty day, one tap
+/// copies the day before as planned foods. Each is ticked when eaten.
+class _SameAsYesterday extends ConsumerWidget {
+  const _SameAsYesterday({required this.day});
+  final String day;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final today = ref.watch(mealDayProvider(day)).value;
+    final before = dayKey(addDays(parseDayKey(day), -1));
+    final previous = ref.watch(mealDayProvider(before)).value;
+    if (today == null || today.isNotEmpty || previous == null || previous.isEmpty) return const SizedBox.shrink();
+    return Padding(
+      padding: const EdgeInsets.only(top: Space.m),
+      child: OutlinedButton.icon(
+        onPressed: () async {
+          final repo = ref.read(mealRepoProvider);
+          final ids = await guardedWrite(context, () => repo.copyDayAsPlanned(before, day));
+          if (ids == null || !context.mounted) return;
+          showMessage(
+            context,
+            '${ids.length} food${ids.length == 1 ? '' : 's'} added as planned. Tick each one when you eat it.',
+            actionLabel: 'Undo',
+            onAction: () => repo.deleteEntries(ids),
+          );
+        },
+        icon: const Icon(LucideIcons.copy, size: 18),
+        label: Text('Same as the day before (${previous.length} food${previous.length == 1 ? '' : 's'})'),
+      ),
+    );
+  }
+}

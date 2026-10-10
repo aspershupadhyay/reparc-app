@@ -18,6 +18,7 @@ import '../../data/models.dart';
 import '../../data/providers.dart';
 import '../../data/settings_repository.dart';
 import '../../data/workout_repository.dart';
+import '../exercises/catalog/catalog.dart' show catalogById;
 import '../exercises/library/library.dart';
 import 'exercise_form.dart';
 import 'exercise_picker.dart';
@@ -291,6 +292,13 @@ class _ExerciseCard extends ConsumerWidget {
                         padding: const EdgeInsets.only(top: Space.xs),
                         child: NoteChips(note: note),
                       ),
+                    if (live && !skipped)
+                      _FirstTimeSetup(
+                        view: view,
+                        onSwap: view.exercise.catalogId == null
+                            ? null
+                            : () => _onAction(context, ref, _ExerciseAction.swap),
+                      ),
                   ],
                 ),
               ),
@@ -507,6 +515,8 @@ class _SetRowState extends ConsumerState<SetRow> {
   Future<void> _toggleDone() async {
     final repo = ref.read(workoutRepoProvider);
     final done = !widget.set.completed;
+    if (done) await _fillFromHints();
+    if (!mounted) return;
     await guardedWrite(context, () async {
       if (done && widget.live && widget.settings.guideOn) {
         // The guide saves the measured time and starts the right rest.
@@ -518,6 +528,38 @@ class _SetRowState extends ConsumerState<SetRow> {
       if (done && widget.live && rest != null) await repo.startRest(widget.sessionId, rest);
     });
     if (done) unawaited(HapticFeedback.lightImpact());
+  }
+
+  /// One-tap set (launch review Block 3): ticking a set with empty fields
+  /// saves the values shown as hints, the set before or the plan's target
+  /// reps, so ✓ means "I did what was planned". Only on the user's tap; a
+  /// set that ends on its timer saves nothing it was not given. A field
+  /// with no hint stays empty.
+  Future<void> _fillFromHints() async {
+    final s = widget.set;
+    final p = widget.previous;
+    if (widget.cols == SetColumns.time) return;
+    final load = widget.cols == SetColumns.loadReps && s.load == null && parseDecimal(_load.text) == null
+        ? p?.load
+        : null;
+    final reps = s.reps == null && parseWhole(_reps.text) == null ? (p?.reps ?? widget.targetReps) : null;
+    if (load == null && reps == null) return;
+    if (load != null) _load.text = _num(load);
+    if (reps != null) _reps.text = '$reps';
+    try {
+      await ref
+          .read(workoutRepoProvider)
+          .updateSet(
+            s.id,
+            SetEntriesCompanion(
+              load: load == null ? const Value.absent() : Value(load),
+              loadUnit: load == null ? const Value.absent() : Value(p?.loadUnit ?? _unit),
+              reps: reps == null ? const Value.absent() : Value(reps),
+            ),
+          );
+    } catch (_) {
+      if (mounted) showMessage(context, 'Not saved. Try again.');
+    }
   }
 
   /// Fills load and reps from the last set, on the user's tap. The set is
@@ -982,6 +1024,52 @@ class _SetDetailsState extends ConsumerState<_SetDetails> {
             label: const Text('Delete set'),
           ),
         ],
+      ),
+    );
+  }
+}
+
+/// First-day help (launch review Block 3): the first time an exercise is in
+/// a live workout, its card offers the setup steps from the coached guide,
+/// and a swap for when the machine is taken. The text is not yet checked by
+/// a qualified coach (D-016), and says so.
+class _FirstTimeSetup extends ConsumerWidget {
+  const _FirstTimeSetup({required this.view, this.onSwap});
+  final SessionExerciseView view;
+  final VoidCallback? onSwap;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final def = catalogById[view.exercise.catalogId];
+    if (def == null || def.setup.isEmpty) return const SizedBox.shrink();
+    if (ref.watch(firstTimeProvider(view.exercise.id)).value != true) return const SizedBox.shrink();
+    final t = Theme.of(context).textTheme;
+    final p = context.pal;
+    return Padding(
+      padding: const EdgeInsets.only(top: Space.s),
+      child: Theme(
+        data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
+        child: ExpansionTile(
+          tilePadding: EdgeInsets.zero,
+          childrenPadding: const EdgeInsets.only(bottom: Space.s),
+          leading: Icon(LucideIcons.lightbulb, color: p.brand, size: IconSizes.s),
+          title: Text('First time? Set up', style: t.titleSmall),
+          expandedCrossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            for (final (i, line) in def.setup.indexed)
+              Padding(
+                padding: const EdgeInsets.only(bottom: Space.xs),
+                child: Text('${i + 1}. $line', style: t.bodyMedium),
+              ),
+            Text('Not yet checked by a coach.', style: t.bodySmall?.copyWith(color: p.inkSoft)),
+            if (onSwap != null)
+              TextButton.icon(
+                onPressed: onSwap,
+                icon: const Icon(LucideIcons.arrowLeftRight, size: IconSizes.s),
+                label: const Text('Machine taken? Swap'),
+              ),
+          ],
+        ),
       ),
     );
   }

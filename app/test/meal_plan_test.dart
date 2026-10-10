@@ -16,6 +16,42 @@ void main() {
     expect(lib.byId['shrimp']!.valueFor(Nutrient.fiber, 100), isNull);
   });
 
+  test('foods by country: India foods carry portions and an honest source', () {
+    final india = lib.foods.where((f) => f.countries.contains('IN')).toList();
+    expect(india.length, greaterThan(80));
+    expect(lib.foods.map((f) => f.id).toSet(), hasLength(lib.foods.length), reason: 'IDs are unique');
+    for (final f in lib.foods) {
+      expect(f.per100g['kcal'], isNotNull, reason: f.id);
+      expect(f.per100g['protein'], isNotNull, reason: f.id);
+    }
+    final roti = lib.byId['in-roti-medium']!;
+    expect(roti.allPortions.first, (label: '1 roti (7 in)', grams: 40.0));
+    expect(roti.source, 'USDA FoodData Central, FDC ID 2707713');
+    final paneer = lib.byId['in-paneer']!;
+    expect(paneer.estimate, isTrue);
+    expect(paneer.source, startsWith('Estimate: Value from queso fresco'));
+    expect(paneer.per100g['sodium'], isNull, reason: 'The stand-in is salted; paneer is not');
+    final poha = lib.byId['in-poha']!;
+    expect((poha.estimate, poha.fdcId), (true, null));
+    expect(poha.source, 'Estimate: Recipe of USDA foods');
+    expect(poha.per100g['sodium'], isNull, reason: 'Recipes add no salt, so sodium is unknown');
+  });
+
+  test('food search puts the user\'s country first, and still finds every food', () {
+    final inIndia = lib.search('roti', country: 'IN');
+    expect(inIndia.first.id, 'in-roti-medium');
+    expect(inIndia.map((f) => f.id), contains('roti'), reason: 'The common roti is still there');
+    final elsewhere = lib.search('roti', country: 'US');
+    expect(elsewhere.first.id, 'roti', reason: 'Common foods first, then other countries');
+    expect(elsewhere.map((f) => f.id), contains('in-roti-medium'));
+    expect(
+      lib.search('paneer', country: 'US', diet: Diet.vegan),
+      isEmpty,
+      reason: 'The diet still applies',
+    );
+    expect(lib.search('  '), isEmpty);
+  });
+
   test('a plan says when fibre is unknown for a food', () {
     for (var seed = 0; seed < 14; seed++) {
       final plan = planDay(lib: lib, diet: Diet.vegan, energy: null, protein: null, seed: seed);
