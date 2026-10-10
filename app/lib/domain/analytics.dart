@@ -104,6 +104,21 @@ List<PersonalRecord> heaviestLoads(List<SetRecord> sets) {
   return list;
 }
 
+/// Records that the workout [sessionId] set by beating a best from an
+/// earlier workout (launch review Block 3: the PR moment). A first time
+/// on an exercise is not a record: there is nothing to beat yet.
+List<PersonalRecord> newRecordsIn(String sessionId, List<SetRecord> sets) {
+  final earlier = <(String, String)>{
+    for (final r in sets)
+      if (r.session.id != sessionId && r.set.load != null && r.set.load! > 0 && r.set.loadUnit != null)
+        (r.exercise.id, r.set.loadUnit!),
+  };
+  return [
+    for (final pr in heaviestLoads(sets))
+      if (pr.source.session.id == sessionId && earlier.contains((pr.source.exercise.id, pr.source.set.loadUnit!))) pr,
+  ];
+}
+
 // ------------------------------------------------------------ Workout stats
 
 /// Exact pounds-to-kilograms factor.
