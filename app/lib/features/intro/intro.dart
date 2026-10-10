@@ -191,10 +191,12 @@ class IntroFrame extends StatelessWidget {
             final gap = m * 0.1465;
             final inkTop = m * MarkGeometry.inkTop / 128;
             final inkBottom = m * MarkGeometry.inkBottom / 128;
-            // Centre the mark and the capitals together, a little above the
-            // middle of the screen so the pair looks centred.
+            // Centre the mark and the capitals together in the middle of the
+            // screen. The descender of "p" is left out, so the pair looks
+            // centred. (It sat at 46% before, which read as high on tall
+            // 20:9 phones.)
             final groupH = (inkBottom - inkTop) + gap + cap;
-            final top = box.maxHeight * 0.46 - groupH / 2 - inkTop;
+            final top = box.maxHeight * 0.5 - groupH / 2 - inkTop;
             return Stack(
               children: [
                 Positioned(

@@ -32,8 +32,6 @@ class AppUpdatesScreen extends ConsumerStatefulWidget {
 class _AppUpdatesScreenState extends ConsumerState<AppUpdatesScreen> {
   bool _checking = false;
   String? _message;
-  ApkProgress? _progress;
-  bool _failed = false;
 
   Future<void> _check() async {
     setState(() {
@@ -52,6 +50,8 @@ class _AppUpdatesScreenState extends ConsumerState<AppUpdatesScreen> {
     });
   }
 
+  /// The download itself runs in [apkDownloadProvider], so it keeps going
+  /// when the user leaves this screen.
   Future<void> _download(ReleaseInfo r, {bool browser = false}) async {
     final android = defaultTargetPlatform == TargetPlatform.android;
     if (!android || browser) {
@@ -59,35 +59,8 @@ class _AppUpdatesScreenState extends ConsumerState<AppUpdatesScreen> {
       if (!ok && mounted) setState(() => _message = 'Could not open the browser. Open ${r.page} yourself.');
       return;
     }
-    setState(() {
-      _message = null;
-      _failed = false;
-      _progress = const ApkDownloading(0, null);
-    });
-    try {
-      await ref.read(apkInstallerProvider)(r, (p) {
-        if (mounted) setState(() => _progress = p);
-      });
-      if (mounted) {
-        setState(() => _message = "Android's installer is open. Tap Update to finish. Your data stays on the phone.");
-      }
-    } on ApkError catch (e) {
-      if (mounted) {
-        setState(() {
-          _progress = null;
-          _failed = true;
-          _message = e.message;
-        });
-      }
-    } catch (_) {
-      if (mounted) {
-        setState(() {
-          _progress = null;
-          _failed = true;
-          _message = 'The download did not work. Try again, or use the browser.';
-        });
-      }
-    }
+    setState(() => _message = null);
+    await ref.read(apkDownloadProvider.notifier).start(r);
   }
 
   @override
@@ -100,6 +73,8 @@ class _AppUpdatesScreenState extends ConsumerState<AppUpdatesScreen> {
     final update = ref.watch(availableUpdateProvider);
     final android = defaultTargetPlatform == TargetPlatform.android;
     final checked = settings.updatesCheckedAt?.toLocal();
+    final download = ref.watch(apkDownloadProvider);
+    final message = _message ?? download.message;
 
     return Scaffold(
       appBar: AppBar(title: const Text('App updates')),
@@ -132,9 +107,9 @@ class _AppUpdatesScreenState extends ConsumerState<AppUpdatesScreen> {
             _UpdateCard(
               release: update,
               android: android,
-              progress: _progress,
+              progress: download.progress,
               onDownload: () => _download(update),
-              onBrowser: _failed ? () => _download(update, browser: true) : null,
+              onBrowser: download.failed ? () => _download(update, browser: true) : null,
             ),
             const SizedBox(height: Space.l),
           ],
@@ -145,11 +120,11 @@ class _AppUpdatesScreenState extends ConsumerState<AppUpdatesScreen> {
                 : const Icon(LucideIcons.refreshCw, size: IconSizes.s),
             label: Text(_checking ? 'Checking' : 'Check for updates'),
           ),
-          if (_message != null) ...[
+          if (message != null) ...[
             const SizedBox(height: Space.m),
             Semantics(
               liveRegion: true,
-              child: StatusLine(icon: LucideIcons.info, text: _message!),
+              child: StatusLine(icon: LucideIcons.info, text: message),
             ),
           ],
           const SizedBox(height: Space.l),
@@ -265,7 +240,7 @@ class _UpdateCard extends StatelessWidget {
               onPressed: onDownload,
               icon: const Icon(LucideIcons.download, size: 20),
               label: OneLine(
-                android ? (progress is ApkReady ? 'Open installer again' : 'Download and install') : 'Download',
+                android ? (progress is ApkReady ? 'Open installer' : 'Download and install') : 'Download',
               ),
             ),
           if (onBrowser != null) ...[

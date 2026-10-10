@@ -62,6 +62,19 @@ typedef SaveTo = Future<String> Function(Uri url, File file, void Function(int, 
 /// Opens Android's installer for an APK. Swappable for tests.
 typedef OpenInstaller = Future<void> Function(String path);
 
+/// The SHA-256 of a file, in lower case. Swappable for tests.
+typedef HashFile = Future<String> Function(File file);
+
+Future<String> sha256OfFile(File file) async {
+  final sink = Sha256().newHashSink();
+  await for (final chunk in file.openRead()) {
+    sink.add(chunk);
+  }
+  sink.close();
+  final hash = await sink.hash();
+  return hash.bytes.map((b) => b.toRadixString(16).padLeft(2, '0')).join();
+}
+
 const _channel = MethodChannel('app.reparc/installer');
 
 Future<void> openAndroidInstaller(String path) async {
@@ -117,12 +130,17 @@ Future<String> httpSaveTo(Uri url, File file, void Function(int, int?) onProgres
 /// Downloads, checks, and opens the installer. Reports each step to
 /// [onProgress]. Throws [ApkError] with a plain message on failure; a file
 /// that fails the check is deleted and never reaches the installer.
+///
+/// When this version was already downloaded and still matches its checksum
+/// (the user closed Android's installer, or it could not open while the app
+/// was in the background), the installer opens again without a new download.
 Future<void> downloadAndInstall(
   ReleaseInfo r, {
   required void Function(ApkProgress) onProgress,
   FetchText fetchText = httpGetText,
   SaveTo saveTo = httpSaveTo,
   OpenInstaller openInstaller = openAndroidInstaller,
+  HashFile hashFile = sha256OfFile,
   Future<Directory> Function() folder = getTemporaryDirectory,
 }) async {
   final apk = r.apk;
@@ -134,9 +152,17 @@ Future<void> downloadAndInstall(
     final expected = shaFor(await fetchText(sums), name);
     if (expected == null) throw ApkError('$name is not in the checksum file.');
     final dir = Directory('${(await folder()).path}/updates');
+    final file = File('${dir.path}/reparc-${r.version}.apk');
+    if (file.existsSync()) {
+      onProgress(const ApkVerifying());
+      if (await hashFile(file) == expected) {
+        await openInstaller(file.path);
+        onProgress(const ApkReady());
+        return;
+      }
+    }
     if (dir.existsSync()) dir.deleteSync(recursive: true);
     dir.createSync(recursive: true);
-    final file = File('${dir.path}/reparc-${r.version}.apk');
     onProgress(const ApkDownloading(0, null));
     final actual = await saveTo(apk, file, (got, total) => onProgress(ApkDownloading(got, total)));
     onProgress(const ApkVerifying());

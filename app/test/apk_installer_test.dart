@@ -57,6 +57,45 @@ void main() {
     expect(File('${tmp.path}/updates/reparc-0.4.0.apk').existsSync(), isFalse);
   });
 
+  test('a version already downloaded and still matching opens the installer without a new download', () async {
+    await run(good);
+    var downloads = 0;
+    String? opened;
+    final steps = <ApkProgress>[];
+    await downloadAndInstall(
+      ReleaseInfo.fromGitHub(release('v0.4.0')),
+      onProgress: steps.add,
+      fetchText: (_) async => sums,
+      saveTo: (url, file, onProgress) async {
+        downloads++;
+        return good;
+      },
+      hashFile: (_) async => good,
+      openInstaller: (path) async => opened = path,
+      folder: () async => tmp,
+    );
+    expect(downloads, 0);
+    expect(opened, '${tmp.path}/updates/reparc-0.4.0.apk');
+    expect(steps.whereType<ApkDownloading>(), isEmpty);
+    expect(steps.last, isA<ApkReady>());
+
+    // A file that no longer matches is downloaded again.
+    await downloadAndInstall(
+      ReleaseInfo.fromGitHub(release('v0.4.0')),
+      onProgress: (_) {},
+      fetchText: (_) async => sums,
+      saveTo: (url, file, onProgress) async {
+        downloads++;
+        file.writeAsStringSync('apk bytes');
+        return good;
+      },
+      hashFile: (_) async => 'ff' * 32,
+      openInstaller: (_) async {},
+      folder: () async => tmp,
+    );
+    expect(downloads, 1);
+  });
+
   test('a release without a checksum file is not installed', () async {
     final j = release('v0.4.0');
     (j['assets']! as List).removeLast();

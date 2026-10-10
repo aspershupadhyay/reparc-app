@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
@@ -10,6 +11,7 @@ import 'package:reparc/core/clock.dart';
 import 'package:reparc/data/database.dart';
 import 'package:reparc/data/providers.dart';
 import 'package:reparc/features/exercises/library/library.dart';
+import 'package:reparc/updates/apk_installer.dart';
 import 'package:reparc/updates/update_check.dart';
 import 'package:reparc/updates/update_controller.dart';
 
@@ -143,6 +145,60 @@ void main() {
       expect((r as CheckFailed).message, 'No connection.');
       await pumpEventQueue();
       expect(c.read(currentSettingsProvider).updatesCheckedAt, isNull);
+    });
+
+    test('a download asks GitHub first and takes the newest release, and runs once at a time', () async {
+      // The last check saw 0.4.0; 0.4.1 came out since.
+      answer = () => release('v0.4.1');
+      final started = <String>[];
+      final gate = Completer<void>();
+      // A container with a fake installer, in place of the shared one.
+      c.dispose();
+      c = ProviderContainer(
+        overrides: [
+          databaseProvider.overrideWithValue(db),
+          clockProvider.overrideWithValue(clock.call),
+          installedVersionProvider.overrideWith((ref) async => '0.3.2'),
+          fetchJsonProvider.overrideWithValue((url) async => answer()),
+          apkInstallerProvider.overrideWithValue((r, onProgress) async {
+            started.add(r.version);
+            onProgress(const ApkDownloading(10, 100));
+            await gate.future;
+            onProgress(const ApkReady());
+          }),
+        ],
+      );
+      final saved = ReleaseInfo.fromGitHub(release('v0.4.0'));
+      final dl = c.read(apkDownloadProvider.notifier);
+      final first = dl.start(saved);
+      await pumpEventQueue();
+      expect(c.read(apkDownloadProvider).running, isTrue);
+      // A second tap (for example after Back and coming back) does not start another.
+      await dl.start(saved);
+      gate.complete();
+      await first;
+      expect(started, ['0.4.1']);
+      expect(c.read(apkDownloadProvider).progress, isA<ApkReady>());
+    });
+
+    test('a download when already up to date says so and downloads nothing', () async {
+      final saved = ReleaseInfo.fromGitHub(release('v0.4.0'));
+      answer = () => release('v0.3.2');
+      var downloads = 0;
+      // A container with a fake installer, in place of the shared one.
+      c.dispose();
+      c = ProviderContainer(
+        overrides: [
+          databaseProvider.overrideWithValue(db),
+          clockProvider.overrideWithValue(clock.call),
+          installedVersionProvider.overrideWith((ref) async => '0.3.2'),
+          fetchJsonProvider.overrideWithValue((url) async => answer()),
+          apkInstallerProvider.overrideWithValue((r, onProgress) async => downloads++),
+        ],
+      );
+      await c.read(apkDownloadProvider.notifier).start(saved);
+      expect(downloads, 0);
+      expect(c.read(apkDownloadProvider).message, 'You have the latest version (0.3.2).');
     });
 
     test('the automatic check runs at most once a day and can be turned off', () async {
