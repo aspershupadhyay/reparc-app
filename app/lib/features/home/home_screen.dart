@@ -8,6 +8,7 @@ import '../../ai/ai_controller.dart';
 import '../../core/clock.dart';
 import '../../core/dates.dart';
 import '../../domain/analytics.dart' show plannedDays;
+import '../../domain/streak.dart';
 import '../../core/format.dart';
 import '../../core/palette.dart';
 import '../../core/theme.dart';
@@ -16,6 +17,7 @@ import '../../core/widgets.dart';
 import '../../data/meal_repository.dart';
 import '../../data/models.dart';
 import '../../data/providers.dart';
+import '../../data/workout_repository.dart' show SessionSummary;
 import '../../domain/nutrition.dart';
 import '../../health/health_service.dart';
 import '../../updates/update_controller.dart';
@@ -44,6 +46,12 @@ class HomeScreen extends ConsumerWidget {
     final week = ref.watch(progressProvider((weekStart, addDays(weekStart, 6)))).value;
     final program = ref.watch(activeProgramProvider).value;
     final greeting = now.hour < 12 ? 'Good morning' : (now.hour < 18 ? 'Good afternoon' : 'Good evening');
+    // Forgives one missed plan day a week (launch review Block 3).
+    final target = streakTarget(
+      program == null
+          ? null
+          : (program.plan.weekdays.isEmpty ? program.plan.days.length : program.plan.weekdays.length),
+    );
     final roadmapDone = program == null
         ? null
         : (week?.sessions.where((s) => s.session.programId == program.id).length ?? 0);
@@ -87,6 +95,15 @@ class HomeScreen extends ConsumerWidget {
                             since: dayOf(program.row.createdAt.toLocal()),
                           )),
               plannedWeekdays: program?.plan.weekdays.toSet() ?? const {},
+              streak: weeklyStreak(
+                [
+                  for (final h in ref.watch(historyProvider).value ?? const <SessionSummary>[])
+                    h.session.startedAt.toLocal(),
+                ],
+                today: today,
+                target: target,
+              ),
+              streakTarget: target,
             ),
             if (settings.health.contains(HealthFeature.steps.name) ||
                 settings.health.contains(HealthFeature.activeEnergy.name)) ...[
@@ -542,7 +559,13 @@ class _WeekCard extends StatelessWidget {
     this.roadmapDone,
     this.roadmapPlanned,
     this.plannedWeekdays = const {},
+    this.streak = 0,
+    this.streakTarget = 1,
   });
+
+  /// Weeks in a row that reached [streakTarget] workouts (launch review).
+  final int streak;
+  final int streakTarget;
 
   /// Roadmap training weekdays, 1 = Monday. Shown as tinted days.
   final Set<int> plannedWeekdays;
@@ -564,7 +587,8 @@ class _WeekCard extends StatelessWidget {
       onTap: () => context.go('/analytics'),
       semanticLabel:
           'This week: $count workouts on ${trained.length} days'
-          '${planned == null ? '' : ', ${roadmapDone ?? 0} of $planned plan days'}. Open Analytics',
+          '${planned == null ? '' : ', ${roadmapDone ?? 0} of $planned plan days'}'
+          '${streak > 0 ? '. $streak week${streak == 1 ? '' : 's'} in a row' : ''}. Open Analytics',
       child: ExcludeSemantics(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -648,6 +672,22 @@ class _WeekCard extends StatelessWidget {
                   ),
               ],
             ),
+            if (streak > 0) ...[
+              const SizedBox(height: Space.m),
+              Row(
+                children: [
+                  Icon(LucideIcons.flame, size: 18, color: p.orange),
+                  const SizedBox(width: Space.xs),
+                  Expanded(
+                    child: Text(
+                      '$streak week${streak == 1 ? '' : 's'} in a row · '
+                      '$streakTarget+ workout${streakTarget == 1 ? '' : 's'} a week',
+                      style: t.bodySmall,
+                    ),
+                  ),
+                ],
+              ),
+            ],
           ],
         ),
       ),
