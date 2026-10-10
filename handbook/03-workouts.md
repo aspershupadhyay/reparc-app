@@ -246,6 +246,8 @@ Run format, analysis, generated-code checks, and all tests after each step. Test
 
 **First-run setup (2026-10-10, launch review Block 2, owner choice).** A user with no plan, who has not finished or skipped the setup, sees "Get your plan" on Home instead of a blank workout. The setup asks three questions, one per screen: goal (the five roadmap goals), level (beginner, intermediate, advanced), and days a week (the goal's options, with the suggested one marked). It then builds and follows that roadmap for a full gym and shows "Your first workout" with **Start now** and **Later**. **Skip** is always there, and the setup does not come back after it is finished or skipped (setting `onboarded`). Equipment is not asked; the user can build another plan in Workout. Code: `app/lib/features/onboarding/welcome_screen.dart`.
 
+**First-day help (2026-10-10, launch review Block 3, owner choice: draft, marked unreviewed).** The first time an exercise from the coached guide is in a live workout (no completed set of it in a saved workout yet), its card offers **First time? Set up**: the guide's setup steps (seat, pads, grip, stance), the line "Not yet checked by a coach.", and **Machine taken? Swap**, which opens the same swap as the exercise menu. It goes away once the exercise has a completed set in a saved workout. A qualified coach review of the text is still open (D-016). Code: `_FirstTimeSetup` in `app/lib/features/workout/session_editor.dart`.
+
 ## 4.13 Guided workout and voice cues
 
 Built 2026-10-08 (D-031). Owner request: less typing, timers that run on their own, and a voice that says when a set or rest starts and ends. Not yet tested on a real phone.

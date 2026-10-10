@@ -320,6 +320,11 @@ void main() {
     await tester.tap(find.text('Back squat'));
     await tester.pumpAndSettle();
     expect(find.bySemanticsLabel('Set 1 complete'), findsOneWidget);
+    // First time on this move: setup help, marked as not yet checked.
+    await tester.tap(find.text('First time? Set up'));
+    await tester.pumpAndSettle();
+    expect(find.text('Not yet checked by a coach.'), findsOneWidget);
+    expect(find.text('Machine taken? Swap'), findsOneWidget);
 
     await tester.tap(find.byTooltip('How to do Back squat'));
     await tester.pumpAndSettle();

@@ -43,6 +43,13 @@ final sessionProvider = StreamProvider.autoDispose.family(
   (ref, String id) => ref.watch(workoutRepoProvider).watchSession(id),
 );
 
+/// True until the user has a completed set of [exerciseId] in a saved
+/// workout: first-day help shows then (launch review Block 3).
+final firstTimeProvider = FutureProvider.autoDispose.family<bool, String>(
+  (ref, String exerciseId) async =>
+      (await ref.watch(workoutRepoProvider).completedSets(exerciseId: exerciseId)).isEmpty,
+);
+
 final historyProvider = StreamProvider.autoDispose((ref) => ref.watch(workoutRepoProvider).watchHistory());
 
 final exercisesProvider = StreamProvider.autoDispose((ref) => ref.watch(workoutRepoProvider).watchExercises());

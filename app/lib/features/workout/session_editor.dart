@@ -18,6 +18,7 @@ import '../../data/models.dart';
 import '../../data/providers.dart';
 import '../../data/settings_repository.dart';
 import '../../data/workout_repository.dart';
+import '../exercises/catalog/catalog.dart' show catalogById;
 import '../exercises/library/library.dart';
 import 'exercise_form.dart';
 import 'exercise_picker.dart';
@@ -290,6 +291,13 @@ class _ExerciseCard extends ConsumerWidget {
                       Padding(
                         padding: const EdgeInsets.only(top: Space.xs),
                         child: NoteChips(note: note),
+                      ),
+                    if (live && !skipped)
+                      _FirstTimeSetup(
+                        view: view,
+                        onSwap: view.exercise.catalogId == null
+                            ? null
+                            : () => _onAction(context, ref, _ExerciseAction.swap),
                       ),
                   ],
                 ),
@@ -1016,6 +1024,52 @@ class _SetDetailsState extends ConsumerState<_SetDetails> {
             label: const Text('Delete set'),
           ),
         ],
+      ),
+    );
+  }
+}
+
+/// First-day help (launch review Block 3): the first time an exercise is in
+/// a live workout, its card offers the setup steps from the coached guide,
+/// and a swap for when the machine is taken. The text is not yet checked by
+/// a qualified coach (D-016), and says so.
+class _FirstTimeSetup extends ConsumerWidget {
+  const _FirstTimeSetup({required this.view, this.onSwap});
+  final SessionExerciseView view;
+  final VoidCallback? onSwap;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final def = catalogById[view.exercise.catalogId];
+    if (def == null || def.setup.isEmpty) return const SizedBox.shrink();
+    if (ref.watch(firstTimeProvider(view.exercise.id)).value != true) return const SizedBox.shrink();
+    final t = Theme.of(context).textTheme;
+    final p = context.pal;
+    return Padding(
+      padding: const EdgeInsets.only(top: Space.s),
+      child: Theme(
+        data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
+        child: ExpansionTile(
+          tilePadding: EdgeInsets.zero,
+          childrenPadding: const EdgeInsets.only(bottom: Space.s),
+          leading: Icon(LucideIcons.lightbulb, color: p.brand, size: IconSizes.s),
+          title: Text('First time? Set up', style: t.titleSmall),
+          expandedCrossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            for (final (i, line) in def.setup.indexed)
+              Padding(
+                padding: const EdgeInsets.only(bottom: Space.xs),
+                child: Text('${i + 1}. $line', style: t.bodyMedium),
+              ),
+            Text('Not yet checked by a coach.', style: t.bodySmall?.copyWith(color: p.inkSoft)),
+            if (onSwap != null)
+              TextButton.icon(
+                onPressed: onSwap,
+                icon: const Icon(LucideIcons.arrowLeftRight, size: IconSizes.s),
+                label: const Text('Machine taken? Swap'),
+              ),
+          ],
+        ),
       ),
     );
   }
