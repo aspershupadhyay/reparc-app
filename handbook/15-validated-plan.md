@@ -282,6 +282,8 @@ Updated 2026-10-06. This records what exists in code. It is not evidence of devi
 
 **First five minutes, v0.4.12 (2026-10-10, launch review Block 2, owner request):** First-run setup with goal, level, and days (owner choice; handbook 4.12). Plain words from the review's list, shown at display time so stored notes and their parsing do not change. Ramp-up sets show a weight when the working weight is known. Analytics shows an empty state before the first workout. Home counts plan days from the plan's start, as Analytics does. Me starts with Your plan; AI connections moved to Advanced. Large-text fixes on Home and Meal, and TalkBack labels on set fields. The body map redo is postponed (owner, 2026-10-10). Checked: format, analyze, `flutter test` (383 passed), and CI on the pull request. **Not checked:** large text and TalkBack on a real phone.
 
+**Reason to stay, v0.4.13 (2026-10-10, launch review Block 3, owner request and choices):** PR moment with a share image (handbook 05), forgiving weekly streak (05), one-tap set and first-day setup help (4.13, 4.12), Same as the day before for meals, and foods by country with 87 India foods from USDA FNDDS and SR Legacy plus marked recipe estimates (5.10). Checked: format, analyze, `flutter test` (392 passed), and CI on the pull request. **Not checked:** the share sheet, haptics, and large text on a real phone; a dietitian check of the recipe estimates; a coach check of the setup text. **Open:** about 300 India foods were proposed (87 built); the body map redo is postponed.
+
 ## 16.12 AI context
 
 - **Purpose:** Give every contributor the current, evidence-based build order.
