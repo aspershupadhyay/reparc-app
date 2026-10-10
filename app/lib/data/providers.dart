@@ -1,4 +1,5 @@
 import 'package:flutter/services.dart';
+import 'package:flutter/widgets.dart' show WidgetsBinding;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../core/clock.dart';
@@ -98,6 +99,23 @@ final programProvider = StreamProvider.autoDispose.family(
 final bodyRepoProvider = Provider((ref) => BodyRepository(ref.watch(databaseProvider), ref.watch(clockProvider)));
 
 final weightsProvider = StreamProvider.autoDispose((ref) => ref.watch(bodyRepoProvider).watchWeights());
+
+/// Countries with their own foods in the bundled list, by ISO code.
+const foodCountries = {'IN': 'India'};
+
+/// The phone's region, for food search. Reads a system setting only: no
+/// location and no permission (owner choice, 2026-10-10).
+final phoneRegionProvider = Provider<String?>(
+  (ref) => WidgetsBinding.instance.platformDispatcher.locale.countryCode?.toUpperCase(),
+);
+
+/// The country whose foods come first in food search: the user's choice in
+/// Me, else the phone's region. Null means no country.
+final foodCountryProvider = Provider<String?>((ref) {
+  final chosen = ref.watch(currentSettingsProvider).foodCountry;
+  if (chosen == 'ALL') return null;
+  return chosen ?? ref.watch(phoneRegionProvider);
+});
 
 /// USDA food list bundled with the app. Loads once; no network.
 final foodLibraryProvider = FutureProvider<FoodLibrary>(

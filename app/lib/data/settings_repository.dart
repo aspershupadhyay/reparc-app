@@ -20,6 +20,7 @@ class AppSettings {
     this.lastBackupAt,
     this.introSeen = false,
     this.onboarded = false,
+    this.foodCountry,
     this.updatesAuto = true,
     this.updatesCheckedAt,
     this.updatesLatest,
@@ -129,6 +130,10 @@ class AppSettings {
   /// The first-run setup (goal, level, days) was finished or skipped.
   final bool onboarded;
 
+  /// The country whose foods come first in food search ("IN"), or "ALL"
+  /// for no country. Null follows the phone's region (handbook 5.10).
+  final String? foodCountry;
+
   /// Check GitHub for a newer build once a day when the app opens (D-029).
   /// On unless the user turns it off in Me → App updates.
   final bool updatesAuto;
@@ -168,6 +173,7 @@ class AppSettings {
     lastBackupAt: DateTime.tryParse(m['backup.lastAt'] ?? ''),
     introSeen: m['introSeen'] == 'true',
     onboarded: m['onboarded'] == 'true',
+    foodCountry: m['food.country'],
     updatesAuto: m['updates.auto'] != 'false',
     updatesCheckedAt: DateTime.tryParse(m['updates.checkedAt'] ?? ''),
     updatesLatest: m['updates.latest'],
@@ -252,6 +258,7 @@ class SettingsRepository {
   Future<void> setLastBackupAt(DateTime at) => set('backup.lastAt', at.toUtc().toIso8601String());
   Future<void> setIntroSeen() => set('introSeen', 'true');
   Future<void> setOnboarded() => set('onboarded', 'true');
+  Future<void> setFoodCountry(String? code) => set('food.country', code);
   Future<void> setGuideOn(bool v) => set('guide.on', v ? null : 'false');
   Future<void> setVoice(String v) => set('guide.voice', v);
   Future<void> setFinishRepSets(bool v) => set('guide.finishReps', v ? null : 'false');

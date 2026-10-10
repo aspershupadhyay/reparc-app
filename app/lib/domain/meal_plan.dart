@@ -12,6 +12,9 @@ import 'dart:math' as math;
 import 'nutrition.dart';
 import 'targets.dart';
 
+/// A household portion: "1 katori", 150 g.
+typedef Portion = ({String label, double grams});
+
 class FoodItem {
   const FoodItem({
     required this.id,
@@ -22,12 +25,16 @@ class FoodItem {
     required this.portionG,
     required this.portion,
     required this.per100g,
+    this.countries = const [],
+    this.portions = const [],
+    this.estimate = false,
+    this.basis,
   });
 
   factory FoodItem.fromJson(Map<String, Object?> j) => FoodItem(
     id: j['id'] as String,
     name: j['name'] as String,
-    fdcId: (j['fdcId'] as num).toInt(),
+    fdcId: (j['fdcId'] as num?)?.toInt(),
     diet: j['diet'] as String,
     group: j['group'] as String,
     portionG: (j['portionG'] as num).toDouble(),
@@ -35,11 +42,32 @@ class FoodItem {
     per100g: {
       for (final e in (j['per100g'] as Map).entries) e.key as String: (e.value as num).toDouble(),
     },
+    countries: [for (final c in j['countries'] as List? ?? const []) c as String],
+    portions: [
+      for (final p in j['portions'] as List? ?? const [])
+        (label: (p as Map)['label'] as String, grams: (p['g'] as num).toDouble()),
+    ],
+    estimate: j['estimate'] == true,
+    basis: j['basis'] as String? ?? (j['recipe'] == null ? null : 'Recipe of USDA foods'),
   );
 
   final String id;
   final String name;
-  final int fdcId;
+
+  /// USDA FoodData Central ID. Null for a recipe estimate.
+  final int? fdcId;
+
+  /// Countries the food belongs to (ISO codes, "IN"). Empty means common
+  /// everywhere (handbook 5.10: foods by country).
+  final List<String> countries;
+
+  /// Household portions, the usual one first. Empty means [portion] only.
+  final List<Portion> portions;
+
+  /// The values are an estimate: a recipe of USDA foods, or a close USDA
+  /// food standing in ([basis] says which).
+  final bool estimate;
+  final String? basis;
 
   /// plant, dairy, egg, fish, or meat.
   final String diet;
@@ -51,7 +79,14 @@ class FoodItem {
   /// key means USDA has no value. It is not zero.
   final Map<String, double> per100g;
 
-  String get source => 'USDA FoodData Central, FDC ID $fdcId';
+  String get source => switch ((estimate, fdcId)) {
+    (false, final id?) => 'USDA FoodData Central, FDC ID $id',
+    (true, final id?) => 'Estimate: ${basis ?? 'a close USDA food'} (USDA FDC ID $id)',
+    _ => 'Estimate: ${basis ?? 'recipe of USDA foods'}',
+  };
+
+  /// Every portion to offer, the usual one first.
+  List<Portion> get allPortions => portions.isEmpty ? [(label: portion, grams: portionG)] : portions;
 
   double? valueFor(Nutrient n, double grams) {
     final v = per100g[_key(n)];
@@ -84,6 +119,22 @@ class FoodLibrary {
   final Map<String, FoodItem> byId;
 
   List<FoodItem> forDiet(Diet d) => foods.where((f) => d.allows(f.diet)).toList();
+
+  /// Foods that match [query], the user's [country] first, then foods common
+  /// everywhere, then other countries' foods (handbook 5.10).
+  List<FoodItem> search(String query, {String? country, Diet? diet, int limit = 8}) {
+    final q = query.trim().toLowerCase();
+    if (q.isEmpty) return const [];
+    int rank(FoodItem f) => f.countries.isEmpty ? 1 : (country != null && f.countries.contains(country) ? 0 : 2);
+    final hits = [
+      for (final f in foods)
+        if ((diet == null || diet.allows(f.diet)) && f.name.toLowerCase().contains(q)) f,
+    ];
+    // A stable sort keeps the list order within each rank.
+    final ranked = [for (final (i, f) in hits.indexed) (rank(f), i, f)]
+      ..sort((a, b) => a.$1 != b.$1 ? a.$1.compareTo(b.$1) : a.$2.compareTo(b.$2));
+    return [for (final r in ranked.take(limit)) r.$3];
+  }
 }
 
 /// Meal slots the planner fills.
