@@ -80,6 +80,11 @@ class _MealScreenState extends ConsumerState<MealScreen> {
               subtitle: _day == today ? 'Today' : fmtDayLong(_day),
               actions: [
                 RoundButton(
+                  icon: LucideIcons.target,
+                  tooltip: settings.targets.isEmpty ? 'Set targets' : 'Targets',
+                  onPressed: () => context.push('/me/body'),
+                ),
+                RoundButton(
                   icon: LucideIcons.slidersHorizontal,
                   tooltip: 'Edit meal times',
                   onPressed: () => showSlotsSheet(context),
@@ -344,26 +349,13 @@ class _Summary extends StatelessWidget {
             ),
           ],
           const SizedBox(height: Space.m),
-          Row(
-            children: [
-              Expanded(
-                child: OutlinedButton.icon(
-                  style: _compact,
-                  onPressed: () => showPlanDaySheet(context, day: day),
-                  icon: const Icon(LucideIcons.wandSparkles, size: 18),
-                  label: const OneLine('Plan my day'),
-                ),
-              ),
-              const SizedBox(width: Space.s),
-              // A quiet link: setting targets is rarer than planning a day.
-              Expanded(
-                child: TextButton.icon(
-                  onPressed: () => context.push('/me/body'),
-                  icon: Icon(targets.isEmpty ? LucideIcons.target : LucideIcons.slidersHorizontal, size: 18),
-                  label: OneLine(targets.isEmpty ? 'Set targets' : 'Targets'),
-                ),
-              ),
-            ],
+          // Targets moved to the title row: with large text, "Add food"
+          // covered a Targets button here (launch review, 2026-10-10).
+          OutlinedButton.icon(
+            style: _compact,
+            onPressed: () => showPlanDaySheet(context, day: day),
+            icon: const Icon(LucideIcons.wandSparkles, size: 18),
+            label: const OneLine('Plan my day'),
           ),
         ],
       ),

@@ -185,3 +185,12 @@ String? cueBetween(List<TimedCue> plan, int before, int now) {
 /// 'lib:Barbell_Shrug' -> 'lib_barbell_shrug'.
 String voiceKey(String catalogId) =>
     catalogId.toLowerCase().replaceAll(RegExp('[^a-z0-9]+'), '_').replaceAll(RegExp(r'^_+|_+$'), '');
+
+/// The weight of a ramp-up set: [percent] of the working weight, rounded
+/// down to a loadable step (2.5 kg or 5 lb), and never below one step.
+double rampUpLoad(double workLoad, int percent, String unit) {
+  final step = unit == 'lb' ? 5.0 : 2.5;
+  final raw = workLoad * percent / 100;
+  final steps = (raw / step).floor();
+  return (steps < 1 ? 1 : steps) * step;
+}

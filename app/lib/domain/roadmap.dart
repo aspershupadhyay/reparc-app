@@ -143,7 +143,7 @@ class PlanItem {
   String get details => [
     target,
     if (restSec != null && kind != ItemKind.warmup) '${restText(restSec!)} rest',
-    if (rir != null) rir == 0 ? 'to failure' : '$rir reps left',
+    if (rir != null) rir == 0 ? 'to failure' : effortText(rir!),
   ].where((s) => s.isNotEmpty).join(' · ');
 
   PlanItem copyWith({
@@ -919,12 +919,24 @@ const _weekdays = {
   6: [1, 2, 3, 4, 5, 6],
 };
 
+/// Reps in reserve in plain words: "Stop when 2 more would be hard"
+/// (launch review, plain words). Notes saved before 0.4.12 say "2 reps
+/// left"; [plainEffort] shows those the same way.
+String effortText(int rir) => 'Stop when $rir more would be hard';
+
+/// Shows an old effort chip ("2 reps left") in plain words.
+String plainEffort(String part) {
+  final m = RegExp(r'^(\d+) reps left$').firstMatch(part);
+  return m == null ? part : effortText(int.parse(m.group(1)!));
+}
+
 String _progression(RoadmapGoal g, RoadmapLevel l) => switch ((g, l)) {
   (RoadmapGoal.strength, RoadmapLevel.beginner) =>
     'Add weight every session while form stays clean: 2.5 kg (5 lb) on upper lifts, 5 kg (10 lb) on squat and '
         'deadlift. If you miss reps twice in a row, take 10% off and build back up.',
   (RoadmapGoal.strength, _) =>
-    'Add weight each week, not each session. When all sets hit the top reps with 1–2 reps left, add 2.5–5 kg. '
+    'Add weight each week, not each session. When all sets hit the top reps and 1–2 more would be hard, add '
+        '2.5–5 kg. '
         'Use the calculator to set loads from your best recent set.',
   (RoadmapGoal.calisthenics, _) =>
     'Stay on a step until you can do every set at the top of the rep range with good form. Then move to the '
@@ -933,10 +945,10 @@ String _progression(RoadmapGoal g, RoadmapLevel l) => switch ((g, l)) {
     'Each week add one rep or a little weight to the strength work. Make the finisher a little harder: one more '
         'round, or a faster pace. Pair this with the eating targets in Meal.',
   (_, RoadmapLevel.beginner) =>
-    'Double progression: stay at one weight until you hit the top of the rep range on every set, then add the '
+    'Add reps, then add weight: stay at one weight until you hit the top of the rep range on every set, then add the '
         'smallest step (2.5 kg / 5 lb). Most beginners can add weight every week.',
   (_, _) =>
-    'Double progression with 1–2 reps left in the tank. Add sets to lagging muscles before adding new '
+    'Add reps, then add weight. Stop each set when 1–2 more would be hard. Add sets to lagging muscles before adding new '
         'exercises. Change an exercise only when it stops progressing for 3–4 weeks.',
 };
 

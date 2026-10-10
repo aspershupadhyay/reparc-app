@@ -91,6 +91,8 @@ void main() {
       expect(targetRepsFromNote('Target: 3 × 5'), 5);
       expect(targetRepsFromNote('Target: 3 × 45 s · 1 min rest'), isNull, reason: 'A timed target has no reps');
       expect(restFromNote('Target: 3 × 6–10 · 2:30 min rest · 2 reps left'), 150);
+      expect(restFromNote('Target: 3 × 6–10 · 2:30 min rest · Stop when 2 more would be hard'), 150);
+      expect(targetRepsFromNote('Target: 3 × 6–10 · 2:30 min rest · Stop when 2 more would be hard'), 10);
       expect(restFromNote('Target: 3 × 12 · 45 s rest'), 45);
       expect(restFromNote('Target: 3 × 12'), isNull);
     });
@@ -139,6 +141,13 @@ void main() {
       expect(nextAim(load: 60, reps: 8, unit: 'kg', style: LoadStyle.pyramid), (load: 62.5, reps: 6));
       expect(nextAim(load: 135, reps: 2, unit: 'lb', style: LoadStyle.pyramid), (load: 140.0, reps: 1));
       expect(nextAim(reps: 1, style: LoadStyle.pyramid), (load: null, reps: 1), reason: 'Missing stays missing');
+    });
+
+    test('a ramp-up weight is a loadable share of the working weight', () {
+      expect(rampUpLoad(60, 50, 'kg'), 30);
+      expect(rampUpLoad(62.5, 70, 'kg'), 42.5, reason: '43.75 rounds down to a 2.5 kg step');
+      expect(rampUpLoad(135, 50, 'lb'), 65);
+      expect(rampUpLoad(4, 50, 'kg'), 2.5, reason: 'Never below one step');
     });
 
     test('ramp-up sets read their share and reps from the note', () {

@@ -42,7 +42,13 @@ String? aimFor(SessionExerciseView view, SetEntry set) {
         : 'Hold ${fmtClock(Duration(seconds: sec))}';
   }
   if (rampUp(view, set) case final r? when set.reps == null && set.load == null) {
-    return '${r.reps} reps at ${r.percent}%';
+    // "50%" of nothing means nothing to a new lifter: show the weight
+    // when the working weight is known, else say what it is a share of
+    // (launch review, 2026-10-10).
+    final work = view.sets.where((x) => x.setType != SetType.warmup && x.load != null).firstOrNull;
+    if (work == null) return '${r.reps} reps · about half your set weight';
+    final unit = work.loadUnit ?? 'kg';
+    return '${r.reps} reps · ${fmtWithUnit(rampUpLoad(work.load!, r.percent, unit), unit)}';
   }
   final before = view.sets.takeWhile((x) => x.id != set.id).where((x) => x.setType == set.setType).toList();
   final prev = before.isEmpty ? null : before.last;

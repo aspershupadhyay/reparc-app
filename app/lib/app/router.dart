@@ -13,6 +13,7 @@ import '../features/home/home_screen.dart';
 import '../features/me/ai_connections_screen.dart';
 import '../features/me/ai_file_screen.dart';
 import '../features/me/app_updates_screen.dart';
+import '../features/onboarding/welcome_screen.dart';
 import '../features/me/body_screen.dart';
 import '../features/me/backup_screen.dart';
 import '../features/me/gateway_setup_screen.dart';
@@ -157,6 +158,12 @@ GoRouter buildRouter({String initialLocation = '/home'}) => GoRouter(
           ],
         ),
       ],
+    ),
+    // First-run setup, without the tab bar (launch review Block 2).
+    GoRoute(
+      path: '/welcome',
+      parentNavigatorKey: rootNavigatorKey,
+      builder: (_, _) => const WelcomeScreen(),
     ),
     // The live workout is a focused full-screen flow without the tab bar.
     GoRoute(

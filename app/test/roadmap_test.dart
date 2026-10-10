@@ -127,7 +127,9 @@ void main() {
 
   test('targets read cleanly', () {
     const reps = PlanItem(kind: ItemKind.main, exerciseId: 'x', name: 'X', sets: 3, repsLow: 6, repsHigh: 10);
-    expect(reps.copyWith(restSec: 150, rir: 2).details, '3 × 6–10 · 2:30 min rest · 2 reps left');
+    expect(reps.copyWith(restSec: 150, rir: 2).details, '3 × 6–10 · 2:30 min rest · Stop when 2 more would be hard');
+    expect(plainEffort('2 reps left'), 'Stop when 2 more would be hard', reason: 'Notes saved before 0.4.12');
+    expect(plainEffort('2:30 min rest'), '2:30 min rest');
     expect(const PlanItem(kind: ItemKind.warmup, exerciseId: 'x', name: 'X', repsLow: 10).details, '10 reps');
     expect(const PlanItem(kind: ItemKind.main, exerciseId: 'x', name: 'X', sets: 3).target, '3 sets');
     expect(restText(45), '45 s');

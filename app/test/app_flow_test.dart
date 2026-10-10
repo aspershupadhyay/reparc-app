@@ -65,11 +65,12 @@ void main() {
     await tester.tap(find.bySemanticsLabel('Analytics, tab 4 of 5'));
     await tester.pumpAndSettle();
     await tester.scrollUntilVisible(
-      find.text('Best lifts'),
+      find.text('Your progress shows here'),
       300,
       scrollable: _scrollableIn(find.byType(AnalyticsScreen)),
     );
-    expect(find.text('Best lifts'), findsOneWidget);
+    expect(find.text('Your progress shows here'), findsOneWidget, reason: 'No zeros before the first workout');
+    expect(find.text('Best lifts'), findsNothing);
     await tester.tap(find.bySemanticsLabel('Me, tab 5 of 5'));
     await tester.pumpAndSettle();
     await tester.scrollUntilVisible(
@@ -77,6 +78,43 @@ void main() {
       300,
       scrollable: _scrollableIn(find.byType(MeScreen)),
     );
+    await unmount(tester);
+  });
+
+  testWidgets('a new user answers three questions and gets a plan and a first workout', (tester) async {
+    await pumpApp(tester);
+    expect(find.text('Get your plan'), findsOneWidget);
+    await tester.tap(find.text('Get your plan'));
+    await tester.pumpAndSettle();
+    expect(find.text('Step 1 of 3'), findsOneWidget);
+    await tester.tap(find.text('Strength'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Beginner'));
+    await tester.pumpAndSettle();
+    expect(find.text('Suggested for you'), findsOneWidget);
+    await tester.tap(find.text('Make my plan'));
+    await tester.pumpAndSettle();
+    expect(find.text('Your plan is ready'), findsOneWidget);
+    expect(find.text('YOUR FIRST WORKOUT'), findsOneWidget);
+    final programs = await db.select(db.programs).get();
+    expect(programs.single.active, isTrue);
+    expect(programs.single.goal, 'strength');
+    expect(programs.single.level, 'beginner');
+    await tester.tap(find.text('Later'));
+    await tester.pumpAndSettle();
+    expect(find.text('Get your plan'), findsNothing, reason: 'Home now shows the plan');
+    expect(find.text('NEXT IN YOUR PLAN'), findsOneWidget);
+    await unmount(tester);
+  });
+
+  testWidgets('the first-run setup can be skipped and does not come back', (tester) async {
+    await pumpApp(tester);
+    await tester.tap(find.text('Get your plan'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Skip'));
+    await tester.pumpAndSettle();
+    expect(find.text('Get your plan'), findsNothing);
+    expect(await db.select(db.programs).get(), isEmpty);
     await unmount(tester);
   });
 

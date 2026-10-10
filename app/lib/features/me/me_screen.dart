@@ -26,6 +26,7 @@ class MeScreen extends ConsumerWidget {
     final s = ref.watch(currentSettingsProvider);
     final repo = ref.read(settingsRepoProvider);
     final ai = ref.watch(aiControllerProvider);
+    final program = ref.watch(activeProgramProvider).value;
 
     Widget group(String title, List<Widget> tiles) => Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -72,7 +73,17 @@ class MeScreen extends ConsumerWidget {
           padding: const EdgeInsets.fromLTRB(Space.l, Space.l, Space.l, Space.xxl),
           children: [
             const ScreenTitle('Me'),
+            // Me starts with the user: their plan and their body and goals
+            // (launch review, 2026-10-10).
             group('You', [
+              // Opens the Workout tab, where the plan lives.
+              ListTile(
+                leading: lead(program == null ? LucideIcons.calendarPlus : LucideIcons.calendarCheck),
+                title: const Text('Your plan'),
+                subtitle: Text(program?.name ?? 'No plan yet. Pick one in Workout'),
+                trailing: Icon(LucideIcons.chevronRight, size: IconSizes.s, color: p.inkSoft),
+                onTap: () => context.go('/workout'),
+              ),
               link(
                 lead(LucideIcons.personStanding),
                 'Body and goals',
@@ -114,7 +125,7 @@ class MeScreen extends ConsumerWidget {
             group('Training', [
               SwitchListTile(
                 secondary: lead(LucideIcons.audioLines),
-                title: const Text('Guided workout'),
+                title: const Text('Coach mode'),
                 subtitle: const Text('Timers and a voice run your workout. The screen stays on'),
                 value: s.guideOn,
                 onChanged: repo.setGuideOn,
@@ -166,16 +177,6 @@ class MeScreen extends ConsumerWidget {
                     : '${s.health.length} type${s.health.length == 1 ? '' : 's'} connected',
                 '/me/health',
               ),
-              link(
-                lead(LucideIcons.sparkles),
-                'AI connections',
-                ai.anyOn
-                    ? 'On${ai.wifiOn ? ' · Wi-Fi' : ''}${ai.onlineOn ? ' · online' : ''}'
-                    : s.aiScopes.isEmpty
-                    ? 'Off. Nothing is shared.'
-                    : 'Off. ${s.aiScopes.length} data type${s.aiScopes.length == 1 ? '' : 's'} chosen.',
-                '/me/ai',
-              ),
             ]),
             group('Your data', [
               link(
@@ -223,6 +224,20 @@ class MeScreen extends ConsumerWidget {
                   Uri.parse('https://github.com/aspershupadhyay/reparc'),
                   mode: LaunchMode.externalApplication,
                 ),
+              ),
+            ]),
+            // For people who connect AI apps; kept out of the way of the
+            // everyday settings (launch review, 2026-10-10).
+            group('Advanced', [
+              link(
+                lead(LucideIcons.sparkles),
+                'AI connections',
+                ai.anyOn
+                    ? 'On${ai.wifiOn ? ' · Wi-Fi' : ''}${ai.onlineOn ? ' · online' : ''}'
+                    : s.aiScopes.isEmpty
+                    ? 'Off. Nothing is shared.'
+                    : 'Off. ${s.aiScopes.length} data type${s.aiScopes.length == 1 ? '' : 's'} chosen.',
+                '/me/ai',
               ),
             ]),
           ],

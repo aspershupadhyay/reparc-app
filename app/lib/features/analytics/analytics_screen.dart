@@ -116,16 +116,27 @@ class _WorkoutTab extends ConsumerWidget {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         _Consistency(s: s, before: before),
-        const SizedBox(height: Space.m),
-        _LoadRow(s: s, before: before, unit: unit),
-        if (program != null) ...[const SizedBox(height: Space.m), _RoadmapAdherence(s: s, program: program)],
-        const SizedBox(height: Space.m),
-        _Muscles(s: s),
-        const SizedBox(height: Space.m),
-        _StrengthTrend(s: s, unit: unit),
-        const SizedBox(height: Space.m),
-        _Records(records: records, s: s),
-        if (s.dayCount > 7) ...[const SizedBox(height: Space.m), _WeeklyVolume(s: s, unit: unit)],
+        // Nothing logged yet: say what will appear, not rows of zeros
+        // (launch review, 2026-10-10).
+        if (s.sessions.isEmpty && records.isEmpty) ...[
+          const SizedBox(height: Space.m),
+          const EmptyState(
+            icon: LucideIcons.chartLine,
+            title: 'Your progress shows here',
+            body: 'Finish one workout to see how much you lifted, your hard sets, and your best lifts.',
+          ),
+        ] else ...[
+          const SizedBox(height: Space.m),
+          _LoadRow(s: s, before: before, unit: unit),
+          if (program != null) ...[const SizedBox(height: Space.m), _RoadmapAdherence(s: s, program: program)],
+          const SizedBox(height: Space.m),
+          _Muscles(s: s),
+          const SizedBox(height: Space.m),
+          _StrengthTrend(s: s, unit: unit),
+          const SizedBox(height: Space.m),
+          _Records(records: records, s: s),
+          if (s.dayCount > 7) ...[const SizedBox(height: Space.m), _WeeklyVolume(s: s, unit: unit)],
+        ],
         const SizedBox(height: Space.m),
         _BodyWeight(s: s, weights: weights, unit: unit),
       ],
@@ -168,7 +179,7 @@ class _Consistency extends StatelessWidget {
                         Text('${s.sessions.length}', style: t.displayLarge?.tabular.copyWith(color: p.onPanel)),
                         // Lime and an up arrow only for a real rise; no change
                         // is a neutral dash.
-                        if (before != null)
+                        if (before != null && deltaText(s.sessions.length, before!.sessions.length).isNotEmpty)
                           Tag(
                             deltaText(s.sessions.length, before!.sessions.length),
                             color: p.panelRaised,
@@ -277,7 +288,7 @@ class _LoadRow extends StatelessWidget {
         children: [
           tile(
             LucideIcons.weight,
-            'Volume',
+            'Total lifted',
             fmtCompact(vol.inUnit(unit)),
             unit,
             vol.skipped > 0
@@ -287,7 +298,7 @@ class _LoadRow extends StatelessWidget {
           const SizedBox(width: Space.s),
           tile(
             LucideIcons.layers,
-            'Working sets',
+            'Hard sets',
             '${working.length}',
             null,
             '${fmtNum(reps)} reps',
@@ -547,7 +558,7 @@ class _WeeklyVolume extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Text('Volume per week', style: t.titleMedium),
+          Text('Total lifted per week', style: t.titleMedium),
           Text('Weight × reps of working sets, in $unit', style: t.bodySmall),
           const SizedBox(height: Space.m),
           Bars(
@@ -555,7 +566,7 @@ class _WeeklyVolume extends StatelessWidget {
             labels: [fmtDayMonth(weeks.first), fmtDayMonth(weeks.last)],
             color: p.blue,
             height: 100,
-            semanticLabel: 'Volume per week. ${byWeek.length} weeks have data.',
+            semanticLabel: 'Total lifted per week. ${byWeek.length} weeks have data.',
           ),
         ],
       ),
