@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:ffi' show Abi;
 import 'dart:io';
 
 /// Where RepArc builds are published (handbook 17.3, D-029).
@@ -42,7 +43,13 @@ class ReleaseInfo {
 
   /// Reads the GitHub "latest release" response. Throws [FormatException]
   /// when it is not a usable release.
-  factory ReleaseInfo.fromGitHub(Map<String, Object?> j) {
+  ///
+  /// Releases carry one APK per processor type (for example
+  /// `reparc-android-arm64-v8a.apk`) beside the full `reparc-android.apk`.
+  /// The one for this phone's [abi] is about 45% smaller, so it is
+  /// preferred; the full APK is the fallback.
+  factory ReleaseInfo.fromGitHub(Map<String, Object?> j, {String? abi}) {
+    abi ??= androidAbi();
     final tag = j['tag_name'];
     final page = j['html_url'];
     if (tag is! String || page is! String || parseVersion(tag) == null) {
@@ -61,12 +68,21 @@ class ReleaseInfo {
       version: tag.replaceFirst(RegExp('^v'), ''),
       notes: (j['body'] as String? ?? '').trim(),
       page: Uri.parse(page),
-      apk: asset('.apk'),
+      apk: (abi == null ? null : asset('-$abi.apk')) ?? asset('reparc-android.apk') ?? asset('.apk'),
       ipa: asset('.ipa'),
       sums: asset('SHA256SUMS.txt'),
       publishedAt: DateTime.tryParse(j['published_at'] as String? ?? ''),
     );
   }
+
+  /// The Android ABI name of the running app, as in the APK file names,
+  /// or null when it is not running on Android.
+  static String? androidAbi() => switch (Abi.current()) {
+    Abi.androidArm64 => 'arm64-v8a',
+    Abi.androidArm => 'armeabi-v7a',
+    Abi.androidX64 => 'x86_64',
+    _ => null,
+  };
 
   Map<String, Object?> toJson() => {
     'version': version,

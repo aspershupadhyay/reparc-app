@@ -56,6 +56,8 @@ Check for update metadata at launch, when the app returns to the foreground, and
 
 **Built for the GitHub test builds (D-029, 2026-10-06):** the metadata source is the GitHub "latest release" API for the public builds repository `aspershupadhyay/reparc` (17.9). `app/lib/updates/` reads the tag, notes, and download links (data only), compares the version with the installed one, and saves the result on the phone. It checks once a day when the app opens (the user can turn this off) and when the user taps **Check for updates**. Home shows a notice that the user can hide until the next version. **Download and install** on Android downloads the APK in the app with a progress bar, checks its SHA-256 against `SHA256SUMS.txt`, and opens Android's installer, which asks the user (D-029, updated 2026-10-08). On iPhone it opens the release page. Code: `app/lib/updates/apk_installer.dart` and `MainActivity.kt`; tests: `app/test/apk_installer_test.dart`. The first line of `release-notes/<version>.md` is the notice text. Store builds will use the store flows below instead.
 
+**APK per processor type (v0.4.9, 2026-10-10):** each release has the full `reparc-android.apk` (every phone, about 105 MB) and one APK per processor type: `reparc-android-arm64-v8a.apk`, `-armeabi-v7a.apk`, and `-x86_64.apk` (each about 58 MB, by the sizes of the v0.4.7 native code; to be measured on the first split release). All come from one build with the same version code, so any of them can update any other. From v0.4.9 the app downloads the APK for its own processor type and falls back to the full APK. The full APK is uploaded first, because older app versions take the first `.apk` in the release. The website still links to the full APK. `SHA256SUMS.txt` lists every file.
+
 For store builds, the metadata source, hosting, schema, and backend are **To confirm**. It may be a small public release manifest, but it must contain data only, such as version, notes, minimum supported version, and store links. Validate its signature or integrity where the chosen hosting supports it. The app must not execute content from the manifest. If metadata is unavailable, use the platform store as the source of truth.
 
 Use an in-app notice by default. Offer push update notices only as an opt-in. Request notification permission when the user turns the option on. If permission is denied, keep the in-app notice and manual check available. Send a notice only after the version is available through the relevant store or beta channel.
@@ -110,6 +112,8 @@ The team must set measurable startup, logging-response, memory, and download-siz
 9. Start a staged rollout where the store supports it.
 10. Watch crash reports, update failures, support reports, and data-loss signals.
 11. Stop rollout when a release gate fails.
+
+**Build speed (2026-10-10):** CI keeps Gradle and its build cache between runs (`setup-java` with `cache: gradle`, and `org.gradle.caching`). The Android and iOS builds run beside the format, analyze, and test job instead of after it. The pull request Android build makes the 64-bit ARM APK only; the release builds every type.
 
 CI provider, signing setup, store credentials, crash reporting provider, and monitoring provider are **To confirm**. Choose them after access control, retention, cost, and team ownership are clear.
 

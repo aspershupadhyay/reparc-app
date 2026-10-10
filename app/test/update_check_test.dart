@@ -62,6 +62,28 @@ void main() {
     expect(() => ReleaseInfo.fromGitHub({'tag_name': 'not-a-version', 'html_url': 'x'}), throwsFormatException);
   });
 
+  test('the APK for this phone\'s processor is preferred, the full APK is the fallback', () {
+    // GitHub lists the full APK first, so older apps that take the first
+    // .apk still get one that installs everywhere.
+    final j = release('v0.4.9');
+    j['assets'] = [
+      ...(j['assets']! as List),
+      for (final abi in ['armeabi-v7a', 'arm64-v8a', 'x86_64'])
+        {
+          'name': 'reparc-android-$abi.apk',
+          'browser_download_url':
+              'https://github.com/aspershupadhyay/reparc/releases/download/v0.4.9/reparc-android-$abi.apk',
+        },
+    ];
+    expect(ReleaseInfo.fromGitHub(j, abi: 'arm64-v8a').apk.toString(), endsWith('/reparc-android-arm64-v8a.apk'));
+    expect(ReleaseInfo.fromGitHub(j, abi: 'armeabi-v7a').apk.toString(), endsWith('/reparc-android-armeabi-v7a.apk'));
+    expect(ReleaseInfo.fromGitHub(j, abi: 'riscv64').apk.toString(), endsWith('/reparc-android.apk'));
+    // A release without per-processor files still gives the full APK.
+    expect(ReleaseInfo.fromGitHub(release('v0.4.8'), abi: 'arm64-v8a').apk.toString(), endsWith('/reparc-android.apk'));
+    // The test machine is not Android.
+    expect(ReleaseInfo.androidAbi(), isNull);
+  });
+
   group('controller', () {
     late AppDatabase db;
     late FakeClock clock;

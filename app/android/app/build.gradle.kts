@@ -53,6 +53,14 @@ android {
         }
     }
 
+    // `flutter build apk --split-per-abi` (the release workflow) makes one
+    // APK per processor type, about 45% smaller than the full one. Keep
+    // the full APK too: the website links to it, and app versions before
+    // 0.4.9 download it (handbook 17.3). The Flutter plugin turns it off.
+    if (project.hasProperty("split-per-abi")) {
+        splits.abi.isUniversalApk = true
+    }
+
     buildTypes {
         release {
             // Without key.properties, a local release build uses the debug key.
