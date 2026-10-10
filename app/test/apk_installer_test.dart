@@ -111,4 +111,33 @@ void main() {
     );
     expect(opened, isFalse);
   });
+
+  test('a download is saved, hashed on a background isolate, and reports progress a few times', () async {
+    final body = List<int>.generate(3 * 1024 * 1024, (i) => i % 251);
+    final server = await HttpServer.bind(InternetAddress.loopbackIPv4, 0);
+    addTearDown(() => server.close(force: true));
+    server.listen((req) async {
+      req.response.contentLength = body.length;
+      // Many small chunks, as a real network sends them.
+      for (var i = 0; i < body.length; i += 4096) {
+        req.response.add(body.sublist(i, (i + 4096).clamp(0, body.length)));
+      }
+      await req.response.close();
+    });
+    final dir = await Directory.systemTemp.createTemp('reparc-dl');
+    addTearDown(() => dir.delete(recursive: true));
+    final file = File('${dir.path}/a.apk');
+    var calls = 0;
+    int? last;
+    final hash = await httpSaveTo(Uri.parse('http://127.0.0.1:${server.port}/a.apk'), file, (got, total) {
+      calls++;
+      last = got;
+      expect(total, body.length);
+    });
+    expect(await file.length(), body.length);
+    expect(last, body.length, reason: 'The last report is the whole file');
+    expect(calls, lessThan(20), reason: 'Not one report per network chunk (768 chunks here)');
+    expect(hash, await sha256OfFile(file));
+    expect(hash, hasLength(64));
+  });
 }

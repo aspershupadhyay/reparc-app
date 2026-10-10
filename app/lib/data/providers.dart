@@ -110,18 +110,26 @@ final weightsProvider = StreamProvider.autoDispose((ref) => ref.watch(bodyRepoPr
 /// Countries with their own foods in the bundled list, by ISO code.
 const foodCountries = {'IN': 'India'};
 
-/// The phone's region, for food search. Reads a system setting only: no
-/// location and no permission (owner choice, 2026-10-10).
-final phoneRegionProvider = Provider<String?>(
-  (ref) => WidgetsBinding.instance.platformDispatcher.locale.countryCode?.toUpperCase(),
-);
+/// The phone's region, for food search: on Android the mobile network's
+/// country (else the SIM's), then the language setting's country. No
+/// location and no permission (owner choice, 2026-10-10; phone test
+/// 2026-10-11: an Indian phone set to "English (United States)" read US).
+final phoneRegionProvider = FutureProvider<String?>((ref) async {
+  try {
+    final code = await const MethodChannel('app.reparc/region').invokeMethod<String>('country');
+    if (code != null && code.length == 2) return code.toUpperCase();
+  } catch (_) {
+    // Not Android, or no telephony: use the language setting.
+  }
+  return WidgetsBinding.instance.platformDispatcher.locale.countryCode?.toUpperCase();
+});
 
 /// The country whose foods come first in food search: the user's choice in
 /// Me, else the phone's region. Null means no country.
 final foodCountryProvider = Provider<String?>((ref) {
   final chosen = ref.watch(currentSettingsProvider).foodCountry;
   if (chosen == 'ALL') return null;
-  return chosen ?? ref.watch(phoneRegionProvider);
+  return chosen ?? ref.watch(phoneRegionProvider).value;
 });
 
 /// USDA food list bundled with the app. Loads once; no network.
