@@ -1,6 +1,6 @@
 # Reparc
 
-**Train. Eat. Own your data.** A free, open-source gym and meal log for iPhone and Android. Your records live on your phone. There is no Reparc account and no Reparc server.
+**Train. Eat. Own your data.** A free gym and meal log for iPhone and Android. Your records live on your phone. There is no Reparc account and no Reparc server.
 
 🌐 **Website:** [aspershupadhyay.github.io/reparc](https://aspershupadhyay.github.io/reparc/) · ⬇️ **Download:** [latest release](https://github.com/aspershupadhyay/reparc/releases/latest)
 
@@ -48,4 +48,4 @@ Check downloads against `SHA256SUMS.txt`. The app never installs updates itself.
 
 **Name status:** Reparc is the chosen working name. Trademark, domain, and app-store name clearance are still pending.
 
-**License:** GNU Affero General Public License v3.0 (AGPL-3.0-only). See [LICENSE](LICENSE).
+**License:** Proprietary. All rights reserved, except the gateway (AGPL-3.0-only) and third-party parts. See [LICENSE](LICENSE).

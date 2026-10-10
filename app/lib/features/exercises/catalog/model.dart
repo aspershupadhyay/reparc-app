@@ -33,7 +33,7 @@ enum Level {
 
 /// A built-in exercise with coaching and a body-model animation.
 ///
-/// Text is original to this project and licensed with the app (AGPL-3.0).
+/// Text is original to this project and is part of the app (all rights reserved).
 /// It is general technique coaching, not medical advice.
 class ExerciseDef {
   const ExerciseDef({

@@ -1,5 +1,5 @@
-# Required pull request checks (handbook 17.5). Release signing and store
-# upload are separate and are not set up yet.
+# Required pull request checks (handbook 17.5). Release signing is in
+# release.yml; the Play upload is done by hand in the Play Console (17.10).
 name: CI
 
 on:
@@ -107,6 +107,22 @@ jobs:
       # Play upload key is set up, Gradle signs it with the debug key, so
       # Google Play will reject it (handbook 17.4).
       - run: flutter build apk --release --split-per-abi --target-platform android-arm64 -Pforce-version-code-ignoring-abi=true
+      # The Google Play build (handbook 17.10) must not ask to install
+      # packages or carry the update file provider; the GitHub APK must.
+      - name: Check the GitHub APK keeps the in-app installer
+        run: |
+          m=$(find build/app/intermediates -path '*release*' -name AndroidManifest.xml -path '*merged_manifest*' | head -1)
+          echo "$m"
+          grep -q 'REQUEST_INSTALL_PACKAGES' "$m"
+          grep -q 'UpdateFileProvider' "$m"
+      - name: Play App Bundle builds without the installer
+        run: |
+          flutter build appbundle --release --dart-define=REPARC_STORE=play --target-platform android-arm64
+          m=$(find build/app/intermediates -path '*release*' -name AndroidManifest.xml -path '*merged_manifest*' | head -1)
+          echo "$m"
+          ! grep -q 'REQUEST_INSTALL_PACKAGES' "$m"
+          ! grep -q 'UpdateFileProvider' "$m"
+          ls -l build/app/outputs/bundle/release/app-release.aab
       # Uploaded as a plain .apk (no zip) so the owner can install it directly.
       - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:

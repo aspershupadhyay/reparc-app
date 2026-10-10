@@ -236,3 +236,11 @@ p { margin: 0 0 12px; }
   .gauge .hubglow { opacity: 0.12; }
   .swap img:last-child { opacity: 0; }
 }
+
+/* Privacy policy (privacy.html): plain reading text. */
+.policy { max-width: 760px; padding-bottom: 64px; }
+.policy h3 { font-size: 22px; letter-spacing: -0.01em; margin: 40px 0 8px; }
+.policy p, .policy li { color: var(--text); }
+.policy ul { padding-left: 1.2em; }
+.policy li { margin: 6px 0; }
+.policy a { color: var(--lime); }

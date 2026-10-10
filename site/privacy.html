@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Privacy policy · RepArc</title>
+<meta name="description" content="How the RepArc app handles your workouts, meals, and health data. Your records stay on your phone.">
+<meta name="theme-color" content="#0A1012">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; img-src 'self' data:; style-src 'self'; script-src 'none'; font-src 'self'; connect-src 'none'; frame-ancestors 'none'; base-uri 'none'; form-action 'none'">
+<meta name="referrer" content="no-referrer">
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+
+<header class="nav">
+  <a class="brand" href="./" aria-label="RepArc home">
+    <img src="favicon.svg" alt="" width="28" height="28"> <span>RepArc</span>
+  </a>
+  <nav aria-label="Main">
+    <a href="./#download" class="pill">Get the app</a>
+  </nav>
+</header>
+
+<!-- Keep this page true to the app. It must match Me → Privacy
+     (app/lib/features/me/privacy_screen.dart) and handbook 09 and 17.10.
+     The Play Console and Health Connect link to this exact URL. -->
+<main id="main" class="section policy">
+  <p class="eyebrow">Privacy policy</p>
+  <h2>Your records stay on your phone.</h2>
+  <p class="fine">Effective 10 October 2026. Applies to the RepArc app for Android and iPhone, version 0.4.11 and later.</p>
+
+  <h3>The short version</h3>
+  <ul>
+    <li>RepArc has no account and no RepArc server. We do not collect, receive, or store your records.</li>
+    <li>Your workouts, meals, foods, body measurements, and settings are saved in a database on your phone.</li>
+    <li>RepArc has no ads, no analytics, no crash reporting, and no third-party tracking code.</li>
+    <li>We never sell your data, share it with advertisers or data brokers, or use it for ads.</li>
+    <li>Data leaves your phone only when you choose to: through a health app, an AI connection, a backup, or a file you export.</li>
+  </ul>
+
+  <h3>What the app stores on your phone</h3>
+  <p>Workouts (exercises, sets, weights, reps, times, and rests), training plans, meals and foods you log, nutrition targets, body weight and other measurements you enter, and app settings. This data stays in the app's private storage on your phone. It is protected by your phone's own storage protection, so protect your phone with a passcode.</p>
+
+  <h3>Health Connect and Apple Health</h3>
+  <p>Health access is off until you switch on a feature in Me → Health apps. RepArc then asks for one data type at a time.</p>
+  <ul>
+    <li><b>Read:</b> steps, active calories burned, and body weight. RepArc shows them with your workouts and meals and uses them in your own progress charts.</li>
+    <li><b>Write:</b> finished workouts (exercise sessions) and eaten meals (nutrition), so other health apps you use can see them.</li>
+  </ul>
+  <p>Health data stays on your phone. RepArc does not send it to us or to any server, does not use it for ads, and does not sell or transfer it to anyone. It is used only to show you your own training and food records. RepArc's use of information received from Health Connect follows Google Play's Health Connect Permissions policy, including its Limited Use requirements. You can turn off access at any time in Me → Health apps or in your phone's Health Connect or Health settings. RepArc does not ask for heart rate, sleep, location, or clinical records.</p>
+
+  <h3>Notifications and alarms</h3>
+  <p>During a guided workout, RepArc can show the rest timer and set cues on the lock screen. On Android it can ask for the "Alarms &amp; reminders" permission so these cues arrive on time. These notifications are made on the phone and send nothing anywhere.</p>
+
+  <h3>AI connections (optional)</h3>
+  <p>AI connections are off until you turn one on, for a time you choose. When one is on, an AI app you connect (for example Claude or ChatGPT) can ask RepArc questions and gets answers only from the data types you switched on. That AI provider then receives those answers, under its own privacy policy. AI suggestions are saved only after you approve them. The Wi-Fi connection works on your local network. The online gateway runs in your own Vercel account: it keeps no records, and questions and answers pass through it encrypted with your key and expire within a minute.</p>
+
+  <h3>Backups</h3>
+  <p>Your phone's own backup (Google or iCloud) can include RepArc's database, under your Google or Apple account. You can also save a backup file encrypted with a passphrase you choose. AI and health switches are not restored on a new phone.</p>
+
+  <h3>Updates</h3>
+  <p>The Google Play version gets its updates from Google Play. The test version from our GitHub page checks GitHub once a day for a newer release; that check sends no records or device data, and GitHub sees your IP address as with any website.</p>
+
+  <h3>Your choices and deleting your data</h3>
+  <p>You can export all your records or delete them in Me → Export or delete. Uninstalling the app deletes the data on the phone. Because we hold no copy of your data, there is nothing for us to delete on a server, and there is no account to close. Copies you made yourself (backups, exports, or data you allowed a health app or AI app to receive) are managed in those places.</p>
+
+  <h3>Children</h3>
+  <p>RepArc is meant for adults and is not directed at children under 16.</p>
+
+  <h3>Not medical advice</h3>
+  <p>RepArc records fitness and food information. It is not a medical service and does not give medical or diet treatment advice.</p>
+
+  <h3>Changes and contact</h3>
+  <p>If this policy changes, we will update this page and its effective date before the app changes how it handles data. For questions about privacy, <a href="https://github.com/aspershupadhyay/reparc/issues">contact us on our project page</a>.</p>
+</main>
+
+<footer class="foot">
+  <span><img src="favicon.svg" alt="" width="20" height="20"> RepArc · © 2026</span>
+  <a href="./">Home</a>
+  <a href="https://github.com/aspershupadhyay/reparc/issues">Report a problem</a>
+</footer>
+</body>
+</html>

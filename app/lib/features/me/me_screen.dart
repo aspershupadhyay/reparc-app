@@ -6,11 +6,14 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../ai/ai_controller.dart';
+import '../../core/distribution.dart';
+import '../../core/format.dart';
 import '../../core/palette.dart';
 import '../../core/tokens.dart';
 import '../../core/widgets.dart';
 import '../../data/models.dart';
 import '../../data/providers.dart';
+import '../../updates/update_controller.dart';
 
 /// Me tab. Settings grouped by purpose (handbook 3.6). Account, health,
 /// and AI are separate rows.
@@ -184,21 +187,31 @@ class MeScreen extends ConsumerWidget {
               link(lead(LucideIcons.shield), 'Privacy', 'What is stored and where', '/me/privacy'),
             ]),
             group('App', [
-              link(
-                lead(LucideIcons.refreshCw),
-                'App updates',
-                'Version and updates',
-                '/me/updates',
-              ),
+              // Google Play delivers updates to the Play build (handbook 17.10).
+              if (playBuild)
+                ListTile(
+                  leading: lead(LucideIcons.refreshCw),
+                  title: const Text('Version'),
+                  subtitle: Text(
+                    '${ref.watch(installedVersionProvider).value ?? missingText}. Updates come from Google Play.',
+                  ),
+                )
+              else
+                link(
+                  lead(LucideIcons.refreshCw),
+                  'App updates',
+                  'Version and updates',
+                  '/me/updates',
+                ),
               ListTile(
                 leading: lead(LucideIcons.fileText),
                 title: const Text('Licenses'),
-                subtitle: const Text('GNU AGPL v3.0 and notices'),
+                subtitle: const Text('Notices for fonts, icons, photos, and the body model'),
                 trailing: Icon(LucideIcons.chevronRight, size: IconSizes.s, color: p.inkSoft),
                 onTap: () => showLicensePage(
                   context: context,
                   applicationName: 'RepArc',
-                  applicationLegalese: 'Copyright the RepArc contributors.\nLicensed under GNU AGPL v3.0 only.',
+                  applicationLegalese: '© 2026 RepArc. All rights reserved.',
                 ),
               ),
               ListTile(

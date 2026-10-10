@@ -26,7 +26,9 @@ class MainActivity : FlutterFragmentActivity() {
         super.configureFlutterEngine(flutterEngine)
         // App updates (D-029, handbook 17.3): hands a downloaded, checked APK
         // to Android's package installer. The installer always asks the user;
-        // Reparc never installs anything by itself.
+        // Reparc never installs anything by itself. Google Play delivers the
+        // Play build's updates, so that build has no installer (handbook 17.10).
+        if (BuildConfig.PLAY_BUILD) return
         MethodChannel(flutterEngine.dartExecutor.binaryMessenger, "app.reparc/installer")
             .setMethodCallHandler { call, result ->
                 if (call.method != "install") {

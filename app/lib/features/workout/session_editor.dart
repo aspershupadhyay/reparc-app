@@ -413,16 +413,45 @@ class _SetRowState extends ConsumerState<SetRow> {
   @override
   void didUpdateWidget(SetRow old) {
     super.didUpdateWidget(old);
-    // Refresh fields from saved data, but never while the user types.
-    if (!_loadFocus.hasFocus && parseDecimal(_load.text) != widget.set.load) {
-      _load.text = _num(widget.set.load);
+    final s = widget.set;
+    // A set that just became done (the set time ran out, or a tap) keeps
+    // what the user typed: a value on screen that is not saved yet is saved
+    // now, never cleared (launch review, 2026-10-10).
+    if (s.completed && !old.set.completed) _saveTyped(old.set);
+    // Refresh fields only when the saved value itself changed, and never
+    // while the user types. A rebuild that comes before a save lands must
+    // not put the old value back.
+    if (!_loadFocus.hasFocus && s.load != old.set.load && parseDecimal(_load.text) != s.load) {
+      _load.text = _num(s.load);
     }
-    if (!_repsFocus.hasFocus && parseWhole(_reps.text) != widget.set.reps) {
-      _reps.text = widget.set.reps?.toString() ?? '';
+    if (!_repsFocus.hasFocus && s.reps != old.set.reps && parseWhole(_reps.text) != s.reps) {
+      _reps.text = s.reps?.toString() ?? '';
     }
-    if (!_timeFocus.hasFocus && parseDuration(_time.text) != widget.set.durationSec) {
-      _time.text = _dur(widget.set.durationSec);
+    if (!_timeFocus.hasFocus && s.durationSec != old.set.durationSec && parseDuration(_time.text) != s.durationSec) {
+      _time.text = _dur(s.durationSec);
     }
+  }
+
+  /// Saves the valid values on screen that were never saved: they match
+  /// neither the set before this change ([was]) nor the set now. A value
+  /// the app wrote, such as a measured time, is never overwritten.
+  void _saveTyped(SetEntry was) {
+    final s = widget.set;
+    final load = parseDecimal(_load.text);
+    final reps = parseWhole(_reps.text);
+    final time = parseDuration(_time.text);
+    final saveLoad = load != null && !load.isNaN && load >= 0 && load != s.load && load != was.load;
+    final saveReps = reps != null && reps >= 0 && reps != s.reps && reps != was.reps;
+    final saveTime = time != null && time >= 0 && time != s.durationSec && time != was.durationSec;
+    if (!saveLoad && !saveReps && !saveTime) return;
+    _save(
+      SetEntriesCompanion(
+        load: saveLoad ? Value(load) : const Value.absent(),
+        loadUnit: saveLoad ? Value(_unit) : const Value.absent(),
+        reps: saveReps ? Value(reps) : const Value.absent(),
+        durationSec: saveTime ? Value(time) : const Value.absent(),
+      ),
+    );
   }
 
   @override
