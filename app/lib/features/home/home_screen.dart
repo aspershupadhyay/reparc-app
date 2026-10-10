@@ -357,6 +357,8 @@ class _Hero extends ConsumerWidget {
     final live = ref.watch(liveSessionProvider).value;
     final program = ref.watch(activeProgramProvider).value;
     final next = program == null || program.plan.days.isEmpty ? null : program.plan.days[program.nextDay];
+    // A new user with no plan is asked three questions first (launch review).
+    final welcome = live == null && program == null && !ref.watch(currentSettingsProvider).onboarded;
 
     final (String eyebrow, String title, String? sub, String label, VoidCallback onTap) = switch ((live, next)) {
       (final l?, _) => (
@@ -372,6 +374,13 @@ class _Hero extends ConsumerWidget {
         metaLine([if (d.focus.isNotEmpty) d.focus, '${d.work.length} exercises', 'about ${d.minutes} min']),
         'Start workout',
         () => startWorkout(context, ref, programId: program!.id, programDay: program.nextDay),
+      ),
+      _ when welcome => (
+        'Welcome',
+        'Get your plan',
+        'Three questions, about 20 seconds',
+        'Get my plan',
+        () => context.push('/welcome'),
       ),
       _ => ('Train', 'Start workout', 'Add exercises as you go', 'Start workout', () => startWorkout(context, ref)),
     };

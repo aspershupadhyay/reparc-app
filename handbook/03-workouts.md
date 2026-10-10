@@ -244,6 +244,8 @@ Run format, analysis, generated-code checks, and all tests after each step. Test
 3. **AI proposals.** Several proposed workouts become one plan with days (recommended). Or each workout becomes its own one-day plan.
 4. **Following.** An approved AI plan or a new own plan is not followed until the user taps Follow (recommended). Or it is followed at once, as an imported roadmap is now.
 
+**First-run setup (2026-10-10, launch review Block 2, owner choice).** A user with no plan, who has not finished or skipped the setup, sees "Get your plan" on Home instead of a blank workout. The setup asks three questions, one per screen: goal (the five roadmap goals), level (beginner, intermediate, advanced), and days a week (the goal's options, with the suggested one marked). It then builds and follows that roadmap for a full gym and shows "Your first workout" with **Start now** and **Later**. **Skip** is always there, and the setup does not come back after it is finished or skipped (setting `onboarded`). Equipment is not asked; the user can build another plan in Workout. Code: `app/lib/features/onboarding/welcome_screen.dart`.
+
 ## 4.13 Guided workout and voice cues
 
 Built 2026-10-08 (D-031). Owner request: less typing, timers that run on their own, and a voice that says when a set or rest starts and ends. Not yet tested on a real phone.
