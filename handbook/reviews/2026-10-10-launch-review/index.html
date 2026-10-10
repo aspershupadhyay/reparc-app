@@ -1,0 +1,639 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Reparc Launch Review</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800&family=IBM+Plex+Sans:ital,wght@0,400;0,500;0,600;1,400&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: a training log. A dark "ink panel" verdict up top (the app's own live-workout panel),
+   then sections read like a plan: each finding is a set card with a weight class (severity). */
+:root{
+  --bg:#F2F2F7; --surface:#FFFFFF; --sunk:#E9E9EF; --line:#DCDCE3;
+  --ink:#0B0C0A; --soft:#5B5D63;
+  --panel:#151A0E; --panel-2:#222A17; --on-panel:#F4F7EC; --on-panel-soft:#A4AA98;
+  --energy:#C6F432; --energy-ink:#3F6B00;
+  --brand:#00727E; --brand-soft:#DDF0F2;
+  --block:#D70015; --block-soft:#FFE5E3;
+  --must:#B35A00; --must-soft:#FFF0DB;
+  --good:#248A3D; --good-soft:#E3F6E7;
+  --display:"Barlow Condensed","Arial Narrow",Impact,sans-serif;
+  --body:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,monospace;
+  --r:18px;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#000000; --surface:#17171A; --sunk:#202024; --line:#2E2E33;
+  --ink:#F5F5F7; --soft:#A1A1A8;
+  --panel:#141A0B; --panel-2:#212A14; --on-panel:#F4F7EC; --on-panel-soft:#A4AA98;
+  --energy:#C6F432; --energy-ink:#C6F432;
+  --brand:#40C8E0; --brand-soft:#0D2E33;
+  --block:#FF5A4F; --block-soft:#3A1310;
+  --must:#FFA43A; --must-soft:#33220A;
+  --good:#30D158; --good-soft:#0F2A17;
+  color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#000000; --surface:#17171A; --sunk:#202024; --line:#2E2E33;
+  --ink:#F5F5F7; --soft:#A1A1A8;
+  --panel:#141A0B; --panel-2:#212A14; --on-panel:#F4F7EC; --on-panel-soft:#A4AA98;
+  --energy:#C6F432; --energy-ink:#C6F432;
+  --brand:#40C8E0; --brand-soft:#0D2E33;
+  --block:#FF5A4F; --block-soft:#3A1310;
+  --must:#FFA43A; --must-soft:#33220A;
+  --good:#30D158; --good-soft:#0F2A17;
+  color-scheme:dark}
+
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font:400 16px/1.6 var(--body);-webkit-font-smoothing:antialiased}
+.wrap{max-width:1120px;margin:0 auto;padding-inline:20px;padding-block:24px 80px}
+h1,h2,h3{font-family:var(--display);text-wrap:balance;margin:0;line-height:1.02;letter-spacing:.005em}
+h2{font-size:clamp(34px,5vw,52px);font-weight:800;text-transform:uppercase}
+h3{font-size:24px;font-weight:700}
+p{margin:0}
+a{color:var(--brand)}
+a:focus-visible,button:focus-visible{outline:3px solid var(--brand);outline-offset:2px;border-radius:6px}
+.eyebrow{font:500 12px/1 var(--mono);letter-spacing:.14em;text-transform:uppercase;color:var(--soft)}
+.lede{font-size:18px;color:var(--soft);max-width:66ch}
+.num{font-variant-numeric:tabular-nums}
+
+/* nav */
+nav.jump{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:color-mix(in srgb,var(--bg) 88%,transparent);backdrop-filter:blur(10px);border-bottom:1px solid var(--line);margin-inline:-20px;padding:10px 20px}
+nav.jump ol{list-style:none;margin:0;padding:0;display:flex;gap:6px;overflow-x:auto;scrollbar-width:none}
+nav.jump a{display:block;white-space:nowrap;text-decoration:none;color:var(--soft);font:500 13px/1 var(--body);padding:8px 12px;border-radius:999px}
+nav.jump a:hover{background:var(--sunk);color:var(--ink)}
+
+/* hero */
+.hero{background:var(--panel);color:var(--on-panel);border-radius:28px;padding:clamp(24px,5vw,48px);margin-block:20px 56px;display:grid;gap:28px}
+.hero .eyebrow{color:var(--energy)}
+.hero h1{font-size:clamp(48px,9vw,104px);font-weight:800;text-transform:uppercase}
+.hero h1 em{font-style:normal;color:var(--energy)}
+.hero .lede{color:var(--on-panel-soft);font-size:19px}
+.hero-grid{display:grid;grid-template-columns:1.25fr 1fr;gap:28px;align-items:end}
+@media (max-width:820px){.hero-grid{grid-template-columns:1fr}}
+.bar-wrap{background:var(--panel-2);border-radius:20px;padding:20px}
+.bar-wrap .m{display:grid;grid-template-columns:1fr auto;gap:12px;align-items:center;padding-block:9px;border-top:1px solid rgba(255,255,255,.07)}
+.bar-wrap .m b{display:block;color:var(--on-panel);font-weight:600;font-size:15px}
+.bar-wrap .m span{font-size:12.5px;color:var(--on-panel-soft)}
+.plates{display:flex;gap:4px}
+.plates i{width:10px;height:28px;border-radius:3px;border:1.5px solid;display:block}
+.legend{display:grid;gap:10px;margin-top:14px}
+.legend div{display:grid;grid-template-columns:14px 1fr auto;gap:10px;align-items:center;font-size:14px;color:var(--on-panel-soft)}
+.legend b{color:var(--on-panel);font-weight:600}
+.legend i{width:14px;height:14px;border-radius:4px;display:block}
+.legend span.num{font-family:var(--mono);font-size:13px;color:var(--on-panel)}
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+@media (max-width:820px){.stats{grid-template-columns:repeat(2,1fr)}}
+.stat{background:var(--panel-2);border-radius:16px;padding:16px}
+.stat strong{display:block;font:800 44px/1 var(--display);color:var(--on-panel)}
+.stat span{font-size:13px;color:var(--on-panel-soft)}
+.stat.hot strong{color:var(--energy)}
+
+section{margin-block:72px;scroll-margin-top:64px}
+.head{display:grid;gap:12px;margin-bottom:28px}
+
+/* good list */
+.goods{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+@media (max-width:820px){.goods{grid-template-columns:1fr}}
+.good{background:var(--surface);border-radius:var(--r);padding:18px;display:grid;gap:6px}
+.good b{font-weight:600}
+.good p{color:var(--soft);font-size:15px}
+.tick{display:inline-grid;place-items:center;width:24px;height:24px;border-radius:50%;background:var(--good-soft);color:var(--good);font:600 13px/1 var(--mono)}
+
+/* wedge */
+.wedge{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+@media (max-width:820px){.wedge{grid-template-columns:1fr}}
+.claim{background:var(--energy);color:#0B0C0A;border-radius:24px;padding:clamp(22px,4vw,36px);display:grid;gap:14px;grid-column:1/-1}
+.claim .eyebrow{color:#2F4A00}
+.claim h3{font-size:clamp(30px,4.6vw,50px);text-transform:uppercase;font-weight:800}
+.claim p{font-size:17px;max-width:70ch}
+.pillar{background:var(--surface);border-radius:var(--r);padding:22px;display:grid;gap:10px;align-content:start}
+.pillar h3{font-size:26px}
+.pillar p{color:var(--soft);font-size:15px}
+.pillar ul{margin:0;padding-left:18px;display:grid;gap:6px;font-size:15px}
+.tag{display:inline-block;font:500 11px/1 var(--mono);letter-spacing:.08em;text-transform:uppercase;padding:6px 8px;border-radius:6px;background:var(--brand-soft);color:var(--brand);justify-self:start}
+
+/* compare table */
+.tbl{overflow-x:auto;background:var(--surface);border-radius:var(--r)}
+table{border-collapse:collapse;width:100%;min-width:720px;font-size:14px}
+th,td{text-align:left;padding:12px 14px;border-bottom:1px solid var(--line);vertical-align:top}
+th{font:500 12px/1.2 var(--mono);letter-spacing:.06em;text-transform:uppercase;color:var(--soft)}
+td:first-child{font-weight:600}
+tr.us td{background:color-mix(in srgb,var(--energy) 14%,transparent)}
+.y{color:var(--good);font-weight:600}.n{color:var(--block);font-weight:600}.m{color:var(--must);font-weight:600}
+
+/* screen findings */
+.finding{display:grid;grid-template-columns:260px 1fr;gap:28px;align-items:start;background:var(--surface);border-radius:24px;padding:20px;margin-bottom:16px}
+@media (max-width:760px){.finding{grid-template-columns:1fr}}
+.shots{display:flex;gap:10px}
+.shots img{width:100%;min-width:0;border-radius:16px;border:1px solid var(--line);display:block;background:#000}
+.shots.two img{width:50%}
+.finding .txt{display:grid;gap:12px;min-width:0}
+.issue{display:grid;grid-template-columns:auto 1fr;gap:12px;align-items:start}
+.issue p{font-size:15px}
+.issue p b{font-weight:600}
+.sev{font:600 11px/1 var(--mono);letter-spacing:.06em;text-transform:uppercase;padding:6px 7px;border-radius:6px;white-space:nowrap}
+.sev.block{background:var(--block-soft);color:var(--block)}
+.sev.must{background:var(--must-soft);color:var(--must)}
+.sev.nice{background:var(--brand-soft);color:var(--brand)}
+.fix{font-size:14px;color:var(--soft);border-left:3px solid var(--energy);padding-left:12px}
+.fix b{color:var(--ink);font-weight:600}
+
+/* words */
+.words{display:grid;grid-template-columns:repeat(2,1fr);gap:8px}
+@media (max-width:700px){.words{grid-template-columns:1fr}}
+.word{display:grid;grid-template-columns:1fr auto 1fr;gap:10px;align-items:center;background:var(--surface);border-radius:14px;padding:12px 14px;font-size:14px}
+.word s{color:var(--soft);text-decoration-color:var(--block)}
+.word span.arrow{color:var(--soft);font-family:var(--mono)}
+.word b{font-weight:600}
+
+/* pain + fears */
+.pains{display:grid;grid-template-columns:repeat(2,1fr);gap:14px}
+@media (max-width:760px){.pains{grid-template-columns:1fr}}
+.pain{background:var(--surface);border-radius:var(--r);padding:20px;display:grid;gap:10px;align-content:start}
+.pain .big{font:800 52px/0.9 var(--display);color:var(--ink)}
+.pain .big small{font:500 15px/1.2 var(--body);color:var(--soft);display:block;margin-top:6px}
+.pain p{font-size:15px;color:var(--soft)}
+.pain .ours{font-size:14px;color:var(--ink);background:var(--sunk);border-radius:12px;padding:10px 12px}
+.src{font-size:12px;color:var(--soft)}
+
+.fears{display:grid;gap:10px}
+.fear{display:grid;grid-template-columns:1.1fr 1.4fr auto;gap:16px;align-items:center;background:var(--surface);border-radius:16px;padding:16px 18px}
+@media (max-width:760px){.fear{grid-template-columns:1fr}}
+.fear q{font:700 22px/1.1 var(--display);quotes:"\201C" "\201D"}
+.fear p{font-size:15px;color:var(--soft)}
+.chip{font:600 11px/1 var(--mono);letter-spacing:.06em;text-transform:uppercase;padding:7px 9px;border-radius:999px;white-space:nowrap;justify-self:start}
+.chip.ok{background:var(--good-soft);color:var(--good)}
+.chip.part{background:var(--must-soft);color:var(--must)}
+.chip.no{background:var(--block-soft);color:var(--block)}
+
+/* checklist */
+.lanes{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+@media (max-width:900px){.lanes{grid-template-columns:1fr}}
+.lane{background:var(--surface);border-radius:var(--r);padding:18px;display:grid;gap:10px;align-content:start}
+.lane h3{display:flex;align-items:center;gap:10px}
+.lane h3 .count{font:500 13px/1 var(--mono);color:var(--soft)}
+.lane .rule{height:4px;border-radius:2px}
+.item{display:grid;gap:4px;padding:12px;border-radius:12px;background:var(--sunk)}
+.item b{font-weight:600;font-size:15px}
+.item p{font-size:13.5px;color:var(--soft)}
+.item .state{font:500 11px/1 var(--mono);letter-spacing:.06em;text-transform:uppercase}
+
+/* plan */
+.phases{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+@media (max-width:900px){.phases{grid-template-columns:1fr}}
+.phase{border-radius:var(--r);padding:22px;display:grid;gap:12px;align-content:start;background:var(--surface)}
+.phase.p1{background:var(--panel);color:var(--on-panel)}
+.phase.p1 .eyebrow,.phase.p1 li{color:var(--on-panel-soft)}
+.phase.p1 li b{color:var(--on-panel)}
+.phase h3{font-size:30px;text-transform:uppercase}
+.phase ul{margin:0;padding-left:18px;display:grid;gap:8px;font-size:15px}
+.phase li b{font-weight:600}
+.eff{font:500 11px/1 var(--mono);color:var(--soft);margin-left:6px}
+.phase.p1 .eff{color:var(--energy)}
+
+/* decisions */
+.decide{display:grid;gap:10px;counter-reset:d}
+.dq{display:grid;grid-template-columns:auto 1fr;gap:14px;background:var(--surface);border-radius:16px;padding:16px 18px}
+.dq::before{counter-increment:d;content:counter(d);font:800 30px/1 var(--display);color:var(--energy-ink);min-width:24px}
+.dq b{font-weight:600}
+.dq p{font-size:15px;color:var(--soft)}
+.sources{columns:2;column-gap:28px;font-size:13px;color:var(--soft);padding-left:18px}
+@media (max-width:700px){.sources{columns:1}}
+.sources li{margin-bottom:6px;break-inside:avoid}
+footer{margin-top:56px;font-size:13px;color:var(--soft);border-top:1px solid var(--line);padding-top:18px}
+@media (prefers-reduced-motion:no-preference){.plate{transition:transform .5s ease}}
+</style>
+</head>
+<body>
+
+
+<div class="wrap">
+
+<header class="hero" id="top">
+  <div class="hero-grid">
+    <div style="display:grid;gap:18px">
+      <p class="eyebrow">Reparc v0.4.7 · launch review · 10 Oct 2026</p>
+      <h1>Strong engine.<br><em>Not store-ready</em> yet.</h1>
+      <p class="lede">Reparc already does the hard part. It works offline, needs no account, shows no ads and has no paywall. It tells you what to lift and talks you through each set. What it lacks is a clear first five minutes, a reason to come back on day 14, everyday words, and the Google Play paperwork.</p>
+    </div>
+    <div class="bar-wrap"><p class="eyebrow" style="margin-bottom:12px">Readiness, loaded plate by plate</p><div class="m"><div><b>Training engine</b><span>Plans, guided sets, progression</span></div><div class="plates" aria-label="4 of 5"><i style="background:var(--energy);border-color:var(--energy)"></i><i style="background:var(--energy);border-color:var(--energy)"></i><i style="background:var(--energy);border-color:var(--energy)"></i><i style="background:var(--energy);border-color:var(--energy)"></i><i style="background:transparent;border-color:var(--energy)"></i></div></div><div class="m"><div><b>Privacy</b><span>No account, nothing leaves the phone</span></div><div class="plates" aria-label="4 of 5"><i style="background:var(--energy);border-color:var(--energy)"></i><i style="background:var(--energy);border-color:var(--energy)"></i><i style="background:var(--energy);border-color:var(--energy)"></i><i style="background:var(--energy);border-color:var(--energy)"></i><i style="background:transparent;border-color:var(--energy)"></i></div></div><div class="m"><div><b>Simplicity</b><span>Jargon, seven-number cards</span></div><div class="plates" aria-label="2 of 5"><i style="background:var(--brand);border-color:var(--brand)"></i><i style="background:var(--brand);border-color:var(--brand)"></i><i style="background:transparent;border-color:var(--brand)"></i><i style="background:transparent;border-color:var(--brand)"></i><i style="background:transparent;border-color:var(--brand)"></i></div></div><div class="m"><div><b>Taste</b><span>Body map, icons, empty states</span></div><div class="plates" aria-label="2 of 5"><i style="background:var(--brand);border-color:var(--brand)"></i><i style="background:var(--brand);border-color:var(--brand)"></i><i style="background:transparent;border-color:var(--brand)"></i><i style="background:transparent;border-color:var(--brand)"></i><i style="background:transparent;border-color:var(--brand)"></i></div></div><div class="m"><div><b>Retention</b><span>No PRs, streaks or first-run</span></div><div class="plates" aria-label="1 of 5"><i style="background:#FF5A4F;border-color:#FF5A4F"></i><i style="background:transparent;border-color:#FF5A4F"></i><i style="background:transparent;border-color:#FF5A4F"></i><i style="background:transparent;border-color:#FF5A4F"></i><i style="background:transparent;border-color:#FF5A4F"></i></div></div><div class="m"><div><b>Play paperwork</b><span>7 blockers</span></div><div class="plates" aria-label="1 of 5"><i style="background:#FF5A4F;border-color:#FF5A4F"></i><i style="background:transparent;border-color:#FF5A4F"></i><i style="background:transparent;border-color:#FF5A4F"></i><i style="background:transparent;border-color:#FF5A4F"></i><i style="background:transparent;border-color:#FF5A4F"></i></div></div></div>
+  </div>
+  <div class="stats">
+    <div class="stat hot"><strong class="num">7</strong><span>Play Store blockers</span></div>
+    <div class="stat"><strong class="num">17</strong><span>taste problems found on your phone</span></div>
+    <div class="stat"><strong class="num">84</strong><span>foods in the food list, with no paneer, idli, dosa or poha</span></div>
+    <div class="stat hot"><strong class="num">2</strong><span>data bugs found in a real workout on your phone</span></div>
+  </div>
+</header>
+
+<nav class="jump" aria-label="Sections">
+  <ol>
+    <li><a href="#good">What's good</a></li>
+    <li><a href="#why">Why switch</a></li>
+    <li><a href="#taste">Taste gaps</a></li>
+    <li><a href="#words">Plain words</a></li>
+    <li><a href="#pain">Pain points</a></li>
+    <li><a href="#fears">Fears</a></li>
+    <li><a href="#play">Play Store</a></li>
+    <li><a href="#plan">The plan</a></li>
+    <li><a href="#tested">Phone test</a></li>
+    <li><a href="#more">Also missing</a></li>
+    <li><a href="#decide">Your calls</a></li>
+  </ol>
+</nav>
+
+<section id="good">
+  <div class="head">
+    <p class="eyebrow">Warm-up · what already works</p>
+    <h2>Keep these. They are rare.</h2>
+    <p class="lede">Most rival apps can't make these claims. They are the base we build on, so nothing in this review asks you to remove them.</p>
+  </div>
+  <div class="goods">
+    <div class="good"><span class="tick">✓</span><b>No account, no ads, no paywall</b><p>The market leaders lock basics behind subscriptions. Reparc gives you everything on day one.</p></div>
+    <div class="good"><span class="tick">✓</span><b>Works with no signal</b><p>Basement gyms have no network. Every record saves on the phone first.</p></div>
+    <div class="good"><span class="tick">✓</span><b>Guided workout with timers and voice</b><p>Set clock, rest clock and "three, two, one". Ramp-up rests are shorter, which fixes a common Hevy complaint.</p></div>
+    <div class="good"><span class="tick">✓</span><b>Plans that decide for you</b><p>Five goals × three levels, with warm-ups, ramp-up sets and double progression.</p></div>
+    <div class="good"><span class="tick">✓</span><b>Swap when the machine is taken</b><p>Same muscle, closest move first, and your logged sets stay.</p></div>
+    <div class="good"><span class="tick">✓</span><b>Honest numbers</b><p>A missing value shows as "—", never 0. Estimates are marked. Export and delete everything.</p></div>
+  </div>
+</section>
+
+<section id="why">
+  <div class="head">
+    <p class="eyebrow">The main lift · why would anyone switch</p>
+    <h2>One sentence people repeat to friends</h2>
+    <p class="lede">Hevy and Strong are logbooks: you decide, they record. Fitbod decides for you but costs a lot. MyFitnessPal tracks food but charges for its barcode scanner. No app does all three things below for free, privately, and with Indian food in it.</p>
+  </div>
+  <div class="wedge">
+    <div class="claim">
+      <p class="eyebrow">Proposed promise</p>
+      <h3>"Tap start. Reparc tells you every weight, every rep, every rest. Free. Private. Works with no signal."</h3>
+      <p>The one thing: <b>you never have to think in the gym.</b> Open the app, see today's workout, and follow it set by set. It picks next week's weight for you. Beginners stop feeling lost, and gym bros get progressive overload without spreadsheets. Most of the engine for this already exists (guided mode and double progression). It just isn't the first thing a new user sees.</p>
+    </div>
+    <div class="pillar">
+      <span class="tag">For gym bros</span>
+      <h3>PRs you can feel</h3>
+      <p>Lifters train for the moment the bar moves more than last time. Reparc records PRs but doesn't celebrate them.</p>
+      <ul>
+        <li>A full-screen PR moment with haptics: <b>"New best: Bench 82.5 kg × 6"</b></li>
+        <li>A clean share card for Instagram stories, with no account needed</li>
+        <li>A weekly streak that forgives a missed day (rest is part of training)</li>
+      </ul>
+    </div>
+    <div class="pillar">
+      <span class="tag">For India</span>
+      <h3>Protein from real Indian food</h3>
+      <p>The food list has 84 items, mostly American (USDA). It has 2 dal entries and no paneer, soya chunks, idli, dosa, poha or rajma. Indian gym-goers struggle most with protein, and no workout app solves it.</p>
+      <ul>
+        <li>About 300 Indian staples with katori, roti and piece sizes</li>
+        <li>A protein-first view: <b>"78 of 115 g · add 2 eggs or 1 scoop whey"</b></li>
+        <li>"Same as yesterday" in one tap</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="tbl" style="margin-top:16px">
+    <table>
+      <thead><tr><th>App</th><th>Tells you what to lift</th><th>Fast logging</th><th>Food</th><th>Free core</th><th>No account</th><th>Data stays on phone</th></tr></thead>
+      <tbody>
+        <tr><td>Hevy</td><td class="n">No (log only)</td><td class="y">Yes</td><td class="n">No</td><td class="m">Mostly</td><td class="n">No</td><td class="n">No</td></tr>
+        <tr><td>Strong</td><td class="n">No (log only)</td><td class="y">Yes</td><td class="n">No</td><td class="m">Limited</td><td class="m">Optional</td><td class="m">Partly</td></tr>
+        <tr><td>Fitbod</td><td class="y">Yes (AI)</td><td class="m">OK</td><td class="n">No</td><td class="n">Paid</td><td class="n">No</td><td class="n">No</td></tr>
+        <tr><td>MyFitnessPal</td><td class="n">No</td><td class="n">n/a</td><td class="y">Yes (Western)</td><td class="n">Barcode paid</td><td class="n">No</td><td class="n">No</td></tr>
+        <tr><td>HealthifyMe</td><td class="m">Coach (paid)</td><td class="n">n/a</td><td class="y">Indian</td><td class="n">Paid coaching</td><td class="n">No</td><td class="n">No</td></tr>
+        <tr class="us"><td>Reparc (target)</td><td class="y">Yes, set by set</td><td class="y">One tap</td><td class="y">Indian + common</td><td class="y">Everything</td><td class="y">Yes</td><td class="y">Yes</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p class="src" style="margin-top:8px">The competitor cells are based on public reviews and comparison articles (see Sources). Check each one in the current app before using it in marketing.</p>
+</section>
+
+<section id="taste">
+  <div class="head">
+    <p class="eyebrow">Working sets · what feels unprofessional</p>
+    <h2>Taste gaps, screen by screen</h2>
+    <p class="lede">All screenshots are from your phone today, except the live workout screen, which I rendered from the app's code. Each problem has a severity: <span class="sev block">Fix first</span> <span class="sev must">Before launch</span> <span class="sev nice">Polish</span></p>
+  </div>
+
+  <article class="finding">
+    <div class="shots two"><img src="shots/body-back.jpg" alt="Body map, back view: the whole back is one blue block and the legs are one green block" loading="lazy"><img src="shots/body-picked.jpg" alt="Body map with the lats selected: the selection is hard to see" loading="lazy"></div>
+    <div class="txt">
+      <h3>The body map looks like a painted bodysuit</h3>
+      <div class="issue"><span class="sev block">Fix first</span><p><b>Colours are by body area, not by muscle.</b> The lats, traps, upper back and lower back are one blue block. You can't see where one muscle ends.</p></div>
+      <div class="issue"><span class="sev block">Fix first</span><p><b>A tapped muscle barely changes.</b> Selecting the lats turns them a slightly brighter blue on a blue back.</p></div>
+      <div class="issue"><span class="sev must">Before launch</span><p><b>The paint hides the form,</b> so the body doesn't read as muscular, and it fills only about half the panel.</p></div>
+      <p class="fix"><b>Fix:</b> a neutral sculpted body with thin lines between muscles, and a lime glow on the one you tap. Best quality comes from a Blender pre-render, which is your open decision from earlier.</p>
+    </div>
+  </article>
+
+  <article class="finding">
+    <div class="shots"><img src="shots/home.jpg" alt="Home screen: greeting, next workout card, food rings with dashes, and a weekly strip" loading="lazy"></div>
+    <div class="txt">
+      <h3>Home: clean, but it doesn't know you</h3>
+      <div class="issue"><span class="sev must">Before launch</span><p><b>No first-run setup.</b> A new user lands on someone else's plan and four empty food rings. Nobody asked their goal, days or gym, and "Good afternoon" has no name.</p></div>
+      <div class="issue"><span class="sev must">Before launch</span><p><b>Four dashes in rings look broken.</b> An empty ring should invite an action ("Log breakfast") rather than show "—".</p></div>
+      <div class="issue"><span class="sev nice">Polish</span><p><b>"0/6 plan" on a Saturday</b> reads like failure on day one. Count from the day the plan started.</p></div>
+      <p class="fix"><b>Fix:</b> a three-question start (goal, days a week, where you train) that takes about 20 seconds, then <b>"Your first workout: Push · 45 min"</b>. Retention research says long questionnaires lose users, so stop at three.</p>
+    </div>
+  </article>
+
+  <article class="finding">
+    <div class="shots two"><img src="shots/analytics.jpg" alt="Analytics with all zeros and 'Same as before'" loading="lazy"><img src="shots/plan.jpg" alt="Workout plan tab" loading="lazy"></div>
+    <div class="txt">
+      <h3>Analytics and plan: zeros and mixed numbers</h3>
+      <div class="issue"><span class="sev must">Before launch</span><p><b>An empty week shows "0 · Same as before" four times.</b> It feels dead. A new user needs a picture of what will appear: "Finish one workout to see your volume and PRs here."</p></div>
+      <div class="issue"><span class="sev must">Before launch</span><p><b>Numbers disagree.</b> Home says <span class="num">0/6</span> plan days, Analytics says <span class="num">0 of 2</span> planned workouts, and the plan says "Mon Push · next" on a Saturday. One user, three counts.</p></div>
+      <div class="issue"><span class="sev nice">Polish</span><p><b>No reward moment.</b> Nothing celebrates a finished workout or a PR, and there's no streak and no share card.</p></div>
+    </div>
+  </article>
+
+  <article class="finding">
+    <div class="shots two"><img src="shots/meal.jpg" alt="Meal screen with seven nutrient rows" loading="lazy"><img src="shots/addfood.jpg" alt="Add food sheet: USDA list and manual entry" loading="lazy"></div>
+    <div class="txt">
+      <h3>Meal: too many numbers, too few foods</h3>
+      <div class="issue"><span class="sev block">Fix first</span><p><b>84 foods, mostly American.</b> A new Indian user searches "paneer", finds nothing, and leaves. Typing food in by hand is where food tracking dies.</p></div>
+      <div class="issue"><span class="sev must">Before launch</span><p><b>Seven numbers on one card</b> (energy, protein, carbs, fibre, fat, sugar, sodium) is a dietitian's view. A gym-goer wants protein and calories first and the rest one tap away.</p></div>
+      <div class="issue"><span class="sev nice">Polish</span><p><b>The "Add food" button covers the Breakfast pill,</b> and the meal timeline sits below the fold.</p></div>
+      <p class="fix"><b>Fix:</b> protein-first card, Indian staples with household portions, a "Same as yesterday" button and recent foods at the top. A barcode scanner is a later decision (it needs an online food source).</p>
+    </div>
+  </article>
+
+  <article class="finding">
+    <div class="shots two"><img src="shots/live.jpg" alt="Live workout screen with ring timer and set rows" loading="lazy"><img src="shots/parts.jpg" alt="Body part list with blob-like icons" loading="lazy"></div>
+    <div class="txt">
+      <h3>Live workout: the best screen, still too busy</h3>
+      <div class="issue"><span class="sev must">Before launch</span><p><b>Jargon in the most important place:</b> "3 reps left", "3 × 6–10", "W" for warm-up, "Double progression with 1–2 reps left in the tank". Beginners won't understand these.</p></div>
+      <div class="issue"><span class="sev nice">Polish</span><p><b>The body-part icons are coloured blobs,</b> and they look homemade next to the clean list.</p></div>
+      <p class="fix"><b>Fix:</b> say "Stop when 3 more reps would be hard" once, with a small "?" for the term. Give warm-up sets a word instead of a letter. Use real muscle icons, made from the same body as the map.</p>
+    </div>
+  </article>
+
+  <article class="finding">
+    <div class="shots two"><img src="shots/me.jpg" alt="Me tab, top half" loading="lazy"><img src="shots/me2.jpg" alt="Me tab, bottom half with AI connections, licenses and GitHub support" loading="lazy"></div>
+    <div class="txt">
+      <h3>Me: a developer's settings page</h3>
+      <div class="issue"><span class="sev must">Before launch</span><p><b>Support opens GitHub.</b> Normal people don't have GitHub accounts. Play also needs a support email.</p></div>
+      <div class="issue"><span class="sev must">Before launch</span><p><b>"AI connections · 4 data types chosen", "GNU AGPL v3.0", "MCP".</b> These words are for engineers. Move them under an "Advanced" row.</p></div>
+      <div class="issue"><span class="sev nice">Polish</span><p><b>No profile at the top</b> (name, goal, current plan). Me should start with you, not with units.</p></div>
+    </div>
+  </article>
+</section>
+
+<section id="words">
+  <div class="head">
+    <p class="eyebrow">Accessory work · "so even a child can use it"</p>
+    <h2>Say it the way people say it</h2>
+    <p class="lede">These words are on your screens today. Changing them costs almost nothing and makes the biggest difference for beginners.</p>
+  </div>
+  <div class="words">
+    <div class="word"><s>3 reps left</s><span class="arrow">→</span><b>Stop when 3 more would be hard</b></div>
+    <div class="word"><s>Double progression</s><span class="arrow">→</span><b>Add reps, then add weight</b></div>
+    <div class="word"><s>Working sets</s><span class="arrow">→</span><b>Hard sets</b></div>
+    <div class="word"><s>Volume 0 kg</s><span class="arrow">→</span><b>Total lifted</b></div>
+    <div class="word"><s>W</s><span class="arrow">→</span><b>Warm-up</b></div>
+    <div class="word"><s>Planned / Eaten</s><span class="arrow">→</span><b>Ate it / Plan it</b></div>
+    <div class="word"><s>AI connections</s><span class="arrow">→</span><b>Advanced → Use with ChatGPT or Claude</b></div>
+    <div class="word"><s>Support: github.com/…</s><span class="arrow">→</span><b>Help and feedback</b></div>
+    <div class="word"><s>Same as before</s><span class="arrow">→</span><b>(hide when both are 0)</b></div>
+    <div class="word"><s>Guided workout · runs on its own</s><span class="arrow">→</span><b>Coach mode</b></div>
+  </div>
+</section>
+
+<section id="pain">
+  <div class="head">
+    <p class="eyebrow">Research · what users complain about elsewhere</p>
+    <h2>Pain points we can win on</h2>
+    <p class="lede">These come from reviews, surveys and comparison articles. Many sources are rival apps' blogs, so read the numbers as direction, not as exact facts.</p>
+  </div>
+  <div class="pains">
+    <div class="pain"><div class="big">60%<small>of gym members worry most about not knowing how to use the machines</small></div><p>43% don't know where to begin, and 36% find asking for help the hardest part (PureGym survey, 800+ members).</p><div class="ours"><b>Our answer:</b> a "First day" plan with the photo, setup and seat height for every machine, so nobody has to ask.</div><p class="src">PureGym via The Conversation</p></div>
+    <div class="pain"><div class="big">3–8%<small>of users are still active on day 30</small></div><p>Most quit in the first two weeks. Long setup questionnaires, too many notifications and "no value felt" are the top reasons.</p><div class="ours"><b>Our answer:</b> value in the first minute (today's workout), a forgiving weekly streak, and a PR moment in week one.</div><p class="src">AppsFlyer and Adjust via Sahha; Braze</p></div>
+    <div class="pain"><div class="big">12/15<small>top fitness apps share personal data with third parties</small></div><p>Free apps share more than paid ones. People are getting more careful about their health data.</p><div class="ours"><b>Our answer:</b> we share nothing. Say it on the store page and on the first screen: "Your data never leaves this phone."</div><p class="src">Surfshark via TechRadar</p></div>
+    <div class="pain"><div class="big">#1<small>complaint in food tracking: the barcode scanner behind a paywall</small></div><p>MyFitnessPal moved it to Premium years ago and users are still angry. Its crowd-sourced food entries are often wrong.</p><div class="ours"><b>Our answer:</b> a checked, Indian-first food list, free forever. Never paywall the basics.</div><p class="src">Kimola; Unstar review analysis</p></div>
+    <div class="pain"><div class="big">3 taps<small>per set is too many</small></div><p>"I don't want to spend more time logging than lifting." Users want last session's weights filled in.</p><div class="ours"><b>Our answer:</b> we already pre-fill. Next, make the whole set one tap: ✓ = did what was planned.</div><p class="src">Reddit summary via PonteFuerte</p></div>
+    <div class="pain"><div class="big">1 timer<small>for warm-ups and work sets in Hevy</small></div><p>Lifters want short rests on warm-ups and long rests on heavy sets.</p><div class="ours"><b>Our answer:</b> already built (60 s ramp-up rests). Mention it in the store listing.</div><p class="src">Stronger app comparison</p></div>
+  </div>
+</section>
+
+<section id="fears">
+  <div class="head">
+    <p class="eyebrow">Mobility · what stops people from trying</p>
+    <h2>What people are afraid of</h2>
+    <p class="lede">Each fear is matched with what Reparc does today. A green chip means you can already promise it, so put it on the store page.</p>
+  </div>
+  <div class="fears">
+    <div class="fear"><q>Will it sell my health data?</q><p>Nothing leaves the phone unless you choose to export or connect. No ads, no trackers.</p><span class="chip ok">Answered</span></div>
+    <div class="fear"><q>Will it lock things after a week?</q><p>No trial, no paywall. Say "Free. No trial. No paywall." in the first line of the listing.</p><span class="chip ok">Answered</span></div>
+    <div class="fear"><q>Do I need to sign up?</q><p>No account at all.</p><span class="chip ok">Answered</span></div>
+    <div class="fear"><q>If I change phones, do I lose everything?</q><p>Android's Google backup includes the database, but Home warns "Saved on this phone only", which scares people. Show "Backed up to Google · yesterday" when it's true.</p><span class="chip part">Partly</span></div>
+    <div class="fear"><q>Will I do it wrong and get hurt?</q><p>Exercises have steps and photos, but the coaching text and plans haven't been reviewed by a qualified coach. That review is listed in the handbook as still to confirm.</p><span class="chip part">Partly</span></div>
+    <div class="fear"><q>Will I look lost at the gym?</q><p>There's no first-day mode, no machine setup help, and no "the gym is busy, swap" prompt before you get stuck.</p><span class="chip no">Not yet</span></div>
+    <div class="fear"><q>Will it spam me?</q><p>The only notification is the rest alert. Keep it that way, plus one optional workout-day reminder.</p><span class="chip ok">Answered</span></div>
+  </div>
+</section>
+
+<section id="play">
+  <div class="head">
+    <p class="eyebrow">Competition day · Google Play readiness</p>
+    <h2>What stands between you and the store</h2>
+    <p class="lede">Checked against the manifest, the build scripts, the handbook and Google's published rules. Target SDK 36 already meets the August 2026 requirement.</p>
+  </div>
+  <div class="lanes">
+    <div class="lane">
+      <div class="rule" style="background:var(--block)"></div>
+      <h3>Blockers <span class="count">7</span></h3>
+      <div class="item"><b>Self-update permission</b><p>REQUEST_INSTALL_PACKAGES and the in-app APK updater break Play's Device and Network Abuse policy. The Play build must leave them out and let Play deliver updates.</p><span class="state" style="color:var(--block)">Not done</span></div>
+      <div class="item"><b>Voice clip licence</b><p>The voice clips come from ElevenLabs' free plan, which allows non-commercial use only. Re-make them on a paid plan or record new ones.</p><span class="state" style="color:var(--block)">Not done</span></div>
+      <div class="item"><b>Privacy policy page</b><p>The website has a privacy section, but Play and Health Connect need a full policy at its own URL, and it must match the in-app link.</p><span class="state" style="color:var(--block)">Not done</span></div>
+      <div class="item"><b>Health apps declaration and Data safety form</b><p>Each of the 5 Health Connect permissions needs a written reason in the Play Console.</p><span class="state" style="color:var(--block)">Not done</span></div>
+      <div class="item"><b>App Bundle and signing</b><p>Release builds an APK, but Play needs an AAB. Without the key secrets, signing falls back to a debug key. Set up an upload key and Play App Signing.</p><span class="state" style="color:var(--block)">Not done</span></div>
+      <div class="item"><b>Exact alarm permission</b><p>Play limits SCHEDULE_EXACT_ALARM to apps whose core job is alarms. Remove it or justify it, because the rest alert works without it.</p><span class="state" style="color:var(--block)">Risk</span></div>
+      <div class="item"><b>Closed test, 12 testers, 14 days</b><p>Required for new personal developer accounts before production. Organisation accounts are exempt.</p><span class="state" style="color:var(--block)">Not started</span></div>
+    </div>
+    <div class="lane">
+      <div class="rule" style="background:var(--must)"></div>
+      <h3>Before launch <span class="count">6</span></h3>
+      <div class="item"><b>Coach review</b><p>A qualified strength coach should check the coaching text and the 15 plans. This is listed as still to confirm in D-016 and D-025.</p><span class="state" style="color:var(--must)">Open</span></div>
+      <div class="item"><b>Store listing</b><p>A 512 px icon, a 1024 × 500 feature graphic, 4–8 phone screenshots, an 80-character short description and a full description.</p><span class="state" style="color:var(--must)">Not done</span></div>
+      <div class="item"><b>Content rating and audience</b><p>Fill in the questionnaire. Target 18+ (16+ at the youngest): simple enough for anyone, but not marketed to children.</p><span class="state" style="color:var(--must)">Not done</span></div>
+      <div class="item"><b>Real-device checks</b><p>TalkBack, large text and a cheap phone. None of these has been checked on a device for the recent releases.</p><span class="state" style="color:var(--must)">Not done</span></div>
+      <div class="item"><b>Support email and in-app feedback</b><p>Play requires a contact email, and GitHub isn't a support channel for normal users.</p><span class="state" style="color:var(--must)">Not done</span></div>
+      <div class="item"><b>Crash visibility</b><p>There's no crash reporting today, so you won't see crashes on users' phones. Decide whether to add opt-in, privacy-friendly reports.</p><span class="state" style="color:var(--must)">Your call</span></div>
+    </div>
+    <div class="lane">
+      <div class="rule" style="background:var(--good)"></div>
+      <h3>Already fine <span class="count">6</span></h3>
+      <div class="item"><b>Target SDK 36</b><p>This meets the requirement for new apps from 31 Aug 2026.</p><span class="state" style="color:var(--good)">Done</span></div>
+      <div class="item"><b>Minimal health permissions</b><p>5 types only, each asked for when the user turns that feature on. No heart rate, sleep or location.</p><span class="state" style="color:var(--good)">Done</span></div>
+      <div class="item"><b>Health Connect privacy link</b><p>The rationale screen and the permission-usage entry point are wired up in the manifest.</p><span class="state" style="color:var(--good)">Done</span></div>
+      <div class="item"><b>Delete my data</b><p>Export and delete are in the app. Account deletion doesn't apply because there are no accounts.</p><span class="state" style="color:var(--good)">Done</span></div>
+      <div class="item"><b>Backup rules</b><p>Android's Google backup and phone-to-phone transfer include the database.</p><span class="state" style="color:var(--good)">Done</span></div>
+      <div class="item"><b>Open licences</b><p>Inter, Lucide, Free Exercise DB and MakeHuman (CC0) notices ship in the app.</p><span class="state" style="color:var(--good)">Done</span></div>
+    </div>
+  </div>
+</section>
+
+<section id="plan">
+  <div class="head">
+    <p class="eyebrow">Programme · three blocks</p>
+    <h2>The order I'd fix it in</h2>
+    <p class="lede">Simple first: each block makes the app smaller to understand, not bigger. Effort is marked S (hours), M (days) or L (a week or more).</p>
+  </div>
+  <div class="phases">
+    <div class="phase p1">
+      <p class="eyebrow">Block 1 · store-ready</p>
+      <h3>Get on Play</h3>
+      <ul>
+        <li><b>Fix the two set-logging bugs</b> found in the real workout <span class="eff">S</span></li>
+        <li><b>Play build without the updater</b> or the exact-alarm permission <span class="eff">M</span></li>
+        <li><b>AAB, upload key, Play App Signing</b> <span class="eff">S</span></li>
+        <li><b>Privacy policy page,</b> Data safety form, health apps declaration <span class="eff">M</span></li>
+        <li><b>Voice clips</b> re-made on a licensed plan <span class="eff">M</span></li>
+        <li><b>Support email</b> and an in-app "Help and feedback" row <span class="eff">S</span></li>
+        <li><b>Start the closed test now</b> so the 14 days run in parallel with Blocks 2 and 3 <span class="eff">S</span></li>
+      </ul>
+    </div>
+    <div class="phase">
+      <p class="eyebrow">Block 2 · first five minutes</p>
+      <h3>Feel professional</h3>
+      <ul>
+        <li><b>Three-question start</b> leading to your first workout <span class="eff">M</span></li>
+        <li><b>Plain words</b> from the list above, across the app <span class="eff">S</span></li>
+        <li><b>Large-text fixes</b> and labels on the kg and reps boxes <span class="eff">S</span></li>
+        <li><b>Empty states</b> that show what will appear, instead of zeros <span class="eff">S</span></li>
+        <li><b>One count</b> for plan progress everywhere <span class="eff">S</span></li>
+        <li><b>Body map</b> redone (neutral body, muscle lines, lime pick) <span class="eff">L</span></li>
+        <li><b>Me</b> starts with you, and engineer settings move to Advanced <span class="eff">S</span></li>
+      </ul>
+    </div>
+    <div class="phase">
+      <p class="eyebrow">Block 3 · reason to stay</p>
+      <h3>Own the niche</h3>
+      <ul>
+        <li><b>PR moment</b> and a share card <span class="eff">M</span></li>
+        <li><b>Forgiving weekly streak</b> <span class="eff">S</span></li>
+        <li><b>Indian food list</b> (about 300 staples, household portions) with a protein-first card <span class="eff">L</span></li>
+        <li><b>"Same as yesterday"</b> and recent foods <span class="eff">S</span></li>
+        <li><b>First-day mode</b> with machine setup help <span class="eff">M</span></li>
+        <li><b>One-tap set:</b> ✓ means you did what was planned <span class="eff">S</span></li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+
+<section id="tested">
+  <div class="head">
+    <p class="eyebrow">Test day · a real workout on your phone</p>
+    <h2>What I tested on your realme</h2>
+    <p class="lede">I ran a real Push workout through the warm-up and the first bench press sets, sent the app to the background during a rest, then discarded the workout so your history stays clean. I also set the phone's font to Very large, checked the main screens, and set it back to Default.</p>
+  </div>
+
+  <article class="finding">
+    <div class="shots two"><img src="shots/t-rest.jpg" alt="Rest screen: next bench press set, 8 reps at 50%, with empty kg fields" loading="lazy"><img src="shots/t-lost.jpg" alt="Two ramp-up sets ticked as done with empty kg and reps" loading="lazy"></div>
+    <div class="txt">
+      <h3>Two bugs that lose workout data</h3>
+      <div class="issue"><span class="sev block">Fix first</span><p><b>A set ended by its timer drops the typed weight.</b> I typed 30 kg into a ramp-up set. The set timer ran out, the app ticked the set as done on its own, and the 30 kg was gone, with reps empty too. The set is saved as done with no weight and no reps.</p></div>
+      <div class="issue"><span class="sev block">Fix first</span><p><b>The button changes under your finger.</b> At the end of a rest, "Skip rest" turns into "Set done" as the next set starts on its own. One tap at 0:00 ticked the next set as done, again with no weight or reps. In a real gym this happens with sweaty hands and no time to check.</p></div>
+      <div class="issue"><span class="sev must">Before launch</span><p><b>"8 reps at 50%" with an empty kg box.</b> A new user has no working weight yet, so 50% of what? The screen should ask once ("What can you lift for 8?") or offer the weight calculator.</p></div>
+      <p class="fix"><b>Note:</b> I typed the weight through Latch, which enters text the same way an accessibility tool does. Please try the first bug once by hand to confirm it. The second bug comes from the screen layout alone.</p>
+    </div>
+  </article>
+
+  <article class="finding">
+    <div class="shots two"><img src="shots/t-warm.jpg" alt="Warm-up timer counting down with two overlapping dots at the top of the ring" loading="lazy"><img src="shots/t-finish.jpg" alt="Finish workout sheet with save, save as incomplete, keep going and discard" loading="lazy"></div>
+    <div class="txt">
+      <h3>The live workout mostly works well</h3>
+      <div class="issue"><span class="sev nice">Works</span><p><b>Warm-up timers, rest timers and ramp-up sets</b> counted down correctly and moved on by themselves. The ramp-up rest was 60 seconds, as designed.</p></div>
+      <div class="issue"><span class="sev nice">Works</span><p><b>The finish sheet is clear:</b> "7 of 29 sets done", save, save as incomplete, keep going, or discard. Discard asks again before deleting. This is the best-written screen in the app.</p></div>
+      <div class="issue"><span class="sev nice">Polish</span><p><b>Small glitches:</b> two dots overlap at the top of the timer ring. The start screen says "READY" over a clock that is already counting. The plan says "7 exercises" but the finish sheet says "12" because it counts warm-up moves.</p></div>
+    </div>
+  </article>
+
+  <article class="finding">
+    <div class="shots two"><img src="shots/t-bigtext.jpg" alt="Home at very large text: food targets cut off as 'of 29…' and 'of 2,1…'" loading="lazy"><img src="shots/t-bigmeal.jpg" alt="Meal at very large text: Add food button covers the Targets button" loading="lazy"></div>
+    <div class="txt">
+      <h3>Large text: mostly fine, two problems</h3>
+      <div class="issue"><span class="sev must">Before launch</span><p><b>Home cuts off the food targets:</b> "of 29…" and "of 2,1…". The one number the user needs is the one that's hidden.</p></div>
+      <div class="issue"><span class="sev must">Before launch</span><p><b>On Meal, "Add food" covers the Targets button,</b> so it can't be tapped without scrolling.</p></div>
+      <div class="issue"><span class="sev nice">Works</span><p>Titles, buttons and the workout screens grew without breaking. The tab bar labels still fit.</p></div>
+    </div>
+  </article>
+
+  <div class="tbl" style="margin-top:8px">
+    <table>
+      <thead><tr><th>Check</th><th>Result</th><th>How I checked</th></tr></thead>
+      <tbody>
+        <tr><td>Real workout</td><td class="m">2 data bugs, otherwise works</td><td>Push day: 5 warm-up moves, a rest, and 2 ramp-up bench sets. Workout discarded afterwards.</td></tr>
+        <tr><td>Rest alert with the app in the background</td><td class="m">Partly</td><td>Reparc's notification icon appeared in the status bar while the app was in the background. Latch can't open the notification shade, so I couldn't see the alert itself or test it with the screen locked.</td></tr>
+        <tr><td>Screen locked</td><td class="n">Not tested</td><td>Latch can't press the power button. Needs a person at the gym.</td></tr>
+        <tr><td>Voice timing</td><td class="n">Not tested</td><td>Voice is off on your phone, and I can't hear audio through Latch.</td></tr>
+        <tr><td>Battery</td><td class="n">Not measured</td><td>32% to 31% over about 6 minutes of mixed use. That's too short to mean anything. A full 60-minute session is needed.</td></tr>
+        <tr><td>Screen reader (TalkBack)</td><td class="m">Labels mostly good</td><td>I read the same labels TalkBack reads. Tabs, buttons, timers and checkboxes are well named ("Set time left 4 minutes 53 seconds", "Set 1 complete"). But <b>every kg and reps box has no label</b>, so TalkBack would just say "edit box". I didn't turn TalkBack itself on, because it takes over the phone's controls.</td></tr>
+        <tr><td>Large text</td><td class="m">2 problems</td><td>Font set to Very large: Home, Workout and Meal checked, then set back to Default.</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section id="more">
+  <div class="head">
+    <p class="eyebrow">Also missing · bigger than one screen</p>
+    <h2>Six things the first draft didn't cover</h2>
+  </div>
+  <div class="pains">
+    <div class="pain"><div class="big" style="font-size:40px">Licence</div><p>The app's licence page says <b>GNU AGPL v3</b>, but the code is in a private repository. Under AGPL, anyone who installs the app can ask for the full source code, so publishing on Play under AGPL means you're promising to open-source it. You own the code, so you can choose a different licence. Decide before launch.</p><div class="ours"><b>Status:</b> decision needed, and it can block launch.</div></div>
+    <div class="pain"><div class="big" style="font-size:40px">Money</div><p>"Free, no paywall" is the strongest promise, but nothing says how the app pays for itself. Options that keep the promise: a one-time supporter purchase for extras (themes, advanced charts, never basics), tips, or a paid plan only for things that cost money to run (cloud sync, an AI coach).</p><div class="ours"><b>Status:</b> decide now. Adding a paywall later is what users hate about MyFitnessPal.</div></div>
+    <div class="pain"><div class="big" style="font-size:40px">Search</div><p>Nobody searches the Play Store for "Reparc". The listing title should carry the words people type, for example <b>"Reparc: Gym Workout &amp; Protein Tracker"</b>. The first screenshot should show the promise in one line, not a settings screen.</p><div class="ours"><b>Status:</b> part of the store listing work.</div></div>
+    <div class="pain"><div class="big" style="font-size:40px">Blind</div><p>The app has no usage numbers at all, so after launch you won't know whether people quit on day 2 or day 20. Opt-in counts like "workouts finished per week", with no health data in them, would answer that. Your handbook already keeps this kind of count separate from users' own progress data.</p><div class="ours"><b>Status:</b> decision needed.</div></div>
+    <div class="pain"><div class="big" style="font-size:40px">iPhone</div><p>The iPhone build is unsigned. The App Store needs a paid Apple developer account (US$99 a year), plus its own review and privacy labels.</p><div class="ours"><b>Status:</b> later, once Android is live.</div></div>
+    <div class="pain"><div class="big" style="font-size:40px">Hindi</div><p>Hindi or Hinglish wording would matter for Indian users. Also, "your data is safe" only holds if the phone's Google backup is on. The app should check that and say it plainly.</p><div class="ours"><b>Status:</b> after launch for Hindi. Before launch for the backup check.</div></div>
+  </div>
+</section>
+
+<section id="decide">
+  <div class="head">
+    <p class="eyebrow">Cool-down · decisions only you can make</p>
+    <h2>Your calls before I start</h2>
+  </div>
+  <div class="decide">
+    <div class="dq"><div><b>Licence</b><p>Keep AGPL and publish the source code, or choose a licence that keeps the code private. This has to be settled before the store build.</p></div></div>
+    <div class="dq"><div><b>How it makes money</b><p>A supporter purchase, tips, or a paid plan only for features that cost money to run. Never paywall the basics.</p></div></div>
+    <div class="dq"><div><b>Who is the first user?</b><p>My pick: Indian gym-goers aged 18–30, beginner to intermediate. It decides the food list, the words and the store listing. The handbook still lists the target user as open.</p></div></div>
+    <div class="dq"><div><b>How should the Play build differ from the GitHub build?</b><p>Your rule says no separate app variants, but Play bans the self-updater. Options: one Play-only build that drops the updater (same app ID), or stop the GitHub builds once Play is live.</p></div></div>
+    <div class="dq"><div><b>Voice clips</b><p>Pay for an ElevenLabs plan that allows commercial use and re-make the clips, record a real voice, or ship without voice for launch.</p></div></div>
+    <div class="dq"><div><b>Crash reports</b><p>None (most private, but you're blind to crashes), or opt-in reports with no health data in them.</p></div></div>
+    <div class="dq"><div><b>Developer account</b><p>Personal (needs the 12-tester, 14-day closed test) or organisation (needs a D-U-N-S number, no closed test).</p></div></div>
+    <div class="dq"><div><b>The body map</b><p>A Blender pre-rendered neutral body (best look) or an improved live 3D body. This is still open from our last chat.</p></div></div>
+  </div>
+</section>
+
+<section id="sources" style="margin-top:56px">
+  <div class="head"><p class="eyebrow">Sources</p></div>
+  <ol class="sources">
+    <li><a href="https://theconversation.com/six-ways-to-get-over-gymtimidation-your-anxiety-of-heading-to-the-gym-174740">The Conversation: six ways to get over gymtimidation</a> (PureGym survey figures)</li>
+    <li><a href="https://puregym.com/blog/how-to-overcome-gymtimidation">PureGym: how to overcome gymtimidation</a></li>
+    <li><a href="https://sahha.ai/blog/health-app-churn-retention/">Sahha: health app churn and retention</a> (AppsFlyer and Adjust day-30 figures)</li>
+    <li><a href="https://www.braze.com/resources/articles/mobile-app-retention">Braze: mobile app retention</a></li>
+    <li><a href="https://www.techradar.com/computing/cyber-security/beware-80-percent-of-the-most-popular-fitness-apps-are-selling-out-your-privacy">TechRadar: 80% of popular fitness apps share data</a> (Surfshark)</li>
+    <li><a href="https://kimola.com/reports/myfitnesspal-removes-free-barcode-scanner-feature-140890">Kimola: MyFitnessPal barcode scanner backlash</a></li>
+    <li><a href="https://unstar.app/blog/calorie-tracking-apps-ranked-1-star-reviews-2026">Unstar: calorie apps ranked by 1-star reviews, 2026</a></li>
+    <li><a href="https://www.pontefuerteai.com/blog/best-gym-app-reddit-recommends-2025">PonteFuerte: what Reddit recommends</a> (a competitor's blog)</li>
+    <li><a href="https://www.strongermobileapp.com/blog/best-workout-tracker-apps">Stronger: workout tracker comparison</a> (a competitor's blog)</li>
+    <li><a href="https://www.producthunt.com/products/hevy/reviews">Product Hunt: Hevy reviews</a></li>
+    <li><a href="https://askvora.com/blog/best-strength-training-apps-2026">Vora: best strength training apps 2026</a></li>
+    <li><a href="https://kimola.com/reports/unlock-insights-healthifyme-user-feedback-analysis-report-app-store-in-154445">Kimola: HealthifyMe feedback analysis</a></li>
+    <li><a href="https://support.google.com/googleplay/android-developer/answer/12085295?hl=en">Google Play: REQUEST_INSTALL_PACKAGES policy</a></li>
+    <li><a href="https://developer.android.com/health-and-fitness/health-connect/publish">Android: publish your health app on Google Play</a></li>
+    <li><a href="https://developer.android.com/google/play/requirements/target-sdk">Android: target API level requirements</a></li>
+    <li><a href="https://www.testerscommunity.com/blog/google-play-closed-testing-requirements-2026">Google Play closed testing rules, 2026</a> (third-party summary; check the Play Console Help page)</li>
+  </ol>
+</section>
+
+<footer>Made from a walkthrough of Reparc v0.4.7 on your realme phone over Latch. It included one test workout, which was discarded, and a font-size check that was set back to Default., a code and manifest audit of <span style="font-family:var(--mono)">reparc-app</span>, and public research. I haven't fixed anything. Every item here waits for your go-ahead.</footer>
+</div>
+
+</body>
+</html>
