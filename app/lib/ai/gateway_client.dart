@@ -21,7 +21,7 @@ String vercelDeployUrl() {
       '&root-directory=gateway'
       '&project-name=reparc-gateway&repository-name=reparc-gateway'
       '&env=REPARC_OWNER_KEY'
-      '&envDescription=${enc('Paste the owner key from the Reparc app. It stays in your Vercel project and on your phone.')}'
+      '&envDescription=${enc('Paste the owner key from the RepArc app. It stays in your Vercel project and on your phone.')}'
       '&envLink=${enc('$gatewayRepository/blob/main/gateway/README.md')}'
       '&stores=${enc(stores)}';
 }
@@ -146,7 +146,7 @@ class GatewayApi {
       try {
         json = jsonDecode(text);
       } on FormatException {
-        throw GatewayException('This address did not answer like a Reparc gateway.', status: res.statusCode);
+        throw GatewayException('This address did not answer like a RepArc gateway.', status: res.statusCode);
       }
       if (res.statusCode == 401) {
         throw const GatewayException('The owner key does not match REPARC_OWNER_KEY in Vercel.', status: 401);
@@ -171,11 +171,11 @@ class GatewayApi {
     }
   }
 
-  /// Checks that [base] is a Reparc gateway that knows this owner key.
+  /// Checks that [base] is a RepArc gateway that knows this owner key.
   Future<void> verify() async {
     final info = await _call('GET', '/v1/info');
     if (info is! Map || info['product'] != 'reparc-gateway') {
-      throw const GatewayException('This address is not a Reparc gateway.');
+      throw const GatewayException('This address is not a RepArc gateway.');
     }
     if (info['setup_required'] == true) {
       throw const GatewayException(
@@ -225,7 +225,7 @@ class GatewayApi {
 enum RelayStatus { stopped, connecting, online, retrying }
 
 /// Answers tool calls that arrive through the owner's gateway while the
-/// user keeps online access on and Reparc open.
+/// user keeps online access on and RepArc open.
 ///
 /// The gateway forwards each call; the phone runs it against the local
 /// database and sends back only that answer. The gateway keeps no copy of

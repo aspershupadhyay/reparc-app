@@ -1,4 +1,4 @@
-/// A minimal Model Context Protocol server for Reparc data.
+/// A minimal Model Context Protocol server for RepArc data.
 ///
 /// It speaks JSON-RPC 2.0, one message per line, over stdin and stdout
 /// (the MCP "stdio" transport). It offers read-only tools over one export
@@ -41,8 +41,8 @@ class McpServer {
           },
           'serverInfo': {'name': serverName, 'version': serverVersion},
           'instructions':
-              'Read-only access to one Reparc export (workouts, meals, body data the user chose to share). '
-              'Do not invent values: null means not recorded. Reparc is not a medical service. To suggest a '
+              'Read-only access to one RepArc export (workouts, meals, body data the user chose to share). '
+              'Do not invent values: null means not recorded. RepArc is not a medical service. To suggest a '
               'roadmap or meal plan, use get_import_formats, then the check_ tools, and give the user the JSON '
               'to import in the app.',
         }),

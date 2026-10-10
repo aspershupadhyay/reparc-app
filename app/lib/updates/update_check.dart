@@ -2,7 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
-/// Where Reparc builds are published (handbook 17.3, D-029).
+/// Where RepArc builds are published (handbook 17.3, D-029).
 /// Public repository that holds only the release builds. The source code
 /// is private (handbook 17.9).
 const releasesRepo = 'aspershupadhyay/reparc';
@@ -46,7 +46,7 @@ class ReleaseInfo {
     final tag = j['tag_name'];
     final page = j['html_url'];
     if (tag is! String || page is! String || parseVersion(tag) == null) {
-      throw const FormatException('Not a Reparc release.');
+      throw const FormatException('Not a RepArc release.');
     }
     Uri? asset(String suffix) {
       for (final a in (j['assets'] as List? ?? const [])) {
@@ -130,7 +130,7 @@ Future<Map<String, Object?>> httpGetJson(Uri url) async {
     final req = await client.getUrl(url);
     req.headers
       ..set(HttpHeaders.acceptHeader, 'application/vnd.github+json')
-      ..set(HttpHeaders.userAgentHeader, 'Reparc-update-check');
+      ..set(HttpHeaders.userAgentHeader, 'RepArc-update-check');
     final res = await req.close().timeout(const Duration(seconds: 15));
     final body = await res.transform(utf8.decoder).join().timeout(const Duration(seconds: 15));
     if (res.statusCode == 404) throw const UpdateCheckError('No published release yet.');

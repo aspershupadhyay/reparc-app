@@ -10,6 +10,9 @@ OUT = "tool/icons/out"
 icon = Image.open(f"{OUT}/icon-1024.png").convert("RGBA")
 fg = Image.open(f"{OUT}/foreground-1024.png").convert("RGBA")
 mark = Image.open(f"{OUT}/mark-1024.png").convert("RGBA")
+mark_ink = Image.open(f"{OUT}/mark-ink-1024.png").convert("RGBA")
+splash_dark = Image.open(f"{OUT}/splash-dark-1024.png").convert("RGBA")
+splash_light = Image.open(f"{OUT}/splash-light-1024.png").convert("RGBA")
 
 
 def save(img, size, path, rgb=False):
@@ -39,8 +42,12 @@ for d, f in dens.items():
     save(rounded, round(48 * f), f"{res}/ic_launcher.png")
     # Adaptive icon foreground: 108 dp canvas.
     save(fg, round(108 * f), f"{res}/ic_launcher_foreground.png")
-    # Splash logo: 160 dp.
-    save(mark, round(160 * f), f"android/app/src/main/res/drawable-{d}/launch_logo.png")
+    # Splash logo before Android 12: 160 dp, ink on light, lime on dark.
+    save(mark_ink, round(160 * f), f"android/app/src/main/res/drawable-{d}/launch_logo.png")
+    save(mark, round(160 * f), f"android/app/src/main/res/drawable-night-{d}/launch_logo.png")
+    # Android 12+ splash icon: 240 dp box, per theme.
+    save(splash_light, round(240 * f), f"android/app/src/main/res/drawable-{d}/splash_icon.png")
+    save(splash_dark, round(240 * f), f"android/app/src/main/res/drawable-night-{d}/splash_icon.png")
 
 # iOS launch image (1x/2x/3x of 160 pt).
 li = "ios/Runner/Assets.xcassets/LaunchImage.imageset"

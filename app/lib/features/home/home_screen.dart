@@ -138,7 +138,7 @@ class _UpdateBanner extends ConsumerWidget {
       child: AppCard(
         color: p.brandSoft,
         onTap: () => context.push('/me/updates'),
-        semanticLabel: 'Reparc ${update.version} is out. Open App updates',
+        semanticLabel: 'RepArc ${update.version} is out. Open App updates',
         child: Row(
           children: [
             IconBadge(LucideIcons.download, color: p.brand, size: 40),

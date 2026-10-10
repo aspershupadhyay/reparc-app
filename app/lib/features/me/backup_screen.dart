@@ -20,7 +20,7 @@ import 'app_updates_screen.dart';
 ///
 /// Two layers, both in the user's own Apple or Google account:
 /// 1. The phone's own backup (iCloud Backup, or Android backup to Google
-///    Drive) includes Reparc's database. It runs by itself when the user has
+///    Drive) includes RepArc's database. It runs by itself when the user has
 ///    phone backup on.
 /// 2. An encrypted backup file the user saves where they choose, for
 ///    example iCloud Drive or Google Drive, and can restore on any phone.
@@ -51,7 +51,7 @@ class _BackupScreenState extends ConsumerState<BackupScreen> {
       final day = dayKey(ref.read(clockProvider)());
       setState(() => _status = 'Choose where to save it…');
       final saved = await FilePicker.saveFile(
-        dialogTitle: 'Save Reparc backup',
+        dialogTitle: 'Save RepArc backup',
         fileName: 'reparc-$day.${BackupCrypto.extension}',
         bytes: bytes,
       );
@@ -79,7 +79,7 @@ class _BackupScreenState extends ConsumerState<BackupScreen> {
       destructive: true,
     );
     if (!ok || !mounted) return;
-    final file = await FilePicker.pickFile(dialogTitle: 'Choose a Reparc backup');
+    final file = await FilePicker.pickFile(dialogTitle: 'Choose a RepArc backup');
     if (file == null || !mounted) return;
     final Uint8List bytes = await file.readAsBytes();
     final pass = await _passphrase(create: false);
@@ -129,10 +129,10 @@ class _BackupScreenState extends ConsumerState<BackupScreen> {
                 const SizedBox(height: Space.m),
                 Text(
                   ios
-                      ? 'When iCloud Backup is on for this iPhone, it includes Reparc\'s records. Restore the iPhone from '
-                            'iCloud, and Reparc comes back with them. Check it in Settings → your name → iCloud → iCloud Backup.'
-                      : 'When Google backup is on for this phone, Android saves Reparc\'s records to your Google Drive with '
-                            'your other app data, encrypted with your screen lock. Install Reparc on a new phone signed in to '
+                      ? 'When iCloud Backup is on for this iPhone, it includes RepArc\'s records. Restore the iPhone from '
+                            'iCloud, and RepArc comes back with them. Check it in Settings → your name → iCloud → iCloud Backup.'
+                      : 'When Google backup is on for this phone, Android saves RepArc\'s records to your Google Drive with '
+                            'your other app data, encrypted with your screen lock. Install RepArc on a new phone signed in to '
                             'the same Google account and restore during setup. Check it in Settings → Google → Backup.',
                   style: t.bodyMedium,
                 ),
@@ -181,7 +181,7 @@ class _BackupScreenState extends ConsumerState<BackupScreen> {
                 const SizedBox(height: Space.m),
                 StatusLine(
                   icon: LucideIcons.keyRound,
-                  text: 'Only your passphrase opens the file: not Apple, Google, or Reparc. If you forget it, the file cannot be opened.',
+                  text: 'Only your passphrase opens the file: not Apple, Google, or RepArc. If you forget it, the file cannot be opened.',
                   color: p.warning,
                 ),
               ],

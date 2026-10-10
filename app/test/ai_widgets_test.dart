@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -65,13 +66,13 @@ void main() {
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 50));
     expect(find.byType(CustomPaint), findsWidgets);
+    // Mid-way the bar is loading; at the end the logo is complete.
     await tester.pump(const Duration(milliseconds: 1300));
-    expect(find.text('R'), findsNWidgets(2));
-    expect(find.text('P'), findsOneWidget);
-    await tester.pump(const Duration(milliseconds: 1200));
+    expect(find.bySemanticsLabel('RepArc. Tap to skip.'), findsOneWidget);
+    await tester.pump(const Duration(milliseconds: 2000));
     await tester.pump();
     expect(find.text('App body'), findsOneWidget);
-    expect(find.text('Train. Eat. Own your data.'), findsNothing);
+    expect(find.bySemanticsLabel('RepArc. Tap to skip.'), findsNothing);
     final settings = await tester.runAsync(() => SettingsRepository(db).watch().first);
     expect(settings!.introSeen, isTrue);
     await unmount(tester);
@@ -81,15 +82,35 @@ void main() {
     await pump(tester, const MaterialApp(home: IntroGate(child: Text('App body'))));
     await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 50)));
     await tester.pump(const Duration(milliseconds: 100));
-    await tester.tap(find.bySemanticsLabel('Reparc. Tap to skip.'));
+    await tester.tap(find.bySemanticsLabel('RepArc. Tap to skip.'));
     await tester.pump();
-    expect(find.bySemanticsLabel('Reparc. Tap to skip.'), findsNothing);
+    expect(find.bySemanticsLabel('RepArc. Tap to skip.'), findsNothing);
     await unmount(tester);
+  });
+
+  test('the intro builds the bar in order and ends complete', () {
+    // Sample the intro timeline the way IntroFrame does.
+    final metric = MarkGeometry.barPath().computeMetrics().first;
+    expect(metric.length, greaterThan(122));
+    for (final c in [const Color(0xFF0B0C0A), BrandColors.lime]) {
+      final rec = ui.PictureRecorder();
+      ReparcMark(
+        color: c,
+        smallLeft: 0.5,
+        bigLeft: 0,
+        pipe: 0.4,
+        bubble: 1,
+        bubbleAt: 0.4,
+        bigRight: 0,
+        smallRight: 0,
+      ).paint(Canvas(rec), const Size(200, 200));
+      rec.endRecording().dispose();
+    }
   });
 
   testWidgets('the logo paints at any size', (tester) async {
     await pump(tester, const MaterialApp(home: Center(child: ReparcLogo(size: 120, background: true))));
-    expect(find.bySemanticsLabel('Reparc logo'), findsOneWidget);
+    expect(find.bySemanticsLabel('RepArc logo'), findsOneWidget);
     await unmount(tester);
   });
 

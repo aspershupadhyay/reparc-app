@@ -11,7 +11,7 @@ import 'package:cryptography/cryptography.dart';
 /// AES-256-GCM. The key comes from the user's passphrase through Argon2id
 /// (OWASP minimum: 19 MiB memory, 2 passes). The passphrase never leaves the
 /// phone and is not stored. Without it, nobody can open the file, including
-/// Apple, Google, and the Reparc project. A lost passphrase cannot be reset.
+/// Apple, Google, and the RepArc project. A lost passphrase cannot be reset.
 ///
 /// File layout (JSON):
 ///
@@ -65,18 +65,18 @@ abstract final class BackupCrypto {
     try {
       env = jsonDecode(utf8.decode(file)) as Map<String, dynamic>;
     } catch (_) {
-      throw const BackupException('This file is not a Reparc backup.');
+      throw const BackupException('This file is not a RepArc backup.');
     }
-    if (env['format'] != format) throw const BackupException('This file is not a Reparc backup.');
+    if (env['format'] != format) throw const BackupException('This file is not a RepArc backup.');
     if ((env['version'] as int? ?? 0) > version) {
-      throw const BackupException('This backup was made by a newer Reparc. Update the app, then try again.');
+      throw const BackupException('This backup was made by a newer RepArc. Update the app, then try again.');
     }
     final kdf = env['kdf'] as Map<String, dynamic>;
     final memory = kdf['memoryKiB'] as int;
     final iterations = kdf['iterations'] as int;
     // Refuse values that would freeze the phone (a crafted file could ask for gigabytes).
     if (kdf['name'] != 'argon2id' || memory > 262144 || iterations > 10 || env['cipher'] != 'aes-256-gcm') {
-      throw const BackupException('This backup uses settings Reparc does not support.');
+      throw const BackupException('This backup uses settings RepArc does not support.');
     }
     final key = await _kdf(
       memory,

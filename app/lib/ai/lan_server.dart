@@ -94,7 +94,7 @@ class LanMcpServer {
         _fail(key);
         res.headers.set('www-authenticate', 'Bearer');
         return await _send(res, 401, {
-          'error': 'Missing or wrong access key. Copy it from Reparc → Me → AI connections.',
+          'error': 'Missing or wrong access key. Copy it from RepArc → Me → AI connections.',
         });
       }
       _failures.remove(key);

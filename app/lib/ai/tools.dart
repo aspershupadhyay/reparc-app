@@ -46,7 +46,7 @@ class ToolResult {
   };
 }
 
-/// Runs Reparc's MCP tools against the local database (handbook 10.4).
+/// Runs RepArc's MCP tools against the local database (handbook 10.4).
 ///
 /// Every call checks the arguments and the user's data choices on this
 /// phone. Read tools return only categories the user switched on. Plan tools
@@ -85,7 +85,7 @@ class ReparcTools {
     if (!s.aiAllows(spec.scope)) {
       return ToolResult.error(
         'The owner has not shared "${spec.scope}" data (${contract.scopes[spec.scope]}). '
-        'Ask them to switch it on in Reparc → Me → AI connections.',
+        'Ask them to switch it on in RepArc → Me → AI connections.',
       );
     }
     try {
@@ -110,7 +110,7 @@ class ReparcTools {
       return ToolResult.error(e.toString());
     } catch (_) {
       // Never return internal details: they could include record content.
-      return ToolResult.error('Reparc could not read this data on the phone. Try again.');
+      return ToolResult.error('RepArc could not read this data on the phone. Try again.');
     }
   }
 
@@ -467,7 +467,7 @@ class ReparcTools {
     if (on.isEmpty) {
       return ToolResult({
         'source': health.platformName,
-        'note': 'The owner has not connected any health data type in Reparc → Me → Health apps.',
+        'note': 'The owner has not connected any health data type in RepArc → Me → Health apps.',
       });
     }
     final steps = on.contains(HealthFeature.steps) ? await health.dailySteps(from, to) : null;
@@ -510,7 +510,7 @@ class ReparcTools {
     return ToolResult({
       'proposal_id': id,
       'status': 'pending',
-      'message': 'Sent to the owner\'s phone. Nothing is saved until they approve it in Reparc.',
+      'message': 'Sent to the owner\'s phone. Nothing is saved until they approve it in RepArc.',
     });
   }
 
@@ -532,7 +532,7 @@ class ReparcTools {
     return ToolResult({
       'proposal_id': id,
       'status': 'pending',
-      'message': 'Sent to the owner\'s phone. Nothing is saved until they approve it in Reparc.',
+      'message': 'Sent to the owner\'s phone. Nothing is saved until they approve it in RepArc.',
     });
   }
 

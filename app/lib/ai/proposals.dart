@@ -210,5 +210,5 @@ class ProposalRepository {
 class ProposalLimit implements Exception {
   const ProposalLimit();
   @override
-  String toString() => '20 proposals are already waiting for review. Ask the owner to review them in Reparc first.';
+  String toString() => '20 proposals are already waiting for review. Ask the owner to review them in RepArc first.';
 }

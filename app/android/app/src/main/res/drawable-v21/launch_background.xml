@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Splash: the Reparc mark on brand ink. The animated intro continues from it. -->
+<!-- Splash: the RepArc mark, ink on light and lime on dark. The animated intro continues from it. -->
 <layer-list xmlns:android="http://schemas.android.com/apk/res/android">
     <item android:drawable="@color/splash_background" />
     <item>

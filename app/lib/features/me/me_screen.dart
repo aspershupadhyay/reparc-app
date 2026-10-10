@@ -197,8 +197,8 @@ class MeScreen extends ConsumerWidget {
                 trailing: Icon(LucideIcons.chevronRight, size: IconSizes.s, color: p.inkSoft),
                 onTap: () => showLicensePage(
                   context: context,
-                  applicationName: 'Reparc',
-                  applicationLegalese: 'Copyright the Reparc contributors.\nLicensed under GNU AGPL v3.0 only.',
+                  applicationName: 'RepArc',
+                  applicationLegalese: 'Copyright the RepArc contributors.\nLicensed under GNU AGPL v3.0 only.',
                 ),
               ),
               ListTile(

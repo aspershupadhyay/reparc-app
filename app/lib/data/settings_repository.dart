@@ -115,7 +115,7 @@ class AppSettings {
   /// Each is a separate choice and all start off (handbook 10.5).
   final Set<String> aiScopes;
 
-  /// Health types the user switched on in Reparc, by [HealthFeature] name.
+  /// Health types the user switched on in RepArc, by [HealthFeature] name.
   /// The operating system keeps its own permission state as well.
   final Set<String> health;
 

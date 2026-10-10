@@ -339,7 +339,7 @@ Keep major choices here. Update the related chapter when a decision changes.
 
 ## D-028: The joint "R" mark, in teal and lime
 
-**Status:** Accepted by the user.
+**Status:** Superseded by D-034 (2026-10-10).
 **Date:** 2026-10-06.
 
 **Choice:** The Reparc mark is a white "R" whose leg swings from a joint through a dotted arc, the range of motion of one rep (`lib/core/brand.dart`). The joint and leg use the teal-to-lime gradient. App icons, splash, intro, website, and gateway pages use it. The palette stays teal and lime (D-023): the owner tried an ember (orange) accent in v0.3.1 and asked for teal and green back.
@@ -428,3 +428,39 @@ Keep major choices here. Update the related chapter when a decision changes.
 The renders from `app/tool/body/render_body_test.dart` were checked from the front, side, back, and three-quarter views. On the Linux test host, a frame takes about 5.9 ms with the new mesh and about 7.7 ms with the old one. This is not a phone measurement.
 
 **To confirm:** Frame time and look on a real phone, TalkBack, and large text.
+
+## D-034: RepArc name, Load Arc mark, and the calm opening
+
+**Status:** Accepted by the user (owner request, 2026-10-10). In the code; not released yet.
+**Date:** 2026-10-10.
+
+**Context:** The owner felt the joint "R" mark (D-028) did not say what the app is or what its name means. They reviewed ten logo concepts and several rounds in Figma (file "Reparc logo: Rep Signal", pages "RepArc v3" and "RepArc opening (2.5 s)"). They rejected a ring-and-arrow mark because it reads as the ♂ symbol.
+
+**Choice:**
+
+- **Name:** the app's name is written **RepArc** everywhere users see it: the launcher label, the iPhone name, and the on-screen text. Code names, file formats (`reparc-export`), the package ID, and stored values do not change.
+- **Mark (Load Arc):** one bar runs through four round plates (capsules) and rises in a flat-topped curve in the middle, like a loaded bar at lockout. The curve is the "arc" in RepArc. The geometry sits on a 128 grid with an 11-unit bar (`MarkGeometry` in `lib/core/brand.dart`). A simpler mark (one plate a side, heavier bar) is drawn in Figma for 24–32 px; the app icons use the full mark.
+- **Wordmark:** Unbounded SemiBold (SIL Open Font License), hand-kerned at p–A and r–c, outlined in Figma, and drawn from its shapes (`lib/core/brand_wordmark.dart`, made by `tool/brand/svg_to_dart.py`). The app does not ship the font. The app's own text stays Inter or SF Pro (D-023). SF Pro is not used for the logo, because its licence covers interfaces on Apple devices only.
+- **Colours:** lime mark on the training panel (#1A2010) for the app icon. Ink on light (#F2F2F7) and lime on dark (#0B0C0A) for the splash and opening.
+- **Opening:** the bar loads like a lift. The small plate, then the big plate slide on from the left. One bubble forms and flows through the bar like water through a pipe, filling it. The big plate, then the small plate slide on from the right as the bubble settles. RepArc fades in, starting during the last plate. The timings are:
+  - first start: 2.5 s to the finished logo, then a short hold and a fade (about 3.1 s in all);
+  - later starts: double speed;
+  - reduced motion: the still logo, then a fade.
+
+  The easing is calm in and out, with no bounce and no glitter. It follows the light or dark theme, and a tap skips it (`lib/features/intro/intro.dart`). The Android splash is ink on light and lime on dark, per theme. Android 12 and later use `splash_icon` inside the system circle. The iPhone launch screen stays dark with the lime mark.
+
+**Supersedes:** D-028.
+
+**Evidence:** These checks pass:
+
+- format;
+- `flutter analyze --fatal-infos`;
+- `flutter test` (373 tests);
+- rendered frames of the opening in both themes (`tool/brand/render_intro_test.dart`);
+- rendered icon and splash masters (`tool/icons`).
+
+**To confirm:**
+
+- A trademark search for "RepArc".
+- The website, README, and handbook prose still say "Reparc".
+- A test on a real phone after the next release, covering the opening's timing, the splash in both themes, and the launcher icon.

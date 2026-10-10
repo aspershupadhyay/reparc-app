@@ -19,7 +19,7 @@ final healthAvailabilityProvider = FutureProvider.autoDispose(
 );
 
 /// Today's values for the types the user switched on. Read live from the
-/// platform; Reparc does not copy them into its database.
+/// platform; RepArc does not copy them into its database.
 final healthTodayProvider = FutureProvider.autoDispose<({int? steps, double? energy, WeightReading? weight})>((
   ref,
 ) async {
@@ -60,7 +60,7 @@ class HealthScreen extends ConsumerWidget {
         if (context.mounted) {
           showMessage(
             context,
-            'Reparc stopped ${f.writes ? 'writing' : 'reading'} ${f.label.toLowerCase()}. '
+            'RepArc stopped ${f.writes ? 'writing' : 'reading'} ${f.label.toLowerCase()}. '
             'To remove the permission too, open ${health.platformName}.',
           );
         }
@@ -93,7 +93,7 @@ class HealthScreen extends ConsumerWidget {
         padding: const EdgeInsets.fromLTRB(Space.l, Space.s, Space.l, Space.xxl),
         children: [
           Text(
-            'Connect ${health.platformName} one data type at a time. Reparc asks only for the types you switch on, '
+            'Connect ${health.platformName} one data type at a time. RepArc asks only for the types you switch on, '
             'reads them when a screen needs them, and does not copy them to any server. Logging works without any of this.',
             style: t.bodyMedium?.copyWith(color: p.inkSoft),
           ),
@@ -110,7 +110,7 @@ class HealthScreen extends ConsumerWidget {
                   children: [
                     Text('Install or update Health Connect', style: t.titleSmall),
                     const SizedBox(height: Space.xs),
-                    const Text('Android needs the Health Connect app before Reparc can connect.'),
+                    const Text('Android needs the Health Connect app before RepArc can connect.'),
                     const SizedBox(height: Space.s),
                     FilledButton(onPressed: health.install, child: const Text('Open Play Store')),
                   ],

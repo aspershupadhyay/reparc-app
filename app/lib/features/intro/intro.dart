@@ -4,15 +4,22 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/brand.dart';
+import '../../core/brand_wordmark.dart';
 import '../../core/motion.dart';
 import '../../data/providers.dart';
 
-/// Animated logo shown over the app when it starts (owner request, D-022).
+/// Animated logo shown over the app when it starts (D-034).
 ///
-/// - First start after install: the full 2.2 s sequence.
-/// - Later starts: a 1 s version.
+/// The bar loads like a lift: the small and big plates slide on from the
+/// left, one bubble flows through the bar like water through a pipe, the
+/// big and small plates slide on from the right, and RepArc fades in.
+///
+/// - First start after install: the full sequence, 2.5 s to the finished
+///   logo, then a short hold and a fade (about 3.1 s in all).
+/// - Later starts: the same sequence at double speed (about 1.6 s).
 /// - Reduced motion: the still logo for a moment, then a fade.
 /// - A tap anywhere skips it. It never blocks data entry.
+/// - Follows the app's light or dark theme.
 class IntroGate extends ConsumerStatefulWidget {
   const IntroGate({super.key, required this.child});
   final Widget child;
@@ -20,6 +27,9 @@ class IntroGate extends ConsumerStatefulWidget {
   @override
   ConsumerState<IntroGate> createState() => _IntroGateState();
 }
+
+/// Seconds of the full sequence, including the hold and the fade out.
+const _fullSeconds = 3.1;
 
 class _IntroGateState extends ConsumerState<IntroGate> with SingleTickerProviderStateMixin {
   AnimationController? _c;
@@ -44,7 +54,7 @@ class _IntroGateState extends ConsumerState<IntroGate> with SingleTickerProvider
     if (!mounted || _done) return;
     final reduced = reduceMotion(context);
     _full = !seen;
-    final ms = reduced ? 700 : (_full ? 2200 : 1000);
+    final ms = reduced ? 700 : (_fullSeconds * 1000 * (_full ? 1 : 0.5)).round();
     setState(() {
       _c =
           AnimationController(
@@ -74,13 +84,14 @@ class _IntroGateState extends ConsumerState<IntroGate> with SingleTickerProvider
 
   @override
   Widget build(BuildContext context) {
+    final colors = IntroColors.of(context);
     if (_done) return widget.child;
     if (_c == null) {
       return Stack(
         fit: StackFit.expand,
         children: [
           widget.child,
-          const ColoredBox(color: BrandColors.ink),
+          ColoredBox(color: colors.background),
         ],
       );
     }
@@ -93,196 +104,132 @@ class _IntroGateState extends ConsumerState<IntroGate> with SingleTickerProvider
           behavior: HitTestBehavior.opaque,
           onTap: _finish,
           child: Semantics(
-            label: 'Reparc. Tap to skip.',
+            label: 'RepArc. Tap to skip.',
             button: true,
             child: AnimatedBuilder(
               animation: _c!,
-              builder: (context, _) => reduced ? _still(_c!.value) : _IntroFrame(t: _c!.value, full: _full),
+              builder: (context, _) {
+                final t = _c!.value;
+                if (reduced) {
+                  return Opacity(
+                    opacity: t < 0.7 ? 1 : 1 - (t - 0.7) / 0.3,
+                    child: IntroFrame(seconds: 2.5, colors: colors),
+                  );
+                }
+                return IntroFrame(seconds: t * _fullSeconds, colors: colors);
+              },
             ),
           ),
         ),
       ],
     );
   }
-
-  Widget _still(double t) => Opacity(
-    opacity: t < 0.7 ? 1 : 1 - (t - 0.7) / 0.3,
-    child: const ColoredBox(
-      color: BrandColors.ink,
-      child: Center(child: _Wordmark(letters: 1, tagline: 1, logo: true)),
-    ),
-  );
 }
 
-/// Interval helper: maps [t] to 0..1 inside [a, b] with [curve].
+/// Intro colours for the current theme.
+class IntroColors {
+  const IntroColors(this.background, this.mark, this.word);
+  final Color background;
+  final Color mark;
+  final Color word;
+
+  static IntroColors of(BuildContext context) => Theme.of(context).brightness == Brightness.dark
+      ? const IntroColors(BrandColors.ink, BrandColors.lime, BrandColors.white)
+      : const IntroColors(BrandColors.paper, BrandColors.ink, BrandColors.ink);
+}
+
+/// Calm in and out: no snap, no bounce.
+const _calm = Cubic(0.45, 0, 0.2, 1);
+
+/// Steady flow through the bar.
+const _flow = Cubic(0.4, 0, 0.6, 1);
+
+/// Maps [t] (seconds) to 0..1 inside [a, b] (seconds) with [curve].
 double _iv(double t, double a, double b, [Curve curve = Curves.linear]) =>
     curve.transform(((t - a) / (b - a)).clamp(0.0, 1.0));
 
-class _IntroFrame extends StatelessWidget {
-  const _IntroFrame({required this.t, required this.full});
-  final double t;
-  final bool full;
+/// One frame of the intro at [seconds] into the full sequence. Public so the
+/// screen renderer and tests can draw any moment.
+class IntroFrame extends StatelessWidget {
+  const IntroFrame({super.key, required this.seconds, required this.colors});
+  final double seconds;
+  final IntroColors colors;
 
   @override
   Widget build(BuildContext context) {
-    // The short version runs the mark faster and skips the wordmark.
-    final k = full ? 1.0 : 1.6;
-    double at(double v) => (v * k).clamp(0.0, 1.0);
-    final letter = _iv(at(t), 0.0, 0.30, Curves.easeOutCubic);
-    final dots = _iv(at(t), 0.30, 0.50, Curves.easeOut);
-    final leg = _iv(at(t), 0.22, 0.55, Curves.elasticOut);
-    final joint = _iv(at(t), 0.20, 0.44, Curves.elasticOut);
-    final burst = _iv(at(t), 0.42, 0.80);
-    final glow = math.sin(_iv(at(t), 0.25, 0.75) * math.pi);
-    final letters = full ? _iv(t, 0.45, 0.70) : 0.0;
-    final tagline = full ? _iv(t, 0.62, 0.78, Curves.easeOut) : 0.0;
-    final exitStart = full ? 0.82 : 0.70;
-    final exit = _iv(t, exitStart, 1.0, Curves.easeIn);
-    final size = math.min(MediaQuery.sizeOf(context).shortestSide * 0.46, 240.0);
+    final t = seconds;
+    final metric = MarkGeometry.barPath().computeMetrics().first;
+    final from = (MarkGeometry.bubbleFrom - 3) / metric.length;
+    final to = (metric.length - (125 - MarkGeometry.bubbleTo)) / metric.length;
+
+    final smallLeft = _iv(t, 0.12, 0.40, _calm);
+    final bigLeft = _iv(t, 0.43, 0.71, _calm);
+    final form = _iv(t, 0.74, 0.90, Curves.easeOut);
+    final flow = _iv(t, 0.90, 1.55, _flow);
+    final bigRight = _iv(t, 1.57, 1.85, _calm);
+    final smallRight = _iv(t, 1.87, 2.13, _calm);
+    final word = _iv(t, 1.98, 2.42, Curves.easeOut);
+    final exit = _iv(t, 2.80, 3.10, Curves.easeIn);
+
+    final bubbleAt = from + (to - from) * flow;
+    final pipe = form < 1 ? from * form : (bigRight > 0 ? bubbleAt + (1 - bubbleAt) * bigRight : bubbleAt);
+    final bubble = form * (1 - bigRight);
 
     return Opacity(
       opacity: 1 - exit,
       child: ColoredBox(
-        color: BrandColors.ink,
-        child: Stack(
-          alignment: Alignment.center,
-          children: [
-            // Ripples and particle burst behind the mark.
-            Positioned.fill(
-              child: CustomPaint(
-                painter: _Ripples(t: at(t), burst: burst, size: size, lift: full ? 48 : 0),
-              ),
-            ),
-            Transform.scale(
-              scale: 1 + 0.08 * exit,
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  SizedBox.square(
-                    dimension: size,
-                    child: CustomPaint(
-                      painter: ReparcMark(letter: letter, dots: dots, leg: leg, joint: joint, glow: glow),
+        color: colors.background,
+        child: LayoutBuilder(
+          builder: (context, box) {
+            // Sizes from the approved Figma layout: the wordmark is 0.71 of the
+            // mark box wide, and the gap from the plates to the capitals is
+            // about one capital height.
+            final m = math.min(box.biggest.shortestSide * 0.52, 230.0);
+            final wordW = m * 0.711;
+            final wordH = wordW * wordmarkSize.height / wordmarkSize.width;
+            final cap = wordW * wordmarkCapHeight / wordmarkSize.width;
+            final gap = m * 0.1465;
+            final inkTop = m * MarkGeometry.inkTop / 128;
+            final inkBottom = m * MarkGeometry.inkBottom / 128;
+            // Centre the mark and the capitals together, a little above the
+            // middle of the screen so the pair looks centred.
+            final groupH = (inkBottom - inkTop) + gap + cap;
+            final top = box.maxHeight * 0.46 - groupH / 2 - inkTop;
+            return Stack(
+              children: [
+                Positioned(
+                  left: (box.maxWidth - m) / 2,
+                  top: top,
+                  width: m,
+                  height: m,
+                  child: CustomPaint(
+                    painter: ReparcMark(
+                      color: colors.mark,
+                      smallLeft: smallLeft,
+                      bigLeft: bigLeft,
+                      pipe: pipe,
+                      bubble: bubble,
+                      bubbleAt: bubbleAt,
+                      bigRight: bigRight,
+                      smallRight: smallRight,
                     ),
                   ),
-                  if (full) _Wordmark(letters: letters, tagline: tagline),
-                ],
-              ),
-            ),
-          ],
+                ),
+                Positioned(
+                  left: (box.maxWidth - wordW) / 2,
+                  top: top + inkBottom + gap + 6 * (1 - word),
+                  width: wordW,
+                  height: wordH,
+                  child: Opacity(
+                    opacity: word,
+                    child: CustomPaint(painter: WordmarkPainter(color: colors.word)),
+                  ),
+                ),
+              ],
+            );
+          },
         ),
       ),
     );
   }
-}
-
-class _Wordmark extends StatelessWidget {
-  const _Wordmark({required this.letters, required this.tagline, this.logo = false});
-  final double letters;
-  final double tagline;
-  final bool logo;
-
-  static const word = 'REPARC';
-
-  @override
-  Widget build(BuildContext context) {
-    final base = Theme.of(context).textTheme.headlineMedium?.copyWith(
-      color: BrandColors.white,
-      fontWeight: FontWeight.w800,
-      letterSpacing: 6,
-    );
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        if (logo) const ReparcLogo(size: 160),
-        const SizedBox(height: 8),
-        Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            for (var i = 0; i < word.length; i++)
-              Builder(
-                builder: (_) {
-                  // Each letter rises in turn.
-                  final v = Curves.easeOutBack.transform(
-                    ((letters * (word.length + 2) - i) / 3).clamp(0.0, 1.0),
-                  );
-                  return Opacity(
-                    opacity: v.clamp(0.0, 1.0),
-                    child: Transform.translate(
-                      offset: Offset(0, 18 * (1 - v)),
-                      child: Text(word[i], style: base),
-                    ),
-                  );
-                },
-              ),
-          ],
-        ),
-        const SizedBox(height: 10),
-        // Teal-to-lime underline sweeps under the word.
-        Container(
-          width: 150 * tagline,
-          height: 3,
-          decoration: BoxDecoration(
-            gradient: BrandColors.markGradient,
-            borderRadius: BorderRadius.circular(2),
-          ),
-        ),
-        const SizedBox(height: 12),
-        Opacity(
-          opacity: tagline,
-          child: Text(
-            'Train. Eat. Own your data.',
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: BrandColors.white.withValues(alpha: 0.7)),
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-/// Expanding rings and a burst of "rep" particles when the leg lands.
-class _Ripples extends CustomPainter {
-  _Ripples({required this.t, required this.burst, required this.size, required this.lift});
-  final double t;
-  final double burst;
-  final double size;
-
-  /// How far the wordmark lifts the mark above the screen centre.
-  final double lift;
-
-  static final _angles = List.generate(28, (i) => (i * 137.508) * math.pi / 180);
-
-  @override
-  void paint(Canvas canvas, Size canvasSize) {
-    // Rings start at the joint of the mark.
-    final c = canvasSize.center(
-      Offset((ReparcMark.jointAt.dx - 0.5) * size, (ReparcMark.jointAt.dy - 0.5) * size - lift),
-    );
-    for (var i = 0; i < 3; i++) {
-      final v = _iv(t, 0.06 + i * 0.07, 0.62 + i * 0.07, Curves.easeOutCubic);
-      if (v <= 0 || v >= 1) continue;
-      canvas.drawCircle(
-        c,
-        size * (0.2 + 1.3 * v),
-        Paint()
-          ..style = PaintingStyle.stroke
-          ..strokeWidth = 2 + 6 * (1 - v)
-          ..color = (i.isEven ? BrandColors.teal : BrandColors.lime).withValues(alpha: 0.28 * (1 - v)),
-      );
-    }
-    if (burst > 0 && burst < 1) {
-      final e = Curves.easeOutCubic.transform(burst);
-      for (final (i, a) in _angles.indexed) {
-        final dist = size * (0.35 + (0.55 + (i % 5) * 0.12) * e);
-        final p = c + Offset(math.cos(a), math.sin(a)) * dist;
-        canvas.drawCircle(
-          p,
-          (2.5 + (i % 3)) * (1 - burst * 0.6),
-          Paint()..color = (i % 3 == 0 ? BrandColors.teal : BrandColors.lime).withValues(alpha: 1 - burst),
-        );
-      }
-    }
-  }
-
-  @override
-  bool shouldRepaint(_Ripples old) => old.t != t || old.burst != burst || old.size != size || old.lift != lift;
 }
