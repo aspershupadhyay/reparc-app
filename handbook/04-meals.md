@@ -103,6 +103,8 @@ Protein needs only body weight. The rest needs the full profile.
 
 **Food list.** "Find a food" searches the user's foods and 84 common foods from USDA FoodData Central SR Legacy, per 100 g, with each FDC ID as the source. The list respects the user's diet. Build: `app/tool/food_library/build.py`.
 
+**Owner direction (2026-10-10): foods by country.** Grow the food list country by country, not as one global list. Each food carries the country (or countries) it belongs to, with that country's household portions (for India: katori, roti, piece). The user sees their own country's foods first, and can still search every food. India comes first, with about 300 staples (launch review, Block 3). This is a direction, not built yet. The food data sources, licences, and how the app picks the user's country are **To confirm** before building.
+
 **Plan my day.** Meal → Plan my day picks a breakfast, lunch, snack, and dinner the diet allows (mixed, vegetarian + eggs, vegetarian, or vegan), scales portions toward the energy target (60–160%), and adds a lean protein top-up when protein is more than 5% short. The user can shuffle. Nothing is saved until the user taps Add; then the foods go in as **planned**, not eaten. Code: `app/lib/domain/meal_plan.dart`.
 
 **To confirm:** Dietitian review of meal ideas and target rules; a barcode or online food database.
