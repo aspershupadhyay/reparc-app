@@ -19,7 +19,7 @@ Before you change code, data, design, or project rules:
 - **`aspershupadhyay/reparc-app` (private):** all source code, the handbook, the gateway, and CI. Do all work here. This file lives here.
 - **`aspershupadhyay/reparc` (public):** builds and the website only: a README, GitHub Releases, and the static `site/` files on its `gh-pages` branch. Never push source code, handbook files, or git history to it. The release and website workflows publish to it with the `RELEASES_TOKEN` secret.
 - Work only in a clone whose `origin` is `reparc-app`. Check with `git remote -v` before any push.
-- Never make `reparc-app` public. Its history contains all source.
+- Never make `reparc-app` public, not even for a few minutes. Its history contains all source; bots copy newly public repositories within minutes, and public forks stay public. Do not suggest it as a fix for Actions minutes.
 - The app's update check, the website download links, and the Support link point to the public `reparc` repository. See handbook/16-production-and-app-updates.md, section 17.9.
 
 ## Authority and status
@@ -64,6 +64,25 @@ Before you change code, data, design, or project rules:
 - Do not log private records, prompts, tokens, or provider keys.
 - Do not let AI change a record without user approval.
 - Keep product-use analytics separate from the user's progress analytics.
+
+## Builds, releases, and Actions minutes
+
+- The repository is private, so GitHub Actions minutes are limited. A job that fails within seconds with no runner and no log usually means the minutes or the spending limit are used up. Tell the owner to check Settings → Billing; do not re-run it again and again.
+- CI is split to save minutes (handbook 17.5): `ci.yml` runs quick Linux checks on code pull requests; `android-build.yml` and `ios-build.yml` run only when their own build files change. iPhone builds run on a Mac, which costs 10 times the minutes. Keep it that way.
+- Push handbook-only or workflow-only changes straight to `main`; they need no pull request run.
+- Release: bump `version` in `app/pubspec.yaml` (raise the `+N` build number every time), add `release-notes/<version>.md`, push to `main`, then run the **Release** workflow with the tag `v<version>`. It publishes the APKs to the public `reparc` repository and keeps the Google Play bundle as the private `play-bundle` artifact (handbook 17.10).
+- Two builds, one app (D-036): the GitHub APK has the in-app updater for testing; the Play bundle (`--dart-define=REPARC_STORE=play`) has none.
+
+## Testing on the owner's phone (Latch)
+
+- The owner can connect their phone through Latch. Test the release build that came through the in-app update, never a dev build.
+- Tap a text field before typing into it. Text set into a field without focus never reaches the app, and it looks like an app bug when it is not (2026-10-11).
+- Do not save, change, or delete the owner's records or settings while testing unless they ask. Close forms without saving.
+
+## Food data
+
+- Foods are grouped by country (owner direction, 2026-10-10). Values come from USDA (SR Legacy and FNDDS, public domain). A dish USDA does not have is a recipe estimate, marked as an estimate with its recipe stored. Never add values from copyrighted tables (for example IFCT) without the owner's licence.
+- Recipe estimates leave sodium out (salt is unknown). Check USDA values for sense before shipping them (USDA's paneer entry was wrong).
 
 ## Verification and handbook updates
 
