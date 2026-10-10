@@ -64,6 +64,12 @@ jobs:
         with:
           distribution: temurin
           java-version: '17'
+          # Keeps Gradle, its downloads, and its build cache between runs.
+          cache: gradle
+          cache-dependency-path: |
+            app/android/*.gradle*
+            app/android/app/*.gradle*
+            app/android/gradle/wrapper/gradle-wrapper.properties
       - uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2
         with:
           channel: stable
@@ -83,17 +89,30 @@ jobs:
           else
             echo "::notice::No release key secrets: the APK is signed with a debug key."
           fi
-      - run: flutter build apk --release
-      - run: mv build/app/outputs/flutter-apk/app-release.apk build/reparc-android.apk
+      # One build gives the full APK and one APK per processor type, all with
+      # the same version code so any of them can update any other.
+      - run: flutter build apk --release --split-per-abi -Pforce-version-code-ignoring-abi=true
+      - name: Name the APKs
+        run: |
+          out=build/app/outputs/flutter-apk
+          mkdir -p build/apk
+          mv $out/app-release.apk build/apk/reparc-android.apk
+          for abi in armeabi-v7a arm64-v8a x86_64; do
+            mv $out/app-$abi-release.apk build/apk/reparc-android-$abi.apk
+          done
+          ls -l build/apk
       - name: Show the signing certificate
         run: |
           # Every release must carry the same certificate, or Android refuses the update.
           apksigner=$(ls -d "$ANDROID_HOME"/build-tools/* | sort -V | tail -1)/apksigner
-          "$apksigner" verify --print-certs build/reparc-android.apk | grep -E 'certificate DN|SHA-256'
+          for apk in build/apk/*.apk; do
+            echo "$apk"
+            "$apksigner" verify --print-certs "$apk" | grep -E 'certificate DN|SHA-256'
+          done
       - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
           name: android
-          path: app/build/reparc-android.apk
+          path: app/build/apk/*.apk
           if-no-files-found: error
           retention-days: 7
 
@@ -141,7 +160,7 @@ jobs:
           path: dist
           merge-multiple: true
       - name: Checksums
-        run: cd dist && sha256sum reparc-android.apk reparc-ios-unsigned.ipa > SHA256SUMS.txt && cat SHA256SUMS.txt
+        run: cd dist && sha256sum reparc-android*.apk reparc-ios-unsigned.ipa > SHA256SUMS.txt && cat SHA256SUMS.txt
       - name: Create the release
         env:
           # The source repository is private. Builds go to a public repository
@@ -162,9 +181,9 @@ jobs:
             : > notes.md
           fi
           cat >> notes.md <<NOTES
-          Reparc ${TAG} (beta). Tested by automated checks; real-device testing is ongoing.
+          RepArc ${TAG} (beta). Tested by automated checks; real-device testing is ongoing.
 
-          **Android:** download \`reparc-android.apk\` on the phone and open it (Android 8+; Health Connect needs Android 9+).
+          **Android:** download \`reparc-android.apk\` on the phone and open it (Android 8+; Health Connect needs Android 9+). It works on every phone. The smaller \`reparc-android-arm64-v8a.apk\` fits most phones made since 2017, and the app's own update picks the right one for you.
 
           **iPhone:** \`reparc-ios-unsigned.ipa\` is not from the App Store. Install it with AltStore or Sideloadly using your own Apple ID (iOS 15+). A free Apple ID must refresh it every 7 days.
 
@@ -173,4 +192,7 @@ jobs:
           Check downloads against \`SHA256SUMS.txt\`. The app tells you when a new version is out (Me → App updates); your phone's installer does the install.
           NOTES
           gh release create "$TAG" dist/reparc-android.apk dist/reparc-ios-unsigned.ipa dist/SHA256SUMS.txt \
-            --repo "$RELEASES_REPO" --title "Reparc $TAG" --notes-file notes.md --latest
+            --repo "$RELEASES_REPO" --title "RepArc $TAG" --notes-file notes.md --latest
+          # Added after the full APK on purpose: app versions before 0.4.9 take
+          # the first .apk they find, and the full one installs on every phone.
+          gh release upload "$TAG" dist/reparc-android-*.apk --repo "$RELEASES_REPO"

@@ -274,6 +274,8 @@ Updated 2026-10-06. This records what exists in code. It is not evidence of devi
 
 **RepArc name and logo, v0.4.8 (2026-10-10, owner request):** The app is now called RepArc on screen and on the home screen. The joint "R" mark is replaced by the Load Arc mark, with the Unbounded wordmark (D-034). A calm 2.5 s opening loads the plates, sends one bubble through the bar, and fades in the name. It follows the light or dark theme. The icons and the Android splash were regenerated from the same painter. Checked: format, analyze, `flutter test` (373 passed), up-to-date generated code, rendered opening frames in both themes, rendered icon and splash masters, and CI on the pull request. **Not checked:** this build on a real phone (opening timing, splash in both themes, launcher icon), TalkBack, and large text.
 
+**Smaller download and faster builds, v0.4.9 (2026-10-10, owner request):** releases add one APK per processor type beside the full APK, and the in-app update downloads the one for the phone (handbook 17.3). The full APK was 105 MB, and 72 MB of it was native code for three processor types, of which a phone uses one. CI keeps Gradle between runs, runs the app builds beside the checks, and builds only the 64-bit ARM APK on pull requests (17.5). Checked: format, analyze, `flutter test` (374 passed), and CI on the pull request. **Not checked yet:** the release run that makes the split APKs, the APK sizes, and an update on a real phone.
+
 ## 16.12 AI context
 
 - **Purpose:** Give every contributor the current, evidence-based build order.

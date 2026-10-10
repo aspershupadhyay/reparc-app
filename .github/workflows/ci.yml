@@ -82,7 +82,7 @@ jobs:
   android:
     name: Android release build
     runs-on: ubuntu-latest
-    needs: checks
+    # Runs beside the checks instead of after them, to save time.
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
@@ -90,19 +90,27 @@ jobs:
         with:
           distribution: temurin
           java-version: '17'
+          # Keeps Gradle, its downloads, and its build cache between runs.
+          cache: gradle
+          cache-dependency-path: |
+            app/android/*.gradle*
+            app/android/app/*.gradle*
+            app/android/gradle/wrapper/gradle-wrapper.properties
       - uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2
         with:
           channel: stable
           flutter-version: ${{ env.FLUTTER_VERSION }}
           cache: true
       - run: flutter pub get --enforce-lockfile
-      # Release-mode APK. Until the Play upload key is set up, Gradle signs
-      # it with the debug key, so Google Play will reject it (handbook 17.4).
-      - run: flutter build apk --release
+      # Release-mode APK for 64-bit ARM phones only (most phones), built the
+      # same split way as a release; the release builds every type. Until the
+      # Play upload key is set up, Gradle signs it with the debug key, so
+      # Google Play will reject it (handbook 17.4).
+      - run: flutter build apk --release --split-per-abi --target-platform android-arm64 -Pforce-version-code-ignoring-abi=true
       # Uploaded as a plain .apk (no zip) so the owner can install it directly.
       - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
-          path: app/build/app/outputs/flutter-apk/app-release.apk
+          path: app/build/app/outputs/flutter-apk/app-arm64-v8a-release.apk
           archive: false
           if-no-files-found: error
           retention-days: 14
@@ -110,7 +118,6 @@ jobs:
   ios:
     name: iOS build without signing
     runs-on: macos-latest
-    needs: checks
     timeout-minutes: 40
     steps:
       - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
