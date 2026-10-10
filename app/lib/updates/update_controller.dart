@@ -99,6 +99,62 @@ final apkInstallerProvider = Provider<Future<void> Function(ReleaseInfo, void Fu
       (r, onProgress) => downloadAndInstall(r, onProgress: onProgress),
 );
 
+/// Where the in-app update download stands. It belongs to the app, not to
+/// the App updates screen, so leaving the screen (Back, another tab) does
+/// not stop it or lose its progress, and a second tap cannot start a second
+/// download over the first.
+class ApkDownloadState {
+  const ApkDownloadState({this.progress, this.message, this.failed = false});
+  final ApkProgress? progress;
+  final String? message;
+
+  /// The last attempt failed; the screen offers the browser instead.
+  final bool failed;
+
+  bool get running => progress is ApkDownloading || progress is ApkVerifying;
+}
+
+class ApkDownloadController extends Notifier<ApkDownloadState> {
+  @override
+  ApkDownloadState build() => const ApkDownloadState();
+
+  /// Asks GitHub for the newest release first, so a release published since
+  /// the last check is the one downloaded, then downloads, checks, and opens
+  /// Android's installer. [saved] is used when the check fails.
+  Future<void> start(ReleaseInfo saved) async {
+    if (state.running) return;
+    state = const ApkDownloadState(progress: ApkDownloading(0, null));
+    var release = saved;
+    switch (await ref.read(updateControllerProvider).check()) {
+      case UpdateFound(release: final newest):
+        release = newest;
+      case UpToDate(:final latest):
+        state = ApkDownloadState(message: 'You have the latest version (${latest.version}).');
+        return;
+      case CheckFailed():
+        break;
+    }
+    try {
+      await ref.read(apkInstallerProvider)(release, (p) => state = ApkDownloadState(progress: p));
+      state = const ApkDownloadState(
+        progress: ApkReady(),
+        message:
+            "Android's installer is open. Tap Update to finish. Your data stays on the phone. "
+            'If it did not open, tap Open installer.',
+      );
+    } on ApkError catch (e) {
+      state = ApkDownloadState(failed: true, message: e.message);
+    } catch (_) {
+      state = const ApkDownloadState(
+        failed: true,
+        message: 'The download did not work. Try again, or use the browser.',
+      );
+    }
+  }
+}
+
+final apkDownloadProvider = NotifierProvider<ApkDownloadController, ApkDownloadState>(ApkDownloadController.new);
+
 /// Runs the quiet daily check once per app start. The shell watches it.
 final autoUpdateCheckProvider = FutureProvider<void>((ref) async {
   try {

@@ -1,7 +1,7 @@
 name: reparc
 description: "Reparc: local-first gym and meal logging for iPhone and Android."
 publish_to: 'none'
-version: 0.4.9+19
+version: 0.4.10+20
 
 environment:
   sdk: ^3.13.5
