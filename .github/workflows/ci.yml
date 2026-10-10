@@ -1,11 +1,17 @@
 # Required pull request checks (handbook 17.5). Release signing is in
 # release.yml; the Play upload is done by hand in the Play Console (17.10).
+#
+# Kept small to save GitHub Actions minutes (owner, 2026-10-11): these
+# quick Linux checks run on every pull request that changes code. The
+# Android and iPhone builds run only when their own files change
+# (android-build.yml, ios-build.yml), and every release builds both.
+# Merges to main do not run CI again; the pull request already did.
 name: CI
 
 on:
   pull_request:
-  push:
-    branches: [main]
+    paths-ignore: ['handbook/**', 'release-notes/**', '**/*.md']
+  workflow_dispatch:
 
 permissions:
   contents: read
@@ -78,69 +84,3 @@ jobs:
       - name: No third-party requests or trackers
         run: |
           ! grep -RInE 'https?://(fonts\.googleapis|fonts\.gstatic|www\.googletagmanager|www\.google-analytics|plausible|cdn\.)' --include='*.html' --include='*.css' --include='*.js' .
-
-  android:
-    name: Android release build
-    runs-on: ubuntu-latest
-    # Runs beside the checks instead of after them, to save time.
-    timeout-minutes: 30
-    steps:
-      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
-      - uses: actions/setup-java@b6effb05e454b25005698d916606bdc6ffcbf961 # v5
-        with:
-          distribution: temurin
-          java-version: '17'
-          # Keeps Gradle, its downloads, and its build cache between runs.
-          cache: gradle
-          cache-dependency-path: |
-            app/android/*.gradle*
-            app/android/app/*.gradle*
-            app/android/gradle/wrapper/gradle-wrapper.properties
-      - uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2
-        with:
-          channel: stable
-          flutter-version: ${{ env.FLUTTER_VERSION }}
-          cache: true
-      - run: flutter pub get --enforce-lockfile
-      # Release-mode APK for 64-bit ARM phones only (most phones), built the
-      # same split way as a release; the release builds every type. Until the
-      # Play upload key is set up, Gradle signs it with the debug key, so
-      # Google Play will reject it (handbook 17.4).
-      - run: flutter build apk --release --split-per-abi --target-platform android-arm64 -Pforce-version-code-ignoring-abi=true
-      # The Google Play build (handbook 17.10) must not ask to install
-      # packages or carry the update file provider; the GitHub APK must.
-      - name: Check the GitHub APK keeps the in-app installer
-        run: |
-          m=$(find build/app/intermediates -path '*release*' -name AndroidManifest.xml -path '*merged_manifest*' | head -1)
-          echo "$m"
-          grep -q 'REQUEST_INSTALL_PACKAGES' "$m"
-          grep -q 'UpdateFileProvider' "$m"
-      - name: Play App Bundle builds without the installer
-        run: |
-          flutter build appbundle --release --dart-define=REPARC_STORE=play --target-platform android-arm64
-          m=$(find build/app/intermediates -path '*release*' -name AndroidManifest.xml -path '*merged_manifest*' | head -1)
-          echo "$m"
-          ! grep -q 'REQUEST_INSTALL_PACKAGES' "$m"
-          ! grep -q 'UpdateFileProvider' "$m"
-          ls -l build/app/outputs/bundle/release/app-release.aab
-      # Uploaded as a plain .apk (no zip) so the owner can install it directly.
-      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
-        with:
-          path: app/build/app/outputs/flutter-apk/app-arm64-v8a-release.apk
-          archive: false
-          if-no-files-found: error
-          retention-days: 14
-
-  ios:
-    name: iOS build without signing
-    runs-on: macos-latest
-    timeout-minutes: 40
-    steps:
-      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
-      - uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2
-        with:
-          channel: stable
-          flutter-version: ${{ env.FLUTTER_VERSION }}
-          cache: true
-      - run: flutter pub get --enforce-lockfile
-      - run: flutter build ios --debug --no-codesign

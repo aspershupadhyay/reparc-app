@@ -1,0 +1,43 @@
+# iPhone build without signing on pull requests, only when iPhone build
+# files change. It runs on a Mac, which GitHub counts at 10x the minutes,
+# so it does not run for app code changes; every release builds iPhone.
+name: iPhone build
+
+on:
+  pull_request:
+    paths:
+      - 'app/ios/**'
+      - 'app/pubspec.yaml'
+      - 'app/pubspec.lock'
+      - '.github/workflows/ios-build.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ios-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  # Keep in step with .tool-versions.
+  FLUTTER_VERSION: 3.47.6
+
+defaults:
+  run:
+    working-directory: app
+
+jobs:
+  ios:
+    name: iOS build without signing
+    runs-on: macos-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+      - uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2
+        with:
+          channel: stable
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          cache: true
+      - run: flutter pub get --enforce-lockfile
+      - run: flutter build ios --debug --no-codesign

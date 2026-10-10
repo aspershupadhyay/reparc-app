@@ -103,6 +103,16 @@ The team must set measurable startup, logging-response, memory, and download-siz
 6. Build unsigned or test-signed app artifacts.
 7. Keep the pull request blocked when a required check fails.
 
+**Actions minutes (2026-10-11, owner request):** the private repository ran out of its monthly GitHub Actions minutes after a day of releases. CI now saves minutes:
+
+- `ci.yml` (format, analyze, test, gateway, website) runs on pull requests that change code, not on handbook, release-note, or Markdown changes, and not again after a merge.
+- `android-build.yml` runs only when Android build files change (`app/android/**`, `pubspec`, `distribution.dart`). It still checks that the Play bundle has no installer.
+- `ios-build.yml` runs only when iPhone build files change. It runs on a Mac, which GitHub counts at 10 times the minutes.
+- Every release (`release.yml`) still builds Android, the Play bundle, and iPhone.
+- Any of them can be started by hand (Actions → the workflow → Run workflow).
+
+Never make the repository public to get free minutes: the full history would be copied by bots within minutes, and public forks stay public (17.9). If minutes run out again, raise the Actions spending limit or add a self-hosted runner.
+
 ### Release workflow
 
 1. Require a reviewed release request and protected version tag.
