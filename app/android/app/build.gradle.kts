@@ -1,3 +1,4 @@
+import java.util.Base64
 import java.util.Properties
 
 plugins {
@@ -17,10 +18,10 @@ val hasReleaseKey = keystoreProperties.getProperty("storeFile") != null
 // The Google Play build (handbook 17.10): `flutter build appbundle
 // --dart-define=REPARC_STORE=play`. Flutter hands the defines to Gradle as
 // base64 text, so the Dart code and this file read the same one switch.
-val isPlayBuild = (project.findProperty("dart-defines") as String?)
-    ?.split(",")
-    ?.any { runCatching { String(java.util.Base64.getDecoder().decode(it)) }.getOrNull() == "REPARC_STORE=play" }
-    ?: false
+val isPlayBuild: Boolean = (project.findProperty("dart-defines") as String?)
+    .orEmpty()
+    .split(",")
+    .any { define -> String(Base64.getDecoder().decode(define), Charsets.UTF_8) == "REPARC_STORE=play" }
 
 android {
     namespace = "app.reparc.reparc"
