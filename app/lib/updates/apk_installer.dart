@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
+import 'dart:isolate';
 
 import 'package:cryptography/cryptography.dart';
 import 'package:flutter/services.dart';
@@ -65,7 +66,14 @@ typedef OpenInstaller = Future<void> Function(String path);
 /// The SHA-256 of a file, in lower case. Swappable for tests.
 typedef HashFile = Future<String> Function(File file);
 
-Future<String> sha256OfFile(File file) async {
+/// Runs on a background isolate, so hashing a 60 MB file does not hold up
+/// the screen.
+Future<String> sha256OfFile(File file) {
+  final path = file.path;
+  return Isolate.run(() => _sha256(File(path)));
+}
+
+Future<String> _sha256(File file) async {
   final sink = Sha256().newHashSink();
   await for (final chunk in file.openRead()) {
     sink.add(chunk);
@@ -100,27 +108,33 @@ Future<String> httpGetText(Uri url) async {
   }
 }
 
-/// Streams [url] to [file] and hashes it on the way, so a 100 MB APK never
-/// sits in memory. GitHub redirects downloads; HttpClient follows them.
+/// Streams [url] to [file], so a 100 MB APK never sits in memory, then
+/// hashes the file on a background isolate. GitHub redirects downloads;
+/// HttpClient follows them. Progress is reported about four times a
+/// second, not for every network chunk, so redrawing the screen does not
+/// slow the download (owner report, 2026-10-11).
 Future<String> httpSaveTo(Uri url, File file, void Function(int, int?) onProgress) async {
   final client = _client();
-  final sink = Sha256().newHashSink();
   final out = file.openWrite();
   try {
     final res = await (await client.getUrl(url)).close().timeout(const Duration(seconds: 30));
     if (res.statusCode != 200) throw ApkError('GitHub answered ${res.statusCode}. Try again later.');
     final total = res.contentLength > 0 ? res.contentLength : null;
     var received = 0;
+    final clock = Stopwatch()..start();
+    var shownAt = -1000;
     await for (final chunk in res.timeout(const Duration(seconds: 60))) {
       out.add(chunk);
-      sink.add(chunk);
       received += chunk.length;
-      onProgress(received, total);
+      if (clock.elapsedMilliseconds - shownAt >= 250) {
+        shownAt = clock.elapsedMilliseconds;
+        onProgress(received, total);
+      }
     }
+    onProgress(received, total);
     await out.flush();
-    sink.close();
-    final hash = await sink.hash();
-    return hash.bytes.map((b) => b.toRadixString(16).padLeft(2, '0')).join();
+    await out.close();
+    return await sha256OfFile(file);
   } finally {
     await out.close();
     client.close(force: true);

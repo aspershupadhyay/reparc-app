@@ -231,9 +231,11 @@ class _BodyScreenState extends ConsumerState<BodyScreen> {
           label('Foods from'),
           Builder(
             builder: (context) {
-              final region = ref.watch(phoneRegionProvider);
+              final region = ref.watch(phoneRegionProvider).value;
               final chosen = settings.foodCountry;
-              String name(String? code) => foodCountries[code] ?? 'No country';
+              // A region without its own food list shows its code, not
+              // "No country", so the user sees what the phone said.
+              String name(String? code) => code == null ? 'unknown' : (foodCountries[code] ?? code);
               return Wrap(
                 spacing: Space.s,
                 runSpacing: Space.s,

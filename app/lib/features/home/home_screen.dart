@@ -374,8 +374,14 @@ class _Hero extends ConsumerWidget {
     final live = ref.watch(liveSessionProvider).value;
     final program = ref.watch(activeProgramProvider).value;
     final next = program == null || program.plan.days.isEmpty ? null : program.plan.days[program.nextDay];
-    // A new user with no plan is asked three questions first (launch review).
-    final welcome = live == null && program == null && !ref.watch(currentSettingsProvider).onboarded;
+    // A new user, with no plan and no saved workout yet, is asked three
+    // questions first (launch review). Someone who already trains is not
+    // greeted with "Welcome" (phone test, 2026-10-11).
+    final welcome =
+        live == null &&
+        program == null &&
+        !ref.watch(currentSettingsProvider).onboarded &&
+        (ref.watch(historyProvider).value?.isEmpty ?? false);
 
     final (String eyebrow, String title, String? sub, String label, VoidCallback onTap) = switch ((live, next)) {
       (final l?, _) => (
