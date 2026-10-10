@@ -116,16 +116,27 @@ class _WorkoutTab extends ConsumerWidget {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         _Consistency(s: s, before: before),
-        const SizedBox(height: Space.m),
-        _LoadRow(s: s, before: before, unit: unit),
-        if (program != null) ...[const SizedBox(height: Space.m), _RoadmapAdherence(s: s, program: program)],
-        const SizedBox(height: Space.m),
-        _Muscles(s: s),
-        const SizedBox(height: Space.m),
-        _StrengthTrend(s: s, unit: unit),
-        const SizedBox(height: Space.m),
-        _Records(records: records, s: s),
-        if (s.dayCount > 7) ...[const SizedBox(height: Space.m), _WeeklyVolume(s: s, unit: unit)],
+        // Nothing logged yet: say what will appear, not rows of zeros
+        // (launch review, 2026-10-10).
+        if (s.sessions.isEmpty && records.isEmpty) ...[
+          const SizedBox(height: Space.m),
+          const EmptyState(
+            icon: LucideIcons.chartLine,
+            title: 'Your progress shows here',
+            body: 'Finish one workout to see how much you lifted, your hard sets, and your best lifts.',
+          ),
+        ] else ...[
+          const SizedBox(height: Space.m),
+          _LoadRow(s: s, before: before, unit: unit),
+          if (program != null) ...[const SizedBox(height: Space.m), _RoadmapAdherence(s: s, program: program)],
+          const SizedBox(height: Space.m),
+          _Muscles(s: s),
+          const SizedBox(height: Space.m),
+          _StrengthTrend(s: s, unit: unit),
+          const SizedBox(height: Space.m),
+          _Records(records: records, s: s),
+          if (s.dayCount > 7) ...[const SizedBox(height: Space.m), _WeeklyVolume(s: s, unit: unit)],
+        ],
         const SizedBox(height: Space.m),
         _BodyWeight(s: s, weights: weights, unit: unit),
       ],
@@ -168,7 +179,7 @@ class _Consistency extends StatelessWidget {
                         Text('${s.sessions.length}', style: t.displayLarge?.tabular.copyWith(color: p.onPanel)),
                         // Lime and an up arrow only for a real rise; no change
                         // is a neutral dash.
-                        if (before != null)
+                        if (before != null && deltaText(s.sessions.length, before!.sessions.length).isNotEmpty)
                           Tag(
                             deltaText(s.sessions.length, before!.sessions.length),
                             color: p.panelRaised,

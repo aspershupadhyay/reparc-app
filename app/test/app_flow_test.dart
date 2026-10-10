@@ -65,11 +65,12 @@ void main() {
     await tester.tap(find.bySemanticsLabel('Analytics, tab 4 of 5'));
     await tester.pumpAndSettle();
     await tester.scrollUntilVisible(
-      find.text('Best lifts'),
+      find.text('Your progress shows here'),
       300,
       scrollable: _scrollableIn(find.byType(AnalyticsScreen)),
     );
-    expect(find.text('Best lifts'), findsOneWidget);
+    expect(find.text('Your progress shows here'), findsOneWidget, reason: 'No zeros before the first workout');
+    expect(find.text('Best lifts'), findsNothing);
     await tester.tap(find.bySemanticsLabel('Me, tab 5 of 5'));
     await tester.pumpAndSettle();
     await tester.scrollUntilVisible(
