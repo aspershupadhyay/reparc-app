@@ -143,6 +143,13 @@ void main() {
       expect(nextAim(reps: 1, style: LoadStyle.pyramid), (load: null, reps: 1), reason: 'Missing stays missing');
     });
 
+    test('a ramp-up weight is a loadable share of the working weight', () {
+      expect(rampUpLoad(60, 50, 'kg'), 30);
+      expect(rampUpLoad(62.5, 70, 'kg'), 42.5, reason: '43.75 rounds down to a 2.5 kg step');
+      expect(rampUpLoad(135, 50, 'lb'), 65);
+      expect(rampUpLoad(4, 50, 'kg'), 2.5, reason: 'Never below one step');
+    });
+
     test('ramp-up sets read their share and reps from the note', () {
       const note = 'Target: 2 × 8–12 · 1:15 min rest\nRamp-up sets first: 50% × 8, 70% × 5 of your working weight';
       expect(rampUpFromNote(note, 0), (percent: 50, reps: 8));
