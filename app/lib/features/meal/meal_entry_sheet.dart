@@ -331,7 +331,7 @@ class _EntrySheetState extends ConsumerState<_EntrySheet> {
           PillTabs<MealStatus>(
             values: const [MealStatus.eaten, MealStatus.planned],
             selected: _status,
-            label: (s) => s == MealStatus.eaten ? 'Eaten' : 'Planned',
+            label: (s) => s == MealStatus.eaten ? 'Ate it' : 'Plan it',
             icon: (s) => s == MealStatus.eaten ? LucideIcons.check : LucideIcons.clock,
             onChanged: (s) => setState(() => _status = s),
           ),

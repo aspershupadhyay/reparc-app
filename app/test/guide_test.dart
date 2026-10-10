@@ -91,6 +91,8 @@ void main() {
       expect(targetRepsFromNote('Target: 3 × 5'), 5);
       expect(targetRepsFromNote('Target: 3 × 45 s · 1 min rest'), isNull, reason: 'A timed target has no reps');
       expect(restFromNote('Target: 3 × 6–10 · 2:30 min rest · 2 reps left'), 150);
+      expect(restFromNote('Target: 3 × 6–10 · 2:30 min rest · Stop when 2 more would be hard'), 150);
+      expect(targetRepsFromNote('Target: 3 × 6–10 · 2:30 min rest · Stop when 2 more would be hard'), 10);
       expect(restFromNote('Target: 3 × 12 · 45 s rest'), 45);
       expect(restFromNote('Target: 3 × 12'), isNull);
     });

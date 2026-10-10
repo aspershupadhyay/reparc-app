@@ -277,7 +277,7 @@ class _LoadRow extends StatelessWidget {
         children: [
           tile(
             LucideIcons.weight,
-            'Volume',
+            'Total lifted',
             fmtCompact(vol.inUnit(unit)),
             unit,
             vol.skipped > 0
@@ -287,7 +287,7 @@ class _LoadRow extends StatelessWidget {
           const SizedBox(width: Space.s),
           tile(
             LucideIcons.layers,
-            'Working sets',
+            'Hard sets',
             '${working.length}',
             null,
             '${fmtNum(reps)} reps',
@@ -547,7 +547,7 @@ class _WeeklyVolume extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Text('Volume per week', style: t.titleMedium),
+          Text('Total lifted per week', style: t.titleMedium),
           Text('Weight × reps of working sets, in $unit', style: t.bodySmall),
           const SizedBox(height: Space.m),
           Bars(
@@ -555,7 +555,7 @@ class _WeeklyVolume extends StatelessWidget {
             labels: [fmtDayMonth(weeks.first), fmtDayMonth(weeks.last)],
             color: p.blue,
             height: 100,
-            semanticLabel: 'Volume per week. ${byWeek.length} weeks have data.',
+            semanticLabel: 'Total lifted per week. ${byWeek.length} weeks have data.',
           ),
         ],
       ),

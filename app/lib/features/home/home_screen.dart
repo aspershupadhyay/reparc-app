@@ -489,11 +489,15 @@ class _TodayFood extends ConsumerWidget {
                           ),
                           const SizedBox(height: 4),
                           Text(short, style: t.labelSmall),
-                          Text(
-                            target == null ? n.unit : 'of ${fmtNum(target.amount, maxDecimals: 0)} ${n.unit}',
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: t.labelSmall?.copyWith(fontSize: 11),
+                          // Shrinks to fit instead of cutting the target off
+                          // with large text (launch review, 2026-10-10).
+                          FittedBox(
+                            fit: BoxFit.scaleDown,
+                            child: Text(
+                              target == null ? n.unit : 'of ${fmtNum(target.amount, maxDecimals: 0)} ${n.unit}',
+                              maxLines: 1,
+                              style: t.labelSmall?.copyWith(fontSize: 11),
+                            ),
                           ),
                         ],
                       );

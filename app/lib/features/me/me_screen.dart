@@ -114,7 +114,7 @@ class MeScreen extends ConsumerWidget {
             group('Training', [
               SwitchListTile(
                 secondary: lead(LucideIcons.audioLines),
-                title: const Text('Guided workout'),
+                title: const Text('Coach mode'),
                 subtitle: const Text('Timers and a voice run your workout. The screen stays on'),
                 value: s.guideOn,
                 onChanged: repo.setGuideOn,

@@ -22,6 +22,7 @@ import '../exercises/library/library.dart';
 import 'exercise_form.dart';
 import 'exercise_picker.dart';
 import '../../domain/guide.dart';
+import '../../domain/roadmap.dart' show plainEffort;
 import 'guide_controller.dart';
 
 /// Exercises and sets of one session. Used by the live workout and by the
@@ -614,15 +615,17 @@ class _SetRowState extends ConsumerState<SetRow> {
                             color: warm ? pal.orangeSoft : (now ? pal.brand : pal.surfaceAlt),
                             shape: BoxShape.circle,
                           ),
-                          child: Text(
-                            warm ? 'W' : '${widget.number}',
-                            style: t.labelMedium?.tabular.copyWith(
-                              // Orange on its soft tint reads as "warm-up" and
-                              // keeps 3:1 in both modes.
-                              color: now ? pal.onBrand : (warm ? pal.orange : pal.ink),
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
+                          // A warm-up set shows a flame, not a "W" that new
+                          // lifters cannot read (launch review, plain words).
+                          child: warm
+                              ? Icon(LucideIcons.flame, size: 16, color: now ? pal.onBrand : pal.orange)
+                              : Text(
+                                  '${widget.number}',
+                                  style: t.labelMedium?.tabular.copyWith(
+                                    color: now ? pal.onBrand : pal.ink,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
                         ),
                       ),
                     ),
@@ -631,17 +634,20 @@ class _SetRowState extends ConsumerState<SetRow> {
                 const SizedBox(width: Space.xs),
                 if (widget.cols == SetColumns.loadReps) ...[
                   Expanded(
-                    child: TextField(
-                      controller: _load,
-                      focusNode: _loadFocus,
-                      keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                      textInputAction: TextInputAction.next,
-                      style: t.bodyLarge?.tabular,
-                      onChanged: _onLoad,
-                      decoration: field(
-                        hint: done || p?.load == null ? null : _num(p!.load),
-                        suffix: _unit,
-                        error: _loadError,
+                    child: Semantics(
+                      label: '${warm ? 'Warm-up set' : 'Set ${widget.number}'} weight in $_unit',
+                      child: TextField(
+                        controller: _load,
+                        focusNode: _loadFocus,
+                        keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                        textInputAction: TextInputAction.next,
+                        style: t.bodyLarge?.tabular,
+                        onChanged: _onLoad,
+                        decoration: field(
+                          hint: done || p?.load == null ? null : _num(p!.load),
+                          suffix: _unit,
+                          error: _loadError,
+                        ),
                       ),
                     ),
                   ),
@@ -649,30 +655,36 @@ class _SetRowState extends ConsumerState<SetRow> {
                 ],
                 if (widget.cols != SetColumns.time)
                   Expanded(
-                    child: TextField(
-                      controller: _reps,
-                      focusNode: _repsFocus,
-                      keyboardType: TextInputType.number,
-                      textInputAction: TextInputAction.next,
-                      style: t.bodyLarge?.tabular,
-                      onChanged: _onReps,
-                      // A done set shows only what was saved, never a guess.
-                      decoration: field(
-                        hint: done ? null : (p?.reps ?? widget.targetReps)?.toString(),
-                        suffix: 'reps',
-                        error: _repsError,
+                    child: Semantics(
+                      label: '${warm ? 'Warm-up set' : 'Set ${widget.number}'} reps',
+                      child: TextField(
+                        controller: _reps,
+                        focusNode: _repsFocus,
+                        keyboardType: TextInputType.number,
+                        textInputAction: TextInputAction.next,
+                        style: t.bodyLarge?.tabular,
+                        onChanged: _onReps,
+                        // A done set shows only what was saved, never a guess.
+                        decoration: field(
+                          hint: done ? null : (p?.reps ?? widget.targetReps)?.toString(),
+                          suffix: 'reps',
+                          error: _repsError,
+                        ),
                       ),
                     ),
                   ),
                 if (widget.cols == SetColumns.time)
                   Expanded(
-                    child: TextField(
-                      controller: _time,
-                      focusNode: _timeFocus,
-                      keyboardType: TextInputType.datetime,
-                      style: t.bodyLarge?.tabular,
-                      onChanged: _onTime,
-                      decoration: field(hint: done ? null : timeHint, error: _timeError),
+                    child: Semantics(
+                      label: '${warm ? 'Warm-up set' : 'Set ${widget.number}'} time',
+                      child: TextField(
+                        controller: _time,
+                        focusNode: _timeFocus,
+                        keyboardType: TextInputType.datetime,
+                        style: t.bodyLarge?.tabular,
+                        onChanged: _onTime,
+                        decoration: field(hint: done ? null : timeHint, error: _timeError),
+                      ),
                     ),
                   ),
                 const SizedBox(width: Space.xs),
@@ -716,7 +728,7 @@ class _SetRowState extends ConsumerState<SetRow> {
 }
 
 /// An exercise note as a few quiet chips: "2 × 8–12", "1:15 min rest",
-/// "3 reps left", then any coaching cue as one short line. The ramp-up
+/// "Stop when 3 more would be hard", then any coaching cue as one short line. The ramp-up
 /// line is left out: the ramp-up rows and the clock already show it.
 class NoteChips extends StatelessWidget {
   const NoteChips({super.key, required this.note});
@@ -731,8 +743,9 @@ class NoteChips extends StatelessWidget {
     for (final line in note.split('\n')) {
       if (line.startsWith('Ramp-up sets first:')) continue;
       final parts = line.replaceFirst('Target: ', '').split(' · ');
-      for (final part in parts) {
-        if (part == 'Warm-up') continue;
+      for (final raw in parts) {
+        if (raw == 'Warm-up') continue;
+        final part = plainEffort(raw);
         // Short facts are chips; a sentence is a cue.
         (part.length <= 16 && !part.endsWith('.') ? chips : cues).add(part);
       }

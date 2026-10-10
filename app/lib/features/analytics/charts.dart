@@ -330,7 +330,8 @@ class HBar extends StatelessWidget {
 
 /// Up or down change against the previous period.
 String deltaText(num now, num before) {
-  if (before == 0) return now == 0 ? 'Same as before' : 'New';
+  // Nothing in both periods says nothing, not "Same as before".
+  if (before == 0) return now == 0 ? '' : 'New';
   final pct = ((now - before) / before * 100).round();
   if (pct == 0) return 'Same as before';
   return '${pct > 0 ? '+' : ''}$pct% vs before';
