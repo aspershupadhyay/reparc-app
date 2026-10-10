@@ -7,6 +7,7 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../../ai/ai_controller.dart';
 import '../../core/clock.dart';
 import '../../core/dates.dart';
+import '../../domain/analytics.dart' show plannedDays;
 import '../../core/format.dart';
 import '../../core/palette.dart';
 import '../../core/theme.dart';
@@ -71,10 +72,20 @@ class HomeScreen extends ConsumerWidget {
               trained: week?.trainingDays ?? const {},
               count: week?.sessions.length ?? 0,
               roadmapDone: roadmapDone,
-              // The weekdays the user chose. Without any, one per roadmap day.
+              // The weekdays the user chose, counted from the day the plan
+              // started, by the same rule as Analytics; so a plan started
+              // on Saturday is not "0/6" (launch review, 2026-10-10).
+              // Without chosen weekdays, one per roadmap day.
               roadmapPlanned: program == null
                   ? null
-                  : (program.plan.weekdays.isEmpty ? program.plan.days.length : program.plan.weekdays.length),
+                  : (program.plan.weekdays.isEmpty
+                        ? program.plan.days.length
+                        : plannedDays(
+                            from: weekStart,
+                            to: addDays(weekStart, 6),
+                            weekdays: program.plan.weekdays,
+                            since: dayOf(program.row.createdAt.toLocal()),
+                          )),
               plannedWeekdays: program?.plan.weekdays.toSet() ?? const {},
             ),
             if (settings.health.contains(HealthFeature.steps.name) ||
@@ -537,11 +548,14 @@ class _WeekCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final p = context.pal;
     final t = Theme.of(context).textTheme;
+    // No plan days left this week (a plan started on its last day): show
+    // the workout count, not "0/0".
+    final planned = roadmapPlanned == 0 ? null : roadmapPlanned;
     return AppCard(
       onTap: () => context.go('/analytics'),
       semanticLabel:
           'This week: $count workouts on ${trained.length} days'
-          '${roadmapPlanned == null ? '' : ', ${roadmapDone ?? 0} of $roadmapPlanned plan days'}. Open Analytics',
+          '${planned == null ? '' : ', ${roadmapDone ?? 0} of $planned plan days'}. Open Analytics',
       child: ExcludeSemantics(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -549,8 +563,8 @@ class _WeekCard extends StatelessWidget {
             Row(
               children: [
                 Expanded(child: Text('This week', style: t.titleMedium)),
-                if (roadmapPlanned != null) ...[
-                  Text('${roadmapDone ?? 0}/$roadmapPlanned', style: t.headlineSmall?.tabular),
+                if (planned != null) ...[
+                  Text('${roadmapDone ?? 0}/$planned', style: t.headlineSmall?.tabular),
                   const SizedBox(width: 4),
                   Text('plan', style: t.bodySmall),
                 ] else ...[
