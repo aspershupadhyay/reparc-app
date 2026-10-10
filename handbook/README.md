@@ -28,6 +28,10 @@ This handbook plans an open-source fitness app for iPhone and Android. Its chose
 16. [Validated plan and open decisions](15-validated-plan.md)
 17. [Production readiness and app updates](16-production-and-app-updates.md)
 
+## Reviews
+
+- [Launch review, 2026-10-10](reviews/2026-10-10-launch-review/index.html): Play Store readiness, design gaps, two data bugs found in a real workout, user pain points, and the open decisions. Findings and proposals only, not accepted decisions. Open the file in a browser.
+
 ## Supplied UI references
 
 - [Meal planner reference](references/meal-ui-reference.png)

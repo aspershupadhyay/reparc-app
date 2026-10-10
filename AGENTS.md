@@ -12,6 +12,7 @@ Before you change code, data, design, or project rules:
 6. Read handbook/13-diagrams.md when the change affects a user flow or data flow.
 7. Use handbook/14-feature-spec-template.md when you add a new feature.
 8. Read handbook/16-production-and-app-updates.md before changing CI, release automation, signing, update checks, or store delivery.
+9. Read the launch review, handbook/reviews/2026-10-10-launch-review/index.html, before planning Play Store work, onboarding, food data, the body map, or other UX polish. It holds findings from a phone test and market research, with proposals. It is not a set of accepted decisions: treat its proposals as **Proposed** until the owner accepts them.
 
 ## Repositories
 
