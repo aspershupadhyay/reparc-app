@@ -14,6 +14,7 @@ def assign(pos, seg, J):
     best = np.full(n, np.inf)
     second = np.full(n, np.inf)
     mid = np.full(n, -1)
+    mid2 = np.full(n, -1)
     fib = np.zeros((n, 3))
     side = np.where(pos[:, 0] >= 0, 'L', 'R')
     sx = np.where(side == 'L', 1.0, -1.0)
@@ -47,8 +48,11 @@ def assign(pos, seg, J):
         idx = np.where(ok)[0]
         if not len(idx):
             continue
-        d = mu['shape'](uv[mu['chart']][idx]) - INFLATE
+        d = mu['shape'](uv[mu['chart']][idx]) - INFLATE - mu['over']
         win = d < best[idx]
+        beat2 = ~win & (d < second[idx])
+        mid2[idx[win]] = mid[idx[win]]
+        mid2[idx[beat2]] = i
         second[idx] = np.where(win, best[idx], np.minimum(second[idx], d))
         best[idx[win]] = d[win]
         mid[idx[win]] = i
@@ -71,4 +75,4 @@ def assign(pos, seg, J):
         e1, e2 = basis[mu['chart']]
         f3 = dvec[:, :1] * e1[idx] + dvec[:, 1:] * e2[idx]
         fib[idx] = f3 / (np.linalg.norm(f3, axis=1, keepdims=True) + 1e-9)
-    return mid, depth, fib, side, uv, near
+    return mid, depth, fib, side, uv, near, mid2

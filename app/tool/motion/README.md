@@ -10,7 +10,15 @@
 2. **Atlas.** Each muscle is a 2D shape on a chart: a rounded polygon (pectoralis, latissimus, trapezius, obliques, glutes, rectus abdominis blocks) or a tapered spindle (biceps, triceps and quad heads, forearm muscles, calves). Shapes are signed distance functions. Heads are separate parts: three deltoid heads, two biceps heads, three triceps heads, three pectoral heads, four rectus abdominis blocks, three serratus slips, two gastrocnemius heads, and so on. Each part names its app muscle (for highlights), its fibre direction, its belly height, and its origin, via points, and insertion.
 3. **Assignment.** The mesh is subdivided once (101,486 vertices). Each point takes the muscle with the lowest signed distance. Shapes are drawn 8 mm large, so neighbours meet in one seam halfway between them (a Voronoi-style split): depth inside a muscle is the distance to the nearer of its own edge and that seam.
 4. **Relief.** Each belly rises with a rounded profile, h = H·s·(2 − s) with s = depth / R, and a groove of 3.2 mm sits at every seam. Normals are recomputed, and a cavity term from mean curvature darkens grooves and lightens bellies (as sculpting tools do), with baked ambient occlusion on top.
-5. **Fibres.** The fibre direction is set in chart space (along the spindle, or toward the insertion for fan muscles such as the pectoralis) and mapped to 3D with the chart's basis vectors. The page draws fine striations along it.
+5. **Fibres.** The fibre direction is set in chart space (along the spindle, or toward the insertion for fan muscles such as the pectoralis).
+6. **Textures (`bake.py`).** The charts double as the texture layout (one side; the other mirrors). Fine detail lives in 2048 px textures baked straight from the atlas shapes, so muscle edges are crisp at any distance: a muscle-ID map (nearest filtering; the page colours each part from it), a detail map (fibre streaks, tendons, seams), and a tangent-space normal map. Fibres are drawn with line integral convolution (Cabral and Leedom, 1993): noise averaged along each muscle's fibre direction, which gives long thin streaks like an anatomy plate. `gym.py` splits vertices where a triangle crosses a chart border or a limb's back seam, and stores tangents from the chart's basis vectors.
+7. **Heads of one muscle.** Parts in one group (pectoralis, trapezius, deltoid, biceps, triceps, gastrocnemius) meet in a faint line, not a deep groove (`atlas.FAINT_GROUPS`). A part with `over` lies over its neighbours (the sartorius over the quads). Fan muscles split into heads along rays from their insertion (`ray_split`).
+
+## Holding the weights
+
+- A dumbbell sits where a closed hand holds it: the centre of the loop the fingers make (knuckles, middle joints, end joints, tips), along the knuckle line (`fist()` in `lab.html`). The check "Hand closed on the handle" measures the fingertips' distance from the handle axis.
+- The goblet squat orients each hand from a wanted palm and finger direction (`handFrame()`), then solves the arm so the hands press the sides of the top plate. Its check measures the hands against the plate rim.
+- Arm IK takes its lengths from the bind pose, because the hand sits below a forearm twist bone (fixed 2026-10-12: the hands fell short before).
 
 ## Muscle physics (in the page)
 
@@ -36,6 +44,10 @@ Live demo (private to the owner): https://claude.ai/artifact/JArExRx3VRAxtg3YQW9
 - Each move shows its tempo phases, the app's coached steps, cues, mistakes, and breathing, and a live joint angle.
 - **Form checks.** Each move lists checks with target ranges (for example "Elbows about 45°: upper arm 30–60° from the body"). The page measures them on the posed skeleton at the start and end of the rep and shows pass or fail with the measured value. `check.js` runs them all and fails if any check fails. The ranges follow common coaching standards and the app's coached text; a review by a qualified coach is **To confirm**.
 
+## Checking shapes
+
+Compare against the body icons at the same framing. In the page, `window.__lab.debug(true)` paints every muscle part its own colour, `window.__lab.parts(['Rectus femoris'])` lights single parts, and `window.__lab.highlight(['quads'])` lights an app muscle. Judge shapes in 3D renders like these, not on the flat charts.
+
 ## Adding a move
 
 A move is data in the `EX` list of `lab.html`, not code:
@@ -54,8 +66,10 @@ git clone --depth 1 --filter=blob:none --sparse https://github.com/makehumancomm
 git -C /tmp/mh sparse-checkout set makehuman/data/3dobjs makehuman/data/rigs makehuman/data/targets/macrodetails
 cd app
 BASE_CACHE=/tmp/base.npz python3 -I tool/motion/export.py /tmp/mh/makehuman/data /tmp/body.json   # rigged body, about 15 s
-python3 -I tool/motion/gym.py /tmp/base.npz /tmp/gym.json /tmp/reparc-gym-model.glb             # gym model, about 10 s
-python3 -I tool/motion/build.py /tmp/gym.json /tmp/motion-lab.html                              # one 7.5 MB page
+python3 -I tool/motion/gym.py /tmp/base.npz /tmp/gym.json                                         # gym model, about 15 s
+python3 -I tool/motion/bake.py /tmp/gym-tex                                                       # textures, about 20 s
+python3 -I tool/motion/build.py /tmp/gym.json /tmp/gym-tex /tmp/motion-lab.html                   # one 8.9 MB page
+python3 -I tool/motion/glb.py /tmp/gym.json /tmp/gym-tex /tmp/reparc-gym-model.glb                # portable .glb, 11.6 MB
 node tool/motion/check.js /tmp/motion-lab.html /tmp/motion-shots           # form checks + screenshots
 ```
 
@@ -68,5 +82,6 @@ To update the live demo, publish `/tmp/motion-lab.html` with the Artifact tool a
 - Poses are set by hand as joint angles (minutes for each move); the checks catch mistakes. Building poses from the library's start and end photos with a pose-estimation model is a possible next step, not started.
 - Fibre lines are drawn by the shader along each muscle's set direction; they are an illustration, not traced fibres.
 - Deep muscles (rhomboids, iliopsoas, rotator cuff under the deltoid) are not drawn: the model shows the surface layer.
-- The model is 101,486 vertices (7.4 MB as JSON, 6.1 MB as .glb). Phone frame time is not measured yet.
+- The model is 103,798 vertices with 2048 px textures (8.9 MB page, 11.6 MB .glb). Phone frame time is not measured yet.
+- Where a triangle switches chart (shoulder, hip) the texture can look slightly ragged.
 - Fingers close as one grip; the thumb is approximate.

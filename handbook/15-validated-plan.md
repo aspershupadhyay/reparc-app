@@ -300,6 +300,8 @@ Updated 2026-10-06. This records what exists in code. It is not evidence of devi
 
 **RepArc gym model (2026-10-12, owner request, not in the app):** Our own anatomical model on the CC0 body: 50 muscle parts and 7 tendons a side drawn from anatomy on unwrapped surface charts, carved as rounded bellies with grooves, with fibre striations and constant-volume muscle bulge (thickness ∝ √(L₀/L), tendon paths through via points). One asset: JSON for the Motion Lab and a standard `.glb` (loads in three.js as a skinned mesh). Open CC BY-SA models (Z-Anatomy, BodyParts3D) were not used; they need an owner licence decision. Checked: all 22 form checks pass on the new model; the bulge moves the right way for each muscle in the curl and goblet squat; the `.glb` loads in three.js's GLTF loader. **Not checked:** a phone, frame time, and a coach or anatomist review.
 
+**Gym model textures and grips (2026-10-12, owner request):** Fine detail moved from the mesh to textures baked from the muscle shapes (crisp edges, fibres by line integral convolution, tendons, seams, normal map); pectoralis redrawn as a fan with heads split along rays from the insertion; quads redrawn as teardrops with the sartorius over them; faint seams between heads of one muscle. Grips fixed: dumbbells sit in the closed fist, the goblet hands hold the plate, and arm IK no longer falls short (a bug from the forearm twist bone). New checks: fingers closed on the handle, hands on the goblet plate. Checked: all 26 form checks pass; side-by-side renders against the chest and quads icons; the `.glb` (11.6 MB, with textures) loads in three.js. **Not checked:** a phone, frame time.
+
 ## 16.12 AI context
 
 - **Purpose:** Give every contributor the current, evidence-based build order.

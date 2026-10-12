@@ -125,6 +125,8 @@ const stageEl = canvas.parentElement;
 if (!window.THREE) { stageEl.insertAdjacentHTML('beforeend', '<div class="error">Could not load three.js. Check your connection and reload.</div>'); return; }
 const D = JSON.parse(document.getElementById('body-data').textContent);
 const DEG = Math.PI / 180, V = (x = 0, y = 0, z = 0) => new THREE.Vector3(x, y, z);
+const wp = (o) => o.getWorldPosition(V());
+const wq = (o) => o.getWorldQuaternion(new THREE.Quaternion());
 const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
 const dec = (b64, T) => { const s = atob(b64); const u = new Uint8Array(s.length); for (let i = 0; i < s.length; i++) u[i] = s.charCodeAt(i); return new T(u.buffer); };
 
@@ -135,7 +137,7 @@ catch (e) { stageEl.insertAdjacentHTML('beforeend', '<div class="error">This bro
 renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
 renderer.outputEncoding = THREE.sRGBEncoding;
 renderer.toneMapping = THREE.ACESFilmicToneMapping;
-renderer.toneMappingExposure = 0.72;
+renderer.toneMappingExposure = 0.85;
 renderer.shadowMap.enabled = true;
 renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 const scene = new THREE.Scene();
@@ -173,53 +175,53 @@ geo.setAttribute('position', new THREE.BufferAttribute(posArr, 3));
 geo.setAttribute('normal', new THREE.BufferAttribute(dec(D.nrm, Int8Array), 3, true));
 geo.setAttribute('skinIndex', new THREE.BufferAttribute(dec(D.skinIndex, Uint8Array), 4));
 geo.setAttribute('skinWeight', new THREE.BufferAttribute(dec(D.skinWeight, Uint8Array), 4, true));
-geo.setAttribute('fiber', new THREE.BufferAttribute(dec(D.fiber, Int8Array), 3, true));
-const mid = dec(D.mid, Uint16Array), amp = dec(D.amp, Uint8Array), edge = dec(D.edge, Uint8Array), ao = dec(D.ao, Uint8Array), cav = dec(D.cav, Int8Array);
+const mid = dec(D.mid, Uint16Array), amp = dec(D.amp, Uint8Array), ao = dec(D.ao, Uint8Array), cav = dec(D.cav, Int8Array);
 geo.setAttribute('mw', new THREE.BufferAttribute(amp, 1, true));
 geo.setAttribute('cav', new THREE.BufferAttribute(cav, 1, true));
 geo.setAttribute('mid', new THREE.BufferAttribute(new Float32Array(mid), 1));
+geo.setAttribute('uv', new THREE.BufferAttribute(dec(D.uv, Uint16Array), 2, true));
+geo.setAttribute('tangent', new THREE.BufferAttribute(dec(D.tangent, Int8Array), 4, true));
 geo.setIndex(new THREE.BufferAttribute(dec(D.index, Uint32Array), 1));
-const NM = D.muscles.length;
+const NM = D.muscles.length, NA = D.atlas.length;
 const bulge = { value: new Array(NM).fill(0) };
 const colors = new Float32Array(nv * 3);
 geo.setAttribute('color', new THREE.BufferAttribute(colors, 3));
-const mat = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.58, metalness: 0, envMapIntensity: 0.45 });
+// Detail textures baked from the muscle atlas (bake.py): muscle id, fibres/tendons/seams, and a normal map.
+const texLoader = new THREE.TextureLoader();
+function tex(url, nearest) {
+  const t = texLoader.load(url);
+  t.flipY = false; t.anisotropy = renderer.capabilities.getMaxAnisotropy();
+  if (nearest) { t.magFilter = THREE.NearestFilter; t.minFilter = THREE.NearestFilter; t.generateMipmaps = false; }
+  return t;
+}
+const uState = { value: new Array(NA).fill(0) }, uDebug = { value: 0 };
+const mat = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.62, metalness: 0, envMapIntensity: 0.5, normalMap: tex('__NORMAL__') });
+const uDetail = { value: tex('__DETAIL__') }, uId = { value: tex('__ID__', true) };
 mat.onBeforeCompile = (sh) => {
-  sh.uniforms.uBulge = bulge;
+  sh.uniforms.uBulge = bulge; sh.uniforms.uState = uState; sh.uniforms.uDebug = uDebug; sh.uniforms.uDetail = uDetail; sh.uniforms.uId = uId;
   sh.vertexShader = sh.vertexShader
-    .replace('#include <common>', `#include <common>\nattribute vec3 fiber;\nattribute float mw;\nattribute float cav;\nattribute float mid;\nuniform float uBulge[${NM}];\nvarying vec3 vBind;\nvarying vec3 vBindN;\nvarying vec3 vFiber;\nvarying float vMw;\nvarying float vCav;`)
+    .replace('#include <common>', `#include <common>\nattribute float mw;\nattribute float cav;\nattribute float mid;\nuniform float uBulge[${NM}];\nvarying float vCav;`)
     .replace('#include <begin_vertex>', `#include <begin_vertex>
-      vBind = position; vBindN = normal; vFiber = fiber; vMw = mw; vCav = cav;
+      vCav = cav;
       // Constant volume: a shorter muscle gets thicker (set per muscle on the CPU).
       if (mid < ${NM}.0) transformed += objectNormal * mw * uBulge[int(mid + 0.5)];`);
   sh.fragmentShader = sh.fragmentShader
-    .replace('#include <common>', '#include <common>\nvarying vec3 vBind;\nvarying vec3 vBindN;\nvarying vec3 vFiber;\nvarying float vMw;\nvarying float vCav;\nfloat fiberH = 0.0;')
+    .replace('#include <common>', `#include <common>\nuniform sampler2D uDetail;\nuniform sampler2D uId;\nuniform float uDebug;\nuniform float uState[${NA}];\nvarying float vCav;`)
     .replace('#include <color_fragment>', `#include <color_fragment>
       {
-        vec3 n = normalize(vBindN);
-        vec3 f = vFiber - n * dot(vFiber, n);
-        float fl = length(f);
-        vec3 fd = f / max(fl, 1e-4);
-        vec3 pd = cross(fd, n);
-        float along = dot(vBind, fd);
-        float s = dot(vBind, pd) * 2600.0 + sin(along * 23.0) * 0.7;
-        float st = sin(s);
-        float aa = clamp(1.2 - fwidth(s) * 0.6, 0.0, 1.0);
-        float m = vMw * step(0.05, fl) * aa;
-        float line = smoothstep(0.35, 1.0, st);
-        diffuseColor.rgb *= 1.0 - 0.10 * line * m;
-        diffuseColor.rgb *= 1.0 + 0.03 * (1.0 - line) * m;
-        fiberH = st * m;
-        diffuseColor.rgb *= clamp(1.0 - 0.9 * max(vCav, 0.0) + 0.35 * max(-vCav, 0.0), 0.35, 1.25);
-      }`)
-    .replace('#include <normal_fragment_maps>', `#include <normal_fragment_maps>
-      {
-        float hx = dFdx(fiberH) * 0.00022, hy = dFdy(fiberH) * 0.00022;
-        vec3 sx = dFdx(-vViewPosition), sy = dFdy(-vViewPosition);
-        vec3 r1 = cross(sy, normal), r2 = cross(normal, sx);
-        float det = dot(sx, r1);
-        vec3 grad = sign(det) * (hx * r1 + hy * r2);
-        normal = normalize(abs(det) * normal - grad);
+        vec4 det = texture2D(uDetail, vUv);
+        int ii = int(floor(texture2D(uId, vUv).r * 255.0 + 0.5));
+        float st = ii < ${NA} ? uState[ii] : -1.0;
+        vec3 skin = vec3(0.42, 0.42, 0.41), mus = vec3(0.5, 0.495, 0.485), ten = vec3(0.74, 0.73, 0.7);
+        vec3 hot = vec3(1.0, 0.13, 0.025), warm = vec3(0.92, 0.32, 0.12);
+        vec3 base = st < -0.5 ? skin : st > 1.5 ? warm : st > 0.5 ? hot : mus;
+        if (uDebug > 0.5 && ii < ${NA}) { float h = fract(float(ii) * 0.618034); base = clamp(abs(mod(h * 6.0 + vec3(0.0, 4.0, 2.0), 6.0) - 3.0) - 1.0, 0.0, 1.0) * 0.8 + 0.1; }
+        float isM = st > -0.5 ? 1.0 - det.g : 0.0;
+        base = mix(base, ten, det.g);
+        base *= mix(1.0, 0.42 + 1.05 * det.r, isM);       // fibre streaks
+        base *= 1.0 - 0.75 * det.b;                         // seams between muscles
+        base *= clamp(1.0 - 0.8 * max(vCav, 0.0) + 0.3 * max(-vCav, 0.0), 0.4, 1.25);
+        diffuseColor.rgb = base * vColor;                   // vColor: baked occlusion
       }`);
 };
 const bones = [], B = {}, bind = {};
@@ -271,17 +273,42 @@ function dumbbell(len = 0.15) {
   g.traverse(m => { if (m.isMesh) m.castShadow = true; });
   return g;
 }
+// Fingertips, for the grip and its check.
+const tips = {};
+for (const s of ['L', 'R']) for (let n = 1; n <= 5; n++) {
+  const o = new THREE.Object3D(); o.position.copy(X(`finger${n}-3.${s}____tail`)).sub(bind[`f${n}3${s}`]); B[`f${n}3${s}`].add(o); tips[`${n}${s}`] = o;
+}
+// Where a closed hand holds a handle: the centre of the loop the fingers
+// make (knuckles, middle joints, end joints, tips), along the knuckle line.
+function fist(s, g) {
+  for (const b of bones) b.quaternion.identity(); B.hips.position.copy(hipsBind);
+  setGrip(s, g); body.updateMatrixWorld(true);
+  const c = V(); let k = 0;
+  for (let n = 2; n <= 5; n++) for (const o of [B[`f${n}1${s}`], B[`f${n}2${s}`], B[`f${n}3${s}`], tips[`${n}${s}`]]) { c.add(wp(o)); k++; }
+  c.multiplyScalar(1 / k);
+  const axis = wp(B[`f21${s}`]).sub(wp(B[`f51${s}`])).normalize();
+  return { at: c.sub(bind[`hand${s}`]), axis };
+}
+const GRIP = 0.92;
 const bells = {};
 for (const s of ['L', 'R']) {
-  const g = dumbbell(); const h = hand[s];
-  g.position.copy(h.grip).sub(bind[`hand${s}`]);
-  g.quaternion.setFromUnitVectors(V(0, 1, 0), h.side);
+  const g = dumbbell(), f = fist(s, GRIP);
+  g.position.copy(f.at); g.quaternion.setFromUnitVectors(V(0, 1, 0), f.axis);
   B[`hand${s}`].add(g); bells[s] = g;
+  hand[s].fist = f;
 }
-// Goblet: one dumbbell held upright at the chest.
+// Goblet: one dumbbell upright at the chest; both hands cup the top plate.
 const goblet = dumbbell(0.11);
-const gobletAt = X('neck01____head').add(V(0, -0.27, 0.2));
+const gobletAt = X('neck01____head').add(V(0, -0.21, 0.21));
 goblet.position.copy(gobletAt).sub(bind.chest); B.chest.add(goblet);
+for (const s of ['L', 'R']) hand[s].cup = fist(s, 0.5);
+// World turn that takes the hand from its bind frame to a wanted palm and finger direction.
+function handFrame(s, palmW, fingersW) {
+  const h = hand[s];
+  const basis = (p, f) => { const P = p.clone().normalize(); const F = f.clone().addScaledVector(P, -f.dot(P)).normalize(); return new THREE.Matrix4().makeBasis(P, F, V().crossVectors(P, F)); };
+  const m = basis(palmW, fingersW).multiply(basis(h.palm, h.fingers).transpose());
+  return new THREE.Quaternion().setFromRotationMatrix(m);
+}
 
 // Markers for form checks.
 function marker(parent, worldBindPos) { const o = new THREE.Object3D(); o.position.copy(worldBindPos).sub(bind[parent]); B[parent].add(o); return o; }
@@ -298,8 +325,6 @@ const eul = new THREE.Euler(), q1 = new THREE.Quaternion(), q2 = new THREE.Quate
 const qx = (deg) => new THREE.Quaternion().setFromAxisAngle(V(1, 0, 0), deg * DEG);
 function setE(name, x = 0, y = 0, z = 0) { eul.set(x * DEG, y * DEG, z * DEG, 'XYZ'); B[name].quaternion.setFromEuler(eul); }
 function reset() { for (const b of bones) b.quaternion.identity(); B.hips.position.copy(hipsBind); }
-const wp = (o) => o.getWorldPosition(V());
-const wq = (o) => o.getWorldQuaternion(new THREE.Quaternion());
 const footBind = bind.footL.clone().add(bind.footR).multiplyScalar(0.5);
 function plantFeet() {
   body.updateMatrixWorld(true);
@@ -326,7 +351,8 @@ function twistQ(s, deg) { return new THREE.Quaternion().setFromAxisAngle(hand[s]
 // Two-bone IK: reach [target] with [end]; the joint bends toward [pole].
 function ik(upper, lower, end, target, pole, flexDir) {
   body.updateMatrixWorld(true);
-  const S = wp(upper), L1 = lower.position.length(), L2 = end.position.length();
+  // The end joint may sit below a twist bone, so lengths and directions come from the bind pose.
+  const S = wp(upper), L1 = lower.position.length(), lowerEnd = bind[end.name].clone().sub(bind[lower.name]), L2 = lowerEnd.length();
   const dir = target.clone().sub(S);
   const d = Math.min(Math.max(dir.length(), 0.05), (L1 + L2) * 0.999); dir.normalize();
   const a = (L1 * L1 - L2 * L2 + d * d) / (2 * d), h = Math.sqrt(Math.max(L1 * L1 - a * a, 0));
@@ -343,7 +369,7 @@ function ik(upper, lower, end, target, pole, flexDir) {
   upper.quaternion.copy(qP.clone().invert().multiply(qU));
   body.updateMatrixWorld(true);
   const qL = wq(lower), qPu = wq(upper);
-  const b2 = end.position.clone().normalize().applyQuaternion(qL);
+  const b2 = lowerEnd.clone().normalize().applyQuaternion(qL);
   // World turn q on the lower bone: new local = parent⁻¹ · q · parent · local.
   lower.quaternion.premultiply(qPu.clone().invert().multiply(new THREE.Quaternion().setFromUnitVectors(b2, w2)).multiply(qPu));
   body.updateMatrixWorld(true);
@@ -384,7 +410,7 @@ function applyPose(P, ex) {
   if (ex.after) ex.after(P);
   body.updateMatrixWorld(true);
 }
-const BASE = { h: 0, pelvis: 0, spine: 0, chest: 0, neck: 0, head: 0, thigh: 0, knee: 0, hipAbd: 0, hipOut: 0, shFlex: 0, shAbd: 0, elbow: 0, twist: 0, wrist: 0, grip: 1, clav: 0 };
+const BASE = { h: 0, pelvis: 0, spine: 0, chest: 0, neck: 0, head: 0, thigh: 0, knee: 0, hipAbd: 0, hipOut: 0, shFlex: 0, shAbd: 0, elbow: 0, twist: 0, wrist: 0, grip: GRIP, clav: 0 };
 const blend = (A, Bk, t) => { const o = {}; for (const k in BASE) o[k] = (A[k] ?? BASE[k]) + ((Bk[k] ?? BASE[k]) - (A[k] ?? BASE[k])) * t; return o; };
 
 // ---------- Push-up support: body angle from shoulder height, hands fixed ----------
@@ -418,6 +444,7 @@ const EX = [
       ['Elbows stay by your sides', 'Upper arm within 15° of vertical', m => m.uarmFromVertL, v => v <= 15, '°', 'both'],
       ['Full squeeze at the top', 'Elbow bent 125–150°', m => m.elbowL, v => v >= 125 && v <= 150, '°', 'end'],
       ['Arms straight at the bottom', 'Elbow bent 15° or less', m => m.elbowL, v => v <= 15, '°', 'start'],
+      ['Hand closed on the handle', 'Fingertips within 3.5 cm of the handle axis', m => m.wrapL * 100, v => v <= 3.5, ' cm', 'both'],
       ['Palms face forward', 'Palm turned forward (supinated)', m => m.palmFwdL * 100, v => v >= 75, '%', 'start'],
     ] },
   { id: 'goblet', name: 'Goblet squat', ground: 'feet', goblet: true,
@@ -427,22 +454,26 @@ const EX = [
     cues: ['Sit between your heels', 'Elbows inside knees', 'Tall chest'],
     mistakes: ['Weight drifting away from the chest.', 'Knees caving in.', 'Heels lifting.'],
     breathing: 'Breathe in at the top. Breathe out as you stand.',
-    keys: [{ hipAbd: 4, hipOut: 12, grip: 0.55 }, { pelvis: 18, spine: 6, chest: 4, neck: -14, thigh: 100, knee: 132, hipAbd: 4, hipOut: 12, grip: 0.55 }],
+    keys: [{ hipAbd: 4, hipOut: 12, grip: 0.5 }, { pelvis: 18, spine: 6, chest: 4, neck: -14, thigh: 100, knee: 132, hipAbd: 4, hipOut: 12, grip: 0.5 }],
     tempo: [['Ready', 0, 0.6, 0], ['Sit down', 1, 3.0, 1], ['Bottom', 1, 0.5, 2], ['Stand up', 0, 1.4, 3]],
     gauge: ['Knee', m => m.kneeL],
     trail: () => wp(B.hips),
     after() {
+      body.updateMatrixWorld(true);
+      const qc = wq(B.chest), top = wp(goblet).add(V(0, 0.085, 0).applyQuaternion(qc));
       for (const [s, sx] of [['L', 1], ['R', -1]]) {
-        body.updateMatrixWorld(true);
-        const g = wp(goblet), S = wp(B[`uarm${s}`]);
-        const t = g.clone().add(V(0.052 * sx, 0.075, -0.035).applyQuaternion(wq(B.chest)));
-        ik(B[`uarm${s}`], B[`farm${s}`], B[`hand${s}`], t, S.clone().add(V(0.12 * sx, -0.5, 0.1)), V(0, 0, 1));
-        const q = wq(B.chest).multiply(new THREE.Quaternion().setFromAxisAngle(V(1, 0, 0), -140 * DEG)).multiply(new THREE.Quaternion().setFromAxisAngle(V(0, 1, 0), -70 * sx * DEG));
+        // Palms press the sides of the top plate, fingers wrap up over it.
+        const q = handFrame(s, V(-sx, 0.35, 0).applyQuaternion(qc), V(0.25 * sx, 0.55, 0.8).applyQuaternion(qc));
+        const contact = top.clone().add(V(0.072 * sx, -0.005, 0).applyQuaternion(qc));
+        const wristAt = contact.clone().sub(hand[s].cup.at.clone().applyQuaternion(q));
+        const S = wp(B[`uarm${s}`]);
+        ik(B[`uarm${s}`], B[`farm${s}`], B[`hand${s}`], wristAt, S.clone().add(V(0.15 * sx, -0.6, 0.05)), V(0, 0, 1));
         setWorldQuat(B[`hand${s}`], q);
       }
     },
     view: { pos: [2.3, 1.15, 2.3], target: [0, 0.72, 0] },
     checks: [
+      ['Hands hold the weight', 'Hands on the top plate (within 3 cm of the rim)', m => m.cupL * 100, v => v <= 3, ' cm', 'both'],
       ['Squat to depth', 'Hip crease at or below the knee', m => (m.hipY - m.kneeY) * 100, v => v <= 3, ' cm', 'end'],
       ['Heels stay down', 'Feet flat and planted', m => m.footLift * 100, v => v <= 1, ' cm', 'both'],
       ['Knees follow the toes', 'Knee in line with the foot', m => m.kneeCave * 100, v => v <= 4, ' cm', 'end'],
@@ -496,6 +527,7 @@ const EX = [
     trail: () => wp(bells.L),
     view: { pos: [0.5, 1.45, 3.1], target: [0, 1.15, 0] },
     checks: [
+      ['Hand closed on the handle', 'Fingertips within 3.5 cm of the handle axis', m => m.wrapL * 100, v => v <= 3.5, ' cm', 'both'],
       ['Stop at shoulder height', 'Arm 80–95° from the side', m => m.abdL, v => v >= 80 && v <= 95, '°', 'end'],
       ['Soft elbows', 'Elbow bent 10–20°', m => m.elbowL, v => v >= 10 && v <= 20, '°', 'both'],
       ['Elbows lead', 'Elbow level with or above the hand', m => (m.elbowYL - m.wristYL) * 100, v => v >= -3, ' cm', 'end'],
@@ -514,6 +546,7 @@ const EX = [
     trail: () => wp(bells.L),
     view: { pos: [2.9, 1.1, 1.0], target: [0, 0.75, 0] },
     checks: [
+      ['Hand closed on the handle', 'Fingertips within 3.5 cm of the handle axis', m => m.wrapL * 100, v => v <= 3.5, ' cm', 'both'],
       ['Soft knees, not a squat', 'Knee bent 15–25°', m => m.kneeL, v => v >= 15 && v <= 25, '°', 'end'],
       ['Flat back', 'Spine bend 12° or less', m => m.spineBend, v => v <= 12, '°', 'end'],
       ['Weights stay over mid-foot', 'Within 7 cm of mid-foot, front to back', m => m.bellOverFoot * 100, v => Math.abs(v) <= 7, ' cm', 'end'],
@@ -578,28 +611,18 @@ function measure() {
     elbowYL: E.y, wristYL: W.y,
     bellOverFoot: bell.z - (A.z + 0.05),
     shinL: ang(K.clone().sub(A), up),
+    wrapL: (() => { const c = wp(bells.L), ax = V(0, 1, 0).applyQuaternion(wq(bells.L)); let d = 0; for (let n = 2; n <= 5; n++) { const t = wp(tips[`${n}L`]).sub(c); d += t.addScaledVector(ax, -t.dot(ax)).length(); } return d / 4; })(),
+    cupL: (() => { const qc = wq(B.chest), rim = wp(goblet).add(V(0.072, 0.08, 0).applyQuaternion(qc)); const c = wp(B.handL).add(hand.L.cup.at.clone().applyQuaternion(wq(B.handL))); return c.distanceTo(rim); })(),
   };
 }
 
 // ---------- Colours ----------
-const cSkin = new THREE.Color('#a19f9b').convertSRGBToLinear();
-const cMuscle = new THREE.Color('#b8b6b1').convertSRGBToLinear();
-const cHot = new THREE.Color('#ff3a10').convertSRGBToLinear();
-const cWarm = new THREE.Color('#f08350').convertSRGBToLinear();
-const cTendon = new THREE.Color('#dcd9d2').convertSRGBToLinear();
 function paint(ex) {
   const main = new Set(ex.primary), help = new Set(ex.helpers);
-  const c = new THREE.Color();
+  D.atlas.forEach((a, i) => { uState.value[i] = a.kind === 'tendon' ? 0 : main.has(a.cat) ? 1 : help.has(a.cat) ? 2 : 0; });
   for (let i = 0; i < nv; i++) {
-    const id = mid[i], m = id < NM ? D.muscles[id] : null;
-    c.copy(cSkin);
-    if (m) {
-      if (m.kind === 'tendon') c.copy(cTendon);
-      else { c.copy(cMuscle); if (main.has(m.cat)) c.copy(cHot); else if (help.has(m.cat)) c.copy(cWarm); }
-    }
-    // Grooves between muscles: a darker shade of the muscle beside them.
-    const k = (1 - (m && m.kind !== 'tendon' ? 0.55 : 0.25) * Math.pow(edge[i] / 255, 1.5)) * (1 - 0.55 * ao[i] / 255);
-    colors[i * 3] = c.r * k; colors[i * 3 + 1] = c.g * k; colors[i * 3 + 2] = c.b * k;
+    const k = Math.pow(1 - ao[i] / 255, 1.6);
+    colors[i * 3] = colors[i * 3 + 1] = colors[i * 3 + 2] = k;
   }
   geo.attributes.color.needsUpdate = true;
 }
@@ -673,6 +696,9 @@ for (const b of document.querySelectorAll('[data-view]')) b.addEventListener('cl
 function resize() { const w = stageEl.clientWidth, h = stageEl.clientHeight; renderer.setSize(w, h, false); camera.aspect = w / Math.max(h, 1); camera.updateProjectionMatrix(); }
 new ResizeObserver(resize).observe(stageEl); resize();
 window.__lab = { select: id => select(EX.find(e => e.id === id)).map(r => ({ ...r })), freeze: a => { frozen = a; }, ids: EX.map(e => e.id), look: (pos, target) => { camT = 1; camera.position.set(...pos); controls.target.set(...target); },
+  parts: (names) => { uDebug.value = 0; D.atlas.forEach((a, i) => { uState.value[i] = names.includes(a.name) ? 1 : 0; }); },
+  debug: (on) => { uDebug.value = on ? 1 : 0; },
+  highlight: (cats) => { D.atlas.forEach((a, i) => { uState.value[i] = a.kind === 'tendon' ? 0 : cats.includes(a.cat) ? 1 : 0; }); },
   bulge: () => D.muscles.map((m, i) => [m.name + ' ' + m.side, +(bulge.value[i] * 1000).toFixed(2)]) };
 select(EX[0]);
 

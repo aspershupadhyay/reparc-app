@@ -85,19 +85,31 @@ def band(v0, v1):
 M = []
 
 
-def mus(name, chart, shape, cat=None, kind='muscle', fiber=('along', (0, 1)), height=0.004, attach=None, segs=None):
-    M.append(dict(name=name, chart=chart, shape=shape, cat=cat, kind=kind, fiber=fiber, height=height, attach=attach, segs=segs))
+def mus(name, chart, shape, cat=None, kind='muscle', fiber=('along', (0, 1)), height=0.004, attach=None, segs=None, over=0.0):
+    """[over] (m) lets a surface muscle lie over its neighbours (the sartorius over the quads)."""
+    M.append(dict(name=name, chart=chart, shape=shape, cat=cat, kind=kind, fiber=fiber, height=height, attach=attach, segs=segs, over=over,
+                  group=name.split(',')[0].split(' (')[0] if ',' in name else name))
+
+
+def ray_split(apex, through, sgn):
+    """Half plane on one side of the line from [apex] through [through], as a distance.
+    Fan muscles (pectoralis, deltoid) split into heads along such rays."""
+    a = np.array(apex, float); b = np.array(through, float)
+    n = np.array([b[1] - a[1], a[0] - b[0]]); n /= np.linalg.norm(n)
+    return lambda p: sgn * ((p - a) @ n)
 
 
 # ---------------- Trunk (left side drawn; the right mirrors) ----------------
 # u: arc from the front midline (0) round the side (0.22) to the spine (0.44). v: height (m).
-PEC = [(0.012, 1.455), (0.06, 1.47), (0.15, 1.475), (0.185, 1.43), (0.2, 1.39), (0.175, 1.3), (0.15, 1.235), (0.1, 1.185), (0.04, 1.19), (0.012, 1.2)]
-pec = poly(PEC, 0.004)
-mus('Pectoralis major, clavicular head', 'trunk', inter(pec, band(1.405, 2)), 'upperChest', fiber=('to', (0.205, 1.4)), height=0.0045,
+PEC = [(0.017, 1.455), (0.06, 1.47), (0.15, 1.476), (0.186, 1.437), (0.207, 1.396), (0.197, 1.352), (0.18, 1.312), (0.15, 1.268), (0.108, 1.232), (0.062, 1.214), (0.017, 1.216)]
+pec = poly(PEC, 0.005)
+PEC_APEX = (0.207, 1.39)
+mus('Pectoralis major, clavicular head', 'trunk', inter(pec, ray_split(PEC_APEX, (0.012, 1.425), -1)), 'upperChest', fiber=('to', PEC_APEX), height=0.006,
     attach=(('chest', 'clavicle.L____head', (0.05, 0.0, 0.08)), ('uarmL', 'upperarm01.L____head', (0.0, -0.07, 0.03))))
-mus('Pectoralis major, sternal head', 'trunk', inter(pec, band(1.255, 1.4)), 'chest', fiber=('to', (0.205, 1.38)), height=0.006,
+pec_up = poly([(x, y + 0.016) for x, y in PEC], 0.005)  # the pec moved up: what is left below it is the lower rim
+mus('Pectoralis major, sternal head', 'trunk', inter(pec, lambda p: np.maximum(ray_split(PEC_APEX, (0.012, 1.425), 1)(p), np.minimum(pec_up(p), ray_split(PEC_APEX, (0.012, 1.3), -1)(p)))), 'chest', fiber=('to', PEC_APEX), height=0.009,
     attach=(('chest', 'spine01____head', (0.0, 0.0, 0.15)), ('uarmL', 'upperarm01.L____head', (0.0, -0.08, 0.03))))
-mus('Pectoralis major, abdominal head', 'trunk', inter(pec, band(0, 1.25)), 'lowerChest', fiber=('to', (0.205, 1.36)), height=0.005,
+mus('Pectoralis major, abdominal head', 'trunk', inter(pec, lambda p: np.maximum(np.maximum(-pec_up(p), ray_split(PEC_APEX, (0.012, 1.425), 1)(p)), ray_split(PEC_APEX, (0.012, 1.3), 1)(p))), 'lowerChest', fiber=('to', PEC_APEX), height=0.007,
     attach=(('chest', 'spine01____head', (0.0, -0.12, 0.15)), ('uarmL', 'upperarm01.L____head', (0.0, -0.08, 0.03))))
 RA_U = (0.009, 0.072)
 for i, (v0, v1) in enumerate([(1.183, 1.245), (1.125, 1.177), (1.07, 1.119)]):
@@ -175,12 +187,14 @@ mus('Wrist tendons', 'forearm', wrap(poly([(-0.13, 0.19), (0.13, 0.19), (0.13, 0
 # ---------------- Thigh (u: front 0, + outer; v: hip 0 to knee 0.43) ----------------
 KNEE_VIA = ('thighL', 'lowerleg01.L____head', (0.0, 0.03, 0.065))  # over the kneecap
 QUAD_A = (('hips', 'upperleg01.L____head', (0.0, 0.05, 0.06)), KNEE_VIA, ('shinL', 'lowerleg01.L____head', (0.0, -0.05, 0.05)))
-mus('Rectus femoris', 'thigh', spindle((0.002, 0.08), (0.004, 0.38), 0.01, 0.028, 0.01), 'quads', height=0.007, attach=QUAD_A)
-mus('Vastus lateralis', 'thigh', wrap(spindle((0.075, 0.1), (0.055, 0.39), 0.015, 0.042, 0.014), P_THIGH), 'quads', height=0.007,
+mus('Rectus femoris', 'thigh', spindle((-0.004, 0.05), (-0.002, 0.36), 0.01, 0.025, 0.011), 'quads', height=0.008, attach=QUAD_A)
+mus('Vastus lateralis', 'thigh', poly([(0.024, 0.15), (0.05, 0.085), (0.105, 0.085), (0.135, 0.19), (0.133, 0.31), (0.108, 0.385), (0.07, 0.408), (0.035, 0.38), (0.026, 0.27)], 0.012), 'quads', height=0.008,
     attach=(('thighL', 'upperleg01.L____head', (0.05, -0.08, 0.0)), KNEE_VIA, QUAD_A[2]))
-mus('Vastus medialis', 'thigh', spindle((-0.035, 0.22), (-0.045, 0.385), 0.008, 0.03, 0.016), 'quads', height=0.007,
+mus('Vastus medialis', 'thigh', poly([(-0.03, 0.215), (-0.055, 0.24), (-0.088, 0.31), (-0.088, 0.38), (-0.06, 0.41), (-0.03, 0.4), (-0.024, 0.33)], 0.012), 'quads', height=0.008,
     attach=(('thighL', 'upperleg01.L____head', (-0.02, -0.15, 0.02)), KNEE_VIA, QUAD_A[2]))
-mus('Sartorius', 'thigh', spindle((0.065, 0.0), (-0.12, 0.42), 0.012, 0.014, 0.01), 'hipFlexors', fiber=('along', (-0.185, 0.42)), height=0.0035,
+mus('Quadriceps tendon', 'thigh', poly([(-0.02, 0.37), (0.035, 0.37), (0.03, 0.44), (-0.016, 0.44)], 0.006), kind='tendon', height=0)
+mus('Sartorius', 'thigh', lambda p: np.minimum(spindle((0.075, -0.02), (-0.04, 0.12), 0.01, 0.011, 0.01)(p), spindle((-0.04, 0.12), (-0.115, 0.43), 0.01, 0.01, 0.007)(p)), 'hipFlexors',
+    fiber=('along', (-0.16, 0.42)), height=0.004, over=0.006,
     attach=(('hips', 'upperleg01.L____head', (0.05, 0.07, 0.07)), ('shinL', 'lowerleg01.L____head', (-0.04, -0.06, 0.0))))
 mus('Adductors', 'thigh', wrap(poly([(-0.06, 0.02), (-0.19, 0.0), (-0.2, 0.2), (-0.13, 0.27), (-0.085, 0.2)], 0.008), P_THIGH), 'adductors',
     fiber=('along', (0.03, 1)), height=0.005,
@@ -203,5 +217,13 @@ mus('Achilles tendon', 'shin', wrap(poly([(0.155, 0.28), (0.19, 0.28), (0.183, 0
 mus('Tibialis anterior', 'shin', spindle((0.018, 0.05), (0.0, 0.35), 0.009, 0.018, 0.006), None, height=0.005)
 mus('Peroneus longus', 'shin', spindle((0.07, 0.03), (0.085, 0.33), 0.007, 0.012, 0.005), None, height=0.0035)
 mus('Patellar tendon', 'shin', poly([(-0.018, -0.02), (0.018, -0.02), (0.015, 0.06), (-0.015, 0.06)], 0.004), kind='tendon', height=0)
+
+# Heads of one muscle: the seam between them is faint, not a deep groove.
+FAINT_GROUPS = {'Pectoralis major', 'Trapezius', 'Deltoid', 'Biceps', 'Triceps', 'Gastrocnemius'}
+
+
+def faint(i, j):
+    return i >= 0 and j >= 0 and M[i]['group'] == M[j]['group'] and M[i]['group'] in FAINT_GROUPS
+
 
 CHART_SEGS = {'trunk': ('trunk', 'neck'), 'upperarm': ('upperarm',), 'forearm': ('forearm',), 'thigh': ('thigh',), 'shin': ('shin',)}
