@@ -81,7 +81,7 @@ ul.plain { margin: 0; padding-left: 18px; display: grid; gap: 4px; line-height: 
 <div class="app">
   <header>
     <h1>RepArc <span>Motion Lab</span></h1>
-    <div class="tag">Prototype · three.js · 54-bone rig</div>
+    <div class="tag">Gym model · 50 muscle parts and 7 tendons a side · 51-bone rig</div>
   </header>
   <div class="stage">
     <canvas id="view" tabindex="0" aria-label="Animated 3D body showing the exercise. Drag to turn, pinch or scroll to zoom."></canvas>
@@ -135,7 +135,7 @@ catch (e) { stageEl.insertAdjacentHTML('beforeend', '<div class="error">This bro
 renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
 renderer.outputEncoding = THREE.sRGBEncoding;
 renderer.toneMapping = THREE.ACESFilmicToneMapping;
-renderer.toneMappingExposure = 0.82;
+renderer.toneMappingExposure = 0.72;
 renderer.shadowMap.enabled = true;
 renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 const scene = new THREE.Scene();
@@ -174,19 +174,26 @@ geo.setAttribute('normal', new THREE.BufferAttribute(dec(D.nrm, Int8Array), 3, t
 geo.setAttribute('skinIndex', new THREE.BufferAttribute(dec(D.skinIndex, Uint8Array), 4));
 geo.setAttribute('skinWeight', new THREE.BufferAttribute(dec(D.skinWeight, Uint8Array), 4, true));
 geo.setAttribute('fiber', new THREE.BufferAttribute(dec(D.fiber, Int8Array), 3, true));
-const mweight = dec(D.mweight, Uint8Array);
-geo.setAttribute('mw', new THREE.BufferAttribute(mweight, 1, true));
-geo.setIndex(new THREE.BufferAttribute(dec(D.index, Uint16Array), 1));
-const label = dec(D.label, Int8Array), groove = dec(D.groove, Uint8Array), ao = dec(D.ao, Uint8Array);
+const mid = dec(D.mid, Uint16Array), amp = dec(D.amp, Uint8Array), edge = dec(D.edge, Uint8Array), ao = dec(D.ao, Uint8Array), cav = dec(D.cav, Int8Array);
+geo.setAttribute('mw', new THREE.BufferAttribute(amp, 1, true));
+geo.setAttribute('cav', new THREE.BufferAttribute(cav, 1, true));
+geo.setAttribute('mid', new THREE.BufferAttribute(new Float32Array(mid), 1));
+geo.setIndex(new THREE.BufferAttribute(dec(D.index, Uint32Array), 1));
+const NM = D.muscles.length;
+const bulge = { value: new Array(NM).fill(0) };
 const colors = new Float32Array(nv * 3);
 geo.setAttribute('color', new THREE.BufferAttribute(colors, 3));
 const mat = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.58, metalness: 0, envMapIntensity: 0.45 });
 mat.onBeforeCompile = (sh) => {
+  sh.uniforms.uBulge = bulge;
   sh.vertexShader = sh.vertexShader
-    .replace('#include <common>', '#include <common>\nattribute vec3 fiber;\nattribute float mw;\nvarying vec3 vBind;\nvarying vec3 vBindN;\nvarying vec3 vFiber;\nvarying float vMw;')
-    .replace('#include <begin_vertex>', '#include <begin_vertex>\nvBind = position; vBindN = normal; vFiber = fiber; vMw = mw;');
+    .replace('#include <common>', `#include <common>\nattribute vec3 fiber;\nattribute float mw;\nattribute float cav;\nattribute float mid;\nuniform float uBulge[${NM}];\nvarying vec3 vBind;\nvarying vec3 vBindN;\nvarying vec3 vFiber;\nvarying float vMw;\nvarying float vCav;`)
+    .replace('#include <begin_vertex>', `#include <begin_vertex>
+      vBind = position; vBindN = normal; vFiber = fiber; vMw = mw; vCav = cav;
+      // Constant volume: a shorter muscle gets thicker (set per muscle on the CPU).
+      if (mid < ${NM}.0) transformed += objectNormal * mw * uBulge[int(mid + 0.5)];`);
   sh.fragmentShader = sh.fragmentShader
-    .replace('#include <common>', '#include <common>\nvarying vec3 vBind;\nvarying vec3 vBindN;\nvarying vec3 vFiber;\nvarying float vMw;\nfloat fiberH = 0.0;')
+    .replace('#include <common>', '#include <common>\nvarying vec3 vBind;\nvarying vec3 vBindN;\nvarying vec3 vFiber;\nvarying float vMw;\nvarying float vCav;\nfloat fiberH = 0.0;')
     .replace('#include <color_fragment>', `#include <color_fragment>
       {
         vec3 n = normalize(vBindN);
@@ -195,14 +202,15 @@ mat.onBeforeCompile = (sh) => {
         vec3 fd = f / max(fl, 1e-4);
         vec3 pd = cross(fd, n);
         float along = dot(vBind, fd);
-        float s = dot(vBind, pd) * 1500.0 + sin(along * 23.0) * 0.7;
+        float s = dot(vBind, pd) * 2600.0 + sin(along * 23.0) * 0.7;
         float st = sin(s);
         float aa = clamp(1.2 - fwidth(s) * 0.6, 0.0, 1.0);
         float m = vMw * step(0.05, fl) * aa;
         float line = smoothstep(0.35, 1.0, st);
-        diffuseColor.rgb *= 1.0 - 0.11 * line * m;
+        diffuseColor.rgb *= 1.0 - 0.10 * line * m;
         diffuseColor.rgb *= 1.0 + 0.03 * (1.0 - line) * m;
         fiberH = st * m;
+        diffuseColor.rgb *= clamp(1.0 - 0.9 * max(vCav, 0.0) + 0.35 * max(-vCav, 0.0), 0.35, 1.25);
       }`)
     .replace('#include <normal_fragment_maps>', `#include <normal_fragment_maps>
       {
@@ -514,6 +522,28 @@ const EX = [
     ] },
 ];
 
+// ---------- Muscle physics: constant volume ----------
+// A muscle keeps its volume V = A·L. When it shortens, its cross-section
+// grows: thickness scales with sqrt(L0 / L). Working muscles also tense up.
+const attachLocal = D.muscles.map(m => m.attach && m.attach.map(a => ({ bone: B[a.bone], off: V(...a.at).sub(bind[a.bone]) })));
+const L0 = D.muscles.map(m => m.attach ? m.attach.slice(1).reduce((acc, a, k) => acc + V(...a.at).distanceTo(V(...m.attach[k].at)), 0) : 0);
+const GAIN = 3.2, TENSION = 0.45;
+const tmpA = V(), tmpB = V();
+function updateBulge(active) {
+  for (let i = 0; i < NM; i++) {
+    const at = attachLocal[i], m = D.muscles[i];
+    let f = 0;
+    if (at) {
+      let L = 0;
+      tmpA.copy(at[0].off).applyMatrix4(at[0].bone.matrixWorld);
+      for (let k = 1; k < at.length; k++) { tmpB.copy(at[k].off).applyMatrix4(at[k].bone.matrixWorld); L += tmpA.distanceTo(tmpB); tmpA.copy(tmpB); }
+      f = (Math.sqrt(L0[i] / Math.max(L, 1e-3)) - 1) * GAIN;
+    }
+    f += (active.get(m.cat) || 0) * TENSION;
+    bulge.value[i] = m.height * Math.max(-0.5, Math.min(1.6, f));
+  }
+}
+
 // ---------- Measurements on the posed skeleton ----------
 let footRef = null;
 const ang = (a, b) => Math.acos(Math.min(1, Math.max(-1, a.clone().normalize().dot(b.clone().normalize())))) / DEG;
@@ -552,19 +582,23 @@ function measure() {
 }
 
 // ---------- Colours ----------
-const M = Object.fromEntries(D.muscles.map((n, i) => [n, i]));
 const cSkin = new THREE.Color('#a19f9b').convertSRGBToLinear();
 const cMuscle = new THREE.Color('#b8b6b1').convertSRGBToLinear();
 const cHot = new THREE.Color('#ff3a10').convertSRGBToLinear();
 const cWarm = new THREE.Color('#f08350').convertSRGBToLinear();
+const cTendon = new THREE.Color('#dcd9d2').convertSRGBToLinear();
 function paint(ex) {
-  const main = new Set(ex.primary.map(n => M[n])), help = new Set(ex.helpers.map(n => M[n]));
+  const main = new Set(ex.primary), help = new Set(ex.helpers);
   const c = new THREE.Color();
   for (let i = 0; i < nv; i++) {
-    const l = label[i], w = mweight[i] / 255;
+    const id = mid[i], m = id < NM ? D.muscles[id] : null;
     c.copy(cSkin);
-    if (l >= 0) { c.lerp(cMuscle, w); if (main.has(l)) c.lerp(cHot, w); else if (help.has(l)) c.lerp(cWarm, w * 0.85); }
-    const k = (1 - 0.28 * groove[i] / 255) * (1 - 0.55 * ao[i] / 255);
+    if (m) {
+      if (m.kind === 'tendon') c.copy(cTendon);
+      else { c.copy(cMuscle); if (main.has(m.cat)) c.copy(cHot); else if (help.has(m.cat)) c.copy(cWarm); }
+    }
+    // Grooves between muscles: a darker shade of the muscle beside them.
+    const k = (1 - (m && m.kind !== 'tendon' ? 0.55 : 0.25) * Math.pow(edge[i] / 255, 1.5)) * (1 - 0.55 * ao[i] / 255);
     colors[i * 3] = c.r * k; colors[i * 3 + 1] = c.g * k; colors[i * 3 + 2] = c.b * k;
   }
   geo.attributes.color.needsUpdate = true;
@@ -638,7 +672,8 @@ for (const b of document.querySelectorAll('[data-view]')) b.addEventListener('cl
 });
 function resize() { const w = stageEl.clientWidth, h = stageEl.clientHeight; renderer.setSize(w, h, false); camera.aspect = w / Math.max(h, 1); camera.updateProjectionMatrix(); }
 new ResizeObserver(resize).observe(stageEl); resize();
-window.__lab = { select: id => select(EX.find(e => e.id === id)).map(r => ({ ...r })), freeze: a => { frozen = a; }, ids: EX.map(e => e.id), look: (pos, target) => { camT = 1; camera.position.set(...pos); controls.target.set(...target); } };
+window.__lab = { select: id => select(EX.find(e => e.id === id)).map(r => ({ ...r })), freeze: a => { frozen = a; }, ids: EX.map(e => e.id), look: (pos, target) => { camT = 1; camera.position.set(...pos); controls.target.set(...target); },
+  bulge: () => D.muscles.map((m, i) => [m.name + ' ' + m.side, +(bulge.value[i] * 1000).toFixed(2)]) };
 select(EX[0]);
 
 // Phase from the tempo: [label, target key, seconds, step index].
@@ -658,6 +693,7 @@ function frame(now) {
   if (playing) clock += dt * speed;
   const ph = frozen != null ? { i: 0, lab: 'Hold', step: 0, left: 0, a: frozen, frac: 1, cycle: 0 } : phaseAt(clock);
   poseAt(ph.a);
+  updateBulge(new Map([...ex.primary.map(c => [c, 1]), ...ex.helpers.map(c => [c, 0.4])]));
   if (playing && frozen == null) pushTrail(ex.trail());
   const m = measure();
   $('gv').textContent = Math.round(ex.gauge[1](m)) + '°';

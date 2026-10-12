@@ -5,7 +5,7 @@ fibre directions for the three.js Motion Lab (see README.md).
 
 Same mesh as app/assets/body/body.bin (tool/body/build.py): MakeHuman's
 CC0 base mesh, shaped and posed the same way, with the same muscle regions.
-MakeHuman's 163 bones are merged into 54: the trunk, limbs, a two-part
+MakeHuman's 163 bones are merged into 51: the trunk, limbs, a two-part
 forearm (so it can twist), and three bones for each finger.
 """
 import base64, json, os, sys
@@ -126,6 +126,10 @@ W = np.array(Wl)
 pos = pos2
 nrm = build.normals(pos, tri)
 label, mw, groove = muscles.label(pos, nrm, tri, joints, seg2)
+if os.environ.get('BASE_CACHE'):
+    np.savez(os.environ['BASE_CACHE'], pos=pos, nrm=nrm, tri=tri, W=W, seg=np.array([str(x) for x in seg2]), label=label,
+             joints=json.dumps({k: [float(x) for x in v] for k, v in joints.items()}), bones=json.dumps(BONES))
+
 ao = muscles.occlusion(pos, nrm, tri)
 
 # Muscle fibre directions, for the striations the page draws. Rules follow

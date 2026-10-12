@@ -1,13 +1,36 @@
-# Motion Lab (prototype)
+# RepArc gym model and Motion Lab (prototype)
 
-A three.js page that shows the app's realistic body, rigged with a skeleton, doing exercises with correct form. It is a prototype for the owner to judge. It is **not** in the app: decision D-038 (Proposed) covers moving it in.
+**The gym model** is RepArc's own anatomical body: the app's CC0 MakeHuman body with a skeleton, and 50 muscle parts and 7 tendons a side laid on it from anatomy, in the style of the body icons (grey anatomy, the working muscle lit). It is one asset we can use anywhere: the Motion Lab page reads it as JSON, and `gym.py` also writes a standard glTF file (`.glb`) for Blender, three.js, game engines, or Flutter.
+
+**The Motion Lab** is a three.js page that shows the model doing exercises with correct form. It is a prototype for the owner to judge. It is **not** in the app: decision D-038 (Proposed) covers moving it in.
+
+## How the gym model is built (`charts.py`, `atlas.py`, `assign.py`, `gym.py`)
+
+1. **Charts.** The trunk and each limb are unwrapped into flat coordinates in metres: arc length around a vertical axis (trunk) or around the bone (limbs), and height or distance along the bone. Both sides share one drawing.
+2. **Atlas.** Each muscle is a 2D shape on a chart: a rounded polygon (pectoralis, latissimus, trapezius, obliques, glutes, rectus abdominis blocks) or a tapered spindle (biceps, triceps and quad heads, forearm muscles, calves). Shapes are signed distance functions. Heads are separate parts: three deltoid heads, two biceps heads, three triceps heads, three pectoral heads, four rectus abdominis blocks, three serratus slips, two gastrocnemius heads, and so on. Each part names its app muscle (for highlights), its fibre direction, its belly height, and its origin, via points, and insertion.
+3. **Assignment.** The mesh is subdivided once (101,486 vertices). Each point takes the muscle with the lowest signed distance. Shapes are drawn 8 mm large, so neighbours meet in one seam halfway between them (a Voronoi-style split): depth inside a muscle is the distance to the nearer of its own edge and that seam.
+4. **Relief.** Each belly rises with a rounded profile, h = H·s·(2 − s) with s = depth / R, and a groove of 3.2 mm sits at every seam. Normals are recomputed, and a cavity term from mean curvature darkens grooves and lightens bellies (as sculpting tools do), with baked ambient occlusion on top.
+5. **Fibres.** The fibre direction is set in chart space (along the spindle, or toward the insertion for fan muscles such as the pectoralis) and mapped to 3D with the chart's basis vectors. The page draws fine striations along it.
+
+## Muscle physics (in the page)
+
+- **Constant volume.** Muscle volume V = A·L stays the same, so when a muscle shortens its cross-section grows: thickness scales with √(L₀/L). Each frame the page measures every muscle's path length from origin through via points to insertion on the posed skeleton, and the vertex shader pushes the belly out (or in) along the normal.
+- **Via points.** Tendons that wrap over a joint (quads over the kneecap, triceps over the elbow) pass through a via point, as in musculoskeletal models such as OpenSim. Without it, a straight line made the rectus femoris shorten far too much in a deep squat.
+- **Tension.** Working muscles (the move's main and helper muscles) get a little extra fullness while the set runs.
+- Measured with `window.__lab.bulge()`: in a curl the biceps long head goes from +3.3 to +5.9 mm while the triceps thins to −1.5 mm; in a goblet squat the glutes thin as they stretch (+4.5 to −1.3 mm), and the rectus femoris barely changes (hip flexion and knee flexion cancel out, a known effect called Lombard's paradox).
+
+## Why our own model
+
+Research (2026-10-12): the best open anatomical muscle models, Z-Anatomy and BodyParts3D, are share-alike (CC BY-SA), which needs an owner decision for a closed-source app (D-035); ready-made écorché models are paid. Our model uses only CC0 MakeHuman data plus our own atlas, so it has no licence questions. Using Z-Anatomy instead would be a licensing decision for the owner.
+
+References: Ramos and Larboulette, "A Muscle Model for Enhanced Character Skinning", Journal of WSCG 2013 (parametric muscles over skinning with volume preservation); OpenSim musculoskeletal models (muscle paths with via points).
 
 Live demo (private to the owner): https://claude.ai/artifact/JArExRx3VRAxtg3YQW92c2
 
 ## What it does
 
 - Same body as the app's body map: MakeHuman's CC0 base mesh, shaped and posed by `tool/body/`, 25,373 vertices, 22 muscle regions.
-- 54 bones with MakeHuman's own skin weights: trunk, neck, head, collarbones, upper arms, a two-part forearm (so the forearm can twist: palms up, neutral, or down), hands, three bones for each finger (so hands close on a dumbbell), thighs, shins, and feet.
+- 51 bones with MakeHuman's own skin weights: trunk, neck, head, collarbones, upper arms, a two-part forearm (so the forearm can twist: palms up, neutral, or down), hands, three bones for each finger (so hands close on a dumbbell), thighs, shins, and feet.
 - Muscle fibre striations in the shader, from a fibre direction for each vertex (`export.py` sets them from anatomy). Main muscles are red-orange and helpers light orange, the same as the body icons.
 - Two-bone IK pins feet to the floor (squats, deadlifts) and hands to the floor (push-ups). Knees track over the toes.
 - Each move shows its tempo phases, the app's coached steps, cues, mistakes, and breathing, and a live joint angle.
@@ -30,8 +53,9 @@ A move is data in the `EX` list of `lab.html`, not code:
 git clone --depth 1 --filter=blob:none --sparse https://github.com/makehumancommunity/makehuman.git /tmp/mh
 git -C /tmp/mh sparse-checkout set makehuman/data/3dobjs makehuman/data/rigs makehuman/data/targets/macrodetails
 cd app
-python3 -I tool/motion/export.py /tmp/mh/makehuman/data /tmp/body.json     # about 15 s
-python3 -I tool/motion/build.py /tmp/body.json /tmp/motion-lab.html        # one 1.4 MB page
+BASE_CACHE=/tmp/base.npz python3 -I tool/motion/export.py /tmp/mh/makehuman/data /tmp/body.json   # rigged body, about 15 s
+python3 -I tool/motion/gym.py /tmp/base.npz /tmp/gym.json /tmp/reparc-gym-model.glb             # gym model, about 10 s
+python3 -I tool/motion/build.py /tmp/gym.json /tmp/motion-lab.html                              # one 7.5 MB page
 node tool/motion/check.js /tmp/motion-lab.html /tmp/motion-shots           # form checks + screenshots
 ```
 
@@ -42,5 +66,7 @@ To update the live demo, publish `/tmp/motion-lab.html` with the Artifact tool a
 ## Known limits
 
 - Poses are set by hand as joint angles (minutes for each move); the checks catch mistakes. Building poses from the library's start and end photos with a pose-estimation model is a possible next step, not started.
-- Fibre lines are drawn by the shader, so they are an illustration, not real fibre paths.
+- Fibre lines are drawn by the shader along each muscle's set direction; they are an illustration, not traced fibres.
+- Deep muscles (rhomboids, iliopsoas, rotator cuff under the deltoid) are not drawn: the model shows the surface layer.
+- The model is 101,486 vertices (7.4 MB as JSON, 6.1 MB as .glb). Phone frame time is not measured yet.
 - Fingers close as one grip; the thumb is approximate.
