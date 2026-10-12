@@ -75,8 +75,9 @@ def painted_arrays(data):
         ('TEXCOORD_0', np.round(A['uv'] * 65535).astype('<u2'), 5123, 'VEC2', True),
         ('JOINTS_0', idx.astype(np.uint8), 5121, 'VEC4', False),
         ('WEIGHTS_0', wq.astype(np.uint8), 5121, 'VEC4', True),
-        ('_MUSCLE', mid.astype('<u2'), 5123, 'SCALAR', False),
-        ('_AMP', np.round(A['amp'][:, 0] * 255).astype(np.uint8), 5121, 'SCALAR', True),
+        # Custom attributes as floats: Blender's importer drops 16-bit ones and fails on normalised bytes.
+        ('_MUSCLE', mid.astype('<f4'), 5126, 'SCALAR', False),
+        ('_AMP', (np.round(A['amp'][:, 0] * 255) / 255).astype('<f4'), 5126, 'SCALAR', False),
     ]
     return arrays, T.reshape(-1).astype('<u4')
 
@@ -101,8 +102,8 @@ def atlas_arrays(data, dec, nv):
         ('TEXCOORD_0', dec('uv', '<u2').reshape(nv, 2), 5123, 'VEC2', True),
         ('JOINTS_0', dec('skinIndex', np.uint8).reshape(nv, 4), 5121, 'VEC4', False),
         ('WEIGHTS_0', dec('skinWeight', np.uint8).reshape(nv, 4), 5121, 'VEC4', True),
-        ('_MUSCLE', dec('mid', '<u2'), 5123, 'SCALAR', False),
-        ('_AMP', dec('amp', np.uint8), 5121, 'SCALAR', True),
+        ('_MUSCLE', dec('mid', '<u2').astype('<f4'), 5126, 'SCALAR', False),
+        ('_AMP', (dec('amp', np.uint8) / 255).astype('<f4'), 5126, 'SCALAR', False),
     ]
     # Tangent w must be exactly ±1 in glTF.
     t = arrays[2][1]; t[:, 3] = np.sign(t[:, 3]); t[:, :3] /= np.linalg.norm(t[:, :3], axis=1, keepdims=True) + 1e-9

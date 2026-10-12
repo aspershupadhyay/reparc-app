@@ -1,6 +1,6 @@
 # RepArc gym model (ready to use)
 
-`reparc-gym-model.glb` is the painted gym model as one glTF 2.0 binary (7.8 MB). It opens in any glTF
+`reparc-gym-model.glb` is the painted gym model as one glTF 2.0 binary (8.3 MB). It opens in any glTF
 viewer or engine: three.js, Blender, Unity (glTFast), Unreal (glTF importer), Godot, Flutter (a glTF
 or three.js view).
 
@@ -9,11 +9,18 @@ What is inside:
 - A 51-bone skeleton: spine, neck, head, clavicles, upper arms, two-part forearms (for the palm
   twist), hands, three bones a finger, thighs, shins, feet. Bone names are in the file.
 - Material: the painting as the base colour (2048 px), its relief as the normal map, roughness 0.72.
-- `_MUSCLE` vertex attribute (muscle id; 65535 = none) and `_AMP` (belly weight, for bulge effects).
+- The muscles are sculpted into the surface (`sculpt.py`): real bellies and grooves under the paint.
+- `_MUSCLE` vertex attribute (muscle id; 65535 = none) and `_AMP` (belly weight 0 to 1, for bulge effects), stored
+  as floats so Blender imports them (its importer drops 16-bit attributes and fails on normalised bytes).
 - Scene extras: `muscles` (each part with its side, app muscle group, origin and insertion bones),
   `atlas` (part names), `cats` (app muscle groups), and `labelTexture` (image 2: the muscle part of
   each texel; value = index into `atlas`, 255 = none). Use it to light a muscle in red, as the
   Motion Lab does.
+
+Blender: File → Import → glTF 2.0. Switch the viewport to Material Preview to see the paint. The muscle ids
+come in as the `_MUSCLE` point attribute and the tables as scene custom properties. Checked with Blender 5.2
+(`../render.py` imports it and renders it). Edits made by hand in Blender do not reach the Motion Lab, which
+builds from `model.json`: put a change into the scripts instead.
 
 Rebuild it after any change to the painting, the muscle atlas, or the mesh, with the commands in
 `../README.md` ("Rebuild and check"), and commit the new file. Do not edit it by hand.

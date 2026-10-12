@@ -26,6 +26,12 @@ The body icons look real because they are paintings. Drawing muscle shapes on th
    - `label.png`: the muscle part of each texel, for the red highlight. It starts from our atlas and is moved onto the painted muscle edges by a watershed on each painting (only the sure middle of each atlas part seeds it; bare skin of the head, hands and feet seeds its own region; islands under 300 px go back to the atlas; a 7-texel majority filter removes specks). Only a clear view (weight above 0.25) moves a border.
 4. **Page.** The page tints the target red from the paint's own shading (as in the icons) and helpers half way. The painting already holds the light, so the scene light adds only a little.
 
+## Sculpted relief (`sculpt.py`) and Blender renders (`render.py`)
+
+The painting alone left the surface smooth: bellies and grooves were only painted, so the outline stayed that of an ordinary body and the scene light never fell on a real belly (seen in clay renders, 2026-10-12). `sculpt.py` moves the 25k base mesh so each painted muscle rises as a belly and sinks into a groove at its painted edge. It reads the part map (`label.png`, which follows the painted edges), measures each point's distance over the surface from its muscle's edge, raises a rounded belly (the atlas belly height × 1.8, up to 16 mm) and cuts a 2.5 mm groove on each edge (faint between heads of one muscle). Tendons and bare skin stay. Only `pos` and `nrm` in `model.json` change, so the textures, the page and `glb.py` need nothing new. It keeps the smooth model as `model-smooth.json` and always starts from it.
+
+`render.py` opens the `.glb` in Blender (the `bpy` package, `pip install bpy`, or `blender -b -P`) and renders four views with studio light in Cycles. `clay` drops the paint so only the shape shows; `torso` and `legs` frame close up. Judge the relief in clay renders, before and after (`model-smooth.json` gives the before).
+
 **More paintings.** `paint/sheets.json` takes more sheets (another pose and other views); `build` blends them all. A sheet with the arms raised seen from four low three-quarter views would cut the badly seen surface from 21 % to 7 % (measured). It was not painted: the owner's Weave workspace allows 2 free model runs, both used (2026-10-12); more runs need a paid Weave plan.
 
 ## Holding the weights
@@ -78,14 +84,16 @@ A move is data in the `EX` list of `lab.html`, not code:
 # MakeHuman data (CC0 assets only; their code is AGPL and is not used)
 git clone --depth 1 --filter=blob:none --sparse https://github.com/makehumancommunity/makehuman.git /tmp/mh
 git -C /tmp/mh sparse-checkout set makehuman/data/3dobjs makehuman/data/rigs makehuman/data/targets/macrodetails
-pip install xatlas==0.0.11 opencv-python-headless numpy pillow   # paint.py needs xatlas (UV layout) and OpenCV
+pip install xatlas==0.0.11 opencv-python-headless numpy pillow scipy   # paint.py needs xatlas (UV layout) and OpenCV; sculpt.py needs scipy
 cd app
 BASE_CACHE=/tmp/base.npz python3 -I tool/motion/export.py /tmp/mh/makehuman/data /tmp/body.json   # rigged body, about 15 s
 python3 -I tool/motion/gym.py /tmp/base.npz /tmp/gym.json                                         # gym model, about 15 s
 python3 -I tool/motion/bake.py /tmp/gym-tex                                                       # textures, about 20 s
 python3 -I tool/motion/paint.py build /tmp/base.npz /tmp/gym.json tool/motion/paint/sheets.json /tmp/paint-out   # painted model + textures, about 90 s
+python3 -I tool/motion/sculpt.py /tmp/paint-out                                                  # muscle relief into the mesh, a few seconds (needs scipy)
 python3 -I tool/motion/build.py /tmp/paint-out/model.json /tmp/paint-out /tmp/motion-lab.html     # painted page, 2.7 MB
-python3 -I tool/motion/glb.py /tmp/paint-out/model.json /tmp/paint-out tool/motion/dist/reparc-gym-model.glb   # painted .glb, 7.8 MB (committed)
+python3 -I tool/motion/glb.py /tmp/paint-out/model.json /tmp/paint-out tool/motion/dist/reparc-gym-model.glb   # painted .glb, 8.3 MB (committed)
+python3 tool/motion/render.py tool/motion/dist/reparc-gym-model.glb /tmp/clay.png clay torso      # Blender check render (pip install bpy), about 1 min
 python3 -I tool/motion/build.py /tmp/gym.json /tmp/gym-tex /tmp/motion-lab-atlas.html            # older atlas-only page
 # A new painting: python3 -I tool/motion/paint.py views /tmp/base.npz /tmp/gym.json tool/motion/paint/sheets.json 0 /tmp/sheet_in.png
 node tool/motion/check.js /tmp/motion-lab.html /tmp/motion-shots           # form checks + screenshots
