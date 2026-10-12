@@ -14,6 +14,19 @@
 6. **Textures (`bake.py`).** The charts double as the texture layout (one side; the other mirrors). Fine detail lives in 2048 px textures baked straight from the atlas shapes, so muscle edges are crisp at any distance: a muscle-ID map (nearest filtering; the page colours each part from it), a detail map (fibre streaks, tendons, seams), and a tangent-space normal map. Fibres are drawn with line integral convolution (Cabral and Leedom, 1993): noise averaged along each muscle's fibre direction, which gives long thin streaks like an anatomy plate. `gym.py` splits vertices where a triangle crosses a chart border or a limb's back seam, and stores tangents from the chart's basis vectors.
 7. **Heads of one muscle.** Parts in one group (pectoralis, trapezius, deltoid, biceps, triceps, gastrocnemius) meet in a faint line, not a deep groove (`atlas.FAINT_GROUPS`). A part with `over` lies over its neighbours (the sartorius over the quads). Fan muscles split into heads along rays from their insertion (`ray_split`).
 
+## Painted model (`paint.py`): the icons' look on the 3D body
+
+The body icons look real because they are paintings. Drawing muscle shapes on the mesh (steps 2 to 6) never matched them. So the model now wears a painting in the icons' style:
+
+1. `paint.py views` renders the smooth body (`gym.py` with `RELIEF=0`) as four grey orthographic views in one sheet.
+2. An image model repaints the sheet in the icons' style and keeps every outline in place (`paint/prompt.txt`; the painting is `paint/painted-2026-10-12.webp`, made in the owner's Figma Weave).
+3. `paint.py project` aligns each painted view to our outline (affine ECC on the silhouettes), then stores for every vertex where it lands in each view (`puv`), how much that view counts (`pw` = facing³, zero where hidden or within 15 px of an outline or occlusion edge, because paintings draw dark outlines there), and a fallback colour for points no view sees (about 30 %: under the arms and between the legs; filled from neighbours and smoothed).
+4. The page samples the painting per pixel from those, so the paint keeps its full detail and moves with the skin. The muscle ID texture still says which part to light: the target is tinted red from the paint's own shading, as in the icons. The painting already holds the light, so the scene light adds only a little.
+
+Orthographic projection is affine, so per-vertex panel coordinates interpolate exactly across a triangle.
+
+Limits: the painted muscle borders and our atlas borders do not match exactly, so a red highlight can sit a little off the painted muscle. Hidden areas are plain colour. A posed area that no view saw well (the side of the chest in a lateral raise) is softer than the rest.
+
 ## Holding the weights
 
 - A dumbbell sits where a closed hand holds it: the centre of the loop the fingers make (knuckles, middle joints, end joints, tips), along the knuckle line (`fist()` in `lab.html`). The check "Hand closed on the handle" measures the fingertips' distance from the handle axis.
@@ -68,7 +81,11 @@ cd app
 BASE_CACHE=/tmp/base.npz python3 -I tool/motion/export.py /tmp/mh/makehuman/data /tmp/body.json   # rigged body, about 15 s
 python3 -I tool/motion/gym.py /tmp/base.npz /tmp/gym.json                                         # gym model, about 15 s
 python3 -I tool/motion/bake.py /tmp/gym-tex                                                       # textures, about 20 s
-python3 -I tool/motion/build.py /tmp/gym.json /tmp/gym-tex /tmp/motion-lab.html                   # one 8.9 MB page
+RELIEF=0 python3 -I tool/motion/gym.py /tmp/base.npz /tmp/gym-flat.json                         # smooth body for painting
+python3 -I tool/motion/paint.py views /tmp/gym-flat.json /tmp/gym-tex                             # masks (+ sheet_in.png for a new painting)
+python3 -I tool/motion/paint.py project /tmp/gym-flat.json tool/motion/paint/painted-2026-10-12.webp /tmp/gym-tex /tmp/gym-paint.json
+python3 -I tool/motion/build.py /tmp/gym-paint.json /tmp/gym-tex /tmp/motion-lab.html             # painted page, 12.4 MB
+python3 -I tool/motion/build.py /tmp/gym.json /tmp/gym-tex-unpainted /tmp/motion-lab-atlas.html    # atlas-only page (a texdir without paint.webp)
 python3 -I tool/motion/glb.py /tmp/gym.json /tmp/gym-tex /tmp/reparc-gym-model.glb                # portable .glb, 11.6 MB
 node tool/motion/check.js /tmp/motion-lab.html /tmp/motion-shots           # form checks + screenshots
 ```
@@ -82,6 +99,6 @@ To update the live demo, publish `/tmp/motion-lab.html` with the Artifact tool a
 - Poses are set by hand as joint angles (minutes for each move); the checks catch mistakes. Building poses from the library's start and end photos with a pose-estimation model is a possible next step, not started.
 - Fibre lines are drawn by the shader along each muscle's set direction; they are an illustration, not traced fibres.
 - Deep muscles (rhomboids, iliopsoas, rotator cuff under the deltoid) are not drawn: the model shows the surface layer.
-- The model is 103,798 vertices with 2048 px textures (8.9 MB page, 11.6 MB .glb). Phone frame time is not measured yet.
+- The model is about 103,800 vertices with 2048 px textures and a 4096 px painting (12.4 MB page). The .glb does not carry the painting yet. Phone frame time is not measured yet.
 - Where a triangle switches chart (shoulder, hip) the texture can look slightly ragged.
 - Fingers close as one grip; the thumb is approximate.

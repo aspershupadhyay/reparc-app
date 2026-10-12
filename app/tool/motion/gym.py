@@ -124,6 +124,8 @@ def main(base_path, out):
     off[near] = -GROOVE * np.exp(-np.clip(out_d[near], 0, None) / 0.005)
     edge[near] = np.exp(-np.clip(out_d[near], 0, None) / 0.005)
     off = smooth(off, e, deg, 1)
+    # RELIEF=0 keeps the smooth body (painted model: the form comes from the painting).
+    off *= float(os.environ.get('RELIEF', '1'))
     pos = pos + nrm * off[:, None]
     nrm = normals(pos, tri)
     # Cavity: concave points darken, convex ones lighten (mean curvature).

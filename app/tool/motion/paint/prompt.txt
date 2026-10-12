@@ -1,0 +1,13 @@
+Model: Nano Banana Pro (fal-ai/nano-banana-pro/edit) in Figma Weave, 4K, aspect 21:9, 23 Weave credits.
+Images: 1 = sheet_in.png from `paint.py views` (gym model with RELIEF=0, bind pose, 4 panels of 896x1536:
+front, back, right side, left side); 2, 3, 4 = body icons area_chest, quads, area_back flattened on white, 512 px.
+
+Prompt:
+Image 1 is a model sheet of one grey 3D body seen from the front, back, its right side and its left side. Repaint image 1 as a detailed anatomical ecorche illustration in exactly the style of images 2, 3 and 4: light warm grey muscles, fine fibre strokes that follow each muscle, clear rounded muscle bellies, thin pale tendons, soft studio light from the upper left, clean white background. Every muscle stays grey: no red, no orange, no colour highlight anywhere. Keep everything about image 1's layout identical: the same four figures, the same pose, the same position, size, outline and proportions of every body part, pixel-aligned with image 1, so the painting can be laid back over the 3D model. Paint correct human anatomy onto that exact outline (pectoralis, deltoids, biceps, triceps, forearm muscles, abdominals, obliques, serratus, trapezius, latissimus, erector spinae, gluteals, quadriceps, sartorius, adductors, hamstrings, gastrocnemius, soleus, tibialis). The four views must agree with each other as one body. No text, no labels, no extra figures.
+
+Note: sheet_in.png at the time was rendered from the relief model (gym.py RELIEF=1) in the bind pose;
+the painting is projected onto the RELIEF=0 model, and the affine alignment absorbs the small outline
+difference (overlap 0.92 to 0.95).
+A second try with a 2x2 sheet and spread limbs (aspect 3:4) came back zoomed in and cropped: the
+image model does not always keep the framing. Check the outline overlap that `paint.py project`
+prints (keep it above 0.9) before using a painting.

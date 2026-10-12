@@ -181,6 +181,16 @@ geo.setAttribute('cav', new THREE.BufferAttribute(cav, 1, true));
 geo.setAttribute('mid', new THREE.BufferAttribute(new Float32Array(mid), 1));
 geo.setAttribute('uv', new THREE.BufferAttribute(dec(D.uv, Uint16Array), 2, true));
 geo.setAttribute('tangent', new THREE.BufferAttribute(dec(D.tangent, Int8Array), 4, true));
+// Painted model (paint.py): where each point lands in the four painted views, and how much each view counts.
+const PAINTED = !!D.paint;
+if (PAINTED) {
+  const puv = dec(D.paint.puv, Uint16Array), pa = new Uint16Array(nv * 4), pb = new Uint16Array(nv * 4);
+  for (let i = 0; i < nv; i++) for (let j = 0; j < 4; j++) { pa[i * 4 + j] = puv[i * 8 + j]; pb[i * 4 + j] = puv[i * 8 + 4 + j]; }
+  geo.setAttribute('puvA', new THREE.BufferAttribute(pa, 4, true));
+  geo.setAttribute('puvB', new THREE.BufferAttribute(pb, 4, true));
+  geo.setAttribute('pw', new THREE.BufferAttribute(dec(D.paint.pw, Uint8Array), 4, true));
+  geo.setAttribute('pc', new THREE.BufferAttribute(dec(D.paint.pc, Uint8Array), 3, true));
+}
 geo.setIndex(new THREE.BufferAttribute(dec(D.index, Uint32Array), 1));
 const NM = D.muscles.length, NA = D.atlas.length;
 const bulge = { value: new Array(NM).fill(0) };
@@ -195,17 +205,34 @@ function tex(url, nearest) {
   return t;
 }
 const uState = { value: new Array(NA).fill(0) }, uDebug = { value: 0 };
-const mat = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.62, metalness: 0, envMapIntensity: 0.5, normalMap: tex('__NORMAL__') });
-const uDetail = { value: tex('__DETAIL__') }, uId = { value: tex('__ID__', true) };
+const mat = PAINTED
+  ? new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.8, metalness: 0, envMapIntensity: 0.25 })
+  : new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.62, metalness: 0, envMapIntensity: 0.5, normalMap: tex('__NORMAL__') });
+if (PAINTED) mat.defines = { PAINTED: '', USE_UV: '' };  // USE_UV: the muscle id still comes from the uv atlas
+if (PAINTED) renderer.toneMappingExposure = 0.74;  // the painting is light already
+const uDetail = { value: tex('__DETAIL__') }, uId = { value: tex('__ID__', true) }, uPaint = { value: PAINTED ? tex('__PAINT__') : null };
 mat.onBeforeCompile = (sh) => {
-  sh.uniforms.uBulge = bulge; sh.uniforms.uState = uState; sh.uniforms.uDebug = uDebug; sh.uniforms.uDetail = uDetail; sh.uniforms.uId = uId;
+  sh.uniforms.uBulge = bulge; sh.uniforms.uState = uState; sh.uniforms.uDebug = uDebug; sh.uniforms.uDetail = uDetail; sh.uniforms.uId = uId; sh.uniforms.uPaint = uPaint;
   sh.vertexShader = sh.vertexShader
     .replace('#include <common>', `#include <common>\nattribute float mw;\nattribute float cav;\nattribute float mid;\nuniform float uBulge[${NM}];\nvarying float vCav;`)
+    .replace('#include <common>', `#include <common>
+      #ifdef PAINTED
+      attribute vec4 puvA; attribute vec4 puvB; attribute vec4 pw; attribute vec3 pc;
+      varying vec4 vPA; varying vec4 vPB; varying vec4 vPW; varying vec3 vPC;
+      #endif`)
     .replace('#include <begin_vertex>', `#include <begin_vertex>
       vCav = cav;
+      #ifdef PAINTED
+      vPA = puvA; vPB = puvB; vPW = pw; vPC = pc;
+      #endif
       // Constant volume: a shorter muscle gets thicker (set per muscle on the CPU).
       if (mid < ${NM}.0) transformed += objectNormal * mw * uBulge[int(mid + 0.5)];`);
   sh.fragmentShader = sh.fragmentShader
+    .replace('#include <common>', `#include <common>
+      #ifdef PAINTED
+      uniform sampler2D uPaint; varying vec4 vPA; varying vec4 vPB; varying vec4 vPW; varying vec3 vPC;
+      #endif
+      `)
     .replace('#include <common>', `#include <common>\nuniform sampler2D uDetail;\nuniform sampler2D uId;\nuniform float uDebug;\nuniform float uState[${NA}];\nvarying float vCav;`)
     .replace('#include <color_fragment>', `#include <color_fragment>
       {
@@ -222,7 +249,23 @@ mat.onBeforeCompile = (sh) => {
         base *= 1.0 - 0.75 * det.b;                         // seams between muscles
         base *= clamp(1.0 - 0.8 * max(vCav, 0.0) + 0.3 * max(-vCav, 0.0), 0.4, 1.25);
         diffuseColor.rgb = base * vColor;                   // vColor: baked occlusion
-      }`);
+        #ifdef PAINTED
+        // The painting already holds the form and light: mix the four views, then tint the target.
+        vec3 ps = pow(texture2D(uPaint, vPA.xy).rgb, vec3(2.2)) * vPW.x + pow(texture2D(uPaint, vPA.zw).rgb, vec3(2.2)) * vPW.y
+                + pow(texture2D(uPaint, vPB.xy).rgb, vec3(2.2)) * vPW.z + pow(texture2D(uPaint, vPB.zw).rgb, vec3(2.2)) * vPW.w;
+        float sw = vPW.x + vPW.y + vPW.z + vPW.w;
+        vec3 pcol = (ps + pow(vPC, vec3(2.2)) * 0.03) / (sw + 0.03);
+        float lum = dot(pcol, vec3(0.2126, 0.7152, 0.0722));
+        vec3 red = vec3(1.0, 0.075, 0.03) * pow(lum, 0.85) * 2.1;
+        vec3 pb = st > 1.5 ? mix(pcol, red, 0.5) : st > 0.5 ? red : pcol;
+        if (uDebug > 0.5) pb = base;
+        diffuseColor.rgb = pb * 0.82 * mix(1.0, vColor.r, 0.3);
+        #endif
+      }`)
+      .replace('#include <emissivemap_fragment>', `#include <emissivemap_fragment>
+      #ifdef PAINTED
+      totalEmissiveRadiance += diffuseColor.rgb * 0.22;   // keep the painted light; scene light adds only a little
+      #endif`);
 };
 const bones = [], B = {}, bind = {};
 for (const b of D.bones) { const o = new THREE.Bone(); o.name = b.name; bones.push(o); B[b.name] = o; bind[b.name] = V(...b.pos); }
