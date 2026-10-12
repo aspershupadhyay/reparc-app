@@ -41,6 +41,6 @@ class AnalyticsRepository {
   Stream<List<PersonalRecord>> watchRecords() => watchTables(
     db,
     [db.workoutSessions, db.sessionExercises, db.setEntries, db.exercises],
-    () async => heaviestLoads(await workouts.completedSets()),
+    workouts.heaviestLoadRecords,
   );
 }

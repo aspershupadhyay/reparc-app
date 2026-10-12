@@ -1,5 +1,7 @@
 import 'dart:convert';
+import 'dart:isolate';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -72,7 +74,7 @@ class LibraryExercise {
 
   /// The one muscle this exercise mainly trains. Picks the delt head,
   /// upper chest, or obliques from the name when the source groups them.
-  Muscle get target => targetMuscle(primary.isEmpty ? '' : primary.first, name);
+  Muscle get target => _libraryTarget[this] ??= targetMuscle(primary.isEmpty ? '' : primary.first, name);
 
   BodyArea get area => target.area;
 
@@ -497,6 +499,14 @@ const coachedPhotos = <String, String>{
   return id == null ? null : ('assets/exercises/img/${id}_0.webp', 'assets/exercises/img/${id}_1.webp');
 }
 
+// Values worked out from names with string matching. Lists, search, and
+// browse read them for every move on every keystroke, so each is worked
+// out once (2026-10-12: search took 20-35 ms a keystroke on a desktop).
+final _libraryTarget = Expando<Muscle>('target');
+final _moveName = Expando<String>('name');
+final _moveTarget = Expando<Muscle>('target');
+final _moveSearch = Expando<String>('searchText');
+
 /// One row in a mixed list: a coached guide or a library entry.
 ///
 /// Library entries that a coached guide covers are left out, so each
@@ -511,10 +521,10 @@ class Move {
   /// Coached names are written in sentence case. Library names come in
   /// Title Case, so they are shown in the same case (visual review,
   /// 2026-10-09).
-  String get name => coached?.name ?? sentenceCase(library!.name);
+  String get name => _moveName[this] ??= coached?.name ?? sentenceCase(library!.name);
 
   /// The muscle this movement mainly trains. Browse groups by it.
-  Muscle get target => coached?.primary.first ?? library!.target;
+  Muscle get target => _moveTarget[this] ??= coached?.primary.first ?? library!.target;
   BodyArea get area => target.area;
   MoveKind get kind => library?.kind ?? MoveKind.strength;
   EquipKind get equipKind => EquipKind.of(equipment);
@@ -537,7 +547,7 @@ class Move {
 
   /// Lower-case text used for search: name, equipment, area, target muscle,
   /// its group (for example "long head"), and the source muscle names.
-  String get searchText =>
+  String get searchText => _moveSearch[this] ??=
       '$name $equipment ${equipKind.label} ${area.label} ${target.label} ${groupOf(this).label} '
               '${coached?.primary.map((m) => m.label).join(' ') ?? library!.primary.join(' ')}'
           .toLowerCase();
@@ -552,7 +562,9 @@ class ExerciseLibrary {
       for (final c in catalog) Move.coached(c),
       for (final e in items)
         if (!covered.contains(e.id)) Move.library(e),
-    ]..sort((a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()));
+    ];
+    final keys = {for (final m in all) m: m.name.toLowerCase()};
+    all.sort((a, b) => keys[a]!.compareTo(keys[b]!));
     moves = List.unmodifiable(all);
     byCatalogId = {for (final m in all) m.catalogId: m};
   }
@@ -621,9 +633,13 @@ class ExerciseLibrary {
 }
 
 /// The bundled library. It loads once from the app's assets; no network.
-final libraryProvider = FutureProvider<ExerciseLibrary>(
-  (ref) async => ExerciseLibrary.parse(await rootBundle.loadString('assets/exercises/library.json')),
-);
+final libraryProvider = FutureProvider<ExerciseLibrary>((ref) async {
+  final json = await rootBundle.loadString('assets/exercises/library.json');
+  // The list is 785 KB. Release builds parse it on a background isolate so
+  // no frame waits for it. Tests parse it in place: a widget test's fake
+  // clock cannot wait for another isolate.
+  return kReleaseMode ? Isolate.run(() => ExerciseLibrary.parse(json)) : ExerciseLibrary.parse(json);
+});
 
 /// Body area for any saved exercise row's `catalogId`.
 BodyArea? areaForCatalogId(String? catalogId, ExerciseLibrary? lib) => targetForCatalogId(catalogId, lib)?.area;

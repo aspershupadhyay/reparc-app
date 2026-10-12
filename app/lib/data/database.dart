@@ -326,8 +326,32 @@ class AppDatabase extends _$AppDatabase {
     },
     beforeOpen: (details) async {
       await customStatement('PRAGMA foreign_keys = ON');
+      await createIndexes();
     },
   );
+
+  /// Indexes for the joins and lookups that History, Analytics, the live
+  /// workout, and the meal day run. Without them each join read every row:
+  /// with two years of data, History took about 1 s to build (2026-10-12).
+  /// They hold no data, so they need no schema version: each is made once,
+  /// on any database, the first time it opens.
+  Future<void> createIndexes() async {
+    for (final sql in const [
+      'CREATE INDEX IF NOT EXISTS idx_session_exercises_session ON session_exercises (session_id, position)',
+      'CREATE INDEX IF NOT EXISTS idx_session_exercises_exercise ON session_exercises (exercise_id)',
+      'CREATE INDEX IF NOT EXISTS idx_set_entries_session_exercise ON set_entries (session_exercise_id, position)',
+      'CREATE INDEX IF NOT EXISTS idx_workout_sessions_started ON workout_sessions (started_at)',
+      'CREATE INDEX IF NOT EXISTS idx_workout_sessions_status ON workout_sessions (status)',
+      'CREATE INDEX IF NOT EXISTS idx_meal_entries_day ON meal_entries (day, created_at)',
+      'CREATE INDEX IF NOT EXISTS idx_meal_entries_created ON meal_entries (created_at)',
+    ]) {
+      await customStatement(sql);
+    }
+    // Lets SQLite's planner learn the table sizes, so it starts a date
+    // range from the session index instead of reading every set. With the
+    // 0x10002 mask it only analyses tables that need it, and stays quick.
+    await customStatement('PRAGMA optimize=0x10002');
+  }
 
   /// Copies plans from schema v4 and before into [programs] as one-day
   /// plans with the same IDs. Plans copied before are skipped. Sessions

@@ -1,6 +1,7 @@
 import 'dart:ui' show ImageFilter;
 
 import 'package:flutter/material.dart';
+import 'package:flutter/scheduler.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -17,6 +18,8 @@ import '../../health/health_sync.dart';
 import '../../core/distribution.dart';
 import '../../updates/update_controller.dart';
 import '../workout/session_clock.dart';
+import '../exercises/body3d/body_model.dart';
+import '../exercises/library/library.dart';
 
 class _Tab {
   const _Tab(this.label, this.icon);
@@ -32,6 +35,17 @@ const _tabs = [
   _Tab('Me', LucideIcons.userRound),
 ];
 
+/// Loads the exercise list, the food list, and the body map's mesh once
+/// the first frame is on screen, so Exercises, Add food, and the body map
+/// open at once instead of with a spinner. A failure here is ignored: each
+/// screen shows its own error if it still cannot load.
+final warmUpProvider = FutureProvider<void>((ref) async {
+  await SchedulerBinding.instance.endOfFrame;
+  try {
+    await Future.wait([ref.watch(libraryProvider.future), ref.watch(foodLibraryProvider.future), BodyMesh.load()]);
+  } catch (_) {}
+});
+
 /// Five persistent tabs. Each tab keeps its own navigation and scroll state.
 class AppShell extends ConsumerWidget {
   const AppShell({super.key, required this.shell});
@@ -40,6 +54,7 @@ class AppShell extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final live = ref.watch(liveSessionProvider).value;
+    ref.watch(warmUpProvider);
     // Health write-back runs only while a write feature is on (D-020).
     if (ref.watch(currentSettingsProvider).health.any((h) => h.startsWith('write'))) ref.watch(healthSyncProvider);
     // The once-a-day update check (D-029). It only reads release data.

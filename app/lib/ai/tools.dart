@@ -283,7 +283,7 @@ class ReparcTools {
   }
 
   Future<ToolResult> _records() async {
-    final records = heaviestLoads(await workouts.completedSets());
+    final records = await workouts.heaviestLoadRecords();
     return ToolResult({
       'rule': heaviestLoadRule,
       'records': [

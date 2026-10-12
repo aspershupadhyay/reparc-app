@@ -224,7 +224,12 @@ const stretchGroup = MoveGroup('Stretches', 'For range of motion. Not for size',
 const powerGroup = MoveGroup('Power and cardio', 'Jumps, throws, and conditioning', []);
 
 /// The group [m] belongs to inside its target muscle.
-MoveGroup groupOf(Move m) {
+MoveGroup groupOf(Move m) => _groups[m] ??= _groupOf(m);
+
+// Worked out once for each move: browse and search call it often.
+final _groups = Expando<MoveGroup>('group');
+
+MoveGroup _groupOf(Move m) {
   if (m.kind == MoveKind.stretch) return stretchGroup;
   if (m.kind == MoveKind.power) return powerGroup;
   final name = m.name.toLowerCase();

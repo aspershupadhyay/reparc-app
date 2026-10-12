@@ -17,7 +17,6 @@ import '../../data/models.dart';
 import '../../data/providers.dart';
 import '../../data/workout_repository.dart';
 import '../../domain/session_time.dart';
-import '../../domain/analytics.dart' show newRecordsIn;
 import 'guide_controller.dart';
 import 'record_moment.dart';
 import 'session_clock.dart';
@@ -135,7 +134,7 @@ class LiveSessionScreen extends ConsumerWidget {
     }
     if (done == true && context.mounted) {
       // The PR moment comes before the saved workout (launch review).
-      final records = newRecordsIn(d.session.id, await repo.completedSets());
+      final records = await repo.newRecordsInSession(d.session.id);
       if (!context.mounted) return;
       if (records.isEmpty) unawaited(HapticFeedback.mediumImpact());
       await showRecordMoment(context, records);

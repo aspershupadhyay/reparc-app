@@ -4,6 +4,7 @@ import 'package:uuid/uuid.dart';
 import '../core/clock.dart';
 import '../domain/analytics.dart';
 import '../domain/guide.dart';
+import 'body_repository.dart' show kgPerLb;
 import 'database.dart';
 import '../domain/roadmap.dart';
 import 'models.dart';
@@ -189,32 +190,158 @@ class WorkoutRepository {
   }
 
   /// Completed sets in saved (finished or incomplete) sessions.
+  ///
+  /// The query returns each set with only the IDs it needs. Sessions and
+  /// exercises load once each and are shared by their sets. One wide join
+  /// copied every session and exercise column into every set row: with two
+  /// years of data that took about 1 s, for History and Records on every
+  /// write (2026-10-12).
   Future<List<SetRecord>> completedSets({
     String? exerciseId,
     DateTime? fromUtc,
     DateTime? toUtc,
+    Set<String>? setIds,
   }) async {
+    if (setIds != null && setIds.length > 500) {
+      // SQLite allows at most 999 values in one statement.
+      final all = [
+        for (final part in _chunks(setIds))
+          ...await completedSets(exerciseId: exerciseId, fromUtc: fromUtc, toUtc: toUtc, setIds: part.toSet()),
+      ];
+      return all..sort(_recordOrder);
+    }
+    final se = db.sessionExercises;
+    final ws = db.workoutSessions;
     final q =
         db.select(db.setEntries).join([
-            innerJoin(db.sessionExercises, db.sessionExercises.id.equalsExp(db.setEntries.sessionExerciseId)),
-            innerJoin(db.exercises, db.exercises.id.equalsExp(db.sessionExercises.exerciseId)),
-            innerJoin(db.workoutSessions, db.workoutSessions.id.equalsExp(db.sessionExercises.sessionId)),
+            innerJoin(se, se.id.equalsExp(db.setEntries.sessionExerciseId), useColumns: false),
+            innerJoin(ws, ws.id.equalsExp(se.sessionId), useColumns: false),
           ])
+          ..addColumns([se.exerciseId, se.sessionId])
           ..where(db.setEntries.completed.equals(true))
-          ..where(db.workoutSessions.status.isNotInValues([SessionStatus.active, SessionStatus.paused]))
+          ..where(ws.status.isNotInValues([SessionStatus.active, SessionStatus.paused]))
           ..orderBy([
-            OrderingTerm.desc(db.workoutSessions.startedAt),
-            OrderingTerm.asc(db.sessionExercises.position),
+            OrderingTerm.desc(ws.startedAt),
+            OrderingTerm.asc(se.position),
             OrderingTerm.asc(db.setEntries.position),
           ]);
-    if (exerciseId != null) q.where(db.sessionExercises.exerciseId.equals(exerciseId));
-    if (fromUtc != null) q.where(db.workoutSessions.startedAt.isBiggerOrEqualValue(fromUtc));
-    if (toUtc != null) q.where(db.workoutSessions.startedAt.isSmallerThanValue(toUtc));
+    if (exerciseId != null) q.where(se.exerciseId.equals(exerciseId));
+    if (setIds != null) q.where(db.setEntries.id.isIn(setIds));
+    if (fromUtc != null) q.where(ws.startedAt.isBiggerOrEqualValue(fromUtc));
+    if (toUtc != null) q.where(ws.startedAt.isSmallerThanValue(toUtc));
     final rows = await q.get();
+    if (rows.isEmpty) return const [];
+
+    final sessionIds = {for (final r in rows) r.read(se.sessionId)!};
+    final exerciseIds = {for (final r in rows) r.read(se.exerciseId)!};
+    final sessions = <String, WorkoutSession>{};
+    final exercises = <String, Exercise>{};
+    // SQLite allows at most 999 values in one statement, so IDs go in parts.
+    for (final part in _chunks(sessionIds)) {
+      for (final s in await (db.select(ws)..where((x) => x.id.isIn(part))).get()) {
+        sessions[s.id] = s;
+      }
+    }
+    for (final part in _chunks(exerciseIds)) {
+      for (final e in await (db.select(db.exercises)..where((x) => x.id.isIn(part))).get()) {
+        exercises[e.id] = e;
+      }
+    }
     return [
       for (final r in rows)
-        SetRecord(r.readTable(db.setEntries), r.readTable(db.exercises), r.readTable(db.workoutSessions)),
+        if ((sessions[r.read(se.sessionId)!], exercises[r.read(se.exerciseId)!]) case (final s?, final e?))
+          SetRecord(r.readTable(db.setEntries), e, s),
     ];
+  }
+
+  /// The order of [completedSets]: newest session first, then the order in
+  /// the session.
+  static int _recordOrder(SetRecord a, SetRecord b) {
+    final s = b.session.startedAt.compareTo(a.session.startedAt);
+    if (s != 0) return s;
+    return a.set.position.compareTo(b.set.position);
+  }
+
+  /// SQL that keeps completed sets in saved sessions.
+  static const _savedSetsSql = '''
+    FROM set_entries s
+    JOIN session_exercises se ON se.id = s.session_exercise_id
+    JOIN workout_sessions w ON w.id = se.session_id
+    WHERE s.completed = 1 AND w.status NOT IN ('active', 'paused')''';
+
+  Set<ResultSetImplementation<Object?, Object?>> get _setTables => {
+    db.setEntries,
+    db.sessionExercises,
+    db.workoutSessions,
+  };
+
+  /// The records by the "Heaviest completed load" rule, the same as
+  /// [heaviestLoads] over every completed set. SQLite picks the one set
+  /// that holds each record, so only those sets load, not every set ever
+  /// logged (2026-10-12: about 1 s with two years of data).
+  Future<List<PersonalRecord>> heaviestLoadRecords() async {
+    final rows = await db.customSelect(
+      '''
+          SELECT id FROM (
+            SELECT s.id AS id, ROW_NUMBER() OVER (
+              PARTITION BY se.exercise_id, s.load_unit
+              ORDER BY s.load DESC, w.started_at ASC, se.position ASC, s.position ASC
+            ) AS n
+            $_savedSetsSql AND s.load > 0 AND s.load_unit IS NOT NULL
+          ) WHERE n = 1''',
+      readsFrom: _setTables,
+    ).get();
+    if (rows.isEmpty) return const [];
+    return heaviestLoads(await completedSets(setIds: {for (final r in rows) r.read<String>('id')}));
+  }
+
+  /// Records the workout [sessionId] set by beating a best from an earlier
+  /// workout: the same result as [newRecordsIn] over every completed set.
+  Future<List<PersonalRecord>> newRecordsInSession(String sessionId) async {
+    final held = [
+      for (final pr in await heaviestLoadRecords())
+        if (pr.source.session.id == sessionId) pr,
+    ];
+    if (held.isEmpty) return held;
+    final earlier = await db
+        .customSelect(
+          'SELECT DISTINCT se.exercise_id AS e, s.load_unit AS u $_savedSetsSql '
+          'AND s.load > 0 AND s.load_unit IS NOT NULL AND w.id != ?',
+          variables: [Variable.withString(sessionId)],
+          readsFrom: _setTables,
+        )
+        .get();
+    final seen = {for (final r in earlier) (r.read<String>('e'), r.read<String>('u'))};
+    return [
+      for (final pr in held)
+        if (seen.contains((pr.source.exercise.id, pr.source.set.loadUnit!))) pr,
+    ];
+  }
+
+  /// Working-set volume of each saved session, as [volumeOf] counts it.
+  Future<Map<String, Volume>> _volumes() async {
+    final rows = await db.customSelect(
+      '''
+          SELECT se.session_id AS id,
+            TOTAL(CASE WHEN s.load IS NOT NULL AND s.reps IS NOT NULL AND s.load_unit IS NOT NULL
+              THEN (CASE WHEN s.load_unit = 'lb' THEN s.load * $kgPerLb ELSE s.load END) * s.reps END) AS kg,
+            SUM(s.load IS NOT NULL AND s.reps IS NOT NULL AND s.load_unit IS NOT NULL) AS counted,
+            SUM(NOT (s.load IS NOT NULL AND s.reps IS NOT NULL AND s.load_unit IS NOT NULL)) AS skipped
+          $_savedSetsSql AND s.set_type != 'warmup'
+          GROUP BY se.session_id''',
+      readsFrom: _setTables,
+    ).get();
+    return {
+      for (final r in rows)
+        r.read<String>('id'): Volume(r.read<double>('kg'), r.read<int>('counted'), r.read<int>('skipped')),
+    };
+  }
+
+  static Iterable<List<String>> _chunks(Set<String> ids, [int size = 500]) sync* {
+    final list = ids.toList();
+    for (var i = 0; i < list.length; i += size) {
+      yield list.sublist(i, i + size > list.length ? list.length : i + size);
+    }
   }
 
   // --------------------------------------------------------------- Sessions
@@ -386,13 +513,9 @@ class WorkoutRepository {
     () async {
       final list = await sessionSummaries();
       if (list.isEmpty) return list;
-      final sets = await completedSets();
-      final bySession = <String, List<SetRecord>>{};
-      for (final r in sets) {
-        (bySession[r.session.id] ??= []).add(r);
-      }
+      final volumes = await _volumes();
       final records = <String, int>{};
-      for (final pr in heaviestLoads(sets)) {
+      for (final pr in await heaviestLoadRecords()) {
         records[pr.source.session.id] = (records[pr.source.session.id] ?? 0) + 1;
       }
       return [
@@ -401,8 +524,8 @@ class WorkoutRepository {
             s.session,
             s.exerciseCount,
             s.completedSets,
-            volume: switch (volumeOf(bySession[s.session.id] ?? const [])) {
-              final v when v.counted > 0 => v,
+            volume: switch (volumes[s.session.id]) {
+              final v? when v.counted > 0 => v,
               _ => null,
             },
             records: records[s.session.id] ?? 0,
