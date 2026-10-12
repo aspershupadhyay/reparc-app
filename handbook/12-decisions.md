@@ -521,3 +521,20 @@ This is one app, not a separate dev variant. See 17.10.
 
 **To confirm:** Data safety answers for map tile requests (approximate area seen by MapTiler), the Play foreground-service declaration and its video, the MapTiler plan once usage passes the free tier, and accuracy on real phones.
 
+## D-038: Rigged 3D exercise demos in three.js
+
+**Status:** Proposed (2026-10-12). Not accepted. If accepted, it replaces D-033's rule "no WebView, no three.js" for this one screen.
+**Date:** 2026-10-12.
+
+**Context:** The owner wants each exercise shown on a realistic body, with correct form that is easy to follow. The app draws its body map on the CPU with Flutter `drawVertices`; it cannot skin a skeleton or light the body well. A prototype, the Motion Lab (`app/tool/motion/`), rigs the same CC0 body with MakeHuman's skeleton and skin weights and animates it in three.js.
+
+**Proposed choice:**
+
+- Show exercise demos with three.js in a WebView, with three.js bundled in the app (no network).
+- Moves are data: joint angles for the start and end, tempo phases, and the coached text. Form checks measured on the skeleton must pass before a move ships.
+- Start with the coached guides and "Start here" picks. Library moves keep their photos.
+
+**Trade-offs:** a new package (a WebView) and about 600 KB of three.js; a short delay the first time the screen opens; colours, dark mode, reduced motion, and taps must pass between Flutter and the page.
+
+**To confirm:** owner acceptance; frame time and memory on a mid-range Android phone; a review of each move by a qualified coach.
+

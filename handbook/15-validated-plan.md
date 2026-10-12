@@ -296,6 +296,8 @@ Updated 2026-10-06. This records what exists in code. It is not evidence of devi
 
 **Exercise library by body part, v0.5.1 (2026-10-12, owner request):** Exercises opens on body-part cards with realistic muscle icons (made with Figma image generation; only the target muscle is lit). A body part opens one card for each muscle (Arms: Biceps, Triceps, Forearms), and a muscle opens its exercises in sections with "Start here" first and four moves for each section until **Show more**. One filter, All, Gym, or Home, replaces ten equipment chips and the Strength / Stretch / Power tabs (stretches and power moves are their own sections). The 3D body map moved to its own page from a **3D body** card. Checked: format, analyze, `flutter test`, and rendered screenshots of Exercises, Arms, and Triceps in both themes. **Not checked:** this build on a real phone, TalkBack, and large text on a device. The owner confirmed use of the AI-generated icons (2026-10-12).
 
+**Motion Lab prototype (2026-10-12, owner request, not in the app):** The app's realistic body rigged with 54 bones (two-part forearm, three bones per finger) and MakeHuman's skin weights, animated in three.js: dumbbell curl, goblet squat, push-up, lateral raise, and Romanian deadlift, with fibre striations, finger grip, forearm twist, tempo phases, the coached steps, and form checks measured on the skeleton (22 checks, all pass in `app/tool/motion/check.js`). Moving it into the app is D-038, **Proposed**. **Not checked:** a phone, and a coach review of the postures.
+
 ## 16.12 AI context
 
 - **Purpose:** Give every contributor the current, evidence-based build order.

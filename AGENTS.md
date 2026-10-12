@@ -84,6 +84,13 @@ Before you change code, data, design, or project rules:
 - Foods are grouped by country (owner direction, 2026-10-10). Values come from USDA (SR Legacy and FNDDS, public domain). A dish USDA does not have is a recipe estimate, marked as an estimate with its recipe stored. Never add values from copyrighted tables (for example IFCT) without the owner's licence.
 - Recipe estimates leave sodium out (salt is unknown). Check USDA values for sense before shipping them (USDA's paneer entry was wrong).
 
+## Body art and motion
+
+- **Body icons** (`app/assets/body/icons/`, one per body area and muscle): made with Figma's image generation (`generate_image`, model `gpt-image-2.5-sunburst`) on the owner's Figma Education plan, one prompt per icon in one shared style: grey anatomy, only the target muscle in red-orange, white background. Check each image for the right muscle, then run `app/tool/body_icons/process.py` (transparent background, 256 px WebP). The design sheet is the Figma file "Reparc body icons" (https://www.figma.com/design/9MOMlAWYiEqYB0AVlOHc0q). The owner confirmed use of these images (2026-10-12). Read `app/tool/body_icons/README.md`.
+- **3D body map** (in the app): `app/tool/body/` builds `app/assets/body/body.bin` from MakeHuman's CC0 data (D-033).
+- **Motion Lab** (prototype, not in the app): `app/tool/motion/` rigs the same body with 54 bones and animates exercises in three.js, with form checks measured on the skeleton. Live demo: https://claude.ai/artifact/JArExRx3VRAxtg3YQW92c2. Moving it into the app is D-038, **Proposed**; do not build it into the app until the owner accepts D-038. Read `app/tool/motion/README.md` before changing a move. Run `check.js`; every form check must pass. Never widen a check's range to make it pass.
+- Postures follow the app's coached guides. Do not claim a move is coach-verified: the checks prove the model matches the target ranges, not that a coach approved them.
+
 ## Verification and handbook updates
 
 - Follow the test plan in handbook/11-open-source-release.md.

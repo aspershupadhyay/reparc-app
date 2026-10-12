@@ -1,0 +1,675 @@
+<title>RepArc Motion Lab</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500&display=swap">
+<style>
+/* Layout: a dark training stage with the move; a coaching panel beside it (below it on phones) with steps, form checks, and muscles. Single dark look by choice, like the app's live workout screen. */
+:root {
+  --stage: #0b1013;
+  --panel: #141b1f;
+  --raised: #1d272c;
+  --line: #29353b;
+  --ink: #f1f5f5;
+  --soft: #95a5aa;
+  --brand: #40c8e0;
+  --hot: #ff4a1c;
+  --warm: #f0915f;
+  --good: #46d27a;
+  --bad: #ff6b5e;
+  --sans: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --mono: "JetBrains Mono", ui-monospace, "SF Mono", Menlo, monospace;
+  color-scheme: dark;
+}
+html, body { height: 100%; }
+body { margin: 0; background: var(--stage); color: var(--ink); font-family: var(--sans); font-size: 14px; }
+.app { min-height: 100%; display: grid; grid-template-rows: auto minmax(340px, 58vh) auto; }
+header { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; padding: 14px 16px 6px; flex-wrap: wrap; }
+h1 { margin: 0; font-size: 17px; font-weight: 700; letter-spacing: -0.01em; }
+h1 span { color: var(--brand); }
+.tag { font: 500 11px/1 var(--mono); color: var(--soft); letter-spacing: 0.04em; text-transform: uppercase; }
+.stage { position: relative; }
+#view { position: absolute; inset: 0; width: 100%; height: 100%; display: block; touch-action: none; outline: none; }
+.hud { position: absolute; left: 16px; top: 6px; right: 16px; display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; pointer-events: none; }
+.hud .name { font-size: 22px; font-weight: 700; letter-spacing: -0.02em; }
+.hud .phase { margin-top: 4px; font: 500 12px/1.2 var(--mono); color: var(--brand); text-transform: uppercase; letter-spacing: 0.06em; font-variant-numeric: tabular-nums; }
+.gauge { text-align: right; }
+.gauge .v { font: 600 26px/1 var(--mono); font-variant-numeric: tabular-nums; }
+.gauge .k { font-size: 11px; color: var(--soft); text-transform: uppercase; letter-spacing: 0.06em; margin-top: 4px; }
+.tempo { position: absolute; left: 16px; right: 16px; bottom: 12px; display: flex; gap: 4px; pointer-events: none; }
+.tempo div { flex: 1; height: 4px; border-radius: 2px; background: var(--line); overflow: hidden; }
+.tempo i { display: block; height: 100%; width: 0; background: var(--brand); }
+.panel { background: var(--panel); border-top: 1px solid var(--line); padding: 14px 16px calc(18px + env(safe-area-inset-bottom, 0px)); display: grid; gap: 14px; align-content: start; }
+.moves { display: flex; gap: 8px; overflow-x: auto; scrollbar-width: none; padding-bottom: 2px; }
+.moves::-webkit-scrollbar { display: none; }
+.move { flex: 0 0 auto; border: 1px solid var(--line); background: var(--raised); color: var(--ink); border-radius: 999px; padding: 9px 14px; font: 600 13px var(--sans); cursor: pointer; }
+.move[aria-pressed="true"] { background: var(--ink); color: var(--stage); border-color: var(--ink); }
+.row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.btn { border: 1px solid var(--line); background: var(--raised); color: var(--ink); border-radius: 10px; padding: 8px 12px; font: 600 13px var(--sans); cursor: pointer; min-height: 38px; }
+.btn.on { border-color: var(--brand); color: var(--brand); }
+.spacer { flex: 1; }
+.btn:focus-visible, .move:focus-visible { outline: 2px solid var(--brand); outline-offset: 2px; }
+h2 { margin: 0 0 8px; font-size: 11px; font-weight: 600; color: var(--soft); text-transform: uppercase; letter-spacing: 0.08em; }
+.card { background: var(--raised); border: 1px solid var(--line); border-radius: 14px; padding: 12px 14px; }
+.summary { margin: 0; color: var(--soft); line-height: 1.45; }
+ol.steps { margin: 0; padding: 0; list-style: none; display: grid; gap: 6px; counter-reset: s; }
+ol.steps li { counter-increment: s; display: grid; grid-template-columns: 24px 1fr; gap: 8px; line-height: 1.4; color: var(--soft); transition: color 0.2s; }
+ol.steps li::before { content: counter(s); font: 600 12px/22px var(--mono); text-align: center; border-radius: 50%; width: 22px; height: 22px; background: var(--line); color: var(--ink); }
+ol.steps li.now { color: var(--ink); }
+ol.steps li.now::before { background: var(--brand); color: var(--stage); }
+ul.plain { margin: 0; padding-left: 18px; display: grid; gap: 4px; line-height: 1.4; color: var(--soft); }
+.checks { display: grid; gap: 6px; }
+.check { display: grid; grid-template-columns: 20px 1fr auto; gap: 8px; align-items: baseline; line-height: 1.35; }
+.check .ok { color: var(--good); font-weight: 700; }
+.check .no { color: var(--bad); font-weight: 700; }
+.check .val { font: 500 12px var(--mono); color: var(--soft); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.check small { display: block; color: var(--soft); font-size: 12px; }
+.legend { display: flex; gap: 14px; flex-wrap: wrap; color: var(--soft); }
+.legend b { color: var(--ink); font-weight: 600; }
+.dot { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 6px; vertical-align: -1px; }
+.two { display: grid; gap: 14px; }
+.note { font-size: 12px; color: var(--soft); line-height: 1.45; margin: 0; }
+.error { position: absolute; inset: 0; display: grid; place-items: center; padding: 24px; text-align: center; color: var(--soft); }
+@media (min-width: 960px) {
+  .app { height: 100%; grid-template-columns: minmax(0, 1fr) 400px; grid-template-rows: auto minmax(0, 1fr); }
+  header { grid-column: 1 / -1; }
+  .panel { border-top: 0; border-left: 1px solid var(--line); overflow-y: auto; grid-row: 2; grid-column: 2; }
+  .stage { grid-row: 2; grid-column: 1; }
+  .moves { flex-wrap: wrap; overflow: visible; }
+}
+@media (min-width: 600px) and (max-width: 959px) { .two { grid-template-columns: 1fr 1fr; } }
+</style>
+
+<div class="app">
+  <header>
+    <h1>RepArc <span>Motion Lab</span></h1>
+    <div class="tag">Prototype · three.js · 54-bone rig</div>
+  </header>
+  <div class="stage">
+    <canvas id="view" tabindex="0" aria-label="Animated 3D body showing the exercise. Drag to turn, pinch or scroll to zoom."></canvas>
+    <div class="hud">
+      <div><div class="name" id="name"></div><div class="phase" id="phase" aria-live="polite"></div></div>
+      <div class="gauge"><div class="v" id="gv"></div><div class="k" id="gk"></div></div>
+    </div>
+    <div class="tempo" id="tempo" aria-hidden="true"></div>
+  </div>
+  <div class="panel">
+    <div class="moves" id="moves" role="group" aria-label="Exercise"></div>
+    <div class="row">
+      <button class="btn" id="play" type="button">Pause</button>
+      <button class="btn" id="slow" type="button">Half speed</button>
+      <span class="spacer"></span>
+      <button class="btn" data-view="front" type="button">Front</button>
+      <button class="btn" data-view="side" type="button">Side</button>
+      <button class="btn" data-view="back" type="button">Back</button>
+    </div>
+    <p class="summary" id="summary"></p>
+    <div class="card"><h2>How to do it</h2><ol class="steps" id="steps"></ol></div>
+    <div class="card"><h2>Form check · measured on this model</h2><div class="checks" id="checks"></div></div>
+    <div class="two">
+      <div class="card"><h2>Cues</h2><ul class="plain" id="cues"></ul></div>
+      <div class="card"><h2>Avoid</h2><ul class="plain" id="mistakes"></ul></div>
+    </div>
+    <div class="legend" id="legend"></div>
+    <p class="note" id="breath"></p>
+    <p class="note">Same realistic body as the app (MakeHuman CC0) with its real skeleton and skin weights. Each move is a few lines of data: joint angles for the start and end, and the tempo. The form checks measure the rendered skeleton against the target ranges. Coaching text is from the app's coached guides; a review by a qualified coach is still to come.</p>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/three@0.147.0/build/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.147.0/examples/js/controls/OrbitControls.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.147.0/examples/js/environments/RoomEnvironment.js"></script>
+<script id="body-data" type="application/json">__BODY__</script>
+<script>
+(() => {
+const canvas = document.getElementById('view');
+const stageEl = canvas.parentElement;
+if (!window.THREE) { stageEl.insertAdjacentHTML('beforeend', '<div class="error">Could not load three.js. Check your connection and reload.</div>'); return; }
+const D = JSON.parse(document.getElementById('body-data').textContent);
+const DEG = Math.PI / 180, V = (x = 0, y = 0, z = 0) => new THREE.Vector3(x, y, z);
+const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+const dec = (b64, T) => { const s = atob(b64); const u = new Uint8Array(s.length); for (let i = 0; i < s.length; i++) u[i] = s.charCodeAt(i); return new T(u.buffer); };
+
+// ---------- Renderer, light, floor ----------
+let renderer;
+try { renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true }); }
+catch (e) { stageEl.insertAdjacentHTML('beforeend', '<div class="error">This browser cannot show 3D (WebGL is off).</div>'); return; }
+renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+renderer.outputEncoding = THREE.sRGBEncoding;
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure = 0.82;
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+const scene = new THREE.Scene();
+scene.environment = new THREE.PMREMGenerator(renderer).fromScene(new THREE.RoomEnvironment(), 0.04).texture;
+const camera = new THREE.PerspectiveCamera(30, 1, 0.05, 50);
+camera.position.set(1.8, 1.4, 3.2);
+const controls = new THREE.OrbitControls(camera, canvas);
+Object.assign(controls, { enableDamping: true, enablePan: false, minDistance: 0.9, maxDistance: 7, maxPolarAngle: Math.PI * 0.55 });
+controls.target.set(0, 0.95, 0);
+scene.add(new THREE.HemisphereLight(0xe8f1f2, 0x182024, 0.45));
+const key = new THREE.DirectionalLight(0xfff3e6, 1.6);
+key.position.set(-1.8, 3.6, 2.6); key.castShadow = true;
+key.shadow.mapSize.set(2048, 2048); key.shadow.bias = -0.0004; key.shadow.normalBias = 0.02;
+Object.assign(key.shadow.camera, { left: -1.6, right: 1.6, top: 2.2, bottom: -1.4, near: 0.5, far: 9 });
+scene.add(key);
+const rim = new THREE.DirectionalLight(0x86e0ef, 1.0); rim.position.set(2.2, 2.0, -3.0); scene.add(rim);
+const fill = new THREE.DirectionalLight(0xffffff, 0.35); fill.position.set(2.5, 1.0, 2.0); scene.add(fill);
+{
+  const c = document.createElement('canvas'); c.width = c.height = 256; const g = c.getContext('2d');
+  const gr = g.createRadialGradient(128, 128, 0, 128, 128, 128);
+  gr.addColorStop(0, 'rgba(64,200,224,0.20)'); gr.addColorStop(0.55, 'rgba(64,200,224,0.06)'); gr.addColorStop(1, 'rgba(64,200,224,0)');
+  g.fillStyle = gr; g.fillRect(0, 0, 256, 256);
+  const tex = new THREE.CanvasTexture(c); tex.encoding = THREE.sRGBEncoding;
+  const disc = new THREE.Mesh(new THREE.CircleGeometry(2.6, 64), new THREE.MeshBasicMaterial({ map: tex, transparent: true, depthWrite: false }));
+  disc.rotation.x = -Math.PI / 2; scene.add(disc);
+  const catcher = new THREE.Mesh(new THREE.PlaneGeometry(8, 8), new THREE.ShadowMaterial({ opacity: 0.5 }));
+  catcher.rotation.x = -Math.PI / 2; catcher.position.y = 0.001; catcher.receiveShadow = true; scene.add(catcher);
+}
+
+// ---------- Body mesh, with muscle-fibre striations in the shader ----------
+const nv = D.nv;
+const geo = new THREE.BufferGeometry();
+const posArr = dec(D.pos, Float32Array);
+geo.setAttribute('position', new THREE.BufferAttribute(posArr, 3));
+geo.setAttribute('normal', new THREE.BufferAttribute(dec(D.nrm, Int8Array), 3, true));
+geo.setAttribute('skinIndex', new THREE.BufferAttribute(dec(D.skinIndex, Uint8Array), 4));
+geo.setAttribute('skinWeight', new THREE.BufferAttribute(dec(D.skinWeight, Uint8Array), 4, true));
+geo.setAttribute('fiber', new THREE.BufferAttribute(dec(D.fiber, Int8Array), 3, true));
+const mweight = dec(D.mweight, Uint8Array);
+geo.setAttribute('mw', new THREE.BufferAttribute(mweight, 1, true));
+geo.setIndex(new THREE.BufferAttribute(dec(D.index, Uint16Array), 1));
+const label = dec(D.label, Int8Array), groove = dec(D.groove, Uint8Array), ao = dec(D.ao, Uint8Array);
+const colors = new Float32Array(nv * 3);
+geo.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+const mat = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.58, metalness: 0, envMapIntensity: 0.45 });
+mat.onBeforeCompile = (sh) => {
+  sh.vertexShader = sh.vertexShader
+    .replace('#include <common>', '#include <common>\nattribute vec3 fiber;\nattribute float mw;\nvarying vec3 vBind;\nvarying vec3 vBindN;\nvarying vec3 vFiber;\nvarying float vMw;')
+    .replace('#include <begin_vertex>', '#include <begin_vertex>\nvBind = position; vBindN = normal; vFiber = fiber; vMw = mw;');
+  sh.fragmentShader = sh.fragmentShader
+    .replace('#include <common>', '#include <common>\nvarying vec3 vBind;\nvarying vec3 vBindN;\nvarying vec3 vFiber;\nvarying float vMw;\nfloat fiberH = 0.0;')
+    .replace('#include <color_fragment>', `#include <color_fragment>
+      {
+        vec3 n = normalize(vBindN);
+        vec3 f = vFiber - n * dot(vFiber, n);
+        float fl = length(f);
+        vec3 fd = f / max(fl, 1e-4);
+        vec3 pd = cross(fd, n);
+        float along = dot(vBind, fd);
+        float s = dot(vBind, pd) * 1500.0 + sin(along * 23.0) * 0.7;
+        float st = sin(s);
+        float aa = clamp(1.2 - fwidth(s) * 0.6, 0.0, 1.0);
+        float m = vMw * step(0.05, fl) * aa;
+        float line = smoothstep(0.35, 1.0, st);
+        diffuseColor.rgb *= 1.0 - 0.11 * line * m;
+        diffuseColor.rgb *= 1.0 + 0.03 * (1.0 - line) * m;
+        fiberH = st * m;
+      }`)
+    .replace('#include <normal_fragment_maps>', `#include <normal_fragment_maps>
+      {
+        float hx = dFdx(fiberH) * 0.00022, hy = dFdy(fiberH) * 0.00022;
+        vec3 sx = dFdx(-vViewPosition), sy = dFdy(-vViewPosition);
+        vec3 r1 = cross(sy, normal), r2 = cross(normal, sx);
+        float det = dot(sx, r1);
+        vec3 grad = sign(det) * (hx * r1 + hy * r2);
+        normal = normalize(abs(det) * normal - grad);
+      }`);
+};
+const bones = [], B = {}, bind = {};
+for (const b of D.bones) { const o = new THREE.Bone(); o.name = b.name; bones.push(o); B[b.name] = o; bind[b.name] = V(...b.pos); }
+for (const b of D.bones) {
+  if (b.parent) { B[b.name].position.copy(bind[b.name]).sub(bind[b.parent]); B[b.parent].add(B[b.name]); }
+  else B[b.name].position.copy(bind[b.name]);
+}
+const body = new THREE.SkinnedMesh(geo, mat);
+body.castShadow = true; body.frustumCulled = false;
+body.add(B.hips); body.updateMatrixWorld(true);
+body.bind(new THREE.Skeleton(bones));
+scene.add(body);
+const hipsBind = B.hips.position.clone();
+const X = k => V(...D.extra[k]);
+
+// ---------- Hands: palm frame, finger flex axes, grip point ----------
+const hand = {};
+for (const [s, sx] of [['L', 1], ['R', -1]]) {
+  const wrist = bind[`hand${s}`];
+  const side = bind[`f21${s}`].clone().sub(bind[`f51${s}`]).normalize(); // pinky to index
+  const fingers = X(`finger3-3.${s}____tail`).sub(wrist).normalize();
+  let palm = V().crossVectors(fingers, side).normalize();
+  if (palm.x * sx > 0) palm.negate(); // palms face the body in the bind pose
+  const axes = {};
+  for (let n = 1; n <= 5; n++) for (let k = 1; k <= 3; k++) {
+    const name = `f${n}${k}${s}`, next = k < 3 ? bind[`f${n}${k + 1}${s}`] : X(`finger${n}-3.${s}____tail`);
+    const dir = next.clone().sub(bind[name]).normalize();
+    let p = palm.clone();
+    if (n === 1) p = palm.clone().add(fingers.clone().multiplyScalar(0.3)).add(side.clone().multiplyScalar(-0.5)).normalize(); // thumb wraps across
+    axes[name] = V().crossVectors(dir, p).normalize();
+  }
+  const knuckles = V(); for (let n = 2; n <= 5; n++) knuckles.add(bind[`f${n}1${s}`]); knuckles.multiplyScalar(0.25);
+  const grip = knuckles.clone().addScaledVector(palm, 0.03).addScaledVector(fingers, 0.012);
+  const forearmAxis = bind[`hand${s}`].clone().sub(bind[`farm${s}`]).normalize();
+  hand[s] = { side, palm, fingers, axes, grip, forearmAxis, sx };
+}
+
+// ---------- Props ----------
+const steel = new THREE.MeshStandardMaterial({ color: 0xb9c3c6, metalness: 0.85, roughness: 0.28 });
+const ironM = new THREE.MeshStandardMaterial({ color: 0x1b2427, metalness: 0.35, roughness: 0.5 });
+function dumbbell(len = 0.15) {
+  const g = new THREE.Group();
+  g.add(new THREE.Mesh(new THREE.CylinderGeometry(0.0155, 0.0155, len + 0.06, 20), steel));
+  for (const y of [-(len / 2 + 0.03), len / 2 + 0.03]) {
+    const p = new THREE.Mesh(new THREE.CylinderGeometry(0.058, 0.058, 0.05, 32), ironM); p.position.y = y; g.add(p);
+    const c = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.03, 0.06, 20), steel); c.position.y = y; g.add(c);
+  }
+  g.traverse(m => { if (m.isMesh) m.castShadow = true; });
+  return g;
+}
+const bells = {};
+for (const s of ['L', 'R']) {
+  const g = dumbbell(); const h = hand[s];
+  g.position.copy(h.grip).sub(bind[`hand${s}`]);
+  g.quaternion.setFromUnitVectors(V(0, 1, 0), h.side);
+  B[`hand${s}`].add(g); bells[s] = g;
+}
+// Goblet: one dumbbell held upright at the chest.
+const goblet = dumbbell(0.11);
+const gobletAt = X('neck01____head').add(V(0, -0.27, 0.2));
+goblet.position.copy(gobletAt).sub(bind.chest); B.chest.add(goblet);
+
+// Markers for form checks.
+function marker(parent, worldBindPos) { const o = new THREE.Object3D(); o.position.copy(worldBindPos).sub(bind[parent]); B[parent].add(o); return o; }
+let sternumZ = 0; const sternumY = bind.uarmL.y - 0.1;
+for (let i = 0; i < nv; i++) { const x = posArr[i * 3], y = posArr[i * 3 + 1], z = posArr[i * 3 + 2]; if (Math.abs(x) < 0.03 && Math.abs(y - sternumY) < 0.02 && z > sternumZ) sternumZ = z; }
+const mk = {
+  sternum: marker('chest', V(0, sternumY, sternumZ)),
+  toeL: marker('footL', X('foot.L____tail')), toeR: marker('footR', X('foot.R____tail')),
+  neck: marker('chest', X('neck01____head')),
+};
+
+// ---------- Pose from parameters ----------
+const eul = new THREE.Euler(), q1 = new THREE.Quaternion(), q2 = new THREE.Quaternion();
+const qx = (deg) => new THREE.Quaternion().setFromAxisAngle(V(1, 0, 0), deg * DEG);
+function setE(name, x = 0, y = 0, z = 0) { eul.set(x * DEG, y * DEG, z * DEG, 'XYZ'); B[name].quaternion.setFromEuler(eul); }
+function reset() { for (const b of bones) b.quaternion.identity(); B.hips.position.copy(hipsBind); }
+const wp = (o) => o.getWorldPosition(V());
+const wq = (o) => o.getWorldQuaternion(new THREE.Quaternion());
+const footBind = bind.footL.clone().add(bind.footR).multiplyScalar(0.5);
+function plantFeet() {
+  body.updateMatrixWorld(true);
+  const now = wp(B.footL).add(wp(B.footR)).multiplyScalar(0.5);
+  B.hips.position.add(footBind.clone().sub(now));
+  body.updateMatrixWorld(true);
+}
+function setGrip(s, g, spread = 0) {
+  const h = hand[s];
+  for (let n = 1; n <= 5; n++) for (let k = 1; k <= 3; k++) {
+    const name = `f${n}${k}${s}`;
+    const deg = n === 1 ? [22, 30, 28][k - 1] * g : [72, 92, 58][k - 1] * g;
+    B[name].quaternion.setFromAxisAngle(h.axes[name], deg * DEG);
+  }
+}
+// Pronation and supination, shared by the two forearm bones.
+const supSign = {};
+for (const s of ['L', 'R']) {
+  const h = hand[s]; const t = h.palm.clone().applyAxisAngle(h.forearmAxis, 90 * DEG);
+  supSign[s] = t.z > 0 ? 1 : -1; // +twist turns the palm forward (supination)
+}
+function twistQ(s, deg) { return new THREE.Quaternion().setFromAxisAngle(hand[s].forearmAxis, supSign[s] * deg * DEG); }
+
+// Two-bone IK: reach [target] with [end]; the joint bends toward [pole].
+function ik(upper, lower, end, target, pole, flexDir) {
+  body.updateMatrixWorld(true);
+  const S = wp(upper), L1 = lower.position.length(), L2 = end.position.length();
+  const dir = target.clone().sub(S);
+  const d = Math.min(Math.max(dir.length(), 0.05), (L1 + L2) * 0.999); dir.normalize();
+  const a = (L1 * L1 - L2 * L2 + d * d) / (2 * d), h = Math.sqrt(Math.max(L1 * L1 - a * a, 0));
+  const pv = pole.clone().sub(S); pv.addScaledVector(dir, -pv.dot(dir)).normalize();
+  const E = S.clone().addScaledVector(dir, a).addScaledVector(pv, h), T = S.clone().addScaledVector(dir, d);
+  const qP = wq(upper.parent), b1 = lower.position.clone().normalize();
+  const w1 = E.clone().sub(S).normalize(), w2 = T.clone().sub(E).normalize();
+  let qU = new THREE.Quaternion().setFromUnitVectors(b1.clone().applyQuaternion(qP), w1).multiply(qP);
+  const hb = V().crossVectors(b1, flexDir).normalize(), hw = V().crossVectors(w1, w2);
+  if (hw.lengthSq() > 1e-8) {
+    hw.normalize(); const hc = hb.clone().applyQuaternion(qU); hc.addScaledVector(w1, -hc.dot(w1)).normalize();
+    qU = new THREE.Quaternion().setFromAxisAngle(w1, Math.atan2(V().crossVectors(hc, hw).dot(w1), hc.dot(hw))).multiply(qU);
+  }
+  upper.quaternion.copy(qP.clone().invert().multiply(qU));
+  body.updateMatrixWorld(true);
+  const qL = wq(lower), qPu = wq(upper);
+  const b2 = end.position.clone().normalize().applyQuaternion(qL);
+  // World turn q on the lower bone: new local = parent⁻¹ · q · parent · local.
+  lower.quaternion.premultiply(qPu.clone().invert().multiply(new THREE.Quaternion().setFromUnitVectors(b2, w2)).multiply(qPu));
+  body.updateMatrixWorld(true);
+}
+function setWorldQuat(o, q) { o.quaternion.copy(wq(o.parent).invert().multiply(q)); }
+
+// Every move is data: these joint angles in degrees, blended between keys.
+//   pelvis, spine, chest, neck: forward bend.  thigh: knee forward of the hip.  knee: flexion.
+//   hipAbd, hipOut: thigh out to the side, and turned out.  Feet stay flat and planted.
+//   shFlex, shAbd: upper arm forward and out (from the trunk, or from vertical with armsWorld).
+//   elbow, twist (+ palm up / forward), wrist, grip (0 open .. 1 fist), clav (shrug).
+let stance = null;
+function applyPose(P, ex) {
+  reset();
+  const trunk = P.pelvis + P.spine + P.chest;
+  setE('hips', P.pelvis); setE('spine', P.spine); setE('chest', P.chest); setE('neck', P.neck); setE('head', P.head || 0);
+  for (const [s, sx] of [['L', 1], ['R', -1]]) {
+    setE(`thigh${s}`, -P.thigh - P.pelvis, P.hipOut * sx, P.hipAbd * sx);
+    setE(`shin${s}`, P.knee);
+    setE(`foot${s}`, P.thigh - P.knee);
+    setE(`clav${s}`, 0, 0, P.clav * sx);
+    eul.set((-P.shFlex - (ex.armsWorld ? trunk : 0)) * DEG, 0, P.shAbd * sx * DEG, 'XYZ');
+    B[`uarm${s}`].quaternion.setFromEuler(eul);
+    B[`farm${s}`].quaternion.copy(qx(-P.elbow)).multiply(twistQ(s, P.twist * 0.45));
+    B[`farm2${s}`].quaternion.copy(twistQ(s, P.twist * 0.55));
+    setE(`hand${s}`, -P.wrist);
+    setGrip(s, P.grip);
+  }
+  if (ex.ground === 'feet') {
+    plantFeet();
+    // Pin each foot to where it stood at the start: leg IK, knee kept on the line the angles gave.
+    if (stance) for (const s of ['L', 'R']) {
+      const toeDir = stance[s].toe.clone().sub(stance[s].pos).setY(0).normalize(); // knee tracks over the toes
+      ik(B[`thigh${s}`], B[`shin${s}`], B[`foot${s}`], stance[s].pos, stance[s].pos.clone().add(V(0, 0.45, 0)).addScaledVector(toeDir, 0.8), V(0, 0, -1));
+      setWorldQuat(B[`foot${s}`], stance[s].q);
+    }
+  }
+  if (ex.after) ex.after(P);
+  body.updateMatrixWorld(true);
+}
+const BASE = { h: 0, pelvis: 0, spine: 0, chest: 0, neck: 0, head: 0, thigh: 0, knee: 0, hipAbd: 0, hipOut: 0, shFlex: 0, shAbd: 0, elbow: 0, twist: 0, wrist: 0, grip: 1, clav: 0 };
+const blend = (A, Bk, t) => { const o = {}; for (const k in BASE) o[k] = (A[k] ?? BASE[k]) + ((Bk[k] ?? BASE[k]) - (A[k] ?? BASE[k])) * t; return o; };
+
+// ---------- Push-up support: body angle from shoulder height, hands fixed ----------
+const L1a = bind.farmL.distanceTo(bind.uarmL), L2a = bind.handL.distanceTo(bind.farmL);
+const push = { hands: null };
+function pushBody(h) {
+  const S0 = bind.uarmL.clone().add(bind.uarmR).multiplyScalar(0.5), T0 = X('foot.L____tail');
+  const vy = S0.y - T0.y, vz = S0.z - T0.z, R = Math.hypot(vy, vz), beta = Math.atan2(vz, vy);
+  B.hips.quaternion.setFromAxisAngle(V(1, 0, 0), Math.acos(Math.min(h / R, 1)) - beta);
+  for (const s of ['L', 'R']) setE(`foot${s}`, 22);
+  body.updateMatrixWorld(true);
+  const toe = wp(mk.toeL).add(wp(mk.toeR)).multiplyScalar(0.5);
+  B.hips.position.add(V(0, -toe.y + 0.012, -0.95 - toe.z));
+  body.updateMatrixWorld(true);
+}
+
+const EX = [
+  { id: 'curl', name: 'Dumbbell curl', ground: 'feet', bells: true, armsWorld: true,
+    primary: ['biceps'], helpers: ['forearms', 'frontDelts'],
+    summary: 'The classic mass builder for the front of the arm. Palms face up the whole time.',
+    steps: ['Stand tall, dumbbells at your sides, palms forward.', 'Curl the weights up in an arc.', 'Squeeze at the top.', 'Lower slowly until the arms are fully straight.'],
+    cues: ['Elbows pinned to your ribs', 'Wrists straight', 'Full stretch at the bottom'],
+    mistakes: ['Swinging with the hips.', 'Elbows drifting forward a lot.', 'Cutting the range short.'],
+    breathing: 'Breathe out as you curl. Breathe in as you lower.',
+    keys: [{ shFlex: 0, shAbd: -3, elbow: 6, twist: 88 }, { shFlex: 10, shAbd: -3, elbow: 138, twist: 92, wrist: 5 }],
+    tempo: [['Ready', 0, 0.6, 0], ['Curl up', 1, 1.2, 1], ['Squeeze', 1, 1.0, 2], ['Lower slowly', 0, 3.0, 3]],
+    gauge: ['Elbow', m => m.elbowL],
+    trail: () => wp(bells.L),
+    view: { pos: [1.6, 1.3, 2.4], target: [0, 1.05, 0] },
+    checks: [
+      ['Elbows stay by your sides', 'Upper arm within 15° of vertical', m => m.uarmFromVertL, v => v <= 15, '°', 'both'],
+      ['Full squeeze at the top', 'Elbow bent 125–150°', m => m.elbowL, v => v >= 125 && v <= 150, '°', 'end'],
+      ['Arms straight at the bottom', 'Elbow bent 15° or less', m => m.elbowL, v => v <= 15, '°', 'start'],
+      ['Palms face forward', 'Palm turned forward (supinated)', m => m.palmFwdL * 100, v => v >= 75, '%', 'start'],
+    ] },
+  { id: 'goblet', name: 'Goblet squat', ground: 'feet', goblet: true,
+    primary: ['quads', 'glutes'], helpers: ['adductors', 'abs'],
+    summary: 'The best way to learn the squat. The weight at your chest keeps you upright.',
+    steps: ['Hold the weight at your chest, elbows down. Feet a little wider than shoulders, toes turned out slightly.', 'Sit straight down between your heels.', 'Elbows go inside the knees.', 'Stand up by pushing the floor away.'],
+    cues: ['Sit between your heels', 'Elbows inside knees', 'Tall chest'],
+    mistakes: ['Weight drifting away from the chest.', 'Knees caving in.', 'Heels lifting.'],
+    breathing: 'Breathe in at the top. Breathe out as you stand.',
+    keys: [{ hipAbd: 4, hipOut: 12, grip: 0.55 }, { pelvis: 18, spine: 6, chest: 4, neck: -14, thigh: 100, knee: 132, hipAbd: 4, hipOut: 12, grip: 0.55 }],
+    tempo: [['Ready', 0, 0.6, 0], ['Sit down', 1, 3.0, 1], ['Bottom', 1, 0.5, 2], ['Stand up', 0, 1.4, 3]],
+    gauge: ['Knee', m => m.kneeL],
+    trail: () => wp(B.hips),
+    after() {
+      for (const [s, sx] of [['L', 1], ['R', -1]]) {
+        body.updateMatrixWorld(true);
+        const g = wp(goblet), S = wp(B[`uarm${s}`]);
+        const t = g.clone().add(V(0.052 * sx, 0.075, -0.035).applyQuaternion(wq(B.chest)));
+        ik(B[`uarm${s}`], B[`farm${s}`], B[`hand${s}`], t, S.clone().add(V(0.12 * sx, -0.5, 0.1)), V(0, 0, 1));
+        const q = wq(B.chest).multiply(new THREE.Quaternion().setFromAxisAngle(V(1, 0, 0), -140 * DEG)).multiply(new THREE.Quaternion().setFromAxisAngle(V(0, 1, 0), -70 * sx * DEG));
+        setWorldQuat(B[`hand${s}`], q);
+      }
+    },
+    view: { pos: [2.3, 1.15, 2.3], target: [0, 0.72, 0] },
+    checks: [
+      ['Squat to depth', 'Hip crease at or below the knee', m => (m.hipY - m.kneeY) * 100, v => v <= 3, ' cm', 'end'],
+      ['Heels stay down', 'Feet flat and planted', m => m.footLift * 100, v => v <= 1, ' cm', 'both'],
+      ['Knees follow the toes', 'Knee in line with the foot', m => m.kneeCave * 100, v => v <= 4, ' cm', 'end'],
+      ['Tall chest', 'Trunk lean 40° or less', m => m.trunk, v => v <= 40, '°', 'end'],
+    ] },
+  { id: 'push', name: 'Push-up', ground: 'custom', bells: false,
+    primary: ['chest', 'upperChest', 'lowerChest'], helpers: ['triceps', 'frontDelts', 'abs'],
+    summary: 'A full-body push that needs no equipment and trains core control.',
+    steps: ['Hands just wider than shoulders, under the chest. Body in one straight line from head to heels.', 'Lower your chest between your hands.', 'Keep elbows about 45° from your body.', 'Stop when the chest is a fist from the floor.', 'Push the floor away until arms are straight.'],
+    cues: ['Plank that moves', 'Screw hands into the floor', 'Chest leads, not chin'],
+    mistakes: ['Hips sagging or piking.', 'Elbows flared straight out.', 'Half reps.'],
+    breathing: 'Breathe in on the way down. Breathe out as you push.',
+    keys: [{ h: 0, grip: 0, neck: -6 }, { h: 1, grip: 0, neck: -6 }],
+    tempo: [['Ready', 0, 0.6, 0], ['Lower', 1, 2.0, 1], ['Bottom', 1, 0.4, 3], ['Push up', 0, 1.2, 4]],
+    gauge: ['Elbow', m => m.elbowL],
+    trail: () => wp(mk.sternum),
+    after(P) {
+      const hTop = (L1a + L2a) * 0.985 + 0.055, hBot = 0.255;
+      pushBody(hTop + (hBot - hTop) * P.h);
+      if (!push.hands) {
+        push.hands = {};
+        for (const [s, sx] of [['L', 1], ['R', -1]]) { const S = wp(B[`uarm${s}`]); push.hands[s] = V(S.x + 0.075 * sx, 0.055, S.z - 0.05); }
+      }
+      for (const [s, sx] of [['L', 1], ['R', -1]]) {
+        const S = wp(B[`uarm${s}`]);
+        ik(B[`uarm${s}`], B[`farm${s}`], B[`hand${s}`], push.hands[s], S.clone().add(V(0.3 * sx, 0.0, -0.3)), V(0, 0, 1));
+        const q = new THREE.Quaternion().setFromAxisAngle(V(0, 1, 0), -12 * sx * DEG)
+          .multiply(new THREE.Quaternion().setFromAxisAngle(V(0, 0, 1), 90 * sx * DEG))
+          .multiply(new THREE.Quaternion().setFromAxisAngle(V(1, 0, 0), -90 * DEG));
+        setWorldQuat(B[`hand${s}`], q);
+      }
+    },
+    view: { pos: [2.0, 0.8, 1.7], target: [0, 0.3, -0.25] },
+    checks: [
+      ['Straight body line', 'Shoulders, hips, and ankles within 10°', m => m.bodyLine, v => v <= 10, '°', 'both'],
+      ['Elbows about 45°', 'Upper arm 30–60° from the body', m => m.flareL, v => v >= 30 && v <= 60, '°', 'end'],
+      ['Chest a fist from the floor', 'Chest 12 cm or lower', m => m.chestY * 100, v => v <= 12, ' cm', 'end'],
+      ['Arms straight at the top', 'Elbow bent 15° or less', m => m.elbowL, v => v <= 15, '°', 'start'],
+      ['Hands under the shoulders', 'Within 12 cm, seen from above', m => m.handUnderL * 100, v => v <= 12, ' cm', 'start'],
+    ] },
+  { id: 'raise', name: 'Lateral raise', ground: 'feet', bells: true,
+    primary: ['sideDelts'], helpers: ['frontDelts', 'traps'],
+    summary: 'Builds the side of the shoulder for width.',
+    steps: ['Stand tall, light dumbbells at your sides. Lean forward a little, soft bend in the elbows.', 'Raise the arms out to the sides.', 'Stop at shoulder height.', 'Lower slowly. Do not let them drop.'],
+    cues: ['Push the hands out wide, not up', 'Elbows lead', 'Pour the water from a jug'],
+    mistakes: ['Swinging the body.', 'Shrugging up to the ears.', 'Going too heavy.'],
+    breathing: 'Breathe out as you raise. Breathe in as you lower.',
+    keys: [{ pelvis: 3, spine: 3, shAbd: 2, elbow: 14 }, { pelvis: 3, spine: 3, shAbd: 73, shFlex: 12, elbow: 14, twist: -8, clav: 4 }],
+    tempo: [['Ready', 0, 0.6, 0], ['Raise', 1, 1.2, 1], ['Pause', 1, 1.0, 2], ['Lower slowly', 0, 3.0, 3]],
+    gauge: ['Arm', m => m.abdL],
+    trail: () => wp(bells.L),
+    view: { pos: [0.5, 1.45, 3.1], target: [0, 1.15, 0] },
+    checks: [
+      ['Stop at shoulder height', 'Arm 80–95° from the side', m => m.abdL, v => v >= 80 && v <= 95, '°', 'end'],
+      ['Soft elbows', 'Elbow bent 10–20°', m => m.elbowL, v => v >= 10 && v <= 20, '°', 'both'],
+      ['Elbows lead', 'Elbow level with or above the hand', m => (m.elbowYL - m.wristYL) * 100, v => v >= -3, ' cm', 'end'],
+      ['No swinging', 'Trunk lean 10° or less', m => m.trunk, v => v <= 10, '°', 'both'],
+    ] },
+  { id: 'rdl', name: 'Romanian deadlift', ground: 'feet', bells: true, armsWorld: true,
+    primary: ['hamstrings', 'glutes'], helpers: ['lowerBack', 'forearms'],
+    summary: 'Long, loaded hamstring stretch. Builds the back of the legs.',
+    steps: ['Start standing with the weights at your hips. Feet hip width, soft knees, shoulders back.', 'Push the hips back like closing a car door with your glutes.', 'Slide the weights down the thighs, past the knees.', 'Stop when the hamstrings are tight and the back is still flat.', 'Drive the hips forward to stand.'],
+    cues: ['Hips back, not down', 'Weights drag the legs', 'Long neck'],
+    mistakes: ['Squatting the knees forward.', 'Rounding to reach lower.', 'Weights swinging away from the legs.'],
+    breathing: 'Breathe in and brace as you hinge. Breathe out at the top.',
+    keys: [{ thigh: 3, knee: 7, shAbd: -7, twist: -80 }, { pelvis: 62, spine: 5, chest: 3, neck: -22, thigh: 24, knee: 16, shAbd: -7, shFlex: -14, twist: -80 }],
+    tempo: [['Ready', 0, 0.6, 0], ['Hinge back', 1, 3.0, 1], ['Hold', 1, 0.5, 3], ['Drive up', 0, 1.4, 4]],
+    gauge: ['Hip hinge', m => m.trunk],
+    trail: () => wp(bells.L),
+    view: { pos: [2.9, 1.1, 1.0], target: [0, 0.75, 0] },
+    checks: [
+      ['Soft knees, not a squat', 'Knee bent 15–25°', m => m.kneeL, v => v >= 15 && v <= 25, '°', 'end'],
+      ['Flat back', 'Spine bend 12° or less', m => m.spineBend, v => v <= 12, '°', 'end'],
+      ['Weights stay over mid-foot', 'Within 7 cm of mid-foot, front to back', m => m.bellOverFoot * 100, v => Math.abs(v) <= 7, ' cm', 'end'],
+      ['Shins stay near vertical', 'Shin 12° or less from vertical', m => m.shinL, v => v <= 12, '°', 'end'],
+      ['Hips go back', 'Trunk hinged 60–85°', m => m.trunk, v => v >= 60 && v <= 85, '°', 'end'],
+    ] },
+];
+
+// ---------- Measurements on the posed skeleton ----------
+let footRef = null;
+const ang = (a, b) => Math.acos(Math.min(1, Math.max(-1, a.clone().normalize().dot(b.clone().normalize())))) / DEG;
+function measure() {
+  body.updateMatrixWorld(true);
+  const P = n => wp(B[n]);
+  const S = P('uarmL'), E = P('farmL'), W = P('handL'), H = P('thighL'), K = P('shinL'), A = P('footL');
+  const Sc = S.clone().add(P('uarmR')).multiplyScalar(0.5), Hc = H.clone().add(P('thighR')).multiplyScalar(0.5);
+  const Ac = A.clone().add(P('footR')).multiplyScalar(0.5);
+  const up = V(0, 1, 0);
+  const ua = E.clone().sub(S);
+  const palmW = hand.L.palm.clone().applyQuaternion(wq(B.handL));
+  const footQ = wq(B.footL);
+  const kneeLine = K.x - (A.x + wp(mk.toeL).x) / 2;
+  const bell = wp(bells.L);
+  return {
+    elbowL: 180 - ang(S.clone().sub(E), W.clone().sub(E)),
+    kneeL: 180 - ang(H.clone().sub(K), A.clone().sub(K)),
+    uarmFromVertL: ang(ua, V(0, -1, 0)),
+    abdL: ang(V(ua.x, ua.y, 0), V(0, -1, 0)),
+    palmFwdL: palmW.z,
+    hipY: H.y, kneeY: K.y,
+    footLift: Math.max(footRef ? A.distanceTo(footRef) : 0, ang(V(0, 1, 0).applyQuaternion(footQ), up) > 5 ? 0.02 : 0),
+    footPos: A,
+    kneeCave: Math.max(0, -kneeLine),
+    trunk: ang(wp(mk.neck).sub(Hc), up),
+    spineBend: ang(V(0, 1, 0).applyQuaternion(wq(B.hips)), V(0, 1, 0).applyQuaternion(wq(B.chest))),
+    bodyLine: ang(Hc.clone().sub(Sc), Ac.clone().sub(Hc)),
+    flareL: ang(ua, Hc.clone().sub(Sc)),
+    chestY: wp(mk.sternum).y,
+    handUnderL: Math.hypot(W.x - S.x, W.z - S.z),
+    elbowYL: E.y, wristYL: W.y,
+    bellOverFoot: bell.z - (A.z + 0.05),
+    shinL: ang(K.clone().sub(A), up),
+  };
+}
+
+// ---------- Colours ----------
+const M = Object.fromEntries(D.muscles.map((n, i) => [n, i]));
+const cSkin = new THREE.Color('#a19f9b').convertSRGBToLinear();
+const cMuscle = new THREE.Color('#b8b6b1').convertSRGBToLinear();
+const cHot = new THREE.Color('#ff3a10').convertSRGBToLinear();
+const cWarm = new THREE.Color('#f08350').convertSRGBToLinear();
+function paint(ex) {
+  const main = new Set(ex.primary.map(n => M[n])), help = new Set(ex.helpers.map(n => M[n]));
+  const c = new THREE.Color();
+  for (let i = 0; i < nv; i++) {
+    const l = label[i], w = mweight[i] / 255;
+    c.copy(cSkin);
+    if (l >= 0) { c.lerp(cMuscle, w); if (main.has(l)) c.lerp(cHot, w); else if (help.has(l)) c.lerp(cWarm, w * 0.85); }
+    const k = (1 - 0.28 * groove[i] / 255) * (1 - 0.55 * ao[i] / 255);
+    colors[i * 3] = c.r * k; colors[i * 3 + 1] = c.g * k; colors[i * 3 + 2] = c.b * k;
+  }
+  geo.attributes.color.needsUpdate = true;
+}
+
+// ---------- Motion trail ----------
+const TRAIL = 90;
+const trailPos = new Float32Array(TRAIL * 3);
+const trailGeo = new THREE.BufferGeometry(); trailGeo.setAttribute('position', new THREE.BufferAttribute(trailPos, 3));
+const trail = new THREE.Line(trailGeo, new THREE.LineBasicMaterial({ color: 0x40c8e0, transparent: true, opacity: 0.75 }));
+trail.frustumCulled = false; scene.add(trail);
+let trailN = 0;
+function pushTrail(p) {
+  trailPos.copyWithin(3, 0, (TRAIL - 1) * 3); trailPos[0] = p.x; trailPos[1] = p.y; trailPos[2] = p.z;
+  trailN = Math.min(trailN + 1, TRAIL); trailGeo.setDrawRange(0, trailN); trailGeo.attributes.position.needsUpdate = true;
+}
+
+// ---------- UI ----------
+const $ = id => document.getElementById(id);
+const labelOf = n => ({ upperChest: 'Upper chest', chest: 'Mid chest', lowerChest: 'Lower chest', frontDelts: 'Front delts', sideDelts: 'Side delts', rearDelts: 'Rear delts', lowerBack: 'Lower back', upperBack: 'Upper back' }[n] || n[0].toUpperCase() + n.slice(1));
+const ease = t => t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+let ex = EX[0], playing = !reduce, speed = 1, clock = 0, reps = 0, frozen = null;
+const camFrom = V(), camTo = V(), tgtFrom = V(), tgtTo = V(); let camT = 1;
+function flyTo(pos, target) {
+  camFrom.copy(camera.position); tgtFrom.copy(controls.target); camTo.set(...pos); tgtTo.set(...target);
+  if (reduce) { camera.position.copy(camTo); controls.target.copy(tgtTo); camT = 1; } else camT = 0;
+}
+function takeStance() {
+  stance = null; applyPose(blend(ex.keys[0], ex.keys[0], 0), ex);
+  stance = {}; for (const s of ['L', 'R']) stance[s] = { pos: wp(B[`foot${s}`]), q: wq(B[`foot${s}`]), toe: wp(mk[`toe${s}`]) };
+}
+function poseAt(a) { const P = blend(ex.keys[0], ex.keys[1], a); applyPose(P, ex); }
+function runChecks() {
+  const at = {}; footRef = null;
+  for (const a of [0, 1]) { poseAt(a); at[a] = measure(); if (a === 0) footRef = at[0].footPos.clone(); }
+  return ex.checks.map(([title, rule, f, ok, unit, when]) => {
+    const vals = when === 'both' ? [f(at[0]), f(at[1])] : [f(at[when === 'end' ? 1 : 0])];
+    const pass = vals.every(ok);
+    const shown = vals.map(v => (Math.abs(v) < 10 ? v.toFixed(1) : Math.round(v)) + unit).join(' → ');
+    return { title, rule, value: shown, pass };
+  });
+}
+function select(e) {
+  ex = e; clock = 0; reps = 0; trailN = 0; push.hands = null; takeStance();
+  for (const b of $('moves').children) b.setAttribute('aria-pressed', String(b.dataset.id === e.id));
+  $('name').textContent = e.name; $('summary').textContent = e.summary; $('breath').textContent = e.breathing;
+  bells.L.visible = bells.R.visible = !!e.bells; goblet.visible = !!e.goblet;
+  paint(e);
+  $('steps').innerHTML = e.steps.map(s => `<li>${s}</li>`).join('');
+  $('cues').innerHTML = e.cues.map(s => `<li>${s}</li>`).join('');
+  $('mistakes').innerHTML = e.mistakes.map(s => `<li>${s}</li>`).join('');
+  const res = runChecks();
+  $('checks').innerHTML = res.map(r => `<div class="check"><span class="${r.pass ? 'ok' : 'no'}" aria-label="${r.pass ? 'Pass' : 'Fail'}">${r.pass ? '✓' : '✕'}</span><span>${r.title}<small>${r.rule}</small></span><span class="val">${r.value}</span></div>`).join('');
+  const ul = n => n.map(labelOf).join(', ');
+  $('legend').innerHTML = `<span><i class="dot" style="background:var(--hot)"></i><b>Main:</b> ${ul(e.primary)}</span><span><i class="dot" style="background:var(--warm)"></i><b>Helpers:</b> ${ul(e.helpers)}</span>`;
+  $('tempo').innerHTML = e.tempo.map(() => '<div><i></i></div>').join('');
+  $('gk').textContent = e.gauge[0];
+  flyTo(e.view.pos, e.view.target);
+  return res;
+}
+for (const e of EX) {
+  const b = document.createElement('button'); b.type = 'button'; b.className = 'move'; b.textContent = e.name; b.dataset.id = e.id;
+  b.addEventListener('click', () => select(e)); $('moves').appendChild(b);
+}
+$('play').addEventListener('click', () => { playing = !playing; $('play').textContent = playing ? 'Pause' : 'Play'; });
+$('slow').addEventListener('click', () => { speed = speed === 1 ? 0.5 : 1; $('slow').classList.toggle('on', speed !== 1); });
+$('play').textContent = playing ? 'Pause' : 'Play';
+const views = { front: [0, 0.2, 3.3], side: [3.3, 0.15, 0], back: [0, 0.2, -3.3] };
+for (const b of document.querySelectorAll('[data-view]')) b.addEventListener('click', () => {
+  const t = controls.target, v = views[b.dataset.view]; flyTo([t.x + v[0], t.y + v[1], t.z + v[2]], [t.x, t.y, t.z]);
+});
+function resize() { const w = stageEl.clientWidth, h = stageEl.clientHeight; renderer.setSize(w, h, false); camera.aspect = w / Math.max(h, 1); camera.updateProjectionMatrix(); }
+new ResizeObserver(resize).observe(stageEl); resize();
+window.__lab = { select: id => select(EX.find(e => e.id === id)).map(r => ({ ...r })), freeze: a => { frozen = a; }, ids: EX.map(e => e.id), look: (pos, target) => { camT = 1; camera.position.set(...pos); controls.target.set(...target); } };
+select(EX[0]);
+
+// Phase from the tempo: [label, target key, seconds, step index].
+function phaseAt(t) {
+  const total = ex.tempo.reduce((s, p) => s + p[2], 0);
+  let u = t % total, from = 0;
+  for (let i = 0; i < ex.tempo.length; i++) {
+    const [lab, to, dur, step] = ex.tempo[i];
+    if (u < dur) return { i, lab, step, left: dur - u, a: from + (to - from) * ease(u / dur), frac: u / dur, cycle: Math.floor(t / total) };
+    u -= dur; from = to;
+  }
+  return { i: 0, lab: '', step: 0, left: 0, a: 0, frac: 0, cycle: 0 };
+}
+let prev = performance.now(), lastStep = -1;
+function frame(now) {
+  const dt = Math.min((now - prev) / 1000, 0.05); prev = now;
+  if (playing) clock += dt * speed;
+  const ph = frozen != null ? { i: 0, lab: 'Hold', step: 0, left: 0, a: frozen, frac: 1, cycle: 0 } : phaseAt(clock);
+  poseAt(ph.a);
+  if (playing && frozen == null) pushTrail(ex.trail());
+  const m = measure();
+  $('gv').textContent = Math.round(ex.gauge[1](m)) + '°';
+  $('phase').textContent = `${ph.lab}${ph.left > 0.05 ? ' · ' + ph.left.toFixed(1) + ' s' : ''} · rep ${ph.cycle + 1}`;
+  const bars = $('tempo').children;
+  for (let i = 0; i < bars.length; i++) bars[i].firstChild.style.width = (i < ph.i ? 100 : i === ph.i ? ph.frac * 100 : 0) + '%';
+  if (ph.step !== lastStep) { lastStep = ph.step; [...$('steps').children].forEach((li, i) => li.classList.toggle('now', i === ph.step)); }
+  if (camT < 1) { camT = Math.min(camT + dt / 0.9, 1); const k = ease(camT); camera.position.lerpVectors(camFrom, camTo, k); controls.target.lerpVectors(tgtFrom, tgtTo, k); }
+  controls.update();
+  renderer.render(scene, camera);
+  requestAnimationFrame(frame);
+}
+requestAnimationFrame(frame);
+})();
+</script>
