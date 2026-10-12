@@ -11,3 +11,7 @@ difference (overlap 0.92 to 0.95).
 A second try with a 2x2 sheet and spread limbs (aspect 3:4) came back zoomed in and cropped: the
 image model does not always keep the framing. Check the outline overlap that `paint.py project`
 prints (keep it above 0.9) before using a painting.
+
+2026-10-12, later: the build now projects onto the base mesh with its own UV layout (paint.py build);
+sheets.json records this painting's layout. A third run (arms raised, four low three-quarter views,
+with this painting as the style guide) was refused by Weave: the workspace's 2 free model runs are used.

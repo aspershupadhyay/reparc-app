@@ -1,0 +1,5 @@
+[
+  {"image": "painted-2026-10-12.webp", "cols": 4, "rows": 1, "w": 896, "h": 1536, "arm": 0, "leg": 0,
+   "views": [[0, 0], [180, 0], [-90, 0], [90, 0]],
+   "note": "front, back, right side, left side; bind pose. Nano Banana Pro 4K 21:9, prompt in prompt.txt."}
+]

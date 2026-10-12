@@ -1,3 +1,5 @@
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
 <title>RepArc Motion Lab</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500&display=swap">
@@ -134,7 +136,10 @@ const dec = (b64, T) => { const s = atob(b64); const u = new Uint8Array(s.length
 let renderer;
 try { renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true }); }
 catch (e) { stageEl.insertAdjacentHTML('beforeend', '<div class="error">This browser cannot show 3D (WebGL is off).</div>'); return; }
-renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+// Phones: fewer pixels and a smaller shadow map; the frame loop lowers the pixel ratio further if frames run slow.
+const PHONE = matchMedia('(pointer: coarse)').matches || Math.min(screen.width, screen.height) < 600;
+let pixelRatio = Math.min(devicePixelRatio, PHONE ? 1.5 : 2);
+renderer.setPixelRatio(pixelRatio);
 renderer.outputEncoding = THREE.sRGBEncoding;
 renderer.toneMapping = THREE.ACESFilmicToneMapping;
 renderer.toneMappingExposure = 0.85;
@@ -150,7 +155,7 @@ controls.target.set(0, 0.95, 0);
 scene.add(new THREE.HemisphereLight(0xe8f1f2, 0x182024, 0.45));
 const key = new THREE.DirectionalLight(0xfff3e6, 1.6);
 key.position.set(-1.8, 3.6, 2.6); key.castShadow = true;
-key.shadow.mapSize.set(2048, 2048); key.shadow.bias = -0.0004; key.shadow.normalBias = 0.02;
+key.shadow.mapSize.set(PHONE ? 1024 : 2048, PHONE ? 1024 : 2048); key.shadow.bias = -0.0004; key.shadow.normalBias = 0.02;
 Object.assign(key.shadow.camera, { left: -1.6, right: 1.6, top: 2.2, bottom: -1.4, near: 0.5, far: 9 });
 scene.add(key);
 const rim = new THREE.DirectionalLight(0x86e0ef, 1.0); rim.position.set(2.2, 2.0, -3.0); scene.add(rim);
@@ -167,36 +172,115 @@ const fill = new THREE.DirectionalLight(0xffffff, 0.35); fill.position.set(2.5, 
   catcher.rotation.x = -Math.PI / 2; catcher.position.y = 0.001; catcher.receiveShadow = true; scene.add(catcher);
 }
 
-// ---------- Body mesh, with muscle-fibre striations in the shader ----------
-const nv = D.nv;
+// ---------- Body mesh ----------
+// Painted model (paint.py, version 5): the 25k base mesh with a full UV layout, subdivided here once
+// on the Phong surface exactly as paint.py does, so the baked textures fit. Atlas model (gym.py): as stored.
+const PAINTED = !!D.painted;
+function paintedMesh() {
+  const n0 = D.nv, nt = D.nt, T = dec(D.index, Uint16Array), O = dec(D.orig, Uint16Array);
+  const P = dec(D.pos, Float32Array), Nb = dec(D.nrm, Int8Array), UV = dec(D.uv, Uint16Array);
+  const SI = dec(D.skinIndex, Uint8Array), SW = dec(D.skinWeight, Uint8Array), MID = dec(D.mid, Uint16Array);
+  const AMP = dec(D.amp, Uint8Array), AO = dec(D.ao, Uint8Array);
+  const nb = new Float32Array(n0 * 3);
+  for (let i = 0; i < n0; i++) { const x = Nb[i * 3], y = Nb[i * 3 + 1], z = Nb[i * 3 + 2], l = Math.hypot(x, y, z) || 1; nb[i * 3] = x / l; nb[i * 3 + 1] = y / l; nb[i * 3 + 2] = z / l; }
+  // Edge table: open addressing in typed arrays (a Map is several times slower on phones).
+  const HS = 1 << 18, hLo = new Int32Array(HS).fill(-1), hHi = new Int32Array(HS), hV = new Int32Array(HS);
+  const lookup = (lo, hi) => { let h = (Math.imul(lo, 73856093) ^ Math.imul(hi, 19349663)) & (HS - 1); while (hLo[h] !== -1 && (hLo[h] !== lo || hHi[h] !== hi)) h = (h + 1) & (HS - 1); return h; };
+  const ea = [], eb = [];
+  const midOf = (a, b) => { const lo = a < b ? a : b, hi = a < b ? b : a, h = lookup(lo, hi); if (hLo[h] === -1) { hLo[h] = lo; hHi[h] = hi; hV[h] = n0 + ea.length; ea.push(lo); eb.push(hi); } return hV[h]; };
+  const tri = new Uint32Array(nt * 12);
+  for (let t = 0; t < nt; t++) {
+    const a = T[t * 3], b = T[t * 3 + 1], c = T[t * 3 + 2];
+    const ab = midOf(a, b), bc = midOf(b, c), ca = midOf(c, a);
+    tri.set([a, ab, ca, ab, b, bc, ca, bc, c, ab, bc, ca], t * 12);
+  }
+  // paint.py numbers edges in sorted order; only positions matter, so insertion order is fine here.
+  const nv = n0 + ea.length;
+  const pos = new Float32Array(nv * 3), uv = new Float32Array(nv * 2), si = new Uint8Array(nv * 4), sw = new Float32Array(nv * 4);
+  const mid = new Uint16Array(nv), amp = new Uint8Array(nv), ao = new Uint8Array(nv), key = new Int32Array(nv);
+  pos.set(P);
+  for (let i = 0; i < n0; i++) {
+    uv[i * 2] = UV[i * 2] / 65535; uv[i * 2 + 1] = UV[i * 2 + 1] / 65535;
+    for (let k = 0; k < 4; k++) { si[i * 4 + k] = SI[i * 4 + k]; sw[i * 4 + k] = SW[i * 4 + k] / 255; }
+    mid[i] = MID[i]; amp[i] = AMP[i]; ao[i] = AO[i]; key[i] = O[i];
+  }
+  // The same edge on both sides of a UV seam shares one weld key (for seamless normals).
+  const oLo = new Int32Array(HS).fill(-1), oHi = new Int32Array(HS), oV = new Int32Array(HS); let nOE = 0;
+  const lookupO = (lo, hi) => { let h = (Math.imul(lo, 73856093) ^ Math.imul(hi, 19349663)) & (HS - 1); while (oLo[h] !== -1 && (oLo[h] !== lo || oHi[h] !== hi)) h = (h + 1) & (HS - 1); return h; };
+  const wb = new Int32Array(8), wx = new Float32Array(8);
+  for (let j = 0; j < ea.length; j++) {
+    const a = ea[j], b = eb[j], v = n0 + j;
+    for (let k = 0; k < 3; k++) {
+      const m = (P[a * 3 + k] + P[b * 3 + k]) / 2;
+      pos[v * 3 + k] = m;
+    }
+    // Phong: average the midpoint's projections onto the two end tangent planes.
+    let qx = 0, qy = 0, qz = 0;
+    for (let ei = 0; ei < 2; ei++) {
+      const e = ei ? b : a;
+      const nx = nb[e * 3], ny = nb[e * 3 + 1], nz = nb[e * 3 + 2];
+      const dx = pos[v * 3] - P[e * 3], dy = pos[v * 3 + 1] - P[e * 3 + 1], dz = pos[v * 3 + 2] - P[e * 3 + 2];
+      const d = dx * nx + dy * ny + dz * nz;
+      qx += pos[v * 3] - d * nx; qy += pos[v * 3 + 1] - d * ny; qz += pos[v * 3 + 2] - d * nz;
+    }
+    pos[v * 3] = 0.25 * pos[v * 3] + 0.375 * qx; pos[v * 3 + 1] = 0.25 * pos[v * 3 + 1] + 0.375 * qy; pos[v * 3 + 2] = 0.25 * pos[v * 3 + 2] + 0.375 * qz;
+    uv[v * 2] = (uv[a * 2] + uv[b * 2]) / 2; uv[v * 2 + 1] = (uv[a * 2 + 1] + uv[b * 2 + 1]) / 2;
+    // Skin weights: merge the two ends' four bones each, keep the four largest.
+    let n = 0;
+    for (let ei = 0; ei < 2; ei++) for (let k = 0; k < 4; k++) {
+      const e = ei ? b : a, bi = si[e * 4 + k], x = sw[e * 4 + k] / 2; let j = 0;
+      while (j < n && wb[j] !== bi) j++;
+      if (j === n) { wb[n] = bi; wx[n] = x; n++; } else wx[j] += x;
+    }
+    let tot = 0;
+    for (let k = 0; k < 4; k++) {
+      let bj = 0; for (let j = 1; j < n; j++) if (wx[j] > wx[bj]) bj = j;
+      si[v * 4 + k] = wb[bj]; sw[v * 4 + k] = Math.max(wx[bj], 0); tot += sw[v * 4 + k]; wx[bj] = -1;
+    }
+    for (let k = 0; k < 4; k++) sw[v * 4 + k] /= tot || 1;
+    mid[v] = mid[a]; amp[v] = (amp[a] + amp[b]) >> 1; ao[v] = (ao[a] + ao[b]) >> 1;
+    const oa = Math.min(O[a], O[b]), ob = Math.max(O[a], O[b]), h = lookupO(oa, ob);
+    if (oLo[h] === -1) { oLo[h] = oa; oHi[h] = ob; oV[h] = 65536 + nOE++; } key[v] = oV[h];
+  }
+  // Normals welded across UV seams (copies of one point share one normal).
+  const acc = new Float32Array((65536 + nOE) * 3);
+  for (let t = 0; t < tri.length; t += 3) {
+    const i0 = tri[t], i1 = tri[t + 1], i2 = tri[t + 2];
+    const ax = pos[i1 * 3] - pos[i0 * 3], ay = pos[i1 * 3 + 1] - pos[i0 * 3 + 1], az = pos[i1 * 3 + 2] - pos[i0 * 3 + 2];
+    const bx = pos[i2 * 3] - pos[i0 * 3], by = pos[i2 * 3 + 1] - pos[i0 * 3 + 1], bz = pos[i2 * 3 + 2] - pos[i0 * 3 + 2];
+    const fx = ay * bz - az * by, fy = az * bx - ax * bz, fz = ax * by - ay * bx;
+    for (let c = 0; c < 3; c++) { const k = key[tri[t + c]] * 3; acc[k] += fx; acc[k + 1] += fy; acc[k + 2] += fz; }
+  }
+  const nrm = new Float32Array(nv * 3);
+  for (let i = 0; i < nv; i++) { const k = key[i] * 3, l = Math.hypot(acc[k], acc[k + 1], acc[k + 2]) || 1; nrm[i * 3] = acc[k] / l; nrm[i * 3 + 1] = acc[k + 1] / l; nrm[i * 3 + 2] = acc[k + 2] / l; }
+  return { nv, pos, nrm, uv, si, sw, mid, amp, ao, cav: new Int8Array(nv), tri };
+}
+function atlasMesh() {
+  return { nv: D.nv, pos: dec(D.pos, Float32Array), nrm: dec(D.nrm, Int8Array), uv: dec(D.uv, Uint16Array), tangent: dec(D.tangent, Int8Array),
+    si: dec(D.skinIndex, Uint8Array), sw: dec(D.skinWeight, Uint8Array), mid: dec(D.mid, Uint16Array), amp: dec(D.amp, Uint8Array),
+    ao: dec(D.ao, Uint8Array), cav: dec(D.cav, Int8Array), tri: dec(D.index, Uint32Array) };
+}
+const T0 = performance.now();
+const M0 = PAINTED ? paintedMesh() : atlasMesh();
+const meshMs = performance.now() - T0;
+const nv = M0.nv, posArr = M0.pos, mid = M0.mid, amp = M0.amp, ao = M0.ao, cav = M0.cav;
 const geo = new THREE.BufferGeometry();
-const posArr = dec(D.pos, Float32Array);
 geo.setAttribute('position', new THREE.BufferAttribute(posArr, 3));
-geo.setAttribute('normal', new THREE.BufferAttribute(dec(D.nrm, Int8Array), 3, true));
-geo.setAttribute('skinIndex', new THREE.BufferAttribute(dec(D.skinIndex, Uint8Array), 4));
-geo.setAttribute('skinWeight', new THREE.BufferAttribute(dec(D.skinWeight, Uint8Array), 4, true));
-const mid = dec(D.mid, Uint16Array), amp = dec(D.amp, Uint8Array), ao = dec(D.ao, Uint8Array), cav = dec(D.cav, Int8Array);
+geo.setAttribute('normal', new THREE.BufferAttribute(M0.nrm, 3, !PAINTED));
+geo.setAttribute('skinIndex', new THREE.BufferAttribute(M0.si, 4));
+geo.setAttribute('skinWeight', new THREE.BufferAttribute(M0.sw, 4, !PAINTED));
 geo.setAttribute('mw', new THREE.BufferAttribute(amp, 1, true));
 geo.setAttribute('cav', new THREE.BufferAttribute(cav, 1, true));
 geo.setAttribute('mid', new THREE.BufferAttribute(new Float32Array(mid), 1));
-geo.setAttribute('uv', new THREE.BufferAttribute(dec(D.uv, Uint16Array), 2, true));
-geo.setAttribute('tangent', new THREE.BufferAttribute(dec(D.tangent, Int8Array), 4, true));
-// Painted model (paint.py): where each point lands in the four painted views, and how much each view counts.
-const PAINTED = !!D.paint;
-if (PAINTED) {
-  const puv = dec(D.paint.puv, Uint16Array), pa = new Uint16Array(nv * 4), pb = new Uint16Array(nv * 4);
-  for (let i = 0; i < nv; i++) for (let j = 0; j < 4; j++) { pa[i * 4 + j] = puv[i * 8 + j]; pb[i * 4 + j] = puv[i * 8 + 4 + j]; }
-  geo.setAttribute('puvA', new THREE.BufferAttribute(pa, 4, true));
-  geo.setAttribute('puvB', new THREE.BufferAttribute(pb, 4, true));
-  geo.setAttribute('pw', new THREE.BufferAttribute(dec(D.paint.pw, Uint8Array), 4, true));
-  geo.setAttribute('pc', new THREE.BufferAttribute(dec(D.paint.pc, Uint8Array), 3, true));
-}
-geo.setIndex(new THREE.BufferAttribute(dec(D.index, Uint32Array), 1));
+geo.setAttribute('uv', new THREE.BufferAttribute(M0.uv, 2, !PAINTED));
+if (!PAINTED) geo.setAttribute('tangent', new THREE.BufferAttribute(M0.tangent, 4, true));
+geo.setIndex(new THREE.BufferAttribute(M0.tri, 1));
 const NM = D.muscles.length, NA = D.atlas.length;
 const bulge = { value: new Array(NM).fill(0) };
 const colors = new Float32Array(nv * 3);
 geo.setAttribute('color', new THREE.BufferAttribute(colors, 3));
-// Detail textures baked from the muscle atlas (bake.py): muscle id, fibres/tendons/seams, and a normal map.
+// Textures. Painted: the paint, its relief, and which muscle part each texel is (paint.py).
+// Atlas: muscle id, fibres/tendons/seams, and a normal map (bake.py).
 const texLoader = new THREE.TextureLoader();
 function tex(url, nearest) {
   const t = texLoader.load(url);
@@ -206,63 +290,50 @@ function tex(url, nearest) {
 }
 const uState = { value: new Array(NA).fill(0) }, uDebug = { value: 0 };
 const mat = PAINTED
-  ? new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.8, metalness: 0, envMapIntensity: 0.25 })
+  ? new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.72, metalness: 0, envMapIntensity: 0.3, normalMap: tex('__PNORMAL__'), normalScale: new THREE.Vector2(1, -1) })
   : new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.62, metalness: 0, envMapIntensity: 0.5, normalMap: tex('__NORMAL__') });
-if (PAINTED) mat.defines = { PAINTED: '', USE_UV: '' };  // USE_UV: the muscle id still comes from the uv atlas
-if (PAINTED) renderer.toneMappingExposure = 0.74;  // the painting is light already
-const uDetail = { value: tex('__DETAIL__') }, uId = { value: tex('__ID__', true) }, uPaint = { value: PAINTED ? tex('__PAINT__') : null };
+if (PAINTED) { mat.defines = { PAINTED: '' }; renderer.toneMappingExposure = 0.74; }  // the painting is light already
+const uDetail = { value: PAINTED ? null : tex('__DETAIL__') }, uId = { value: tex(PAINTED ? '__LABEL__' : '__ID__', true) };
+const uAlbedo = { value: PAINTED ? tex('__ALBEDO__') : null };
 mat.onBeforeCompile = (sh) => {
-  sh.uniforms.uBulge = bulge; sh.uniforms.uState = uState; sh.uniforms.uDebug = uDebug; sh.uniforms.uDetail = uDetail; sh.uniforms.uId = uId; sh.uniforms.uPaint = uPaint;
+  Object.assign(sh.uniforms, { uBulge: bulge, uState, uDebug, uDetail, uId, uAlbedo });
   sh.vertexShader = sh.vertexShader
     .replace('#include <common>', `#include <common>\nattribute float mw;\nattribute float cav;\nattribute float mid;\nuniform float uBulge[${NM}];\nvarying float vCav;`)
-    .replace('#include <common>', `#include <common>
-      #ifdef PAINTED
-      attribute vec4 puvA; attribute vec4 puvB; attribute vec4 pw; attribute vec3 pc;
-      varying vec4 vPA; varying vec4 vPB; varying vec4 vPW; varying vec3 vPC;
-      #endif`)
     .replace('#include <begin_vertex>', `#include <begin_vertex>
       vCav = cav;
-      #ifdef PAINTED
-      vPA = puvA; vPB = puvB; vPW = pw; vPC = pc;
-      #endif
       // Constant volume: a shorter muscle gets thicker (set per muscle on the CPU).
       if (mid < ${NM}.0) transformed += objectNormal * mw * uBulge[int(mid + 0.5)];`);
   sh.fragmentShader = sh.fragmentShader
-    .replace('#include <common>', `#include <common>
-      #ifdef PAINTED
-      uniform sampler2D uPaint; varying vec4 vPA; varying vec4 vPB; varying vec4 vPW; varying vec3 vPC;
-      #endif
-      `)
-    .replace('#include <common>', `#include <common>\nuniform sampler2D uDetail;\nuniform sampler2D uId;\nuniform float uDebug;\nuniform float uState[${NA}];\nvarying float vCav;`)
+    .replace('#include <common>', `#include <common>\nuniform sampler2D uDetail;\nuniform sampler2D uId;\nuniform sampler2D uAlbedo;\nuniform float uDebug;\nuniform float uState[${NA}];\nvarying float vCav;`)
     .replace('#include <color_fragment>', `#include <color_fragment>
       {
-        vec4 det = texture2D(uDetail, vUv);
         int ii = int(floor(texture2D(uId, vUv).r * 255.0 + 0.5));
         float st = ii < ${NA} ? uState[ii] : -1.0;
+        vec3 dbg = vec3(0.0);
+        if (ii < ${NA}) { float h = fract(float(ii) * 0.618034); dbg = clamp(abs(mod(h * 6.0 + vec3(0.0, 4.0, 2.0), 6.0) - 3.0) - 1.0, 0.0, 1.0) * 0.8 + 0.1; }
+        #ifdef PAINTED
+        // The paint holds the form and light; the target is tinted red from the paint's own shading, as in the icons.
+        vec3 pcol = pow(texture2D(uAlbedo, vUv).rgb, vec3(2.2));
+        float lum = dot(pcol, vec3(0.2126, 0.7152, 0.0722));
+        vec3 red = vec3(1.0, 0.075, 0.03) * pow(lum, 0.85) * 2.1;
+        vec3 base = st > 1.5 ? mix(pcol, red, 0.5) : st > 0.5 ? red : pcol;
+        if (uDebug > 0.5 && ii < ${NA}) base = mix(pcol, dbg, 0.7);
+        diffuseColor.rgb = base * 0.82 * mix(1.0, vColor.r, 0.3);
+        #else
+        vec4 det = texture2D(uDetail, vUv);
         vec3 skin = vec3(0.42, 0.42, 0.41), mus = vec3(0.5, 0.495, 0.485), ten = vec3(0.74, 0.73, 0.7);
         vec3 hot = vec3(1.0, 0.13, 0.025), warm = vec3(0.92, 0.32, 0.12);
         vec3 base = st < -0.5 ? skin : st > 1.5 ? warm : st > 0.5 ? hot : mus;
-        if (uDebug > 0.5 && ii < ${NA}) { float h = fract(float(ii) * 0.618034); base = clamp(abs(mod(h * 6.0 + vec3(0.0, 4.0, 2.0), 6.0) - 3.0) - 1.0, 0.0, 1.0) * 0.8 + 0.1; }
+        if (uDebug > 0.5 && ii < ${NA}) base = dbg;
         float isM = st > -0.5 ? 1.0 - det.g : 0.0;
         base = mix(base, ten, det.g);
         base *= mix(1.0, 0.42 + 1.05 * det.r, isM);       // fibre streaks
         base *= 1.0 - 0.75 * det.b;                         // seams between muscles
         base *= clamp(1.0 - 0.8 * max(vCav, 0.0) + 0.3 * max(-vCav, 0.0), 0.4, 1.25);
         diffuseColor.rgb = base * vColor;                   // vColor: baked occlusion
-        #ifdef PAINTED
-        // The painting already holds the form and light: mix the four views, then tint the target.
-        vec3 ps = pow(texture2D(uPaint, vPA.xy).rgb, vec3(2.2)) * vPW.x + pow(texture2D(uPaint, vPA.zw).rgb, vec3(2.2)) * vPW.y
-                + pow(texture2D(uPaint, vPB.xy).rgb, vec3(2.2)) * vPW.z + pow(texture2D(uPaint, vPB.zw).rgb, vec3(2.2)) * vPW.w;
-        float sw = vPW.x + vPW.y + vPW.z + vPW.w;
-        vec3 pcol = (ps + pow(vPC, vec3(2.2)) * 0.03) / (sw + 0.03);
-        float lum = dot(pcol, vec3(0.2126, 0.7152, 0.0722));
-        vec3 red = vec3(1.0, 0.075, 0.03) * pow(lum, 0.85) * 2.1;
-        vec3 pb = st > 1.5 ? mix(pcol, red, 0.5) : st > 0.5 ? red : pcol;
-        if (uDebug > 0.5) pb = base;
-        diffuseColor.rgb = pb * 0.82 * mix(1.0, vColor.r, 0.3);
         #endif
       }`)
-      .replace('#include <emissivemap_fragment>', `#include <emissivemap_fragment>
+    .replace('#include <emissivemap_fragment>', `#include <emissivemap_fragment>
       #ifdef PAINTED
       totalEmissiveRadiance += diffuseColor.rgb * 0.22;   // keep the painted light; scene light adds only a little
       #endif`);
@@ -304,14 +375,30 @@ for (const [s, sx] of [['L', 1], ['R', -1]]) {
 }
 
 // ---------- Props ----------
-const steel = new THREE.MeshStandardMaterial({ color: 0xb9c3c6, metalness: 0.85, roughness: 0.28 });
-const ironM = new THREE.MeshStandardMaterial({ color: 0x1b2427, metalness: 0.35, roughness: 0.5 });
+// A gym hex dumbbell: rubber heads, chrome collars, a knurled steel handle. Sizes are the ones the grip checks use.
+const knurl = (() => {
+  const c = document.createElement('canvas'); c.width = c.height = 64; const g = c.getContext('2d');
+  g.fillStyle = '#808080'; g.fillRect(0, 0, 64, 64); g.strokeStyle = '#d8d8d8'; g.lineWidth = 3;
+  for (let i = -64; i < 128; i += 8) { g.beginPath(); g.moveTo(i, 0); g.lineTo(i + 64, 64); g.stroke(); g.beginPath(); g.moveTo(i + 64, 0); g.lineTo(i, 64); g.stroke(); }
+  const t = new THREE.CanvasTexture(c); t.wrapS = t.wrapT = THREE.RepeatWrapping; t.repeat.set(10, 3); return t;
+})();
+const steel = new THREE.MeshStandardMaterial({ color: 0xc9d0d3, metalness: 0.9, roughness: 0.32, bumpMap: knurl, bumpScale: 0.0006 });
+const chrome = new THREE.MeshStandardMaterial({ color: 0xe4e9eb, metalness: 1, roughness: 0.14 });
+const ironM = new THREE.MeshStandardMaterial({ color: 0x121416, metalness: 0, roughness: 0.75, envMapIntensity: 0.2 });
 function dumbbell(len = 0.15) {
   const g = new THREE.Group();
-  g.add(new THREE.Mesh(new THREE.CylinderGeometry(0.0155, 0.0155, len + 0.06, 20), steel));
-  for (const y of [-(len / 2 + 0.03), len / 2 + 0.03]) {
-    const p = new THREE.Mesh(new THREE.CylinderGeometry(0.058, 0.058, 0.05, 32), ironM); p.position.y = y; g.add(p);
-    const c = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.03, 0.06, 20), steel); c.position.y = y; g.add(c);
+  g.add(new THREE.Mesh(new THREE.CylinderGeometry(0.0155, 0.0155, len + 0.06, 24), steel));
+  for (const sgn of [-1, 1]) {
+    const y = sgn * (len / 2 + 0.03);
+    const head = new THREE.Mesh(new THREE.CylinderGeometry(0.058, 0.058, 0.05, 6), ironM); head.position.y = y; g.add(head);
+    for (const e of [-1, 1]) {   // bevelled rims on each face of the hex
+      const rim = new THREE.Mesh(new THREE.CylinderGeometry(0.052 + (e === sgn ? 0 : 0.006), 0.058, 0.004, 6), ironM);
+      rim.position.y = y + e * 0.027; if (e < 0) rim.rotation.x = Math.PI; g.add(rim);
+    }
+    const collar = new THREE.Mesh(new THREE.CylinderGeometry(0.024, 0.024, 0.016, 32), chrome);
+    collar.position.y = y - sgn * 0.031; g.add(collar);
+    const cap = new THREE.Mesh(new THREE.CylinderGeometry(0.02, 0.02, 0.006, 32), chrome);
+    cap.position.y = y + sgn * 0.0275; g.add(cap);
   }
   g.traverse(m => { if (m.isMesh) m.castShadow = true; });
   return g;
@@ -736,12 +823,19 @@ const views = { front: [0, 0.2, 3.3], side: [3.3, 0.15, 0], back: [0, 0.2, -3.3]
 for (const b of document.querySelectorAll('[data-view]')) b.addEventListener('click', () => {
   const t = controls.target, v = views[b.dataset.view]; flyTo([t.x + v[0], t.y + v[1], t.z + v[2]], [t.x, t.y, t.z]);
 });
-function resize() { const w = stageEl.clientWidth, h = stageEl.clientHeight; renderer.setSize(w, h, false); camera.aspect = w / Math.max(h, 1); camera.updateProjectionMatrix(); }
+function resize() {
+  const w = stageEl.clientWidth, h = stageEl.clientHeight; renderer.setSize(w, h, false); camera.aspect = w / Math.max(h, 1);
+  // Portrait (phones): widen the view so the move's framing keeps the width it has on a square stage.
+  camera.fov = camera.aspect < 1 ? 2 * Math.atan(Math.tan(15 * DEG) / camera.aspect) / DEG : 30;
+  camera.updateProjectionMatrix();
+}
 new ResizeObserver(resize).observe(stageEl); resize();
 window.__lab = { select: id => select(EX.find(e => e.id === id)).map(r => ({ ...r })), freeze: a => { frozen = a; }, ids: EX.map(e => e.id), look: (pos, target) => { camT = 1; camera.position.set(...pos); controls.target.set(...target); },
   parts: (names) => { uDebug.value = 0; D.atlas.forEach((a, i) => { uState.value[i] = names.includes(a.name) ? 1 : 0; }); },
   debug: (on) => { uDebug.value = on ? 1 : 0; },
   highlight: (cats) => { D.atlas.forEach((a, i) => { uState.value[i] = a.kind === 'tendon' ? 0 : cats.includes(a.cat) ? 1 : 0; }); },
+  perf: () => ({ phone: PHONE, pixelRatio, frameMs: +perf.ema.toFixed(1), qualitySteps: perf.steps, meshMs: Math.round(meshMs),
+    vertices: nv, triangles: geo.index.count / 3, textures: PAINTED ? '3 x 2048 px' : '3 x 2048 px (atlas)' }),
   bulge: () => D.muscles.map((m, i) => [m.name + ' ' + m.side, +(bulge.value[i] * 1000).toFixed(2)]) };
 select(EX[0]);
 
@@ -757,8 +851,12 @@ function phaseAt(t) {
   return { i: 0, lab: '', step: 0, left: 0, a: 0, frac: 0, cycle: 0 };
 }
 let prev = performance.now(), lastStep = -1;
+const perf = { frames: 0, ema: 16, slow: 0, steps: 0 };
 function frame(now) {
-  const dt = Math.min((now - prev) / 1000, 0.05); prev = now;
+  const raw = (now - prev) / 1000, dt = Math.min(raw, 0.05); prev = now;
+  // Adaptive quality: if frames average over 28 ms for 2 s, step the pixel ratio down (to 1 at least).
+  perf.frames++; perf.ema = perf.ema * 0.95 + raw * 1000 * 0.05; perf.slow = perf.ema > 28 ? perf.slow + raw : 0;
+  if (perf.slow > 2 && pixelRatio > 1) { pixelRatio = Math.max(1, pixelRatio - 0.5); renderer.setPixelRatio(pixelRatio); resize(); perf.slow = 0; perf.steps++; }
   if (playing) clock += dt * speed;
   const ph = frozen != null ? { i: 0, lab: 'Hold', step: 0, left: 0, a: frozen, frac: 1, cycle: 0 } : phaseAt(clock);
   poseAt(ph.a);

@@ -16,16 +16,17 @@
 
 ## Painted model (`paint.py`): the icons' look on the 3D body
 
-The body icons look real because they are paintings. Drawing muscle shapes on the mesh (steps 2 to 6) never matched them. So the model now wears a painting in the icons' style:
+The body icons look real because they are paintings. Drawing muscle shapes on the mesh (steps 2 to 6) never matched them. So the model wears a painting in the icons' style, baked into ordinary textures:
 
-1. `paint.py views` renders the smooth body (`gym.py` with `RELIEF=0`) as four grey orthographic views in one sheet.
-2. An image model repaints the sheet in the icons' style and keeps every outline in place (`paint/prompt.txt`; the painting is `paint/painted-2026-10-12.webp`, made in the owner's Figma Weave).
-3. `paint.py project` aligns each painted view to our outline (affine ECC on the silhouettes), then stores for every vertex where it lands in each view (`puv`), how much that view counts (`pw` = facing³, zero where hidden or within 15 px of an outline or occlusion edge, because paintings draw dark outlines there), and a fallback colour for points no view sees (about 30 %: under the arms and between the legs; filled from neighbours and smoothed).
-4. The page samples the painting per pixel from those, so the paint keeps its full detail and moves with the skin. The muscle ID texture still says which part to light: the target is tinted red from the paint's own shading, as in the icons. The painting already holds the light, so the scene light adds only a little.
+1. **Painting.** `paint.py views` renders the smooth body as grey orthographic views in one sheet (`paint/sheets.json` says the pose, the views and the layout). An image model repaints the sheet in the icons' style and keeps every outline in place (`paint/prompt.txt`; the painting is `paint/painted-2026-10-12.webp`, made with Nano Banana Pro in the owner's Figma Weave).
+2. **UV layout.** xatlas cuts the 25k-point base mesh into 275 charts and packs them for 2048 px. The page and `glb.py` subdivide the mesh once on the Phong surface, exactly as `paint.subdivide()` does, so texture and surface agree. Copies that a UV seam makes share one normal (a weld key), so seams do not show in the light.
+3. **Bake.** For every texel, each painted view that sees it adds its colour, weighted by facing³ and faded out within 15 px of an outline or occlusion edge (paintings draw dark outlines there). Each view is first aligned to our outline (affine ECC on the silhouettes; the overlap must be 0.9 or more, or the build stops). Outputs:
+   - `albedo.webp`: the paint. Points no view sees (about 30 %: under the arms, between the legs) take colour diffused over the surface from their neighbours, and where the paint is thin, fibre strokes in the paint's own colour are drawn along each muscle's fibre direction (line integral convolution, with sign-free tracing; strokes cut short at a chart edge are left out because they read as noise).
+   - `normal.webp`: relief from the paint (a high-pass of its brightness used as height, 1.5 mm for a full step), glTF convention, so the scene light moves over the painted bellies and fibres.
+   - `label.png`: the muscle part of each texel, for the red highlight. It starts from our atlas and is moved onto the painted muscle edges by a watershed on each painting (only the sure middle of each atlas part seeds it; bare skin of the head, hands and feet seeds its own region; islands under 300 px go back to the atlas; a 7-texel majority filter removes specks). Only a clear view (weight above 0.25) moves a border.
+4. **Page.** The page tints the target red from the paint's own shading (as in the icons) and helpers half way. The painting already holds the light, so the scene light adds only a little.
 
-Orthographic projection is affine, so per-vertex panel coordinates interpolate exactly across a triangle.
-
-Limits: the painted muscle borders and our atlas borders do not match exactly, so a red highlight can sit a little off the painted muscle. Hidden areas are plain colour. A posed area that no view saw well (the side of the chest in a lateral raise) is softer than the rest.
+**More paintings.** `paint/sheets.json` takes more sheets (another pose and other views); `build` blends them all. A sheet with the arms raised seen from four low three-quarter views would cut the badly seen surface from 21 % to 7 % (measured). It was not painted: the owner's Weave workspace allows 2 free model runs, both used (2026-10-12); more runs need a paid Weave plan.
 
 ## Holding the weights
 
@@ -81,12 +82,11 @@ cd app
 BASE_CACHE=/tmp/base.npz python3 -I tool/motion/export.py /tmp/mh/makehuman/data /tmp/body.json   # rigged body, about 15 s
 python3 -I tool/motion/gym.py /tmp/base.npz /tmp/gym.json                                         # gym model, about 15 s
 python3 -I tool/motion/bake.py /tmp/gym-tex                                                       # textures, about 20 s
-RELIEF=0 python3 -I tool/motion/gym.py /tmp/base.npz /tmp/gym-flat.json                         # smooth body for painting
-python3 -I tool/motion/paint.py views /tmp/gym-flat.json /tmp/gym-tex                             # masks (+ sheet_in.png for a new painting)
-python3 -I tool/motion/paint.py project /tmp/gym-flat.json tool/motion/paint/painted-2026-10-12.webp /tmp/gym-tex /tmp/gym-paint.json
-python3 -I tool/motion/build.py /tmp/gym-paint.json /tmp/gym-tex /tmp/motion-lab.html             # painted page, 12.4 MB
-python3 -I tool/motion/build.py /tmp/gym.json /tmp/gym-tex-unpainted /tmp/motion-lab-atlas.html    # atlas-only page (a texdir without paint.webp)
-python3 -I tool/motion/glb.py /tmp/gym.json /tmp/gym-tex /tmp/reparc-gym-model.glb                # portable .glb, 11.6 MB
+python3 -I tool/motion/paint.py build /tmp/base.npz /tmp/gym.json tool/motion/paint/sheets.json /tmp/paint-out   # painted model + textures, about 90 s
+python3 -I tool/motion/build.py /tmp/paint-out/model.json /tmp/paint-out /tmp/motion-lab.html     # painted page, 2.7 MB
+python3 -I tool/motion/glb.py /tmp/paint-out/model.json /tmp/paint-out /tmp/reparc-gym-model.glb   # painted .glb, 7.8 MB
+python3 -I tool/motion/build.py /tmp/gym.json /tmp/gym-tex /tmp/motion-lab-atlas.html            # older atlas-only page
+# A new painting: python3 -I tool/motion/paint.py views /tmp/base.npz /tmp/gym.json tool/motion/paint/sheets.json 0 /tmp/sheet_in.png
 node tool/motion/check.js /tmp/motion-lab.html /tmp/motion-shots           # form checks + screenshots
 ```
 
@@ -99,6 +99,7 @@ To update the live demo, publish `/tmp/motion-lab.html` with the Artifact tool a
 - Poses are set by hand as joint angles (minutes for each move); the checks catch mistakes. Building poses from the library's start and end photos with a pose-estimation model is a possible next step, not started.
 - Fibre lines are drawn by the shader along each muscle's set direction; they are an illustration, not traced fibres.
 - Deep muscles (rhomboids, iliopsoas, rotator cuff under the deltoid) are not drawn: the model shows the surface layer.
-- The model is about 103,800 vertices with 2048 px textures and a 4096 px painting (12.4 MB page). The .glb does not carry the painting yet. Phone frame time is not measured yet.
-- Where a triangle switches chart (shoulder, hip) the texture can look slightly ragged.
+- Size: the page is 2.7 MB (a 1.75 MB base mesh and three 2048 px textures); in the browser the mesh is 112,292 points and 202,968 triangles after subdivision. Building it takes about 130 ms on a desktop and about 470 ms with the CPU slowed 4× (Pixel 7 emulation). Phones get a pixel ratio of at most 1.5 and a 1024 px shadow map, and the page steps the pixel ratio down to 1 if frames average over 28 ms for 2 s. `__lab.perf()` reports all of this. **Not measured:** frame rate on a real phone (the cloud browser draws in software, so its frame times say nothing about a phone GPU).
+- Hidden areas (sides of the chest under the arms, armpits, inner thighs) carry diffused paint with drawn fibre strokes, not real painting. They are softer than the rest; a second painting fixes this (see "More paintings").
+- The red highlight follows the painted edges where a view sees the muscle clearly; elsewhere it uses our atlas, which can sit a little off the painted muscle.
 - Fingers close as one grip; the thumb is approximate.
