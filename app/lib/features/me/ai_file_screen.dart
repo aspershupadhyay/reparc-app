@@ -36,7 +36,8 @@ class AiFileScreen extends ConsumerStatefulWidget {
 }
 
 class _AiFileScreenState extends ConsumerState<AiFileScreen> {
-  final _scopes = {...DataControls.allScopes};
+  // Routes show where the user lives and trains, so they start off.
+  final _scopes = {...DataControls.allScopes}..remove('activity');
   bool _busy = false;
 
   Future<void> _export() async {
@@ -124,6 +125,12 @@ class _AiFileScreenState extends ConsumerState<AiFileScreen> {
                 scope('workout', LucideIcons.dumbbell, 'Workouts', 'Sessions, sets, exercises, and your roadmap'),
                 scope('meal', LucideIcons.utensils, 'Meals', 'Foods, amounts, and nutrients'),
                 scope('body', LucideIcons.personStanding, 'Body and goals', 'Profile, targets, and weight'),
+                scope(
+                  'activity',
+                  LucideIcons.route,
+                  'Runs, walks, and rides',
+                  'GPS routes: where you went. Off unless you turn it on',
+                ),
               ],
             ),
           ),

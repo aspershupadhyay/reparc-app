@@ -2,6 +2,7 @@ import 'package:drift/drift.dart';
 import 'package:drift_flutter/drift_flutter.dart';
 
 import '../domain/roadmap.dart';
+import '../domain/track.dart';
 import 'models.dart';
 
 part 'database.g.dart';
@@ -227,6 +228,57 @@ class HealthWrites extends Table {
   Set<Column<Object>> get primaryKey => {recordId, kind};
 }
 
+/// A GPS run, walk, or ride (handbook 4.14). Added in v7.
+///
+/// Times work like a workout session's: elapsed time comes from stored
+/// instants, so a restart loses nothing. The summary is worked out from the
+/// points when the activity ends; it is null while it records.
+@DataClassName('GpsActivity')
+class Activities extends Table with RecordColumns {
+  TextColumn get kind => textEnum<ActivityKind>()();
+  TextColumn get name => text().withLength(min: 1, max: 120)();
+  TextColumn get status => textEnum<ActivityStatus>()();
+  DateTimeColumn get startedAt => dateTime()();
+  DateTimeColumn get endedAt => dateTime().nullable()();
+
+  /// Total paused time before the current pause, in milliseconds.
+  IntColumn get pausedMs => integer().withDefault(const Constant(0))();
+  DateTimeColumn get pausedAt => dateTime().nullable()();
+
+  /// The points' segment now: one more after each pause.
+  IntColumn get segment => integer().withDefault(const Constant(0))();
+  IntColumn get utcOffsetMinutes => integer()();
+  TextColumn get timeZoneName => text()();
+
+  /// Metres.
+  RealColumn get distanceM => real().nullable()();
+  IntColumn get movingSec => integer().nullable()();
+
+  /// Metres climbed, an estimate from GPS altitude.
+  RealColumn get elevationGainM => real().nullable()();
+
+  /// Metres per second over at least 10 seconds.
+  RealColumn get maxSpeed => real().nullable()();
+  TextColumn get note => text().nullable()();
+}
+
+/// The GPS fixes of an activity, as the phone gave them. Filtering and
+/// smoothing happen when the numbers are worked out, so a better rule can
+/// recompute old activities. Added in v7.
+class ActivityPoints extends Table {
+  IntColumn get id => integer().autoIncrement()();
+  TextColumn get activityId => text().references(Activities, #id, onDelete: KeyAction.cascade)();
+  DateTimeColumn get at => dateTime()();
+  RealColumn get lat => real()();
+  RealColumn get lon => real()();
+
+  /// Horizontal accuracy in metres.
+  RealColumn get accuracy => real()();
+  RealColumn get altitude => real().nullable()();
+  RealColumn get altitudeAccuracy => real().nullable()();
+  IntColumn get segment => integer()();
+}
+
 class Settings extends Table {
   TextColumn get key => text()();
   TextColumn get value => text()();
@@ -258,6 +310,8 @@ const _defaultKinds = [
     Settings,
     AiProposals,
     HealthWrites,
+    Activities,
+    ActivityPoints,
   ],
 )
 class AppDatabase extends _$AppDatabase {
@@ -281,7 +335,7 @@ class AppDatabase extends _$AppDatabase {
   ''');
 
   @override
-  int get schemaVersion => 6;
+  int get schemaVersion => 7;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -323,6 +377,11 @@ class AppDatabase extends _$AppDatabase {
         await m.addColumn(setEntries, setEntries.targetSec);
         await moveTargetTimes();
       }
+      // v6 -> v7: GPS activities and their points.
+      if (from < 7) {
+        await m.createTable(activities);
+        await m.createTable(activityPoints);
+      }
     },
     beforeOpen: (details) async {
       await customStatement('PRAGMA foreign_keys = ON');
@@ -344,6 +403,8 @@ class AppDatabase extends _$AppDatabase {
       'CREATE INDEX IF NOT EXISTS idx_workout_sessions_status ON workout_sessions (status)',
       'CREATE INDEX IF NOT EXISTS idx_meal_entries_day ON meal_entries (day, created_at)',
       'CREATE INDEX IF NOT EXISTS idx_meal_entries_created ON meal_entries (created_at)',
+      'CREATE INDEX IF NOT EXISTS idx_activity_points_activity ON activity_points (activity_id, at)',
+      'CREATE INDEX IF NOT EXISTS idx_activities_started ON activities (started_at)',
     ]) {
       await customStatement(sql);
     }

@@ -32,6 +32,11 @@ class PrivacyScreen extends StatelessWidget {
             'Live steps, if you turn it on, reads the phone\'s step sensor while RepArc is open and saves nothing.',
       ),
       (
+        LucideIcons.mapPin,
+        'GPS runs, walks, and rides: location is used only while an activity records, with a notification showing. '
+            'Routes stay on this phone. When a map shows, its images come from MapTiler, which sees the map area on screen.',
+      ),
+      (
         LucideIcons.sparkles,
         'AI connections are off until you turn one on, for a time you choose. An AI app then gets answers only from '
             'the data types you switched on. The AI provider receives those answers. AI plans are saved only if you '

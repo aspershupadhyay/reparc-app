@@ -95,7 +95,11 @@ jobs:
           fi
       # One build gives the full APK and one APK per processor type, all with
       # the same version code so any of them can update any other.
-      - run: flutter build apk --release --split-per-abi -Pforce-version-code-ignoring-abi=true
+      # MAPTILER_KEY: map tiles for GPS activities (handbook 4.14). Without
+      # the secret, routes are drawn without a map and no tile is fetched.
+      - run: flutter build apk --release --split-per-abi -Pforce-version-code-ignoring-abi=true --dart-define=MAPTILER_KEY=$MAPTILER_KEY
+        env:
+          MAPTILER_KEY: ${{ secrets.MAPTILER_KEY }}
       - name: Name the APKs
         run: |
           out=build/app/outputs/flutter-apk
@@ -125,12 +129,14 @@ jobs:
       # debug-signed bundle, so it is only made with the upload key.
       - name: Google Play App Bundle
         id: aab
+        env:
+          MAPTILER_KEY: ${{ secrets.MAPTILER_KEY }}
         run: |
           if [ ! -f android/key.properties ]; then
             echo "::warning::No release key secrets: no Play bundle was made."
             exit 0
           fi
-          flutter build appbundle --release --dart-define=REPARC_STORE=play
+          flutter build appbundle --release --dart-define=REPARC_STORE=play --dart-define=MAPTILER_KEY=$MAPTILER_KEY
           m=$(find build/app/intermediates -path '*release*' -name AndroidManifest.xml -path '*merged_manifest*' | head -1)
           if grep -q 'REQUEST_INSTALL_PACKAGES' "$m"; then
             echo "::error::The Play bundle still asks to install packages."
@@ -163,7 +169,9 @@ jobs:
           flutter-version: ${{ env.FLUTTER_VERSION }}
           cache: true
       - run: flutter pub get --enforce-lockfile
-      - run: flutter build ios --release --no-codesign
+      - run: flutter build ios --release --no-codesign --dart-define=MAPTILER_KEY=$MAPTILER_KEY
+        env:
+          MAPTILER_KEY: ${{ secrets.MAPTILER_KEY }}
       - name: Ad-hoc sign with entitlements and package the IPA
         run: |
           app=build/ios/iphoneos/Runner.app

@@ -13,7 +13,10 @@ import 'helpers.dart';
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
+  late FakeMotion motion;
+
   Future<(ProviderContainer, FakeHealth, FakeStepSensor)> setUpLive({required bool live}) async {
+    motion = FakeMotion();
     final db = memoryDb();
     addTearDown(db.close);
     final settings = SettingsRepository(db);
@@ -30,6 +33,7 @@ void main() {
         clockProvider.overrideWithValue(() => DateTime(2026, 3, 2, 9)),
         healthSourceProvider.overrideWithValue(health),
         stepSensorProvider.overrideWithValue(sensor),
+        motionSourceProvider.overrideWithValue(motion),
       ],
     );
     addTearDown(c.dispose);
@@ -66,15 +70,43 @@ void main() {
     await pumpEventQueue();
     expect(c.read(liveStepsProvider).steps, 1025, reason: '1010 from the store + 15 new steps');
 
-    // A phone restart resets the sensor; counting goes on from there.
+    // A phone restart resets the sensor to 0; the steps since then count.
     sensor.controller.add(3);
     await pumpEventQueue();
+    expect(c.read(liveStepsProvider).steps, 1028);
     sensor.controller.add(10);
     await pumpEventQueue();
-    expect(c.read(liveStepsProvider).steps, 1025, reason: '1010 + 7 is still below 1025');
-    sensor.controller.add(30);
+    expect(c.read(liveStepsProvider).steps, 1035);
+  });
+
+  test('steps are not added in a vehicle or on a bike', () async {
+    final (c, _, sensor) = await setUpLive(live: true);
+    sensor.controller.add(100);
     await pumpEventQueue();
-    expect(c.read(liveStepsProvider).steps, 1037, reason: '1010 + 27 since the restart');
+    sensor.controller.add(150);
+    await pumpEventQueue();
+    expect(c.read(liveStepsProvider).steps, 1050);
+
+    motion.controller.add(Motion.vehicle);
+    await pumpEventQueue();
+    expect(c.read(liveStepsProvider).held, isTrue);
+    // 400 "steps" from a bumpy auto-rickshaw ride.
+    sensor.controller.add(550);
+    await pumpEventQueue();
+    expect(c.read(liveStepsProvider).steps, 1050);
+
+    motion.controller.add(Motion.onFoot);
+    await pumpEventQueue();
+    sensor.controller.add(570);
+    await pumpEventQueue();
+    expect(c.read(liveStepsProvider).steps, 1070, reason: 'Walking again: only the new 20 steps');
+    expect(c.read(liveStepsProvider).held, isFalse);
+
+    motion.controller.add(Motion.bicycle);
+    await pumpEventQueue();
+    sensor.controller.add(700);
+    await pumpEventQueue();
+    expect(c.read(liveStepsProvider).steps, 1070);
   });
 
   test('with Live steps off the sensor is not used', () async {

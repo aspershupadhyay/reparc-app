@@ -238,7 +238,8 @@ class _HealthRow extends ConsumerWidget {
     final s = ref.watch(currentSettingsProvider);
     final v = ref.watch(healthTodayProvider).value;
     // Steps count up live while the phone's sensor runs (Live steps).
-    final steps = ref.watch(liveStepsProvider).steps ?? v?.steps;
+    final live = ref.watch(liveStepsProvider);
+    final steps = live.steps ?? v?.steps;
     final distance = fmtDistance(v?.distance, s.distanceUnit);
     final tiles = [
       if (s.health.contains(HealthFeature.steps.name))
@@ -247,6 +248,7 @@ class _HealthRow extends ConsumerWidget {
           label: 'Steps',
           value: steps == null ? '–' : NumberFormat.decimalPattern().format(steps),
           caption: switch ((steps, distance)) {
+            _ when live.held => 'held: in a vehicle',
             (null, null) => 'No data',
             (_, final d?) => 'today · $d',
             _ => 'today',

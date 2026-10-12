@@ -9298,6 +9298,1592 @@ class HealthWritesCompanion extends UpdateCompanion<HealthWrite> {
   }
 }
 
+class $ActivitiesTable extends Activities
+    with TableInfo<$ActivitiesTable, GpsActivity> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $ActivitiesTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _createdAtMeta = const VerificationMeta(
+    'createdAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> createdAt = GeneratedColumn<DateTime>(
+    'created_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _updatedAtMeta = const VerificationMeta(
+    'updatedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> updatedAt = GeneratedColumn<DateTime>(
+    'updated_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  @override
+  late final GeneratedColumnWithTypeConverter<ActivityKind, String> kind =
+      GeneratedColumn<String>(
+        'kind',
+        aliasedName,
+        false,
+        type: DriftSqlType.string,
+        requiredDuringInsert: true,
+      ).withConverter<ActivityKind>($ActivitiesTable.$converterkind);
+  static const VerificationMeta _nameMeta = const VerificationMeta('name');
+  @override
+  late final GeneratedColumn<String> name = GeneratedColumn<String>(
+    'name',
+    aliasedName,
+    false,
+    additionalChecks: GeneratedColumn.checkTextLength(
+      minTextLength: 1,
+      maxTextLength: 120,
+    ),
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  @override
+  late final GeneratedColumnWithTypeConverter<ActivityStatus, String> status =
+      GeneratedColumn<String>(
+        'status',
+        aliasedName,
+        false,
+        type: DriftSqlType.string,
+        requiredDuringInsert: true,
+      ).withConverter<ActivityStatus>($ActivitiesTable.$converterstatus);
+  static const VerificationMeta _startedAtMeta = const VerificationMeta(
+    'startedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> startedAt = GeneratedColumn<DateTime>(
+    'started_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _endedAtMeta = const VerificationMeta(
+    'endedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> endedAt = GeneratedColumn<DateTime>(
+    'ended_at',
+    aliasedName,
+    true,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _pausedMsMeta = const VerificationMeta(
+    'pausedMs',
+  );
+  @override
+  late final GeneratedColumn<int> pausedMs = GeneratedColumn<int>(
+    'paused_ms',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0),
+  );
+  static const VerificationMeta _pausedAtMeta = const VerificationMeta(
+    'pausedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> pausedAt = GeneratedColumn<DateTime>(
+    'paused_at',
+    aliasedName,
+    true,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _segmentMeta = const VerificationMeta(
+    'segment',
+  );
+  @override
+  late final GeneratedColumn<int> segment = GeneratedColumn<int>(
+    'segment',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0),
+  );
+  static const VerificationMeta _utcOffsetMinutesMeta = const VerificationMeta(
+    'utcOffsetMinutes',
+  );
+  @override
+  late final GeneratedColumn<int> utcOffsetMinutes = GeneratedColumn<int>(
+    'utc_offset_minutes',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _timeZoneNameMeta = const VerificationMeta(
+    'timeZoneName',
+  );
+  @override
+  late final GeneratedColumn<String> timeZoneName = GeneratedColumn<String>(
+    'time_zone_name',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _distanceMMeta = const VerificationMeta(
+    'distanceM',
+  );
+  @override
+  late final GeneratedColumn<double> distanceM = GeneratedColumn<double>(
+    'distance_m',
+    aliasedName,
+    true,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _movingSecMeta = const VerificationMeta(
+    'movingSec',
+  );
+  @override
+  late final GeneratedColumn<int> movingSec = GeneratedColumn<int>(
+    'moving_sec',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _elevationGainMMeta = const VerificationMeta(
+    'elevationGainM',
+  );
+  @override
+  late final GeneratedColumn<double> elevationGainM = GeneratedColumn<double>(
+    'elevation_gain_m',
+    aliasedName,
+    true,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _maxSpeedMeta = const VerificationMeta(
+    'maxSpeed',
+  );
+  @override
+  late final GeneratedColumn<double> maxSpeed = GeneratedColumn<double>(
+    'max_speed',
+    aliasedName,
+    true,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _noteMeta = const VerificationMeta('note');
+  @override
+  late final GeneratedColumn<String> note = GeneratedColumn<String>(
+    'note',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    createdAt,
+    updatedAt,
+    kind,
+    name,
+    status,
+    startedAt,
+    endedAt,
+    pausedMs,
+    pausedAt,
+    segment,
+    utcOffsetMinutes,
+    timeZoneName,
+    distanceM,
+    movingSec,
+    elevationGainM,
+    maxSpeed,
+    note,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'activities';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<GpsActivity> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('created_at')) {
+      context.handle(
+        _createdAtMeta,
+        createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_createdAtMeta);
+    }
+    if (data.containsKey('updated_at')) {
+      context.handle(
+        _updatedAtMeta,
+        updatedAt.isAcceptableOrUnknown(data['updated_at']!, _updatedAtMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_updatedAtMeta);
+    }
+    if (data.containsKey('name')) {
+      context.handle(
+        _nameMeta,
+        name.isAcceptableOrUnknown(data['name']!, _nameMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_nameMeta);
+    }
+    if (data.containsKey('started_at')) {
+      context.handle(
+        _startedAtMeta,
+        startedAt.isAcceptableOrUnknown(data['started_at']!, _startedAtMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_startedAtMeta);
+    }
+    if (data.containsKey('ended_at')) {
+      context.handle(
+        _endedAtMeta,
+        endedAt.isAcceptableOrUnknown(data['ended_at']!, _endedAtMeta),
+      );
+    }
+    if (data.containsKey('paused_ms')) {
+      context.handle(
+        _pausedMsMeta,
+        pausedMs.isAcceptableOrUnknown(data['paused_ms']!, _pausedMsMeta),
+      );
+    }
+    if (data.containsKey('paused_at')) {
+      context.handle(
+        _pausedAtMeta,
+        pausedAt.isAcceptableOrUnknown(data['paused_at']!, _pausedAtMeta),
+      );
+    }
+    if (data.containsKey('segment')) {
+      context.handle(
+        _segmentMeta,
+        segment.isAcceptableOrUnknown(data['segment']!, _segmentMeta),
+      );
+    }
+    if (data.containsKey('utc_offset_minutes')) {
+      context.handle(
+        _utcOffsetMinutesMeta,
+        utcOffsetMinutes.isAcceptableOrUnknown(
+          data['utc_offset_minutes']!,
+          _utcOffsetMinutesMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_utcOffsetMinutesMeta);
+    }
+    if (data.containsKey('time_zone_name')) {
+      context.handle(
+        _timeZoneNameMeta,
+        timeZoneName.isAcceptableOrUnknown(
+          data['time_zone_name']!,
+          _timeZoneNameMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_timeZoneNameMeta);
+    }
+    if (data.containsKey('distance_m')) {
+      context.handle(
+        _distanceMMeta,
+        distanceM.isAcceptableOrUnknown(data['distance_m']!, _distanceMMeta),
+      );
+    }
+    if (data.containsKey('moving_sec')) {
+      context.handle(
+        _movingSecMeta,
+        movingSec.isAcceptableOrUnknown(data['moving_sec']!, _movingSecMeta),
+      );
+    }
+    if (data.containsKey('elevation_gain_m')) {
+      context.handle(
+        _elevationGainMMeta,
+        elevationGainM.isAcceptableOrUnknown(
+          data['elevation_gain_m']!,
+          _elevationGainMMeta,
+        ),
+      );
+    }
+    if (data.containsKey('max_speed')) {
+      context.handle(
+        _maxSpeedMeta,
+        maxSpeed.isAcceptableOrUnknown(data['max_speed']!, _maxSpeedMeta),
+      );
+    }
+    if (data.containsKey('note')) {
+      context.handle(
+        _noteMeta,
+        note.isAcceptableOrUnknown(data['note']!, _noteMeta),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  GpsActivity map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return GpsActivity(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}id'],
+      )!,
+      createdAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}created_at'],
+      )!,
+      updatedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}updated_at'],
+      )!,
+      kind: $ActivitiesTable.$converterkind.fromSql(
+        attachedDatabase.typeMapping.read(
+          DriftSqlType.string,
+          data['${effectivePrefix}kind'],
+        )!,
+      ),
+      name: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}name'],
+      )!,
+      status: $ActivitiesTable.$converterstatus.fromSql(
+        attachedDatabase.typeMapping.read(
+          DriftSqlType.string,
+          data['${effectivePrefix}status'],
+        )!,
+      ),
+      startedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}started_at'],
+      )!,
+      endedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}ended_at'],
+      ),
+      pausedMs: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}paused_ms'],
+      )!,
+      pausedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}paused_at'],
+      ),
+      segment: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}segment'],
+      )!,
+      utcOffsetMinutes: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}utc_offset_minutes'],
+      )!,
+      timeZoneName: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}time_zone_name'],
+      )!,
+      distanceM: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}distance_m'],
+      ),
+      movingSec: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}moving_sec'],
+      ),
+      elevationGainM: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}elevation_gain_m'],
+      ),
+      maxSpeed: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}max_speed'],
+      ),
+      note: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}note'],
+      ),
+    );
+  }
+
+  @override
+  $ActivitiesTable createAlias(String alias) {
+    return $ActivitiesTable(attachedDatabase, alias);
+  }
+
+  static JsonTypeConverter2<ActivityKind, String, String> $converterkind =
+      const EnumNameConverter<ActivityKind>(ActivityKind.values);
+  static JsonTypeConverter2<ActivityStatus, String, String> $converterstatus =
+      const EnumNameConverter<ActivityStatus>(ActivityStatus.values);
+}
+
+class GpsActivity extends DataClass implements Insertable<GpsActivity> {
+  final String id;
+  final DateTime createdAt;
+  final DateTime updatedAt;
+  final ActivityKind kind;
+  final String name;
+  final ActivityStatus status;
+  final DateTime startedAt;
+  final DateTime? endedAt;
+
+  /// Total paused time before the current pause, in milliseconds.
+  final int pausedMs;
+  final DateTime? pausedAt;
+
+  /// The points' segment now: one more after each pause.
+  final int segment;
+  final int utcOffsetMinutes;
+  final String timeZoneName;
+
+  /// Metres.
+  final double? distanceM;
+  final int? movingSec;
+
+  /// Metres climbed, an estimate from GPS altitude.
+  final double? elevationGainM;
+
+  /// Metres per second over at least 10 seconds.
+  final double? maxSpeed;
+  final String? note;
+  const GpsActivity({
+    required this.id,
+    required this.createdAt,
+    required this.updatedAt,
+    required this.kind,
+    required this.name,
+    required this.status,
+    required this.startedAt,
+    this.endedAt,
+    required this.pausedMs,
+    this.pausedAt,
+    required this.segment,
+    required this.utcOffsetMinutes,
+    required this.timeZoneName,
+    this.distanceM,
+    this.movingSec,
+    this.elevationGainM,
+    this.maxSpeed,
+    this.note,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['created_at'] = Variable<DateTime>(createdAt);
+    map['updated_at'] = Variable<DateTime>(updatedAt);
+    {
+      map['kind'] = Variable<String>(
+        $ActivitiesTable.$converterkind.toSql(kind),
+      );
+    }
+    map['name'] = Variable<String>(name);
+    {
+      map['status'] = Variable<String>(
+        $ActivitiesTable.$converterstatus.toSql(status),
+      );
+    }
+    map['started_at'] = Variable<DateTime>(startedAt);
+    if (!nullToAbsent || endedAt != null) {
+      map['ended_at'] = Variable<DateTime>(endedAt);
+    }
+    map['paused_ms'] = Variable<int>(pausedMs);
+    if (!nullToAbsent || pausedAt != null) {
+      map['paused_at'] = Variable<DateTime>(pausedAt);
+    }
+    map['segment'] = Variable<int>(segment);
+    map['utc_offset_minutes'] = Variable<int>(utcOffsetMinutes);
+    map['time_zone_name'] = Variable<String>(timeZoneName);
+    if (!nullToAbsent || distanceM != null) {
+      map['distance_m'] = Variable<double>(distanceM);
+    }
+    if (!nullToAbsent || movingSec != null) {
+      map['moving_sec'] = Variable<int>(movingSec);
+    }
+    if (!nullToAbsent || elevationGainM != null) {
+      map['elevation_gain_m'] = Variable<double>(elevationGainM);
+    }
+    if (!nullToAbsent || maxSpeed != null) {
+      map['max_speed'] = Variable<double>(maxSpeed);
+    }
+    if (!nullToAbsent || note != null) {
+      map['note'] = Variable<String>(note);
+    }
+    return map;
+  }
+
+  ActivitiesCompanion toCompanion(bool nullToAbsent) {
+    return ActivitiesCompanion(
+      id: Value(id),
+      createdAt: Value(createdAt),
+      updatedAt: Value(updatedAt),
+      kind: Value(kind),
+      name: Value(name),
+      status: Value(status),
+      startedAt: Value(startedAt),
+      endedAt: endedAt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(endedAt),
+      pausedMs: Value(pausedMs),
+      pausedAt: pausedAt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(pausedAt),
+      segment: Value(segment),
+      utcOffsetMinutes: Value(utcOffsetMinutes),
+      timeZoneName: Value(timeZoneName),
+      distanceM: distanceM == null && nullToAbsent
+          ? const Value.absent()
+          : Value(distanceM),
+      movingSec: movingSec == null && nullToAbsent
+          ? const Value.absent()
+          : Value(movingSec),
+      elevationGainM: elevationGainM == null && nullToAbsent
+          ? const Value.absent()
+          : Value(elevationGainM),
+      maxSpeed: maxSpeed == null && nullToAbsent
+          ? const Value.absent()
+          : Value(maxSpeed),
+      note: note == null && nullToAbsent ? const Value.absent() : Value(note),
+    );
+  }
+
+  factory GpsActivity.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return GpsActivity(
+      id: serializer.fromJson<String>(json['id']),
+      createdAt: serializer.fromJson<DateTime>(json['createdAt']),
+      updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
+      kind: $ActivitiesTable.$converterkind.fromJson(
+        serializer.fromJson<String>(json['kind']),
+      ),
+      name: serializer.fromJson<String>(json['name']),
+      status: $ActivitiesTable.$converterstatus.fromJson(
+        serializer.fromJson<String>(json['status']),
+      ),
+      startedAt: serializer.fromJson<DateTime>(json['startedAt']),
+      endedAt: serializer.fromJson<DateTime?>(json['endedAt']),
+      pausedMs: serializer.fromJson<int>(json['pausedMs']),
+      pausedAt: serializer.fromJson<DateTime?>(json['pausedAt']),
+      segment: serializer.fromJson<int>(json['segment']),
+      utcOffsetMinutes: serializer.fromJson<int>(json['utcOffsetMinutes']),
+      timeZoneName: serializer.fromJson<String>(json['timeZoneName']),
+      distanceM: serializer.fromJson<double?>(json['distanceM']),
+      movingSec: serializer.fromJson<int?>(json['movingSec']),
+      elevationGainM: serializer.fromJson<double?>(json['elevationGainM']),
+      maxSpeed: serializer.fromJson<double?>(json['maxSpeed']),
+      note: serializer.fromJson<String?>(json['note']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'createdAt': serializer.toJson<DateTime>(createdAt),
+      'updatedAt': serializer.toJson<DateTime>(updatedAt),
+      'kind': serializer.toJson<String>(
+        $ActivitiesTable.$converterkind.toJson(kind),
+      ),
+      'name': serializer.toJson<String>(name),
+      'status': serializer.toJson<String>(
+        $ActivitiesTable.$converterstatus.toJson(status),
+      ),
+      'startedAt': serializer.toJson<DateTime>(startedAt),
+      'endedAt': serializer.toJson<DateTime?>(endedAt),
+      'pausedMs': serializer.toJson<int>(pausedMs),
+      'pausedAt': serializer.toJson<DateTime?>(pausedAt),
+      'segment': serializer.toJson<int>(segment),
+      'utcOffsetMinutes': serializer.toJson<int>(utcOffsetMinutes),
+      'timeZoneName': serializer.toJson<String>(timeZoneName),
+      'distanceM': serializer.toJson<double?>(distanceM),
+      'movingSec': serializer.toJson<int?>(movingSec),
+      'elevationGainM': serializer.toJson<double?>(elevationGainM),
+      'maxSpeed': serializer.toJson<double?>(maxSpeed),
+      'note': serializer.toJson<String?>(note),
+    };
+  }
+
+  GpsActivity copyWith({
+    String? id,
+    DateTime? createdAt,
+    DateTime? updatedAt,
+    ActivityKind? kind,
+    String? name,
+    ActivityStatus? status,
+    DateTime? startedAt,
+    Value<DateTime?> endedAt = const Value.absent(),
+    int? pausedMs,
+    Value<DateTime?> pausedAt = const Value.absent(),
+    int? segment,
+    int? utcOffsetMinutes,
+    String? timeZoneName,
+    Value<double?> distanceM = const Value.absent(),
+    Value<int?> movingSec = const Value.absent(),
+    Value<double?> elevationGainM = const Value.absent(),
+    Value<double?> maxSpeed = const Value.absent(),
+    Value<String?> note = const Value.absent(),
+  }) => GpsActivity(
+    id: id ?? this.id,
+    createdAt: createdAt ?? this.createdAt,
+    updatedAt: updatedAt ?? this.updatedAt,
+    kind: kind ?? this.kind,
+    name: name ?? this.name,
+    status: status ?? this.status,
+    startedAt: startedAt ?? this.startedAt,
+    endedAt: endedAt.present ? endedAt.value : this.endedAt,
+    pausedMs: pausedMs ?? this.pausedMs,
+    pausedAt: pausedAt.present ? pausedAt.value : this.pausedAt,
+    segment: segment ?? this.segment,
+    utcOffsetMinutes: utcOffsetMinutes ?? this.utcOffsetMinutes,
+    timeZoneName: timeZoneName ?? this.timeZoneName,
+    distanceM: distanceM.present ? distanceM.value : this.distanceM,
+    movingSec: movingSec.present ? movingSec.value : this.movingSec,
+    elevationGainM: elevationGainM.present
+        ? elevationGainM.value
+        : this.elevationGainM,
+    maxSpeed: maxSpeed.present ? maxSpeed.value : this.maxSpeed,
+    note: note.present ? note.value : this.note,
+  );
+  GpsActivity copyWithCompanion(ActivitiesCompanion data) {
+    return GpsActivity(
+      id: data.id.present ? data.id.value : this.id,
+      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+      updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
+      kind: data.kind.present ? data.kind.value : this.kind,
+      name: data.name.present ? data.name.value : this.name,
+      status: data.status.present ? data.status.value : this.status,
+      startedAt: data.startedAt.present ? data.startedAt.value : this.startedAt,
+      endedAt: data.endedAt.present ? data.endedAt.value : this.endedAt,
+      pausedMs: data.pausedMs.present ? data.pausedMs.value : this.pausedMs,
+      pausedAt: data.pausedAt.present ? data.pausedAt.value : this.pausedAt,
+      segment: data.segment.present ? data.segment.value : this.segment,
+      utcOffsetMinutes: data.utcOffsetMinutes.present
+          ? data.utcOffsetMinutes.value
+          : this.utcOffsetMinutes,
+      timeZoneName: data.timeZoneName.present
+          ? data.timeZoneName.value
+          : this.timeZoneName,
+      distanceM: data.distanceM.present ? data.distanceM.value : this.distanceM,
+      movingSec: data.movingSec.present ? data.movingSec.value : this.movingSec,
+      elevationGainM: data.elevationGainM.present
+          ? data.elevationGainM.value
+          : this.elevationGainM,
+      maxSpeed: data.maxSpeed.present ? data.maxSpeed.value : this.maxSpeed,
+      note: data.note.present ? data.note.value : this.note,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('GpsActivity(')
+          ..write('id: $id, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('kind: $kind, ')
+          ..write('name: $name, ')
+          ..write('status: $status, ')
+          ..write('startedAt: $startedAt, ')
+          ..write('endedAt: $endedAt, ')
+          ..write('pausedMs: $pausedMs, ')
+          ..write('pausedAt: $pausedAt, ')
+          ..write('segment: $segment, ')
+          ..write('utcOffsetMinutes: $utcOffsetMinutes, ')
+          ..write('timeZoneName: $timeZoneName, ')
+          ..write('distanceM: $distanceM, ')
+          ..write('movingSec: $movingSec, ')
+          ..write('elevationGainM: $elevationGainM, ')
+          ..write('maxSpeed: $maxSpeed, ')
+          ..write('note: $note')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    id,
+    createdAt,
+    updatedAt,
+    kind,
+    name,
+    status,
+    startedAt,
+    endedAt,
+    pausedMs,
+    pausedAt,
+    segment,
+    utcOffsetMinutes,
+    timeZoneName,
+    distanceM,
+    movingSec,
+    elevationGainM,
+    maxSpeed,
+    note,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is GpsActivity &&
+          other.id == this.id &&
+          other.createdAt == this.createdAt &&
+          other.updatedAt == this.updatedAt &&
+          other.kind == this.kind &&
+          other.name == this.name &&
+          other.status == this.status &&
+          other.startedAt == this.startedAt &&
+          other.endedAt == this.endedAt &&
+          other.pausedMs == this.pausedMs &&
+          other.pausedAt == this.pausedAt &&
+          other.segment == this.segment &&
+          other.utcOffsetMinutes == this.utcOffsetMinutes &&
+          other.timeZoneName == this.timeZoneName &&
+          other.distanceM == this.distanceM &&
+          other.movingSec == this.movingSec &&
+          other.elevationGainM == this.elevationGainM &&
+          other.maxSpeed == this.maxSpeed &&
+          other.note == this.note);
+}
+
+class ActivitiesCompanion extends UpdateCompanion<GpsActivity> {
+  final Value<String> id;
+  final Value<DateTime> createdAt;
+  final Value<DateTime> updatedAt;
+  final Value<ActivityKind> kind;
+  final Value<String> name;
+  final Value<ActivityStatus> status;
+  final Value<DateTime> startedAt;
+  final Value<DateTime?> endedAt;
+  final Value<int> pausedMs;
+  final Value<DateTime?> pausedAt;
+  final Value<int> segment;
+  final Value<int> utcOffsetMinutes;
+  final Value<String> timeZoneName;
+  final Value<double?> distanceM;
+  final Value<int?> movingSec;
+  final Value<double?> elevationGainM;
+  final Value<double?> maxSpeed;
+  final Value<String?> note;
+  final Value<int> rowid;
+  const ActivitiesCompanion({
+    this.id = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.updatedAt = const Value.absent(),
+    this.kind = const Value.absent(),
+    this.name = const Value.absent(),
+    this.status = const Value.absent(),
+    this.startedAt = const Value.absent(),
+    this.endedAt = const Value.absent(),
+    this.pausedMs = const Value.absent(),
+    this.pausedAt = const Value.absent(),
+    this.segment = const Value.absent(),
+    this.utcOffsetMinutes = const Value.absent(),
+    this.timeZoneName = const Value.absent(),
+    this.distanceM = const Value.absent(),
+    this.movingSec = const Value.absent(),
+    this.elevationGainM = const Value.absent(),
+    this.maxSpeed = const Value.absent(),
+    this.note = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  ActivitiesCompanion.insert({
+    required String id,
+    required DateTime createdAt,
+    required DateTime updatedAt,
+    required ActivityKind kind,
+    required String name,
+    required ActivityStatus status,
+    required DateTime startedAt,
+    this.endedAt = const Value.absent(),
+    this.pausedMs = const Value.absent(),
+    this.pausedAt = const Value.absent(),
+    this.segment = const Value.absent(),
+    required int utcOffsetMinutes,
+    required String timeZoneName,
+    this.distanceM = const Value.absent(),
+    this.movingSec = const Value.absent(),
+    this.elevationGainM = const Value.absent(),
+    this.maxSpeed = const Value.absent(),
+    this.note = const Value.absent(),
+    this.rowid = const Value.absent(),
+  }) : id = Value(id),
+       createdAt = Value(createdAt),
+       updatedAt = Value(updatedAt),
+       kind = Value(kind),
+       name = Value(name),
+       status = Value(status),
+       startedAt = Value(startedAt),
+       utcOffsetMinutes = Value(utcOffsetMinutes),
+       timeZoneName = Value(timeZoneName);
+  static Insertable<GpsActivity> custom({
+    Expression<String>? id,
+    Expression<DateTime>? createdAt,
+    Expression<DateTime>? updatedAt,
+    Expression<String>? kind,
+    Expression<String>? name,
+    Expression<String>? status,
+    Expression<DateTime>? startedAt,
+    Expression<DateTime>? endedAt,
+    Expression<int>? pausedMs,
+    Expression<DateTime>? pausedAt,
+    Expression<int>? segment,
+    Expression<int>? utcOffsetMinutes,
+    Expression<String>? timeZoneName,
+    Expression<double>? distanceM,
+    Expression<int>? movingSec,
+    Expression<double>? elevationGainM,
+    Expression<double>? maxSpeed,
+    Expression<String>? note,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (createdAt != null) 'created_at': createdAt,
+      if (updatedAt != null) 'updated_at': updatedAt,
+      if (kind != null) 'kind': kind,
+      if (name != null) 'name': name,
+      if (status != null) 'status': status,
+      if (startedAt != null) 'started_at': startedAt,
+      if (endedAt != null) 'ended_at': endedAt,
+      if (pausedMs != null) 'paused_ms': pausedMs,
+      if (pausedAt != null) 'paused_at': pausedAt,
+      if (segment != null) 'segment': segment,
+      if (utcOffsetMinutes != null) 'utc_offset_minutes': utcOffsetMinutes,
+      if (timeZoneName != null) 'time_zone_name': timeZoneName,
+      if (distanceM != null) 'distance_m': distanceM,
+      if (movingSec != null) 'moving_sec': movingSec,
+      if (elevationGainM != null) 'elevation_gain_m': elevationGainM,
+      if (maxSpeed != null) 'max_speed': maxSpeed,
+      if (note != null) 'note': note,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  ActivitiesCompanion copyWith({
+    Value<String>? id,
+    Value<DateTime>? createdAt,
+    Value<DateTime>? updatedAt,
+    Value<ActivityKind>? kind,
+    Value<String>? name,
+    Value<ActivityStatus>? status,
+    Value<DateTime>? startedAt,
+    Value<DateTime?>? endedAt,
+    Value<int>? pausedMs,
+    Value<DateTime?>? pausedAt,
+    Value<int>? segment,
+    Value<int>? utcOffsetMinutes,
+    Value<String>? timeZoneName,
+    Value<double?>? distanceM,
+    Value<int?>? movingSec,
+    Value<double?>? elevationGainM,
+    Value<double?>? maxSpeed,
+    Value<String?>? note,
+    Value<int>? rowid,
+  }) {
+    return ActivitiesCompanion(
+      id: id ?? this.id,
+      createdAt: createdAt ?? this.createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
+      kind: kind ?? this.kind,
+      name: name ?? this.name,
+      status: status ?? this.status,
+      startedAt: startedAt ?? this.startedAt,
+      endedAt: endedAt ?? this.endedAt,
+      pausedMs: pausedMs ?? this.pausedMs,
+      pausedAt: pausedAt ?? this.pausedAt,
+      segment: segment ?? this.segment,
+      utcOffsetMinutes: utcOffsetMinutes ?? this.utcOffsetMinutes,
+      timeZoneName: timeZoneName ?? this.timeZoneName,
+      distanceM: distanceM ?? this.distanceM,
+      movingSec: movingSec ?? this.movingSec,
+      elevationGainM: elevationGainM ?? this.elevationGainM,
+      maxSpeed: maxSpeed ?? this.maxSpeed,
+      note: note ?? this.note,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (createdAt.present) {
+      map['created_at'] = Variable<DateTime>(createdAt.value);
+    }
+    if (updatedAt.present) {
+      map['updated_at'] = Variable<DateTime>(updatedAt.value);
+    }
+    if (kind.present) {
+      map['kind'] = Variable<String>(
+        $ActivitiesTable.$converterkind.toSql(kind.value),
+      );
+    }
+    if (name.present) {
+      map['name'] = Variable<String>(name.value);
+    }
+    if (status.present) {
+      map['status'] = Variable<String>(
+        $ActivitiesTable.$converterstatus.toSql(status.value),
+      );
+    }
+    if (startedAt.present) {
+      map['started_at'] = Variable<DateTime>(startedAt.value);
+    }
+    if (endedAt.present) {
+      map['ended_at'] = Variable<DateTime>(endedAt.value);
+    }
+    if (pausedMs.present) {
+      map['paused_ms'] = Variable<int>(pausedMs.value);
+    }
+    if (pausedAt.present) {
+      map['paused_at'] = Variable<DateTime>(pausedAt.value);
+    }
+    if (segment.present) {
+      map['segment'] = Variable<int>(segment.value);
+    }
+    if (utcOffsetMinutes.present) {
+      map['utc_offset_minutes'] = Variable<int>(utcOffsetMinutes.value);
+    }
+    if (timeZoneName.present) {
+      map['time_zone_name'] = Variable<String>(timeZoneName.value);
+    }
+    if (distanceM.present) {
+      map['distance_m'] = Variable<double>(distanceM.value);
+    }
+    if (movingSec.present) {
+      map['moving_sec'] = Variable<int>(movingSec.value);
+    }
+    if (elevationGainM.present) {
+      map['elevation_gain_m'] = Variable<double>(elevationGainM.value);
+    }
+    if (maxSpeed.present) {
+      map['max_speed'] = Variable<double>(maxSpeed.value);
+    }
+    if (note.present) {
+      map['note'] = Variable<String>(note.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('ActivitiesCompanion(')
+          ..write('id: $id, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('kind: $kind, ')
+          ..write('name: $name, ')
+          ..write('status: $status, ')
+          ..write('startedAt: $startedAt, ')
+          ..write('endedAt: $endedAt, ')
+          ..write('pausedMs: $pausedMs, ')
+          ..write('pausedAt: $pausedAt, ')
+          ..write('segment: $segment, ')
+          ..write('utcOffsetMinutes: $utcOffsetMinutes, ')
+          ..write('timeZoneName: $timeZoneName, ')
+          ..write('distanceM: $distanceM, ')
+          ..write('movingSec: $movingSec, ')
+          ..write('elevationGainM: $elevationGainM, ')
+          ..write('maxSpeed: $maxSpeed, ')
+          ..write('note: $note, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $ActivityPointsTable extends ActivityPoints
+    with TableInfo<$ActivityPointsTable, ActivityPoint> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $ActivityPointsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<int> id = GeneratedColumn<int>(
+    'id',
+    aliasedName,
+    false,
+    hasAutoIncrement: true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'PRIMARY KEY AUTOINCREMENT',
+    ),
+  );
+  static const VerificationMeta _activityIdMeta = const VerificationMeta(
+    'activityId',
+  );
+  @override
+  late final GeneratedColumn<String> activityId = GeneratedColumn<String>(
+    'activity_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES activities (id) ON DELETE CASCADE',
+    ),
+  );
+  static const VerificationMeta _atMeta = const VerificationMeta('at');
+  @override
+  late final GeneratedColumn<DateTime> at = GeneratedColumn<DateTime>(
+    'at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _latMeta = const VerificationMeta('lat');
+  @override
+  late final GeneratedColumn<double> lat = GeneratedColumn<double>(
+    'lat',
+    aliasedName,
+    false,
+    type: DriftSqlType.double,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _lonMeta = const VerificationMeta('lon');
+  @override
+  late final GeneratedColumn<double> lon = GeneratedColumn<double>(
+    'lon',
+    aliasedName,
+    false,
+    type: DriftSqlType.double,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _accuracyMeta = const VerificationMeta(
+    'accuracy',
+  );
+  @override
+  late final GeneratedColumn<double> accuracy = GeneratedColumn<double>(
+    'accuracy',
+    aliasedName,
+    false,
+    type: DriftSqlType.double,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _altitudeMeta = const VerificationMeta(
+    'altitude',
+  );
+  @override
+  late final GeneratedColumn<double> altitude = GeneratedColumn<double>(
+    'altitude',
+    aliasedName,
+    true,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _altitudeAccuracyMeta = const VerificationMeta(
+    'altitudeAccuracy',
+  );
+  @override
+  late final GeneratedColumn<double> altitudeAccuracy = GeneratedColumn<double>(
+    'altitude_accuracy',
+    aliasedName,
+    true,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _segmentMeta = const VerificationMeta(
+    'segment',
+  );
+  @override
+  late final GeneratedColumn<int> segment = GeneratedColumn<int>(
+    'segment',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    activityId,
+    at,
+    lat,
+    lon,
+    accuracy,
+    altitude,
+    altitudeAccuracy,
+    segment,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'activity_points';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<ActivityPoint> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    }
+    if (data.containsKey('activity_id')) {
+      context.handle(
+        _activityIdMeta,
+        activityId.isAcceptableOrUnknown(data['activity_id']!, _activityIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_activityIdMeta);
+    }
+    if (data.containsKey('at')) {
+      context.handle(_atMeta, at.isAcceptableOrUnknown(data['at']!, _atMeta));
+    } else if (isInserting) {
+      context.missing(_atMeta);
+    }
+    if (data.containsKey('lat')) {
+      context.handle(
+        _latMeta,
+        lat.isAcceptableOrUnknown(data['lat']!, _latMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_latMeta);
+    }
+    if (data.containsKey('lon')) {
+      context.handle(
+        _lonMeta,
+        lon.isAcceptableOrUnknown(data['lon']!, _lonMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_lonMeta);
+    }
+    if (data.containsKey('accuracy')) {
+      context.handle(
+        _accuracyMeta,
+        accuracy.isAcceptableOrUnknown(data['accuracy']!, _accuracyMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_accuracyMeta);
+    }
+    if (data.containsKey('altitude')) {
+      context.handle(
+        _altitudeMeta,
+        altitude.isAcceptableOrUnknown(data['altitude']!, _altitudeMeta),
+      );
+    }
+    if (data.containsKey('altitude_accuracy')) {
+      context.handle(
+        _altitudeAccuracyMeta,
+        altitudeAccuracy.isAcceptableOrUnknown(
+          data['altitude_accuracy']!,
+          _altitudeAccuracyMeta,
+        ),
+      );
+    }
+    if (data.containsKey('segment')) {
+      context.handle(
+        _segmentMeta,
+        segment.isAcceptableOrUnknown(data['segment']!, _segmentMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_segmentMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  ActivityPoint map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return ActivityPoint(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}id'],
+      )!,
+      activityId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}activity_id'],
+      )!,
+      at: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}at'],
+      )!,
+      lat: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}lat'],
+      )!,
+      lon: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}lon'],
+      )!,
+      accuracy: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}accuracy'],
+      )!,
+      altitude: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}altitude'],
+      ),
+      altitudeAccuracy: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}altitude_accuracy'],
+      ),
+      segment: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}segment'],
+      )!,
+    );
+  }
+
+  @override
+  $ActivityPointsTable createAlias(String alias) {
+    return $ActivityPointsTable(attachedDatabase, alias);
+  }
+}
+
+class ActivityPoint extends DataClass implements Insertable<ActivityPoint> {
+  final int id;
+  final String activityId;
+  final DateTime at;
+  final double lat;
+  final double lon;
+
+  /// Horizontal accuracy in metres.
+  final double accuracy;
+  final double? altitude;
+  final double? altitudeAccuracy;
+  final int segment;
+  const ActivityPoint({
+    required this.id,
+    required this.activityId,
+    required this.at,
+    required this.lat,
+    required this.lon,
+    required this.accuracy,
+    this.altitude,
+    this.altitudeAccuracy,
+    required this.segment,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<int>(id);
+    map['activity_id'] = Variable<String>(activityId);
+    map['at'] = Variable<DateTime>(at);
+    map['lat'] = Variable<double>(lat);
+    map['lon'] = Variable<double>(lon);
+    map['accuracy'] = Variable<double>(accuracy);
+    if (!nullToAbsent || altitude != null) {
+      map['altitude'] = Variable<double>(altitude);
+    }
+    if (!nullToAbsent || altitudeAccuracy != null) {
+      map['altitude_accuracy'] = Variable<double>(altitudeAccuracy);
+    }
+    map['segment'] = Variable<int>(segment);
+    return map;
+  }
+
+  ActivityPointsCompanion toCompanion(bool nullToAbsent) {
+    return ActivityPointsCompanion(
+      id: Value(id),
+      activityId: Value(activityId),
+      at: Value(at),
+      lat: Value(lat),
+      lon: Value(lon),
+      accuracy: Value(accuracy),
+      altitude: altitude == null && nullToAbsent
+          ? const Value.absent()
+          : Value(altitude),
+      altitudeAccuracy: altitudeAccuracy == null && nullToAbsent
+          ? const Value.absent()
+          : Value(altitudeAccuracy),
+      segment: Value(segment),
+    );
+  }
+
+  factory ActivityPoint.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return ActivityPoint(
+      id: serializer.fromJson<int>(json['id']),
+      activityId: serializer.fromJson<String>(json['activityId']),
+      at: serializer.fromJson<DateTime>(json['at']),
+      lat: serializer.fromJson<double>(json['lat']),
+      lon: serializer.fromJson<double>(json['lon']),
+      accuracy: serializer.fromJson<double>(json['accuracy']),
+      altitude: serializer.fromJson<double?>(json['altitude']),
+      altitudeAccuracy: serializer.fromJson<double?>(json['altitudeAccuracy']),
+      segment: serializer.fromJson<int>(json['segment']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<int>(id),
+      'activityId': serializer.toJson<String>(activityId),
+      'at': serializer.toJson<DateTime>(at),
+      'lat': serializer.toJson<double>(lat),
+      'lon': serializer.toJson<double>(lon),
+      'accuracy': serializer.toJson<double>(accuracy),
+      'altitude': serializer.toJson<double?>(altitude),
+      'altitudeAccuracy': serializer.toJson<double?>(altitudeAccuracy),
+      'segment': serializer.toJson<int>(segment),
+    };
+  }
+
+  ActivityPoint copyWith({
+    int? id,
+    String? activityId,
+    DateTime? at,
+    double? lat,
+    double? lon,
+    double? accuracy,
+    Value<double?> altitude = const Value.absent(),
+    Value<double?> altitudeAccuracy = const Value.absent(),
+    int? segment,
+  }) => ActivityPoint(
+    id: id ?? this.id,
+    activityId: activityId ?? this.activityId,
+    at: at ?? this.at,
+    lat: lat ?? this.lat,
+    lon: lon ?? this.lon,
+    accuracy: accuracy ?? this.accuracy,
+    altitude: altitude.present ? altitude.value : this.altitude,
+    altitudeAccuracy: altitudeAccuracy.present
+        ? altitudeAccuracy.value
+        : this.altitudeAccuracy,
+    segment: segment ?? this.segment,
+  );
+  ActivityPoint copyWithCompanion(ActivityPointsCompanion data) {
+    return ActivityPoint(
+      id: data.id.present ? data.id.value : this.id,
+      activityId: data.activityId.present
+          ? data.activityId.value
+          : this.activityId,
+      at: data.at.present ? data.at.value : this.at,
+      lat: data.lat.present ? data.lat.value : this.lat,
+      lon: data.lon.present ? data.lon.value : this.lon,
+      accuracy: data.accuracy.present ? data.accuracy.value : this.accuracy,
+      altitude: data.altitude.present ? data.altitude.value : this.altitude,
+      altitudeAccuracy: data.altitudeAccuracy.present
+          ? data.altitudeAccuracy.value
+          : this.altitudeAccuracy,
+      segment: data.segment.present ? data.segment.value : this.segment,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('ActivityPoint(')
+          ..write('id: $id, ')
+          ..write('activityId: $activityId, ')
+          ..write('at: $at, ')
+          ..write('lat: $lat, ')
+          ..write('lon: $lon, ')
+          ..write('accuracy: $accuracy, ')
+          ..write('altitude: $altitude, ')
+          ..write('altitudeAccuracy: $altitudeAccuracy, ')
+          ..write('segment: $segment')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    id,
+    activityId,
+    at,
+    lat,
+    lon,
+    accuracy,
+    altitude,
+    altitudeAccuracy,
+    segment,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is ActivityPoint &&
+          other.id == this.id &&
+          other.activityId == this.activityId &&
+          other.at == this.at &&
+          other.lat == this.lat &&
+          other.lon == this.lon &&
+          other.accuracy == this.accuracy &&
+          other.altitude == this.altitude &&
+          other.altitudeAccuracy == this.altitudeAccuracy &&
+          other.segment == this.segment);
+}
+
+class ActivityPointsCompanion extends UpdateCompanion<ActivityPoint> {
+  final Value<int> id;
+  final Value<String> activityId;
+  final Value<DateTime> at;
+  final Value<double> lat;
+  final Value<double> lon;
+  final Value<double> accuracy;
+  final Value<double?> altitude;
+  final Value<double?> altitudeAccuracy;
+  final Value<int> segment;
+  const ActivityPointsCompanion({
+    this.id = const Value.absent(),
+    this.activityId = const Value.absent(),
+    this.at = const Value.absent(),
+    this.lat = const Value.absent(),
+    this.lon = const Value.absent(),
+    this.accuracy = const Value.absent(),
+    this.altitude = const Value.absent(),
+    this.altitudeAccuracy = const Value.absent(),
+    this.segment = const Value.absent(),
+  });
+  ActivityPointsCompanion.insert({
+    this.id = const Value.absent(),
+    required String activityId,
+    required DateTime at,
+    required double lat,
+    required double lon,
+    required double accuracy,
+    this.altitude = const Value.absent(),
+    this.altitudeAccuracy = const Value.absent(),
+    required int segment,
+  }) : activityId = Value(activityId),
+       at = Value(at),
+       lat = Value(lat),
+       lon = Value(lon),
+       accuracy = Value(accuracy),
+       segment = Value(segment);
+  static Insertable<ActivityPoint> custom({
+    Expression<int>? id,
+    Expression<String>? activityId,
+    Expression<DateTime>? at,
+    Expression<double>? lat,
+    Expression<double>? lon,
+    Expression<double>? accuracy,
+    Expression<double>? altitude,
+    Expression<double>? altitudeAccuracy,
+    Expression<int>? segment,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (activityId != null) 'activity_id': activityId,
+      if (at != null) 'at': at,
+      if (lat != null) 'lat': lat,
+      if (lon != null) 'lon': lon,
+      if (accuracy != null) 'accuracy': accuracy,
+      if (altitude != null) 'altitude': altitude,
+      if (altitudeAccuracy != null) 'altitude_accuracy': altitudeAccuracy,
+      if (segment != null) 'segment': segment,
+    });
+  }
+
+  ActivityPointsCompanion copyWith({
+    Value<int>? id,
+    Value<String>? activityId,
+    Value<DateTime>? at,
+    Value<double>? lat,
+    Value<double>? lon,
+    Value<double>? accuracy,
+    Value<double?>? altitude,
+    Value<double?>? altitudeAccuracy,
+    Value<int>? segment,
+  }) {
+    return ActivityPointsCompanion(
+      id: id ?? this.id,
+      activityId: activityId ?? this.activityId,
+      at: at ?? this.at,
+      lat: lat ?? this.lat,
+      lon: lon ?? this.lon,
+      accuracy: accuracy ?? this.accuracy,
+      altitude: altitude ?? this.altitude,
+      altitudeAccuracy: altitudeAccuracy ?? this.altitudeAccuracy,
+      segment: segment ?? this.segment,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<int>(id.value);
+    }
+    if (activityId.present) {
+      map['activity_id'] = Variable<String>(activityId.value);
+    }
+    if (at.present) {
+      map['at'] = Variable<DateTime>(at.value);
+    }
+    if (lat.present) {
+      map['lat'] = Variable<double>(lat.value);
+    }
+    if (lon.present) {
+      map['lon'] = Variable<double>(lon.value);
+    }
+    if (accuracy.present) {
+      map['accuracy'] = Variable<double>(accuracy.value);
+    }
+    if (altitude.present) {
+      map['altitude'] = Variable<double>(altitude.value);
+    }
+    if (altitudeAccuracy.present) {
+      map['altitude_accuracy'] = Variable<double>(altitudeAccuracy.value);
+    }
+    if (segment.present) {
+      map['segment'] = Variable<int>(segment.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('ActivityPointsCompanion(')
+          ..write('id: $id, ')
+          ..write('activityId: $activityId, ')
+          ..write('at: $at, ')
+          ..write('lat: $lat, ')
+          ..write('lon: $lon, ')
+          ..write('accuracy: $accuracy, ')
+          ..write('altitude: $altitude, ')
+          ..write('altitudeAccuracy: $altitudeAccuracy, ')
+          ..write('segment: $segment')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
@@ -9322,6 +10908,8 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final $SettingsTable settings = $SettingsTable(this);
   late final $AiProposalsTable aiProposals = $AiProposalsTable(this);
   late final $HealthWritesTable healthWrites = $HealthWritesTable(this);
+  late final $ActivitiesTable activities = $ActivitiesTable(this);
+  late final $ActivityPointsTable activityPoints = $ActivityPointsTable(this);
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
@@ -9341,6 +10929,8 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     settings,
     aiProposals,
     healthWrites,
+    activities,
+    activityPoints,
   ];
   @override
   StreamQueryUpdateRules get streamUpdateRules => const StreamQueryUpdateRules([
@@ -9364,6 +10954,13 @@ abstract class _$AppDatabase extends GeneratedDatabase {
         limitUpdateKind: UpdateKind.delete,
       ),
       result: [TableUpdate('set_entries', kind: UpdateKind.delete)],
+    ),
+    WritePropagation(
+      on: TableUpdateQuery.onTableName(
+        'activities',
+        limitUpdateKind: UpdateKind.delete,
+      ),
+      result: [TableUpdate('activity_points', kind: UpdateKind.delete)],
     ),
   ]);
   @override
@@ -15113,6 +16710,955 @@ typedef $$HealthWritesTableProcessedTableManager =
       HealthWrite,
       PrefetchHooks Function()
     >;
+typedef $$ActivitiesTableCreateCompanionBuilder = ActivitiesCompanion Function({
+  required String id,
+  required DateTime createdAt,
+  required DateTime updatedAt,
+  required ActivityKind kind,
+  required String name,
+  required ActivityStatus status,
+  required DateTime startedAt,
+  Value<DateTime?> endedAt,
+  Value<int> pausedMs,
+  Value<DateTime?> pausedAt,
+  Value<int> segment,
+  required int utcOffsetMinutes,
+  required String timeZoneName,
+  Value<double?> distanceM,
+  Value<int?> movingSec,
+  Value<double?> elevationGainM,
+  Value<double?> maxSpeed,
+  Value<String?> note,
+  Value<int> rowid,
+});
+typedef $$ActivitiesTableUpdateCompanionBuilder = ActivitiesCompanion Function({
+  Value<String> id,
+  Value<DateTime> createdAt,
+  Value<DateTime> updatedAt,
+  Value<ActivityKind> kind,
+  Value<String> name,
+  Value<ActivityStatus> status,
+  Value<DateTime> startedAt,
+  Value<DateTime?> endedAt,
+  Value<int> pausedMs,
+  Value<DateTime?> pausedAt,
+  Value<int> segment,
+  Value<int> utcOffsetMinutes,
+  Value<String> timeZoneName,
+  Value<double?> distanceM,
+  Value<int?> movingSec,
+  Value<double?> elevationGainM,
+  Value<double?> maxSpeed,
+  Value<String?> note,
+  Value<int> rowid,
+});
+
+final class $$ActivitiesTableReferences
+    extends BaseReferences<_$AppDatabase, $ActivitiesTable, GpsActivity> {
+  $$ActivitiesTableReferences(super.$_db, super.$_table, super.$_typedResult);
+
+  static MultiTypedResultKey<$ActivityPointsTable, List<ActivityPoint>>
+  _activityPointsRefsTable(_$AppDatabase db) => MultiTypedResultKey.fromTable(
+    db.activityPoints,
+    aliasName: 'activities__id__activity_points__activity_id',
+  );
+
+  $$ActivityPointsTableProcessedTableManager get activityPointsRefs {
+    final manager = $$ActivityPointsTableTableManager(
+      $_db,
+      $_db.activityPoints,
+    ).filter((f) => f.activityId.id.sqlEquals($_itemColumn<String>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(_activityPointsRefsTable($_db));
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+}
+
+class $$ActivitiesTableFilterComposer
+    extends Composer<_$AppDatabase, $ActivitiesTable> {
+  $$ActivitiesTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnWithTypeConverterFilters<ActivityKind, ActivityKind, String> get kind =>
+      $composableBuilder(
+        column: $table.kind,
+        builder: (column) => ColumnWithTypeConverterFilters(column),
+      );
+
+  ColumnFilters<String> get name => $composableBuilder(
+    column: $table.name,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnWithTypeConverterFilters<ActivityStatus, ActivityStatus, String>
+  get status => $composableBuilder(
+    column: $table.status,
+    builder: (column) => ColumnWithTypeConverterFilters(column),
+  );
+
+  ColumnFilters<DateTime> get startedAt => $composableBuilder(
+    column: $table.startedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get endedAt => $composableBuilder(
+    column: $table.endedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get pausedMs => $composableBuilder(
+    column: $table.pausedMs,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get pausedAt => $composableBuilder(
+    column: $table.pausedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get segment => $composableBuilder(
+    column: $table.segment,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get utcOffsetMinutes => $composableBuilder(
+    column: $table.utcOffsetMinutes,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get timeZoneName => $composableBuilder(
+    column: $table.timeZoneName,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get distanceM => $composableBuilder(
+    column: $table.distanceM,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get movingSec => $composableBuilder(
+    column: $table.movingSec,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get elevationGainM => $composableBuilder(
+    column: $table.elevationGainM,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get maxSpeed => $composableBuilder(
+    column: $table.maxSpeed,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get note => $composableBuilder(
+    column: $table.note,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  Expression<bool> activityPointsRefs(
+    Expression<bool> Function($$ActivityPointsTableFilterComposer f) f,
+  ) {
+    final $$ActivityPointsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.activityPoints,
+      getReferencedColumn: (t) => t.activityId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$ActivityPointsTableFilterComposer(
+            $db: $db,
+            $table: $db.activityPoints,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+}
+
+class $$ActivitiesTableOrderingComposer
+    extends Composer<_$AppDatabase, $ActivitiesTable> {
+  $$ActivitiesTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get kind => $composableBuilder(
+    column: $table.kind,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get name => $composableBuilder(
+    column: $table.name,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get status => $composableBuilder(
+    column: $table.status,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get startedAt => $composableBuilder(
+    column: $table.startedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get endedAt => $composableBuilder(
+    column: $table.endedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get pausedMs => $composableBuilder(
+    column: $table.pausedMs,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get pausedAt => $composableBuilder(
+    column: $table.pausedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get segment => $composableBuilder(
+    column: $table.segment,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get utcOffsetMinutes => $composableBuilder(
+    column: $table.utcOffsetMinutes,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get timeZoneName => $composableBuilder(
+    column: $table.timeZoneName,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get distanceM => $composableBuilder(
+    column: $table.distanceM,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get movingSec => $composableBuilder(
+    column: $table.movingSec,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get elevationGainM => $composableBuilder(
+    column: $table.elevationGainM,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get maxSpeed => $composableBuilder(
+    column: $table.maxSpeed,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get note => $composableBuilder(
+    column: $table.note,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$ActivitiesTableAnnotationComposer
+    extends Composer<_$AppDatabase, $ActivitiesTable> {
+  $$ActivitiesTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get updatedAt =>
+      $composableBuilder(column: $table.updatedAt, builder: (column) => column);
+
+  GeneratedColumnWithTypeConverter<ActivityKind, String> get kind =>
+      $composableBuilder(column: $table.kind, builder: (column) => column);
+
+  GeneratedColumn<String> get name =>
+      $composableBuilder(column: $table.name, builder: (column) => column);
+
+  GeneratedColumnWithTypeConverter<ActivityStatus, String> get status =>
+      $composableBuilder(column: $table.status, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get startedAt =>
+      $composableBuilder(column: $table.startedAt, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get endedAt =>
+      $composableBuilder(column: $table.endedAt, builder: (column) => column);
+
+  GeneratedColumn<int> get pausedMs =>
+      $composableBuilder(column: $table.pausedMs, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get pausedAt =>
+      $composableBuilder(column: $table.pausedAt, builder: (column) => column);
+
+  GeneratedColumn<int> get segment =>
+      $composableBuilder(column: $table.segment, builder: (column) => column);
+
+  GeneratedColumn<int> get utcOffsetMinutes => $composableBuilder(
+    column: $table.utcOffsetMinutes,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get timeZoneName => $composableBuilder(
+    column: $table.timeZoneName,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<double> get distanceM =>
+      $composableBuilder(column: $table.distanceM, builder: (column) => column);
+
+  GeneratedColumn<int> get movingSec =>
+      $composableBuilder(column: $table.movingSec, builder: (column) => column);
+
+  GeneratedColumn<double> get elevationGainM => $composableBuilder(
+    column: $table.elevationGainM,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<double> get maxSpeed =>
+      $composableBuilder(column: $table.maxSpeed, builder: (column) => column);
+
+  GeneratedColumn<String> get note =>
+      $composableBuilder(column: $table.note, builder: (column) => column);
+
+  Expression<T> activityPointsRefs<T extends Object>(
+    Expression<T> Function($$ActivityPointsTableAnnotationComposer a) f,
+  ) {
+    final $$ActivityPointsTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.activityPoints,
+      getReferencedColumn: (t) => t.activityId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$ActivityPointsTableAnnotationComposer(
+            $db: $db,
+            $table: $db.activityPoints,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+}
+
+class $$ActivitiesTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $ActivitiesTable,
+          GpsActivity,
+          $$ActivitiesTableFilterComposer,
+          $$ActivitiesTableOrderingComposer,
+          $$ActivitiesTableAnnotationComposer,
+          $$ActivitiesTableCreateCompanionBuilder,
+          $$ActivitiesTableUpdateCompanionBuilder,
+          (GpsActivity, $$ActivitiesTableReferences),
+          GpsActivity,
+          PrefetchHooks Function({bool activityPointsRefs})
+        > {
+  $$ActivitiesTableTableManager(_$AppDatabase db, $ActivitiesTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$ActivitiesTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$ActivitiesTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$ActivitiesTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<DateTime> createdAt = const Value.absent(),
+                Value<DateTime> updatedAt = const Value.absent(),
+                Value<ActivityKind> kind = const Value.absent(),
+                Value<String> name = const Value.absent(),
+                Value<ActivityStatus> status = const Value.absent(),
+                Value<DateTime> startedAt = const Value.absent(),
+                Value<DateTime?> endedAt = const Value.absent(),
+                Value<int> pausedMs = const Value.absent(),
+                Value<DateTime?> pausedAt = const Value.absent(),
+                Value<int> segment = const Value.absent(),
+                Value<int> utcOffsetMinutes = const Value.absent(),
+                Value<String> timeZoneName = const Value.absent(),
+                Value<double?> distanceM = const Value.absent(),
+                Value<int?> movingSec = const Value.absent(),
+                Value<double?> elevationGainM = const Value.absent(),
+                Value<double?> maxSpeed = const Value.absent(),
+                Value<String?> note = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => ActivitiesCompanion(
+                id: id,
+                createdAt: createdAt,
+                updatedAt: updatedAt,
+                kind: kind,
+                name: name,
+                status: status,
+                startedAt: startedAt,
+                endedAt: endedAt,
+                pausedMs: pausedMs,
+                pausedAt: pausedAt,
+                segment: segment,
+                utcOffsetMinutes: utcOffsetMinutes,
+                timeZoneName: timeZoneName,
+                distanceM: distanceM,
+                movingSec: movingSec,
+                elevationGainM: elevationGainM,
+                maxSpeed: maxSpeed,
+                note: note,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String id,
+                required DateTime createdAt,
+                required DateTime updatedAt,
+                required ActivityKind kind,
+                required String name,
+                required ActivityStatus status,
+                required DateTime startedAt,
+                Value<DateTime?> endedAt = const Value.absent(),
+                Value<int> pausedMs = const Value.absent(),
+                Value<DateTime?> pausedAt = const Value.absent(),
+                Value<int> segment = const Value.absent(),
+                required int utcOffsetMinutes,
+                required String timeZoneName,
+                Value<double?> distanceM = const Value.absent(),
+                Value<int?> movingSec = const Value.absent(),
+                Value<double?> elevationGainM = const Value.absent(),
+                Value<double?> maxSpeed = const Value.absent(),
+                Value<String?> note = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => ActivitiesCompanion.insert(
+                id: id,
+                createdAt: createdAt,
+                updatedAt: updatedAt,
+                kind: kind,
+                name: name,
+                status: status,
+                startedAt: startedAt,
+                endedAt: endedAt,
+                pausedMs: pausedMs,
+                pausedAt: pausedAt,
+                segment: segment,
+                utcOffsetMinutes: utcOffsetMinutes,
+                timeZoneName: timeZoneName,
+                distanceM: distanceM,
+                movingSec: movingSec,
+                elevationGainM: elevationGainM,
+                maxSpeed: maxSpeed,
+                note: note,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable<$ActivitiesTable, GpsActivity>(table),
+                  $$ActivitiesTableReferences(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: ({activityPointsRefs = false}) {
+            return PrefetchHooks(
+              db: db,
+              explicitlyWatchedTables: [
+                if (activityPointsRefs) db.activityPoints,
+              ],
+              addJoins: null,
+              getPrefetchedDataCallback: (items) async {
+                return [
+                  if (activityPointsRefs)
+                    await $_getPrefetchedData<
+                      GpsActivity,
+                      $ActivitiesTable,
+                      ActivityPoint
+                    >(
+                      currentTable: table,
+                      referencedTable: $$ActivitiesTableReferences
+                          ._activityPointsRefsTable(db),
+                      managerFromTypedResult: (p0) =>
+                          $$ActivitiesTableReferences(
+                            db,
+                            table,
+                            p0,
+                          ).activityPointsRefs,
+                      referencedItemsForCurrentItem: (item, referencedItems) =>
+                          referencedItems.where((e) => e.activityId == item.id),
+                      typedResults: items,
+                    ),
+                ];
+              },
+            );
+          },
+        ),
+      );
+}
+
+typedef $$ActivitiesTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $ActivitiesTable,
+      GpsActivity,
+      $$ActivitiesTableFilterComposer,
+      $$ActivitiesTableOrderingComposer,
+      $$ActivitiesTableAnnotationComposer,
+      $$ActivitiesTableCreateCompanionBuilder,
+      $$ActivitiesTableUpdateCompanionBuilder,
+      (GpsActivity, $$ActivitiesTableReferences),
+      GpsActivity,
+      PrefetchHooks Function({bool activityPointsRefs})
+    >;
+typedef $$ActivityPointsTableCreateCompanionBuilder =
+    ActivityPointsCompanion Function({
+      Value<int> id,
+      required String activityId,
+      required DateTime at,
+      required double lat,
+      required double lon,
+      required double accuracy,
+      Value<double?> altitude,
+      Value<double?> altitudeAccuracy,
+      required int segment,
+    });
+typedef $$ActivityPointsTableUpdateCompanionBuilder =
+    ActivityPointsCompanion Function({
+      Value<int> id,
+      Value<String> activityId,
+      Value<DateTime> at,
+      Value<double> lat,
+      Value<double> lon,
+      Value<double> accuracy,
+      Value<double?> altitude,
+      Value<double?> altitudeAccuracy,
+      Value<int> segment,
+    });
+
+final class $$ActivityPointsTableReferences
+    extends BaseReferences<_$AppDatabase, $ActivityPointsTable, ActivityPoint> {
+  $$ActivityPointsTableReferences(
+    super.$_db,
+    super.$_table,
+    super.$_typedResult,
+  );
+
+  static $ActivitiesTable _activityIdTable(_$AppDatabase db) =>
+      db.activities.createAlias('activity_points__activity_id__activities__id');
+
+  $$ActivitiesTableProcessedTableManager get activityId {
+    final $_column = $_itemColumn<String>('activity_id')!;
+
+    final manager = $$ActivitiesTableTableManager(
+      $_db,
+      $_db.activities,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_activityIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+}
+
+class $$ActivityPointsTableFilterComposer
+    extends Composer<_$AppDatabase, $ActivityPointsTable> {
+  $$ActivityPointsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get at => $composableBuilder(
+    column: $table.at,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get lat => $composableBuilder(
+    column: $table.lat,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get lon => $composableBuilder(
+    column: $table.lon,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get accuracy => $composableBuilder(
+    column: $table.accuracy,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get altitude => $composableBuilder(
+    column: $table.altitude,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get altitudeAccuracy => $composableBuilder(
+    column: $table.altitudeAccuracy,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get segment => $composableBuilder(
+    column: $table.segment,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  $$ActivitiesTableFilterComposer get activityId {
+    final $$ActivitiesTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.activityId,
+      referencedTable: $db.activities,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$ActivitiesTableFilterComposer(
+            $db: $db,
+            $table: $db.activities,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$ActivityPointsTableOrderingComposer
+    extends Composer<_$AppDatabase, $ActivityPointsTable> {
+  $$ActivityPointsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get at => $composableBuilder(
+    column: $table.at,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get lat => $composableBuilder(
+    column: $table.lat,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get lon => $composableBuilder(
+    column: $table.lon,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get accuracy => $composableBuilder(
+    column: $table.accuracy,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get altitude => $composableBuilder(
+    column: $table.altitude,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get altitudeAccuracy => $composableBuilder(
+    column: $table.altitudeAccuracy,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get segment => $composableBuilder(
+    column: $table.segment,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  $$ActivitiesTableOrderingComposer get activityId {
+    final $$ActivitiesTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.activityId,
+      referencedTable: $db.activities,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$ActivitiesTableOrderingComposer(
+            $db: $db,
+            $table: $db.activities,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$ActivityPointsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $ActivityPointsTable> {
+  $$ActivityPointsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<int> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get at =>
+      $composableBuilder(column: $table.at, builder: (column) => column);
+
+  GeneratedColumn<double> get lat =>
+      $composableBuilder(column: $table.lat, builder: (column) => column);
+
+  GeneratedColumn<double> get lon =>
+      $composableBuilder(column: $table.lon, builder: (column) => column);
+
+  GeneratedColumn<double> get accuracy =>
+      $composableBuilder(column: $table.accuracy, builder: (column) => column);
+
+  GeneratedColumn<double> get altitude =>
+      $composableBuilder(column: $table.altitude, builder: (column) => column);
+
+  GeneratedColumn<double> get altitudeAccuracy => $composableBuilder(
+    column: $table.altitudeAccuracy,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get segment =>
+      $composableBuilder(column: $table.segment, builder: (column) => column);
+
+  $$ActivitiesTableAnnotationComposer get activityId {
+    final $$ActivitiesTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.activityId,
+      referencedTable: $db.activities,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$ActivitiesTableAnnotationComposer(
+            $db: $db,
+            $table: $db.activities,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$ActivityPointsTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $ActivityPointsTable,
+          ActivityPoint,
+          $$ActivityPointsTableFilterComposer,
+          $$ActivityPointsTableOrderingComposer,
+          $$ActivityPointsTableAnnotationComposer,
+          $$ActivityPointsTableCreateCompanionBuilder,
+          $$ActivityPointsTableUpdateCompanionBuilder,
+          (ActivityPoint, $$ActivityPointsTableReferences),
+          ActivityPoint,
+          PrefetchHooks Function({bool activityId})
+        > {
+  $$ActivityPointsTableTableManager(
+    _$AppDatabase db,
+    $ActivityPointsTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$ActivityPointsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$ActivityPointsTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$ActivityPointsTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                Value<String> activityId = const Value.absent(),
+                Value<DateTime> at = const Value.absent(),
+                Value<double> lat = const Value.absent(),
+                Value<double> lon = const Value.absent(),
+                Value<double> accuracy = const Value.absent(),
+                Value<double?> altitude = const Value.absent(),
+                Value<double?> altitudeAccuracy = const Value.absent(),
+                Value<int> segment = const Value.absent(),
+              }) => ActivityPointsCompanion(
+                id: id,
+                activityId: activityId,
+                at: at,
+                lat: lat,
+                lon: lon,
+                accuracy: accuracy,
+                altitude: altitude,
+                altitudeAccuracy: altitudeAccuracy,
+                segment: segment,
+              ),
+          createCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                required String activityId,
+                required DateTime at,
+                required double lat,
+                required double lon,
+                required double accuracy,
+                Value<double?> altitude = const Value.absent(),
+                Value<double?> altitudeAccuracy = const Value.absent(),
+                required int segment,
+              }) => ActivityPointsCompanion.insert(
+                id: id,
+                activityId: activityId,
+                at: at,
+                lat: lat,
+                lon: lon,
+                accuracy: accuracy,
+                altitude: altitude,
+                altitudeAccuracy: altitudeAccuracy,
+                segment: segment,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable<$ActivityPointsTable, ActivityPoint>(table),
+                  $$ActivityPointsTableReferences(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: ({activityId = false}) {
+            return PrefetchHooks(
+              db: db,
+              explicitlyWatchedTables: [],
+              addJoins:
+                  <
+                    T extends TableManagerState<
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic
+                    >
+                  >(state) {
+                    if (activityId) {
+                      state = state.withJoin(
+                        currentTable: table,
+                        currentColumn: table.activityId,
+                        referencedTable: $$ActivityPointsTableReferences
+                            ._activityIdTable(db),
+                        referencedColumn: $$ActivityPointsTableReferences
+                            ._activityIdTable(db)
+                            .id,
+                      ) as T;
+                    }
+
+                    return state;
+                  },
+              getPrefetchedDataCallback: (items) async {
+                return [];
+              },
+            );
+          },
+        ),
+      );
+}
+
+typedef $$ActivityPointsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $ActivityPointsTable,
+      ActivityPoint,
+      $$ActivityPointsTableFilterComposer,
+      $$ActivityPointsTableOrderingComposer,
+      $$ActivityPointsTableAnnotationComposer,
+      $$ActivityPointsTableCreateCompanionBuilder,
+      $$ActivityPointsTableUpdateCompanionBuilder,
+      (ActivityPoint, $$ActivityPointsTableReferences),
+      ActivityPoint,
+      PrefetchHooks Function({bool activityId})
+    >;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
@@ -15145,4 +17691,8 @@ class $AppDatabaseManager {
       $$AiProposalsTableTableManager(_db, _db.aiProposals);
   $$HealthWritesTableTableManager get healthWrites =>
       $$HealthWritesTableTableManager(_db, _db.healthWrites);
+  $$ActivitiesTableTableManager get activities =>
+      $$ActivitiesTableTableManager(_db, _db.activities);
+  $$ActivityPointsTableTableManager get activityPoints =>
+      $$ActivityPointsTableTableManager(_db, _db.activityPoints);
 }

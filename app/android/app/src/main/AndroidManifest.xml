@@ -1,4 +1,5 @@
-<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
     <!-- AI connections: the Wi-Fi MCP server and the owner's own gateway (handbook 10.3). -->
     <uses-permission android:name="android.permission.INTERNET"/>
 
@@ -14,13 +15,26 @@
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
     <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM"/>
 
+    <!-- GPS runs, walks, and rides (handbook 4.14). Location is asked for
+         "while using the app" only, when the user starts the first activity.
+         A recording that started on screen goes on with the screen off as a
+         foreground service with a notification. RepArc never asks for
+         "Allow all the time" (no ACCESS_BACKGROUND_LOCATION). -->
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION"/>
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION"/>
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE"/>
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_LOCATION"/>
+    <!-- The activity recognition plugin also declares a health foreground
+         service. RepArc reads activity only while open, so it is removed. -->
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_HEALTH" tools:node="remove"/>
+
     <!-- Live steps: the phone's step sensor, asked for only when the user
          turns Live steps on in Me → Health apps (handbook 9.5). -->
     <uses-permission android:name="android.permission.ACTIVITY_RECOGNITION"/>
 
     <!-- Health Connect: one permission per data type, each asked for only when
          the user switches that feature on (handbook 9.2, D-020). No heart rate,
-         sleep, location, or clinical records. -->
+         sleep, location, or clinical records from Health Connect. -->
     <uses-permission android:name="android.permission.health.READ_STEPS"/>
     <uses-permission android:name="android.permission.health.READ_ACTIVE_CALORIES_BURNED"/>
     <uses-permission android:name="android.permission.health.READ_DISTANCE"/>
@@ -35,6 +49,9 @@
         android:allowBackup="true"
         android:fullBackupContent="@xml/backup_rules"
         android:dataExtractionRules="@xml/data_extraction_rules">
+        <service
+            android:name="dk.carp.activity_recognition_flutter.ForegroundService"
+            tools:node="remove"/>
         <activity
             android:name=".MainActivity"
             android:exported="true"

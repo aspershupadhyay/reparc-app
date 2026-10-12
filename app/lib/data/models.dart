@@ -6,6 +6,9 @@ library;
 
 enum SessionStatus { active, paused, finished, incomplete }
 
+/// A GPS activity's state (handbook 4.14).
+enum ActivityStatus { recording, paused, finished }
+
 enum SetType { warmup, working, drop, timed }
 
 enum MealStatus { planned, eaten }

@@ -38,7 +38,7 @@ void main() {
     expect(slots['own']!.kind, isNull);
     expect(slots['own']!.name, 'Pre-workout');
     final v = await db.customSelect('PRAGMA user_version').getSingle();
-    expect(v.data.values.first, 6);
+    expect(v.data.values.first, 7);
     await db.close();
   });
 
@@ -68,7 +68,7 @@ void main() {
     expect(await db.select(db.aiProposals).get(), isEmpty);
     expect(await db.select(db.healthWrites).get(), isEmpty);
     final v = await db.customSelect('PRAGMA user_version').getSingle();
-    expect(v.data.values.first, 6);
+    expect(v.data.values.first, 7);
     await db.close();
   });
 
@@ -107,7 +107,7 @@ void main() {
     expect(await db.select(db.programs).get(), isEmpty);
     expect(await db.select(db.bodyWeights).get(), isEmpty);
     final v = await db.customSelect('PRAGMA user_version').getSingle();
-    expect(v.data.values.first, 6);
+    expect(v.data.values.first, 7);
     await db.close();
   });
 
@@ -175,7 +175,7 @@ void main() {
     // Running the copy again changes nothing.
     expect(await db.copyLegacyPlans(), 0);
     final v = await db.customSelect('PRAGMA user_version').getSingle();
-    expect(v.data.values.first, 6);
+    expect(v.data.values.first, 7);
     await db.close();
   });
 
@@ -220,7 +220,34 @@ void main() {
       reason: 'A set outside a plan is the user\'s',
     );
     final v = await db.customSelect('PRAGMA user_version').getSingle();
-    expect(v.data.values.first, 6);
+    expect(v.data.values.first, 7);
+    await db.close();
+  });
+
+  test('v6 to v7 keeps every record and adds GPS activities', () async {
+    final file = File('${dir.path}/v6.sqlite');
+    // Build the v6 shape: today's schema without the activity tables.
+    driftRuntimeOptions.dontWarnAboutMultipleDatabases = true;
+    final fresh = AppDatabase(NativeDatabase(file));
+    await fresh.customSelect('SELECT 1').get();
+    await fresh.close();
+    final raw = sql.sqlite3.open(file.path);
+    raw.execute('DROP TABLE activity_points');
+    raw.execute('DROP TABLE activities');
+    const t = '2026-03-02T08:00:00.000Z';
+    raw.execute(
+      'INSERT INTO workout_sessions (id, created_at, updated_at, name, status, started_at, utc_offset_minutes, '
+      "time_zone_name) VALUES ('w1', '$t', '$t', 'Push', 'finished', '$t', 330, 'IST')",
+    );
+    raw.execute('PRAGMA user_version = 6');
+    raw.close();
+
+    final db = AppDatabase(NativeDatabase(file));
+    expect((await db.select(db.workoutSessions).getSingle()).name, 'Push');
+    expect(await db.select(db.activities).get(), isEmpty);
+    expect(await db.select(db.activityPoints).get(), isEmpty);
+    final v = await db.customSelect('PRAGMA user_version').getSingle();
+    expect(v.data.values.first, 7);
     await db.close();
   });
 }

@@ -243,7 +243,14 @@ Check each answer against the app before submitting. If a data flow changes, upd
 
 Each is asked for only when the user switches that feature on. Health data is not sent to any server, not used for ads, and not sold.
 
-**Physical activity (`ACTIVITY_RECOGNITION`):** asked for only when the user turns on Me → Health apps → Live steps (from 0.4.17). The phone's step sensor counts steps while RepArc is open, on top of the Health Connect total. Nothing is stored or sent. Data safety stays **No collection**, because nothing leaves the phone.
+**Location and the location foreground service (from 0.5.0, D-037):**
+
+- `ACCESS_FINE_LOCATION` and `ACCESS_COARSE_LOCATION`, asked "while using the app" when the user starts the first run, walk, or ride. No `ACCESS_BACKGROUND_LOCATION`.
+- `FOREGROUND_SERVICE_LOCATION`: Play Console → App content → Foreground service permissions. Use: "The user starts recording a run, walk, or ride. GPS measures distance, pace, and the route while the screen is off. A notification shows the whole time; the user stops it with Pause or Finish." Play asks for a short video of the flow. **Owner:** record it on a phone (start Run, lock the screen, show the notification, finish).
+- Data safety: precise location stays on the phone, so it is not "collected". Map tile requests show MapTiler the map area on screen (approximate location) when a build has a key. **To confirm (owner):** whether to declare "Approximate location: collected, for app functionality, processed ephemerally", or ship the Play build without map tiles.
+- The activity recognition plugin's `FOREGROUND_SERVICE_HEALTH` permission and service are removed from the merged manifest (`tools:node="remove"`), so no health foreground-service declaration is needed.
+
+**Physical activity (`ACTIVITY_RECOGNITION`):** asked for only when the user turns on Me → Health apps → Live steps (from 0.4.17). The phone's step sensor counts steps while RepArc is open, on top of the Health Connect total. Nothing is stored or sent. Data safety stays **No collection** for this, because nothing leaves the phone. From 0.5.0 the same permission also lets activity recognition hold Live steps in a vehicle.
 
 **Content rating and audience:** fitness, no user-generated content shared with others, no ads, no purchases. Target 18+ (16+ at the youngest), as the launch review proposes. **To confirm (owner).**
 

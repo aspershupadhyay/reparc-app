@@ -26,8 +26,14 @@
 	<string>$(FLUTTER_BUILD_NUMBER)</string>
 	<key>NSHealthShareUsageDescription</key>
 	<string>Reparc reads only the types you switch on in Me → Health apps: steps, walking and running distance, active energy, or body weight. It shows them next to your workouts and meals, and shares them with an AI app only if you allow health data there.</string>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>RepArc uses GPS to measure the distance, pace, and route of a run, walk, or ride that you start. The route stays on this phone.</string>
+	<key>UIBackgroundModes</key>
+	<array>
+		<string>location</string>
+	</array>
 	<key>NSMotionUsageDescription</key>
-	<string>RepArc counts your steps live while it is open, only if you turn on Live steps in Me → Health apps. Steps stay on this phone.</string>
+	<string>RepArc counts your steps live while it is open, if you turn on Live steps, and notices when you are in a vehicle so those steps are not counted. Nothing is sent anywhere.</string>
 	<key>NSHealthUpdateUsageDescription</key>
 	<string>Reparc writes only what you switch on in Me → Health apps: workouts you finish and meals you mark as eaten.</string>
 	<key>NSLocalNetworkUsageDescription</key>

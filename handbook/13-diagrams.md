@@ -68,6 +68,33 @@ flowchart LR
     Next --> Done([Every set done: user finishes and saves])
 ```
 
+## 2b. GPS activity states (handbook 4.14)
+
+GPS is on only while recording. Each resume starts a new segment, so no distance is counted across a pause.
+
+```mermaid
+stateDiagram-v2
+    [*] --> Recording: Run, Walk, or Ride (location allowed)
+    Recording --> Paused: Pause (GPS off)
+    Paused --> Recording: Resume (new segment)
+    Recording --> Finished: Finish and save
+    Paused --> Finished: Finish and save
+    Recording --> [*]: Discard
+    Paused --> [*]: Discard
+    Finished --> [*]: Delete
+```
+
+```mermaid
+flowchart LR
+    GPS[Phone GPS, about 1 fix a second] --> Buffer[Recorder buffer]
+    Buffer -->|every 3 s| DB[(activity_points on the phone)]
+    DB --> Track[track.dart: drop poor fixes and jumps, smooth, count]
+    Track --> Screen[Recording screen and activity page]
+    DB -->|Finish| Summary[(activities summary)]
+    Summary -->|Write Workouts on| Health[Health Connect or Apple Health: workout of that kind]
+    Tiles[MapTiler tiles, only with a key] -.->|map images| Screen
+```
+
 ## 3. Local-first record flow
 
 ```mermaid

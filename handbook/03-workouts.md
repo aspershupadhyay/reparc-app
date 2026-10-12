@@ -314,3 +314,93 @@ A cue is said only within 2 s of its time, and a late tick says only the latest 
 - License: the clips were made on the owner's free ElevenLabs plan (non-commercial). A store release needs a paid plan and the clips made again (D-031).
 - Screen reader: the set time has a spoken label. Check VoiceOver and TalkBack on devices.
 - Code: `app/lib/domain/guide.dart` (rules), `app/lib/features/workout/guide_controller.dart`, `voice.dart`. Tests: `app/test/guide_test.dart`.
+
+## 4.14 GPS runs, walks, and rides
+
+Built 2026-10-12 (D-037, owner request: "full Strava like for running and walking and cycling"). Owner choices: GPS keeps recording with the screen off, with a notification; MapTiler free tier for maps; schema v7. **Not tested on a real phone yet.**
+
+### Purpose
+
+Measure a run, walk, or ride (distance, pace or speed, time, route, splits, climb) as precisely as the phone's GPS allows, on the phone, with no account.
+
+### User and trigger
+
+- **User:** anyone who runs, walks, or cycles, with or without gym training.
+- **Trigger:** Workout tab → **Run**, **Walk**, or **Ride** (three buttons under the start card).
+- **Preconditions:** no gym workout in progress; location allowed "while using the app"; the phone's location on.
+
+### User flow
+
+1. The user taps **Run**. The first time, the phone asks for location ("while using the app" only; RepArc never asks for "Allow all the time").
+2. The recording screen opens: GPS signal, the route, time, distance, pace now, and average pace (rides: speed in km/h or mph).
+3. The user puts the phone away. Android shows the notification "Recording your run"; iPhone shows its blue location indicator. Recording goes on with the screen off or in another app.
+4. **Pause** turns GPS off and stops the clock. **Resume** starts a new segment, so no distance is counted across the pause (a bus ride during a pause adds nothing).
+5. **Finish** → **Finish and save** opens the activity page: map, distance, average pace or speed, moving time, elapsed time, climb, top speed, and splits per km or mile. **Discard** asks again before it deletes. With no distance yet, the sheet offers **Keep going** or **End without saving**.
+6. The activity shows in Workout → History with the gym workouts, newest first. The page can rename or delete it.
+
+### How precise it is (`app/lib/domain/track.dart`)
+
+- Raw GPS fixes are saved as the phone gives them (about one a second). All filtering happens when numbers are worked out, so a better rule can recompute old activities.
+- Fixes with poor accuracy are dropped (over 20 m for runs and walks, 25 m for rides), and so is any fix that would need a speed the activity cannot reach (over 11 m/s running, 4 m/s walking, 25 m/s riding): a GPS jump or a car.
+- A Kalman filter smooths position, weighing each fix by its accuracy against how far the user could have moved. Raw GPS zig-zags a few metres to each side, which adds about 10% to a walk.
+- A step counts only when it is longer than the two fixes' uncertainty, so standing still adds no distance. Each segment ends at its last raw fix, so the smoothing lag is not lost.
+- Moving time leaves out stops (slower than 0.4 m/s walking, 1 m/s running, 1.5 m/s riding) and gaps over 60 s. Pace is moving time over distance. Splits are interpolated to the exact point where each km or mile was reached.
+- Climb uses GPS height with a 3 m dead band; it is an estimate. Top speed is over at least 10 seconds.
+- Tests (`app/test/track_test.dart`): a noisy 1 km walk (±4 m on every fix, five seeds) measures within 3%; a square route keeps its corners; 10 minutes standing still adds less than 15 m; jumps and poor fixes are dropped; nothing is counted across a pause.
+- **Limits:** GPS under trees, between tall buildings, and indoors is worse; a treadmill run measures nothing. Phone GPS is usually within 1–3% on an open route. **To confirm:** checks against a measured route on real phones.
+
+### Data
+
+- **Create:** `activities` (kind, name, status, start, end, paused time, segment, UTC offset, time zone, distance in metres, moving seconds, climb in metres, top speed in m/s, note) and `activity_points` (time, latitude, longitude, accuracy, altitude, altitude accuracy, segment). Schema v7 with a tested upgrade from v6.
+- **Read:** the points, to draw the route and work out the numbers.
+- **Update:** name and note. The summary is saved at **Finish**.
+- **Delete:** one activity with its points (cascade), or everything in Me → Export or delete. Export and backup include both tables under a new `activity` scope; the AI file export leaves routes out unless the user ticks **Runs, walks, and rides**.
+- **Units and time:** metres, seconds, and m/s stored; km or mi from Me → Units. UTC instants with the start's UTC offset.
+- **Retention:** until the user deletes it.
+
+### States and failure paths
+
+- **Location refused:** nothing starts; a message says why. **Refused for good:** a **Settings** action. **Location off:** a **Turn on** action.
+- **Weak or no GPS:** "Weak GPS" or "Finding GPS" above the map; fixes that are too poor are not used.
+- **GPS lost** (location switched off mid-run): "GPS lost. Is location on?" The recording waits; fixes count again when they come back.
+- **App closed or the phone restarts:** fixes are saved every 3 seconds, so at most 3 seconds are lost. When RepArc opens again, recording goes on (the app shell restarts GPS); the gap is a straight line if the speed is possible, else a new start.
+- **Two things at once:** a GPS activity cannot start while a gym workout runs, and only one activity records at a time.
+
+### Privacy and security
+
+- Routes are where the user lives and trains. They stay on the phone and are never sent to RepArc or any server.
+- **Map tiles:** builds with a MapTiler key load map images from MapTiler while a map is on screen. Those requests show MapTiler roughly which area is on screen. Without a key, routes are drawn on a plain grid and no map request is made. The key is a GitHub secret (`MAPTILER_KEY`), passed at build time; it is not in the repository.
+- Permissions: location while in use (`ACCESS_FINE_LOCATION`, `ACCESS_COARSE_LOCATION`), a location foreground service (`FOREGROUND_SERVICE`, `FOREGROUND_SERVICE_LOCATION`) on Android; `NSLocationWhenInUseUsageDescription` and the `location` background mode on iPhone. No background location permission.
+- Logs never contain coordinates.
+
+### Accessibility and motion
+
+- Run, Walk, and Ride buttons are named "Record a run with GPS" and so on. Each large number on the recording screen reads as one phrase ("Distance 2.31 km"). The map has a text label. Splits read as "Km 3, 5:12 /km".
+- Large text: numbers scale down to fit their box instead of cutting off.
+- Buttons are 64 dp high for use while moving. Haptics confirm start, pause, and finish. No motion besides the map following the user.
+
+### Analytics and reporting
+
+- **User progress:** distance, moving time, pace, climb, and splits per activity. Analytics → Workout does not count activities yet (**To confirm** with the owner).
+- **Product-use events:** none.
+
+### Health apps
+
+With **Write → Workouts** on (Me → Health apps), each finished run, walk, or ride with distance is written once to Health Connect or Apple Health as a running, walking, or biking workout with its start and end. Distance and route are not written: that needs separate write permissions RepArc does not ask for.
+
+### Acceptance checks
+
+- [x] Numbers from points: distance, moving time, pace, splits, climb, top speed (`track_test.dart`).
+- [x] Start, pause, resume, finish, discard, restore after restart, and refused permission (`recorder_test.dart`, `activity_flow_test.dart`).
+- [x] v6 to v7 upgrade, export, restore, and delete (`migration_test.dart`, `activity_repository_test.dart`).
+- [x] Health write of activities once each (`health_sync_test.dart`).
+- [ ] On a real Android phone: a run with the screen off, the notification, battery use over an hour, and distance against a measured route.
+- [ ] On an iPhone: background recording and the blue indicator.
+- [ ] TalkBack and VoiceOver on the recording screen.
+
+### AI context
+
+- **Purpose:** record GPS runs, walks, and rides on the phone, precisely, with no account.
+- **Must preserve:** raw points stay raw; missing summary values stay null; nothing is counted across a pause; routes never leave the phone except as map tile requests and user exports.
+- **Must not:** ask for background ("all the time") location; send coordinates to any server; write routes to a health app without a new owner decision.
+- **Code:** `app/lib/domain/track.dart`, `app/lib/data/activity_repository.dart`, `app/lib/activity/`.

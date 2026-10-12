@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:reparc/domain/track.dart';
 import 'package:reparc/health/health_service.dart';
 import 'package:reparc/health/live_steps.dart';
 
@@ -12,6 +13,7 @@ class FakeHealth implements HealthSource {
   HealthAvailability state = HealthAvailability.available;
   final requested = <HealthFeature>[];
   final workouts = <String>[];
+  final activities = <String, ActivityKind>{};
   final meals = <String>[];
 
   @override
@@ -47,8 +49,10 @@ class FakeHealth implements HealthSource {
     required String title,
     required DateTime start,
     required DateTime end,
+    ActivityKind? activity,
   }) async {
     workouts.add(id);
+    if (activity != null) activities[id] = activity;
     return true;
   }
 
@@ -82,4 +86,12 @@ class FakeStepSensor implements StepSensor {
     listens++;
     return controller.stream;
   }
+}
+
+/// Activity recognition in tests.
+class FakeMotion implements MotionSource {
+  final controller = StreamController<Motion>.broadcast();
+
+  @override
+  Stream<Motion> motion() => controller.stream;
 }

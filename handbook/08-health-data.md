@@ -16,6 +16,7 @@ updated: 2026-10-06
 - **Live steps** (switch, off by default, shown when Steps is on): while RepArc is open, the phone's step sensor (`pedometer` 4.2.0, MIT) counts steps after the last store read and adds them on screen. It needs "Physical activity" on Android 10+ (asked only when the switch is turned on) or "Motion & Fitness" on iPhone. The store's total is read again every 5 minutes and when the app comes back (every minute without Live steps), and the number never goes down within a day, because the apps that write steps to the store do it in batches. Nothing from the sensor is stored. Code: `app/lib/health/live_steps.dart`.
 - **Today** refreshes on its own; each type is read separately, so one failure never hides the others.
 - **Analytics → Workout → Steps and distance:** steps a day (average over the days with data), total distance, and a bar per day for the 7, 30, or 90 days chosen. Health Connect lets an app read only 30 days before its first permission was granted, so older days can be gaps.
+- **Vehicles (from 0.5.0):** Live steps does not add sensor steps while Android (Google Play services activity recognition) or iPhone (Core Motion) says, with at least 50% confidence, that the user is in a vehicle or on a bicycle. Home shows "held: in a vehicle". It uses the same Physical activity or Motion & Fitness permission, reads only while RepArc is open, and saves nothing. The plugin's own health-type foreground service is removed from the Android manifest. The store's total itself is not changed: if the app that writes steps there counted bumps, RepArc cannot tell.
 - **Not done (owner decision needed, 9.3):** heart rate, sleep, and reading other apps' workouts.
 
 ## 9.1 Purpose
@@ -40,7 +41,7 @@ Do not copy the system permission screen.
 
 Assess workout records first. Add steps, active energy, or nutrition only if a user-facing feature needs them.
 
-Do not request heart rate, location, sleep, body measurements, or clinical records without a separate product decision and review.
+Do not request heart rate, location, sleep, body measurements, or clinical records without a separate product decision and review. (Location for GPS activities was decided in D-037; it does not come from Health Connect or Apple Health. See 4.14.)
 
 ## 9.4 Platform behavior
 

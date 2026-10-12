@@ -4,6 +4,8 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:health/health.dart';
 
+import '../domain/track.dart';
+
 /// One health feature the user can switch on by itself (handbook 9.2).
 ///
 /// Each feature names one data type, whether RepArc reads or writes it, and
@@ -42,7 +44,7 @@ enum HealthFeature {
   writeWorkouts(
     'Workouts',
     'Write',
-    'Saves each finished RepArc workout as a strength training workout, with its start and end time.',
+    'Saves each finished workout as strength training, and each run, walk, or ride as that activity, with its start and end time.',
     HealthDataType.WORKOUT,
     HealthDataAccess.WRITE,
   ),
@@ -120,11 +122,14 @@ abstract class HealthSource {
   /// Latest weight on or before [until], within the last 90 days.
   Future<WeightReading?> latestWeight(DateTime until);
 
+  /// Writes a workout. [activity] makes it a run, walk, or ride; without
+  /// it the workout is strength training.
   Future<bool> writeWorkout({
     required String id,
     required String title,
     required DateTime start,
     required DateTime end,
+    ActivityKind? activity,
   });
 
   Future<bool> writeMeal({
@@ -290,12 +295,21 @@ class PlatformHealth implements HealthSource {
     required String title,
     required DateTime start,
     required DateTime end,
+    ActivityKind? activity,
   }) async {
     await _ready();
+    // Only the session: its distance would need a separate write
+    // permission, which RepArc does not ask for.
     return _health.writeWorkoutData(
-      activityType: Platform.isIOS
-          ? HealthWorkoutActivityType.TRADITIONAL_STRENGTH_TRAINING
-          : HealthWorkoutActivityType.STRENGTH_TRAINING,
+      activityType: switch (activity) {
+        ActivityKind.run => HealthWorkoutActivityType.RUNNING,
+        ActivityKind.walk => HealthWorkoutActivityType.WALKING,
+        ActivityKind.ride => HealthWorkoutActivityType.BIKING,
+        null =>
+          Platform.isIOS
+              ? HealthWorkoutActivityType.TRADITIONAL_STRENGTH_TRAINING
+              : HealthWorkoutActivityType.STRENGTH_TRAINING,
+      },
       start: start,
       end: end,
       title: title,

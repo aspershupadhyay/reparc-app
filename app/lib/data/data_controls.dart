@@ -12,7 +12,7 @@ class DataControls {
   final Clock clock;
 
   /// Every data scope. An export for a backup uses all of them.
-  static const allScopes = {'workout', 'meal', 'body'};
+  static const allScopes = {'workout', 'meal', 'body', 'activity'};
 
   /// Version of the export file layout. Change it when fields change.
   static const exportFormatVersion = 2;
@@ -23,7 +23,8 @@ class DataControls {
   /// values. A missing value is written as null, never as zero.
   ///
   /// [scopes] limits the export to the data the user chose: `workout`,
-  /// `meal`, and `body` (profile, targets, weight). Settings that are not
+  /// `meal`, `body` (profile, targets, weight), and `activity` (GPS runs,
+  /// walks, and rides with their routes). Settings that are not
   /// personal data, such as units, are always kept.
   Future<String> exportJson({required String appVersion, Set<String> scopes = DataControls.allScopes}) async {
     Future<List<Map<String, Object?>>> rows(TableInfo<Table, DataClass> t) async {
@@ -32,6 +33,7 @@ class DataControls {
     }
 
     final workout = scopes.contains('workout'), meal = scopes.contains('meal'), body = scopes.contains('body');
+    final activity = scopes.contains('activity');
     final settings = [
       for (final r in await rows(db.settings))
         if (body || !(r['key'] as String).startsWith('profile.') && r['key'] != 'targetsOn') r,
@@ -48,6 +50,8 @@ class DataControls {
         'Meal entry nutrient values are per source serving. amount and amountUnit are the amount eaten.',
         'null means the value was not recorded. It does not mean zero.',
         'sodiumMg is milligrams. fiberG and sugarG are grams.',
+        'activities: distanceM is metres, maxSpeed is metres per second, movingSec is seconds. '
+            'activityPoints are the raw GPS fixes (lat and lon in degrees, accuracy and altitude in metres).',
         'programs.plan is a JSON document: the plan days, warm-ups, and exercise targets. '
             'An exerciseId of "user:<id>" points to a row in exercises.',
       ],
@@ -68,6 +72,8 @@ class DataControls {
         'settings': settings,
         'aiProposals': workout && meal && body ? await rows(db.aiProposals) : none,
         'healthWrites': body ? await rows(db.healthWrites) : none,
+        'activities': activity ? await rows(db.activities) : none,
+        'activityPoints': activity ? await rows(db.activityPoints) : none,
       },
     };
     return const JsonEncoder.withIndent('  ').convert(out);
@@ -118,6 +124,8 @@ class DataControls {
       await db.copyLegacyPlans();
       await put(db.bodyWeights, 'bodyWeights', (j) => BodyWeight.fromJson(j, serializer: ser));
       await put(db.aiProposals, 'aiProposals', (j) => AiProposal.fromJson(j, serializer: ser));
+      await put(db.activities, 'activities', (j) => GpsActivity.fromJson(j, serializer: ser));
+      await put(db.activityPoints, 'activityPoints', (j) => ActivityPoint.fromJson(j, serializer: ser));
       for (final r in rows('settings')) {
         final key = r['key'] as String;
         if (key.startsWith('health') || key.startsWith('ai.')) continue;
@@ -133,6 +141,8 @@ class DataControls {
   Future<void> _clear() async {
     await db.customStatement('PRAGMA defer_foreign_keys = ON');
     for (final TableInfo<Table, dynamic> t in [
+      db.activityPoints,
+      db.activities,
       db.setEntries,
       db.sessionExercises,
       db.workoutSessions,

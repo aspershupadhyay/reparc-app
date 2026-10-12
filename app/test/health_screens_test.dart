@@ -51,6 +51,7 @@ void main() {
           libraryProvider.overrideWith((ref) async => library),
           healthSourceProvider.overrideWithValue(health),
           stepSensorProvider.overrideWithValue(sensor),
+          motionSourceProvider.overrideWithValue(FakeMotion()),
         ],
         child: ReparcApp(router: buildRouter(initialLocation: at)),
       ),

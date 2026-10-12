@@ -11,6 +11,9 @@ import '../../core/tokens.dart';
 import '../../core/widgets.dart';
 import '../../data/models.dart';
 import '../../data/providers.dart';
+import '../../activity/activity_widgets.dart';
+import '../../data/database.dart';
+import '../../data/workout_repository.dart';
 import '../exercises/library_screen.dart';
 import 'roadmap_screens.dart';
 import 'session_clock.dart';
@@ -41,6 +44,9 @@ class _WorkoutScreenState extends ConsumerState<WorkoutScreen> {
           children: [
             const ScreenTitle('Workout'),
             _StartCard(liveId: live?.id, compact: _section != _Section.plan),
+            const SizedBox(height: Space.m),
+            // GPS runs, walks, and rides (handbook 4.14).
+            const ActivityStartRow(),
             const SizedBox(height: Space.l),
             PillTabs<_Section>(
               values: _Section.values,
@@ -181,106 +187,113 @@ class _History extends ConsumerWidget {
     final t = Theme.of(context).textTheme;
     final p = context.pal;
     final unit = ref.watch(currentSettingsProvider).loadUnit;
+    final activities = ref.watch(activityHistoryProvider).value ?? const <GpsActivity>[];
     return AsyncBody(
       value: ref.watch(historyProvider),
       builder: (list) {
-        if (list.isEmpty) {
+        // Workouts and GPS activities together, newest first.
+        final items = <Object>[...list, ...activities]..sort((a, b) => _startOf(b).compareTo(_startOf(a)));
+        if (items.isEmpty) {
           return const EmptyState(
             icon: LucideIcons.history,
             title: 'No workouts yet',
-            body: 'Finished workouts show up here.',
+            body: 'Finished workouts, runs, walks, and rides show up here.',
           );
         }
         return Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            for (final h in list) ...[
-              Builder(
-                builder: (context) {
-                  final d = localDayOfInstant(h.session.startedAt, h.session.utcOffsetMinutes);
-                  final incomplete = h.session.status == SessionStatus.incomplete;
-                  final duration = h.duration;
-                  final volume = h.volume?.inUnit(unit);
-                  final records = h.records == 1 ? '1 personal record' : '${h.records} personal records';
-                  return AppCard(
-                    padding: const EdgeInsets.all(Space.m),
-                    onTap: () => context.push('/workout/session/${h.session.id}'),
-                    semanticLabel: [
-                      h.session.name,
-                      fmtDayLong(d),
-                      if (duration != null) speakDuration(duration),
-                      '${h.exerciseCount} exercises',
-                      '${h.completedSets} sets',
-                      if (volume != null) '${speakWithUnit(volume.round(), unit)} lifted',
-                      if (h.records > 0) records,
-                      if (incomplete) 'incomplete',
-                    ].join(', '),
-                    child: ExcludeSemantics(
-                      child: Row(
-                        children: [
-                          Container(
-                            width: 56,
-                            height: 56,
-                            decoration: BoxDecoration(color: p.brandSoft, borderRadius: Radii.medium),
-                            child: Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Text('${d.day}', style: t.titleLarge?.copyWith(color: p.brand, height: 1)),
-                                Text(
-                                  fmtDayMonth(d).split(' ').last.toUpperCase(),
-                                  style: t.labelSmall?.copyWith(color: p.brand),
-                                ),
-                              ],
-                            ),
-                          ),
-                          const SizedBox(width: Space.m),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Row(
-                                  children: [
-                                    Expanded(
-                                      child: Text(
-                                        h.session.name,
-                                        style: t.titleSmall,
-                                        maxLines: 1,
-                                        overflow: TextOverflow.ellipsis,
-                                      ),
-                                    ),
-                                    if (h.records > 0)
-                                      Tag(
-                                        h.records == 1 ? 'PR' : '${h.records} PRs',
-                                        color: p.action,
-                                        textColor: p.onAction,
-                                        icon: LucideIcons.trophy,
-                                      ),
-                                  ],
-                                ),
-                                const SizedBox(height: 4),
-                                Text(
-                                  metaLine([
-                                    if (duration != null) _minutes(duration),
-                                    '${h.exerciseCount} exercises',
-                                    '${h.completedSets} sets',
-                                    if (volume != null) fmtWithUnit(volume.round(), unit),
-                                  ]),
-                                  style: t.bodySmall,
-                                ),
-                                if (incomplete) ...[
-                                  const SizedBox(height: 4),
-                                  Tag('Incomplete', color: p.orangeSoft),
+            for (final item in items) ...[
+              if (item is GpsActivity)
+                ActivityHistoryCard(activity: item)
+              else
+                Builder(
+                  builder: (context) {
+                    final h = item as SessionSummary;
+                    final d = localDayOfInstant(h.session.startedAt, h.session.utcOffsetMinutes);
+                    final incomplete = h.session.status == SessionStatus.incomplete;
+                    final duration = h.duration;
+                    final volume = h.volume?.inUnit(unit);
+                    final records = h.records == 1 ? '1 personal record' : '${h.records} personal records';
+                    return AppCard(
+                      padding: const EdgeInsets.all(Space.m),
+                      onTap: () => context.push('/workout/session/${h.session.id}'),
+                      semanticLabel: [
+                        h.session.name,
+                        fmtDayLong(d),
+                        if (duration != null) speakDuration(duration),
+                        '${h.exerciseCount} exercises',
+                        '${h.completedSets} sets',
+                        if (volume != null) '${speakWithUnit(volume.round(), unit)} lifted',
+                        if (h.records > 0) records,
+                        if (incomplete) 'incomplete',
+                      ].join(', '),
+                      child: ExcludeSemantics(
+                        child: Row(
+                          children: [
+                            Container(
+                              width: 56,
+                              height: 56,
+                              decoration: BoxDecoration(color: p.brandSoft, borderRadius: Radii.medium),
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Text('${d.day}', style: t.titleLarge?.copyWith(color: p.brand, height: 1)),
+                                  Text(
+                                    fmtDayMonth(d).split(' ').last.toUpperCase(),
+                                    style: t.labelSmall?.copyWith(color: p.brand),
+                                  ),
                                 ],
-                              ],
+                              ),
                             ),
-                          ),
-                          Icon(LucideIcons.chevronRight, size: IconSizes.s, color: p.inkSoft),
-                        ],
+                            const SizedBox(width: Space.m),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Row(
+                                    children: [
+                                      Expanded(
+                                        child: Text(
+                                          h.session.name,
+                                          style: t.titleSmall,
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                      ),
+                                      if (h.records > 0)
+                                        Tag(
+                                          h.records == 1 ? 'PR' : '${h.records} PRs',
+                                          color: p.action,
+                                          textColor: p.onAction,
+                                          icon: LucideIcons.trophy,
+                                        ),
+                                    ],
+                                  ),
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    metaLine([
+                                      if (duration != null) _minutes(duration),
+                                      '${h.exerciseCount} exercises',
+                                      '${h.completedSets} sets',
+                                      if (volume != null) fmtWithUnit(volume.round(), unit),
+                                    ]),
+                                    style: t.bodySmall,
+                                  ),
+                                  if (incomplete) ...[
+                                    const SizedBox(height: 4),
+                                    Tag('Incomplete', color: p.orangeSoft),
+                                  ],
+                                ],
+                              ),
+                            ),
+                            Icon(LucideIcons.chevronRight, size: IconSizes.s, color: p.inkSoft),
+                          ],
+                        ),
                       ),
-                    ),
-                  );
-                },
-              ),
+                    );
+                  },
+                ),
               const SizedBox(height: Space.s),
             ],
           ],
@@ -289,6 +302,8 @@ class _History extends ConsumerWidget {
     );
   }
 }
+
+DateTime _startOf(Object item) => item is GpsActivity ? item.startedAt : (item as SessionSummary).session.startedAt;
 
 /// "48 min" or "1 h 05 min".
 String _minutes(Duration d) {

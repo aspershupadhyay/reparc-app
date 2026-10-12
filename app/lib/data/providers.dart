@@ -7,6 +7,7 @@ import '../domain/meal_plan.dart';
 import 'analytics_repository.dart';
 import 'body_repository.dart';
 import 'data_controls.dart';
+import 'activity_repository.dart';
 import 'database.dart';
 import 'meal_repository.dart';
 import 'program_repository.dart';
@@ -18,6 +19,21 @@ final databaseProvider = Provider<AppDatabase>((ref) => throw UnimplementedError
 
 final workoutRepoProvider = Provider(
   (ref) => WorkoutRepository(ref.watch(databaseProvider), ref.watch(clockProvider)),
+);
+
+final activityRepoProvider = Provider(
+  (ref) => ActivityRepository(ref.watch(databaseProvider), ref.watch(clockProvider)),
+);
+
+/// The GPS activity that records or is paused, if any (handbook 4.14).
+final liveActivityProvider = StreamProvider((ref) => ref.watch(activityRepoProvider).watchLive());
+
+final activityHistoryProvider = StreamProvider.autoDispose((ref) => ref.watch(activityRepoProvider).watchHistory());
+
+final activityDetailProvider = StreamProvider.autoDispose.family<ActivityDetail?, String>(
+  (ref, id) => ref
+      .watch(activityRepoProvider)
+      .watchDetail(id, splitMetres: ref.watch(currentSettingsProvider).distanceUnit == 'mi' ? 1609.344 : 1000),
 );
 
 final mealRepoProvider = Provider(

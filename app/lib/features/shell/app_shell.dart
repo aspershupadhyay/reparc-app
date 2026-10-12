@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:ui' show ImageFilter;
 
 import 'package:flutter/material.dart';
@@ -14,6 +15,7 @@ import '../../core/tokens.dart';
 import '../../data/models.dart';
 import '../../data/providers.dart';
 import '../workout/guide_controller.dart';
+import '../../activity/recorder.dart';
 import '../../health/health_sync.dart';
 import '../../core/distribution.dart';
 import '../../updates/update_controller.dart';
@@ -62,6 +64,16 @@ class AppShell extends ConsumerWidget {
     if (!playBuild) ref.watch(autoUpdateCheckProvider);
     // The guided workout ticks while a workout is live (handbook 4.13).
     if (live != null) ref.read(guideProvider.notifier).attach();
+    // A run, walk, or ride that was recording when the app closed goes on
+    // (handbook 4.14).
+    final activity = ref.watch(liveActivityProvider).value;
+    if (activity != null) {
+      // After the frame: starting GPS changes the recorder's state, which
+      // must not happen while the tree builds.
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (context.mounted) unawaited(ref.read(recorderProvider.notifier).attach(activity));
+      });
+    }
     return Scaffold(
       body: shell,
       bottomNavigationBar: Column(

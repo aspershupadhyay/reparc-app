@@ -11,7 +11,7 @@ import '../data/providers.dart';
 import '../data/settings_repository.dart';
 import 'health_service.dart';
 
-/// Writes finished workouts and eaten meals to Apple Health or Health
+/// Writes finished workouts, runs, walks, rides, and eaten meals to Apple Health or Health
 /// Connect, when the user switched that on (handbook 9.5).
 ///
 /// - Only records saved after the switch was turned on are written.
@@ -35,7 +35,10 @@ class HealthSync {
     try {
       final s = await settings.watch().first;
       var written = 0;
-      if (s.health.contains(HealthFeature.writeWorkouts.name)) written += await _workouts();
+      if (s.health.contains(HealthFeature.writeWorkouts.name)) {
+        written += await _workouts();
+        written += await _activities();
+      }
       if (s.health.contains(HealthFeature.writeMeals.name)) written += await _meals();
       return written;
     } catch (_) {
@@ -68,6 +71,33 @@ class HealthSync {
       if (done.contains(x.id) || x.endedAt == null) continue;
       if (await health.writeWorkout(id: x.id, title: x.name, start: x.startedAt.toLocal(), end: x.endedAt!.toLocal())) {
         await _mark(x.id, 'workout');
+        n++;
+      }
+    }
+    return n;
+  }
+
+  /// Finished runs, walks, and rides, as workouts of that kind.
+  Future<int> _activities() async {
+    final since = await settings.healthSince(HealthFeature.writeWorkouts.name);
+    if (since == null) return 0;
+    final done = await _done('activity');
+    final list =
+        await (db.select(db.activities)
+              ..where((x) => x.status.equalsValue(ActivityStatus.finished))
+              ..where((x) => x.endedAt.isBiggerOrEqualValue(since)))
+            .get();
+    var n = 0;
+    for (final a in list) {
+      if (done.contains(a.id) || a.endedAt == null || (a.distanceM ?? 0) < 10) continue;
+      if (await health.writeWorkout(
+        id: a.id,
+        title: a.name,
+        start: a.startedAt.toLocal(),
+        end: a.endedAt!.toLocal(),
+        activity: a.kind,
+      )) {
+        await _mark(a.id, 'activity');
         n++;
       }
     }
@@ -117,12 +147,14 @@ final healthSyncProvider = Provider<HealthSync>((ref) {
     ref.watch(clockProvider),
   );
   Timer? debounce;
-  final sub = db.tableUpdates(TableUpdateQuery.onAllTables([db.workoutSessions, db.mealEntries, db.settings])).listen((
-    _,
-  ) {
-    debounce?.cancel();
-    debounce = Timer(const Duration(seconds: 3), () => unawaited(sync.run()));
-  });
+  final sub = db
+      .tableUpdates(TableUpdateQuery.onAllTables([db.workoutSessions, db.activities, db.mealEntries, db.settings]))
+      .listen((
+        _,
+      ) {
+        debounce?.cancel();
+        debounce = Timer(const Duration(seconds: 3), () => unawaited(sync.run()));
+      });
   ref.onDispose(() {
     debounce?.cancel();
     unawaited(sub.cancel());

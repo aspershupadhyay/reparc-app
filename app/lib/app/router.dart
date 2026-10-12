@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
+import '../activity/activity_screen.dart';
+import '../activity/track_screen.dart';
 import '../features/analytics/analytics_screen.dart';
 import '../features/analytics/source_records_screen.dart';
 import '../features/exercises/catalog/model.dart';
@@ -56,6 +58,10 @@ GoRouter buildRouter({String initialLocation = '/home'}) => GoRouter(
                 GoRoute(
                   path: 'session/:id',
                   builder: (_, s) => SessionDetailScreen(id: s.pathParameters['id']!),
+                ),
+                GoRoute(
+                  path: 'activity/:id',
+                  builder: (_, s) => ActivityScreen(id: s.pathParameters['id']!),
                 ),
                 GoRoute(path: 'library', builder: (_, _) => const LibraryScreen()),
                 GoRoute(path: 'calculator', builder: (_, _) => const CalculatorScreen()),
@@ -172,6 +178,15 @@ GoRouter buildRouter({String initialLocation = '/home'}) => GoRouter(
       pageBuilder: (_, s) => MaterialPage(
         fullscreenDialog: true,
         child: LiveSessionScreen(id: s.pathParameters['id']!),
+      ),
+    ),
+    // A run, walk, or ride being recorded: full screen, like a live workout.
+    GoRoute(
+      path: '/track/:id',
+      parentNavigatorKey: rootNavigatorKey,
+      pageBuilder: (_, s) => MaterialPage(
+        fullscreenDialog: true,
+        child: TrackScreen(id: s.pathParameters['id']!),
       ),
     ),
     // Guides opened from a workout. They sit above the live screen; pushing

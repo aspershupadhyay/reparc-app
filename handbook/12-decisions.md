@@ -502,3 +502,22 @@ This is one app, not a separate dev variant. See 17.10.
 
 **Rule:** CI builds the Play bundle on every pull request and fails if its merged manifest still has `REQUEST_INSTALL_PACKAGES` or the update file provider.
 
+## D-037: GPS runs, walks, and rides
+
+**Status:** Accepted by the user (owner answers, 2026-10-12).
+**Date:** 2026-10-12.
+
+**Context:** The owner asked for "full Strava like" tracking of running, walking, and cycling in RepArc, and asked how precise step counts are in a car or on a bike. Handbook 9.3 had kept location out until a separate product decision; this is that decision.
+
+**Choice:**
+
+- GPS activities live in the Workout tab (no sixth tab): Run, Walk, and Ride buttons, a full-screen recording screen, an activity page, and History together with gym workouts (handbook 4.14).
+- Location "while using the app" only. A recording started on screen goes on with the screen off as an Android location foreground service with a notification, and with iOS background location updates. No "Allow all the time".
+- Maps from MapTiler's free tier (OpenStreetMap data), with the key from a GitHub secret at build time. Without a key, routes are drawn on a plain grid.
+- Schema v7 adds `activities` and `activity_points`. Raw points are kept; filtering and smoothing happen when numbers are worked out.
+- Live steps pauses while Android or iPhone activity recognition says the user is in a vehicle or on a bicycle (handbook 9.5).
+
+**Why:** Owner request. GPS stays on the phone; the only network use is map tiles, and only in builds with a key.
+
+**To confirm:** Data safety answers for map tile requests (approximate area seen by MapTiler), the Play foreground-service declaration and its video, the MapTiler plan once usage passes the free tier, and accuracy on real phones.
+
