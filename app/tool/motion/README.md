@@ -78,6 +78,7 @@ A move is data in the `EX` list of `lab.html`, not code:
 # MakeHuman data (CC0 assets only; their code is AGPL and is not used)
 git clone --depth 1 --filter=blob:none --sparse https://github.com/makehumancommunity/makehuman.git /tmp/mh
 git -C /tmp/mh sparse-checkout set makehuman/data/3dobjs makehuman/data/rigs makehuman/data/targets/macrodetails
+pip install xatlas==0.0.11 opencv-python-headless numpy pillow   # paint.py needs xatlas (UV layout) and OpenCV
 cd app
 BASE_CACHE=/tmp/base.npz python3 -I tool/motion/export.py /tmp/mh/makehuman/data /tmp/body.json   # rigged body, about 15 s
 python3 -I tool/motion/gym.py /tmp/base.npz /tmp/gym.json                                         # gym model, about 15 s
