@@ -217,7 +217,10 @@ class _RingsPainter extends CustomPainter {
       ).createShader(innerRect);
     canvas.drawArc(innerRect, _start, sweep, false, arc);
 
-    // A bright head on the moving end, so the eye finds "now".
+    // A bright head on the moving end, so the eye finds "now". Near the
+    // start it would sit on the arc's round start cap and show as two
+    // dots (launch review, 2026-10-10), so it waits until they part.
+    if (sweep < 2 * innerW / innerR) return;
     final head = Offset(c.dx + innerR * math.cos(_start + sweep), c.dy + innerR * math.sin(_start + sweep));
     canvas.drawCircle(
       head,
@@ -236,5 +239,6 @@ class _RingsPainter extends CustomPainter {
       old.current != current ||
       old.progress != progress ||
       old.colors != colors ||
-      old.track != track;
+      old.track != track ||
+      old.doneColor != doneColor;
 }

@@ -88,7 +88,7 @@ Do not require every field. A timed set may not have load or repetitions. Keep z
 - Keep session time and rest time separate.
 - Let the user skip an exercise without creating a result.
 - Let the user finish a session with incomplete exercises.
-- Do not save a session with no done sets. **Finish workout** with no ticked set offers **Keep going** or **End without saving** (built 2026-10-10).
+- Do not save a session with no done sets. **Finish workout** with no ticked set offers **Keep going** or **End without saving** (built 2026-10-10). The finish sheet counts exercises without warm-up moves, as the plan and History do (from 0.4.15).
 - **Swap for a similar move** (exercise options in a live or saved session, built 2026-10-10): moves for the same target muscle and kind. The same group comes first, then other equipment, then hand-picked moves; an equipment filter narrows the list. Logged sets stay, and **Undo** puts the old exercise back. Exercises the user made opens the full picker instead.
 
 **History cards** show the date, name, time without pauses, exercise and set counts, total weight in the user's load unit, and a **PR** badge for each heaviest-load record the session still holds. Total weight is missing, not zero, when no set has a load and reps.

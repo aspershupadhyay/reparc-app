@@ -111,6 +111,8 @@ Protein needs only body weight. The rest needs the full profile.
 - **Build:** `app/tool/food_library/build.py [cache-folder]` with the India list in `app/tool/food_library/india.py`.
 - **Not done:** about 300 India staples were proposed; this is 87. A qualified dietitian has not checked the recipe estimates. Other countries come later.
 
+**Recent foods.** Before a search, Add food lists the last six foods the user logged, newest first, one for each name and brand. A tap fills in the food with the values and amount used last time; the user can change them before saving (built 2026-10-12, launch review Block 3). Code: `watchRecentFoods` in `app/lib/data/meal_repository.dart`.
+
 **Plan my day.** Meal → Plan my day picks a breakfast, lunch, snack, and dinner the diet allows (mixed, vegetarian + eggs, vegetarian, or vegan), scales portions toward the energy target (60–160%), and adds a lean protein top-up when protein is more than 5% short. The user can shuffle. Nothing is saved until the user taps Add; then the foods go in as **planned**, not eaten. Code: `app/lib/domain/meal_plan.dart`.
 
 **To confirm:** Dietitian review of meal ideas and target rules; a barcode or online food database.

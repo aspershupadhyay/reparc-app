@@ -299,7 +299,10 @@ class _GuidedHeader extends ConsumerWidget {
     final empty = detail.exercises.isEmpty;
     return (
       phase: paused ? RingPhase.paused : RingPhase.ready,
-      label: paused ? 'Paused' : (next == null && !empty ? 'Done' : 'Ready'),
+      // The clock here is the workout's time, so the label names it.
+      // "Ready" over a running clock read as a countdown that had not
+      // started (launch review, 2026-10-10).
+      label: paused ? 'Paused' : (next == null && !empty ? 'Done' : 'Workout'),
       time: fmtClock(elapsed),
       semantic: 'Elapsed ${speakDuration(elapsed)}',
       progress: null,

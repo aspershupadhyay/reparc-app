@@ -70,6 +70,8 @@ final mealDayProvider = StreamProvider.autoDispose.family(
 
 final foodsProvider = StreamProvider.autoDispose((ref) => ref.watch(mealRepoProvider).watchFoods());
 
+final recentFoodsProvider = StreamProvider.autoDispose((ref) => ref.watch(mealRepoProvider).watchRecentFoods());
+
 final analyticsRepoProvider = Provider(
   (ref) => AnalyticsRepository(
     ref.watch(databaseProvider),

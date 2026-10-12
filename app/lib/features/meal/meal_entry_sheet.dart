@@ -113,6 +113,31 @@ class _EntrySheetState extends ConsumerState<_EntrySheet> {
     });
   }
 
+  /// Fills the form from a food logged before, with the amount used then.
+  void _useRecent(MealEntry e) {
+    setState(() {
+      _foodId = e.foodId;
+      _name.text = e.name;
+      _brand.text = e.brand ?? '';
+      _serving.text = _n(e.servingAmount);
+      _servingUnit = e.servingUnit ?? 'g';
+      _kcal.text = _n(e.energyKcal);
+      _protein.text = _n(e.proteinG);
+      _carbs.text = _n(e.carbsG);
+      _fat.text = _n(e.fatG);
+      _fiber.text = _n(e.fiberG);
+      _sugar.text = _n(e.sugarG);
+      _sodium.text = _n(e.sodiumMg);
+      _amount.text = _n(e.amount);
+      _amountUnit = e.amountUnit ?? 'serving';
+      _estimate = e.isEstimate;
+      _source = e.source;
+      _portions = const [];
+      _search.clear();
+      _saveFood = false;
+    });
+  }
+
   /// Fills the form from the bundled USDA list: values per 100 g, and the
   /// usual portion as the amount.
   void _useUsda(FoodItem f) {
@@ -293,6 +318,9 @@ class _EntrySheetState extends ConsumerState<_EntrySheet> {
         ref.watch(foodLibraryProvider).value?.search(q, country: ref.watch(foodCountryProvider), diet: diet) ??
         const <FoodItem>[];
     final adding = _e == null;
+    // Before a search, the last foods logged: most meals repeat.
+    final recentFoods = ref.watch(recentFoodsProvider).value ?? const <MealEntry>[];
+    final recent = q.isEmpty && _name.text.isEmpty && !_manual ? recentFoods : const <MealEntry>[];
     final settings = ref.watch(currentSettingsProvider);
     // Search first. The long form shows once a food is picked, or when the
     // user asks to type one in (visual review, 2026-10-09).
@@ -349,6 +377,23 @@ class _EntrySheetState extends ConsumerState<_EntrySheet> {
                 helperText: 'Your foods and a list of common foods, your country first',
               ),
             ),
+            if (recent.isNotEmpty) ...[
+              const SizedBox(height: Space.s),
+              Text('Recent', style: t.labelMedium),
+              for (final e in recent)
+                ListTile(
+                  title: Text(e.name),
+                  subtitle: Text(
+                    [
+                      ?e.brand,
+                      if (e.amount != null) fmtWithUnit(e.amount, e.amountUnit),
+                      if (e.input.eaten.proteinG case final g?) '${fmtNum(g)} g protein',
+                    ].join(' · '),
+                  ),
+                  trailing: e.isEstimate ? const Tag('Estimate') : null,
+                  onTap: () => _useRecent(e),
+                ),
+            ],
             for (final f in usda)
               ListTile(
                 title: Text(f.name),

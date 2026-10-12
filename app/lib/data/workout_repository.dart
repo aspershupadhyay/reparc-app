@@ -27,6 +27,10 @@ class SessionDetail {
 
   int get completedSets => exercises.fold(0, (a, e) => a + e.completedSets);
   int get totalSets => exercises.fold(0, (a, e) => a + e.sets.length);
+
+  /// Exercises with at least one set that is not a warm-up set, counted the
+  /// way the plan and History count them. Warm-up moves are left out.
+  int get workExercises => exercises.where((e) => e.sets.any((s) => s.setType != SetType.warmup)).length;
 }
 
 class SessionSummary {

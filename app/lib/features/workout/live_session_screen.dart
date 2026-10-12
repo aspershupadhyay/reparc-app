@@ -407,8 +407,8 @@ class _FinishSheet extends StatelessWidget {
           Text('Finish workout', style: t.titleLarge),
           SizedBox(height: Space.s),
           Text(
-            '${detail.completedSets} of ${detail.totalSets} sets done in ${detail.exercises.length} '
-            'exercise${detail.exercises.length == 1 ? '' : 's'}.'
+            '${detail.completedSets} of ${detail.totalSets} sets done in ${detail.workExercises} '
+            'exercise${detail.workExercises == 1 ? '' : 's'}.'
             '${open > 0 ? ' Sets that are not done stay in the record as not done.' : ''}',
             style: t.bodyMedium,
           ),

@@ -162,6 +162,25 @@ class MealRepository {
             ..orderBy([(e) => OrderingTerm.asc(e.day), (e) => OrderingTerm.asc(e.createdAt)]))
           .get();
 
+  /// The last foods the user logged, newest first, one entry for each name
+  /// and brand. Add food shows them before a search (launch review,
+  /// 2026-10-10: recent foods at the top).
+  Stream<List<MealEntry>> watchRecentFoods({int limit = 6}) =>
+      (db.select(db.mealEntries)
+            ..orderBy([(e) => OrderingTerm.desc(e.createdAt)])
+            ..limit(200))
+          .watch()
+          .map((rows) {
+            final seen = <String>{};
+            final out = <MealEntry>[];
+            for (final e in rows) {
+              if (!seen.add('${e.name.toLowerCase()}|${(e.brand ?? '').toLowerCase()}')) continue;
+              out.add(e);
+              if (out.length == limit) break;
+            }
+            return out;
+          });
+
   Future<String> addEntry({
     required String day,
     required String slotId,
