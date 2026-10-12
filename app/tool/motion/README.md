@@ -85,7 +85,7 @@ python3 -I tool/motion/gym.py /tmp/base.npz /tmp/gym.json                       
 python3 -I tool/motion/bake.py /tmp/gym-tex                                                       # textures, about 20 s
 python3 -I tool/motion/paint.py build /tmp/base.npz /tmp/gym.json tool/motion/paint/sheets.json /tmp/paint-out   # painted model + textures, about 90 s
 python3 -I tool/motion/build.py /tmp/paint-out/model.json /tmp/paint-out /tmp/motion-lab.html     # painted page, 2.7 MB
-python3 -I tool/motion/glb.py /tmp/paint-out/model.json /tmp/paint-out /tmp/reparc-gym-model.glb   # painted .glb, 7.8 MB
+python3 -I tool/motion/glb.py /tmp/paint-out/model.json /tmp/paint-out tool/motion/dist/reparc-gym-model.glb   # painted .glb, 7.8 MB (committed)
 python3 -I tool/motion/build.py /tmp/gym.json /tmp/gym-tex /tmp/motion-lab-atlas.html            # older atlas-only page
 # A new painting: python3 -I tool/motion/paint.py views /tmp/base.npz /tmp/gym.json tool/motion/paint/sheets.json 0 /tmp/sheet_in.png
 node tool/motion/check.js /tmp/motion-lab.html /tmp/motion-shots           # form checks + screenshots
