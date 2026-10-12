@@ -72,31 +72,15 @@ const areaMuscles = <BodyArea, List<Muscle>>{
   BodyArea.core: [Muscle.abs, Muscle.lowerAbs, Muscle.obliques],
 };
 
-/// Muscles coloured on the area's own icon.
-const _areaIconMuscles = <BodyArea, Set<Muscle>>{
-  BodyArea.chest: {Muscle.chest, Muscle.upperChest, Muscle.lowerChest},
-  BodyArea.back: {Muscle.lats, Muscle.upperBack, Muscle.traps, Muscle.lowerBack},
-  BodyArea.shoulders: {Muscle.frontDelts, Muscle.sideDelts},
-  BodyArea.arms: {Muscle.biceps, Muscle.forearms},
-  BodyArea.legs: {Muscle.quads, Muscle.adductors},
-  BodyArea.glutes: {Muscle.glutes, Muscle.abductors},
-  BodyArea.core: {Muscle.abs, Muscle.lowerAbs, Muscle.obliques},
-};
+/// Body icon artwork: a realistic muscle illustration with only the
+/// target muscle, or the whole area, in a vivid colour. Made in Figma; see
+/// `tool/body_icons/README.md`.
+String bodyIconAsset({BodyArea? area, Muscle? muscle}) =>
+    'assets/body/icons/${muscle != null ? muscle.name : 'area_${area!.name}'}.webp';
 
-/// Part of the figure each icon zooms to, in figure units (100 × 200).
-const _crops = <BodyArea, Rect>{
-  BodyArea.chest: Rect.fromLTRB(20, 20, 80, 70),
-  BodyArea.back: Rect.fromLTRB(18, 18, 82, 100),
-  BodyArea.shoulders: Rect.fromLTRB(16, 20, 84, 64),
-  BodyArea.arms: Rect.fromLTRB(10, 30, 50, 118),
-  BodyArea.legs: Rect.fromLTRB(20, 98, 80, 198),
-  BodyArea.glutes: Rect.fromLTRB(22, 84, 78, 150),
-  BodyArea.core: Rect.fromLTRB(24, 38, 76, 104),
-};
-
-/// An icon for one body area or one muscle: a drawn figure, zoomed to that
-/// part, with only that part coloured. Chest shows the chest, biceps show
-/// the biceps, and so on.
+/// An icon for one body area or one muscle: the anatomy in soft grey, with
+/// only that part lit. Chest shows the chest, biceps show the biceps, and
+/// so on.
 class MuscleIcon extends StatelessWidget {
   const MuscleIcon.area(BodyArea this.area, {super.key, this.size = 44, required this.color, this.background})
     : muscle = null;
@@ -106,34 +90,34 @@ class MuscleIcon extends StatelessWidget {
   final BodyArea? area;
   final Muscle? muscle;
   final double size;
+
+  /// Tints the tile behind the artwork.
   final Color color;
 
-  /// Fill behind the figure. Null draws a soft tint of [color].
+  /// Fill behind the artwork. Null draws a soft tint of [color].
   final Color? background;
 
   @override
   Widget build(BuildContext context) {
-    final a = area ?? muscle!.area;
-    final lit = muscle == null ? _areaIconMuscles[a]! : {muscle!};
-    final back = lit.every((m) => m.onBack);
+    final px = (size * MediaQuery.devicePixelRatioOf(context)).ceil();
     return ExcludeSemantics(
       child: Container(
         width: size,
         height: size,
         decoration: BoxDecoration(
-          color: background ?? color.withValues(alpha: 0.12),
-          borderRadius: BorderRadius.circular(size * 0.28),
+          color: background ?? color.withValues(alpha: 0.10),
+          borderRadius: BorderRadius.circular(size * 0.26),
         ),
         clipBehavior: Clip.antiAlias,
-        child: CustomPaint(
-          painter: _FigurePainter(
-            primary: lit,
-            secondary: const {},
-            back: back,
-            crop: _crops[a]!,
-            hot: color,
-            body: color.withValues(alpha: 0.22),
-          ),
+        padding: EdgeInsets.all(size * 0.06),
+        child: Image.asset(
+          bodyIconAsset(area: area, muscle: muscle),
+          // Decode at the size shown, not 256 px, to keep memory low in
+          // long lists.
+          cacheWidth: px < 256 ? px : null,
+          fit: BoxFit.contain,
+          filterQuality: FilterQuality.medium,
+          gaplessPlayback: true,
         ),
       ),
     );

@@ -52,7 +52,6 @@ class _MoveBrowserState extends ConsumerState<MoveBrowser> {
 
   /// One muscle inside [_area], or null for the whole area.
   Muscle? _muscle;
-  EquipKind? _equip;
 
   @override
   void dispose() {
@@ -66,6 +65,7 @@ class _MoveBrowserState extends ConsumerState<MoveBrowser> {
     final t = Theme.of(context).textTheme;
     final lib = ref.watch(libraryProvider);
     final q = _q.text.trim().toLowerCase();
+    final place = ref.watch(placeProvider);
     return lib.when(
       loading: () => const Center(child: CircularProgressIndicator(semanticsLabel: 'Loading exercises')),
       error: (e, _) => Center(child: Text('Could not load the exercise library. $e')),
@@ -75,7 +75,7 @@ class _MoveBrowserState extends ConsumerState<MoveBrowser> {
           for (final m in lib.moves)
             if ((_area == null || m.area == _area) &&
                 (_muscle == null || m.target == _muscle) &&
-                (_equip == null || m.equipKind == _equip))
+                (place == null || place.fits(m)))
               m,
         ];
         // A search ranks the best matches first. With no search and a body
@@ -162,14 +162,7 @@ class _MoveBrowserState extends ConsumerState<MoveBrowser> {
                 ),
               ],
               const SizedBox(height: Space.s),
-              Padding(
-                padding: EdgeInsets.only(left: widget.padding.left),
-                child: _EquipmentChips(
-                  options: lib.equipKinds,
-                  selected: _equip,
-                  onChanged: (e) => setState(() => _equip = e),
-                ),
-              ),
+              Padding(padding: widget.padding, child: const PlaceTabs()),
             ],
             Padding(
               padding: EdgeInsets.fromLTRB(widget.padding.left, Space.m, widget.padding.right, Space.xs),
@@ -274,28 +267,26 @@ class _MuscleChips extends StatelessWidget {
   }
 }
 
-class _EquipmentChips extends StatelessWidget {
-  const _EquipmentChips({required this.options, required this.selected, required this.onChanged});
-  final List<EquipKind> options;
-  final EquipKind? selected;
-  final ValueChanged<EquipKind?> onChanged;
+/// All, Gym, or Home: the one equipment filter in browse lists. The choice
+/// stays while the app is open.
+class PlaceTabs extends ConsumerWidget {
+  const PlaceTabs({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    return SingleChildScrollView(
-      scrollDirection: Axis.horizontal,
-      child: Row(
-        children: [
-          for (final o in [null, ...options])
-            Padding(
-              padding: const EdgeInsets.only(right: Space.s),
-              child: ChoiceChip(
-                label: Text(o?.label ?? 'Any equipment'),
-                selected: selected == o,
-                onSelected: (_) => onChanged(o),
-              ),
-            ),
-        ],
+  Widget build(BuildContext context, WidgetRef ref) {
+    return Semantics(
+      container: true,
+      label: 'Where you train',
+      child: PillTabs<Place?>(
+        values: const [null, Place.gym, Place.home],
+        selected: ref.watch(placeProvider),
+        label: (v) => v?.label ?? 'All',
+        icon: (v) => switch (v) {
+          null => LucideIcons.layers,
+          Place.gym => LucideIcons.dumbbell,
+          Place.home => LucideIcons.house,
+        },
+        onChanged: ref.read(placeProvider.notifier).set,
       ),
     );
   }

@@ -108,8 +108,6 @@ class _SwapSheet extends ConsumerStatefulWidget {
 }
 
 class _SwapSheetState extends ConsumerState<_SwapSheet> {
-  EquipKind? _equip;
-
   Future<void> _pick(Move m) async {
     final id = await _exerciseRowFor(context, ref, m);
     if (id != null && mounted) Navigator.pop(context, id);
@@ -121,11 +119,8 @@ class _SwapSheetState extends ConsumerState<_SwapSheet> {
     final lib = ref.watch(libraryProvider).value;
     final c = widget.current;
     final all = lib == null ? const <Move>[] : swapsFor(lib, c);
-    final kinds = [
-      for (final k in EquipKind.values)
-        if (all.any((m) => m.equipKind == k)) k,
-    ];
-    final shown = _equip == null ? all : all.where((m) => m.equipKind == _equip).toList();
+    final place = ref.watch(placeProvider);
+    final shown = place == null ? all : all.where(place.fits).toList();
     final group = groupOf(c);
     return SizedBox(
       height: MediaQuery.sizeOf(context).height * 0.88,
@@ -146,27 +141,14 @@ class _SwapSheetState extends ConsumerState<_SwapSheet> {
             ),
           ),
           const SizedBox(height: Space.m),
-          SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            padding: const EdgeInsets.symmetric(horizontal: Space.l),
-            child: Row(
-              children: [
-                for (final k in [null, ...kinds])
-                  Padding(
-                    padding: const EdgeInsets.only(right: Space.s),
-                    child: ChoiceChip(
-                      label: Text(k?.label ?? 'Any equipment'),
-                      selected: _equip == k,
-                      onSelected: (_) => setState(() => _equip = k),
-                    ),
-                  ),
-              ],
-            ),
+          const Padding(
+            padding: EdgeInsets.symmetric(horizontal: Space.l),
+            child: PlaceTabs(),
           ),
           const SizedBox(height: Space.s),
           Expanded(
             child: shown.isEmpty
-                ? Center(child: Text('No other moves here. Try "Any equipment".', style: t.bodyMedium))
+                ? Center(child: Text('No other moves here. Try All.', style: t.bodyMedium))
                 : ListView.builder(
                     padding: const EdgeInsets.fromLTRB(Space.l, Space.s, Space.l, Space.xxl),
                     itemCount: shown.length,

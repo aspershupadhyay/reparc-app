@@ -137,6 +137,37 @@ enum EquipKind {
   }
 }
 
+/// Where the user trains: the one equipment filter in browse lists. Ten
+/// equipment chips were clutter (owner direction, 2026-10-12); people ask
+/// "can I do this in my gym?" or "can I do this at home?".
+enum Place {
+  gym('Gym', 'Weights and machines'),
+  home('Home', 'Body weight, dumbbells, kettlebells, bands');
+
+  const Place(this.label, this.hint);
+  final String label;
+  final String hint;
+
+  bool fits(Move m) => switch (this) {
+    Place.gym => m.atGym,
+    Place.home => m.atHome,
+  };
+}
+
+/// Kit most homes have, or can find, beyond the equipment groups below.
+const _homeKit = {'Chair', 'Jump rope', 'Ab wheel', 'Box', 'Suspension straps', 'Weight plate'};
+
+/// The place filter chosen in browse lists. It stays while the app is open,
+/// so a home trainer does not pick "Home" on every page.
+final placeProvider = NotifierProvider<PlaceFilter, Place?>(PlaceFilter.new);
+
+class PlaceFilter extends Notifier<Place?> {
+  @override
+  Place? build() => null;
+
+  void set(Place? place) => state = place;
+}
+
 const _keepCase = {
   'Arnold',
   'Bulgarian',
@@ -528,6 +559,25 @@ class Move {
   BodyArea get area => target.area;
   MoveKind get kind => library?.kind ?? MoveKind.strength;
   EquipKind get equipKind => EquipKind.of(equipment);
+
+  /// Needs weights or gym kit: dumbbells, bars, machines, cables, and so on.
+  bool get atGym => switch (equipKind) {
+    EquipKind.dumbbell || EquipKind.barbell || EquipKind.machine || EquipKind.cable || EquipKind.kettlebell => true,
+    EquipKind.other => !_homeKit.contains(equipment),
+    _ => false,
+  };
+
+  /// Works with the body alone or small kit that fits in a home.
+  bool get atHome => switch (equipKind) {
+    EquipKind.bodyweight ||
+    EquipKind.dumbbell ||
+    EquipKind.kettlebell ||
+    EquipKind.band ||
+    EquipKind.ball ||
+    EquipKind.foamRoll => true,
+    _ => _homeKit.contains(equipment),
+  };
+
   Set<Muscle> get helpers {
     if (coached != null) return coached!.secondary;
     final t = target;
@@ -619,12 +669,6 @@ class ExerciseLibrary {
   /// Hand-picked starting exercises for [m] that exist in this build.
   List<Move> essentialsFor(Muscle m) => [
     for (final id in essentials[m] ?? const <String>[]) ?byCatalogId[id],
-  ];
-
-  /// Equipment groups in use, in filter order.
-  late final List<EquipKind> equipKinds = [
-    for (final k in EquipKind.values)
-      if (moves.any((m) => m.equipKind == k)) k,
   ];
 
   /// Library entry for a saved `catalogId`, if it is a library ID.

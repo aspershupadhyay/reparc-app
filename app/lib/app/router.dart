@@ -83,11 +83,13 @@ GoRouter buildRouter({String initialLocation = '/home'}) => GoRouter(
                 ),
                 GoRoute(
                   path: 'area/:area',
-                  builder: (_, s) => AreaScreen(
-                    area: BodyArea.values.byName(s.pathParameters['area']!),
-                    muscle: Muscle.values.asNameMap()[s.uri.queryParameters['muscle']],
-                  ),
+                  builder: (_, s) => AreaScreen(area: BodyArea.values.byName(s.pathParameters['area']!)),
                 ),
+                GoRoute(
+                  path: 'muscle/:muscle',
+                  builder: (_, s) => MuscleScreen(muscle: Muscle.values.byName(s.pathParameters['muscle']!)),
+                ),
+                GoRoute(path: 'body', builder: (_, _) => const BodyMapScreen()),
                 GoRoute(
                   path: 'browse',
                   builder: (_, s) => BrowseScreen(area: BodyArea.values.asNameMap()[s.uri.queryParameters['area']]),

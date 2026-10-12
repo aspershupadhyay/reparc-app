@@ -261,7 +261,7 @@ Avoid rebuilding a large screen for each animation tick. Do not animate large im
 
 Library photos play as one slow rep: a pause at the start, 1.5 s to the end position, a pause, and 2.5 s back. A label names each phase. The user can pause, play at half speed, or drag a slider between the start and end photos. With reduced motion the rep does not play; the slider still works.
 
-Each body area and muscle has a drawn body icon that colours only that part. Exercise pages show a front and back body map with main and helper muscles.
+Each body area and muscle has a realistic muscle icon with only that part lit in red-orange (2026-10-12; handbook 03, "Body icons"). Exercise pages show a front and back body map with main and helper muscles.
 
 ### Coached body model
 

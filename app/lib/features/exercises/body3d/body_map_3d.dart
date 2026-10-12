@@ -19,7 +19,7 @@ import 'body_render.dart';
 /// sideways drag, tap a muscle to select it, then open its exercises.
 ///
 /// Only sideways drags turn the body, so the page still scrolls with an
-/// up or down swipe. The body-part list below the map offers the same
+/// up or down swipe. The body-part cards on Exercises offer the same
 /// choices for screen readers and switch access.
 class BodyMap3D extends ConsumerStatefulWidget {
   const BodyMap3D({super.key, this.height = 440});
@@ -83,7 +83,7 @@ class _BodyMap3DState extends ConsumerState<BodyMap3D> with SingleTickerProvider
     setState(() => _selected = m);
   }
 
-  void _open(Muscle m) => context.push('/workout/area/${m.area.name}?muscle=${m.name}');
+  void _open(Muscle m) => context.push('/workout/muscle/${m.name}');
 
   /// The view the current turn is closest to.
   String get _facing {
@@ -114,7 +114,7 @@ class _BodyMap3DState extends ConsumerState<BodyMap3D> with SingleTickerProvider
             child: Semantics(
               label:
                   'Body map, 3D. Facing $_facing. Drag sideways to turn it. Tap a muscle to see its exercises. '
-                  'The body part list below has the same choices.',
+                  'The body part cards on Exercises have the same choices.',
               child: GestureDetector(
                 onHorizontalDragUpdate: _drag,
                 onHorizontalDragEnd: _dragEnd,

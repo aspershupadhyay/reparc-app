@@ -262,23 +262,29 @@ void main() {
 
     await tester.tap(find.text('Exercises'));
     await tester.pumpAndSettle();
-    expect(find.text('TAP A MUSCLE'), findsOneWidget);
-    expect(find.text('OR PICK A BODY PART'), findsOneWidget);
+    expect(find.text('BODY PARTS'), findsOneWidget);
 
-    // Arms splits into biceps, triceps, and forearms, with picks to start.
-    final arms = find.bySemanticsLabel(RegExp('^Arms: Biceps, Triceps, Forearms'));
+    // Arms opens a card for each of its muscles; a card opens its moves,
+    // with picks to start.
+    final arms = find.bySemanticsLabel(RegExp('^Arms. Biceps, Triceps, Forearms'));
     await tester.ensureVisible(arms);
     await tester.pumpAndSettle();
     await tester.tap(arms);
     await tester.pumpAndSettle();
-    expect(find.bySemanticsLabel('Biceps'), findsOneWidget);
-    expect(find.bySemanticsLabel('Triceps'), findsOneWidget);
-    expect(find.bySemanticsLabel('Forearms'), findsOneWidget);
+    expect(find.bySemanticsLabel(RegExp('^Biceps. ')), findsOneWidget);
+    expect(find.bySemanticsLabel(RegExp('^Triceps. ')), findsOneWidget);
+    expect(find.bySemanticsLabel(RegExp('^Forearms. ')), findsOneWidget);
+    await tester.tap(find.bySemanticsLabel(RegExp('^Biceps. ')));
+    await tester.pumpAndSettle();
     expect(find.text('START HERE'), findsOneWidget);
     expect(find.textContaining('Barbell curl'), findsWidgets);
-    await tester.tap(find.bySemanticsLabel('Triceps'));
+    await tester.tap(find.byTooltip('Back'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.bySemanticsLabel(RegExp('^Triceps. ')));
     await tester.pumpAndSettle();
     expect(find.textContaining('Triceps pushdown'), findsWidgets);
+    await tester.tap(find.byTooltip('Back'));
+    await tester.pumpAndSettle();
     await tester.tap(find.byTooltip('Back'));
     await tester.pumpAndSettle();
 

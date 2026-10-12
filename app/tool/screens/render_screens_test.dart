@@ -53,6 +53,8 @@ void main() {
     'live': '/live/',
     'calculator': '/workout/calculator',
     'library': '/workout/library',
+    'arms': '/workout/area/arms',
+    'triceps': '/workout/muscle/triceps',
     'body': '/me/body',
     'data': '/me/data',
   };
@@ -92,6 +94,12 @@ void main() {
         await settle();
         // Let the update check's database write land.
         await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 200)));
+        // Decode pictures (body icons, photos) so they show in the PNG.
+        await tester.runAsync(() async {
+          for (final e in find.byType(Image).evaluate()) {
+            await precacheImage((e.widget as Image).image, e);
+          }
+        });
         await settle();
         await settle();
         await expectLater(
