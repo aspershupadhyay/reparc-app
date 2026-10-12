@@ -1,9 +1,13 @@
+import 'dart:async';
+
 import 'package:reparc/health/health_service.dart';
+import 'package:reparc/health/live_steps.dart';
 
 /// In-memory health store for tests. Synthetic values only.
 class FakeHealth implements HealthSource {
   Map<String, int> steps = {};
   Map<String, double> energy = {};
+  Map<String, double> distance = {};
   WeightReading? weight;
   HealthAvailability state = HealthAvailability.available;
   final requested = <HealthFeature>[];
@@ -32,6 +36,9 @@ class FakeHealth implements HealthSource {
   Future<Map<String, double>> dailyActiveEnergy(DateTime fromDay, DateTime toDay) async => energy;
 
   @override
+  Future<Map<String, double>> dailyDistance(DateTime fromDay, DateTime toDay) async => distance;
+
+  @override
   Future<WeightReading?> latestWeight(DateTime until) async => weight;
 
   @override
@@ -58,5 +65,21 @@ class FakeHealth implements HealthSource {
   }) async {
     meals.add(id);
     return true;
+  }
+}
+
+/// The phone's step sensor in tests. Tests push counts by hand.
+class FakeStepSensor implements StepSensor {
+  final controller = StreamController<int>.broadcast();
+  bool allow = true;
+  int listens = 0;
+
+  @override
+  Future<bool> request() async => allow;
+
+  @override
+  Stream<int> counts() {
+    listens++;
+    return controller.stream;
   }
 }

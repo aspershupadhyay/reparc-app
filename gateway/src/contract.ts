@@ -18,7 +18,7 @@ export const contract = {
   "scopes": {
     "gym": "Workouts, sets, exercise history, personal records, and plans",
     "meal": "Meals, foods, and nutrition totals",
-    "health": "Steps, active energy, and body weight that the owner allowed from Apple Health or Health Connect",
+    "health": "Steps, distance, active energy, and body weight that the owner allowed from Apple Health or Health Connect",
     "plans": "Send workout and meal plan proposals for the owner to approve"
   },
   "tools": [
@@ -230,7 +230,7 @@ export const contract = {
       "name": "get_health_summary",
       "scope": "health",
       "title": "Health summary",
-      "description": "Daily steps, active energy (kcal), and the latest body weight from Apple Health or Health Connect, only for the types the owner allowed. Ranges are capped at 31 days.",
+      "description": "Daily steps, distance (metres), active energy (kcal), and the latest body weight from Apple Health or Health Connect, only for the types the owner allowed. Ranges are capped at 31 days.",
       "annotations": {
         "readOnlyHint": true,
         "openWorldHint": false

@@ -263,6 +263,8 @@ Keep major choices here. Update the related chapter when a decision changes.
 
 **Choice:** Use the `health` package (13.3.2) for HealthKit and Health Connect. Each data type is a separate switch in **Me → Health apps**, explained before the system sheet opens: read steps, active energy, and body weight; write finished workouts and eaten meals. Health values are read when needed and not copied into the database. Writes happen once per record (`health_writes`), only for records saved after the switch was turned on. Heart rate, sleep, location, and clinical records are not requested. Android minimum is API 26.
 
+**Update (2026-10-12, owner request "track steps very precisely"):** Distance is a fourth read type. Daily totals come from the store's own aggregates (handbook 9). A **Live steps** switch uses the phone's step sensor while the app is open; it needs the Physical activity (Android) or Motion & Fitness (iPhone) permission, asked only when the switch is turned on. The owner left the choice of types to the developer; heart rate and sleep stay out pending a separate decision (9.3).
+
 **Why:** The owner asked for Apple Health and Health Connect, used wisely. Workout read from Health Connect was left out because the plugin also needs distance, total calories, and steps permissions for it.
 
 **Trade-off:** Edits after a write are not sent; the user edits the copy in the Health app.

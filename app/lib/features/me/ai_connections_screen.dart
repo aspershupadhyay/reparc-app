@@ -221,7 +221,7 @@ String _scopeTitle(String scope) => switch (scope) {
 String? _scopeHint(String scope) => switch (scope) {
   'gym' => 'Workouts, sets, exercise history, personal records, and plans',
   'meal' => 'Meals, foods, and nutrition totals',
-  'health' => 'Steps, active energy, and body weight you allowed from Apple Health or Health Connect',
+  'health' => 'Steps, distance, active energy, and body weight you allowed from Apple Health or Health Connect',
   'plans' => 'Let the AI send workout and meal plans for you to approve',
   _ => null,
 };

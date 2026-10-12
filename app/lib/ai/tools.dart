@@ -471,6 +471,7 @@ class ReparcTools {
       });
     }
     final steps = on.contains(HealthFeature.steps) ? await health.dailySteps(from, to) : null;
+    final distance = on.contains(HealthFeature.distance) ? await health.dailyDistance(from, to) : null;
     final energy = on.contains(HealthFeature.activeEnergy) ? await health.dailyActiveEnergy(from, to) : null;
     final weight = on.contains(HealthFeature.weight) ? await health.latestWeight(addDays(to, 1)) : null;
     return ToolResult({
@@ -482,6 +483,7 @@ class ReparcTools {
           {
             'date': dayKey(d),
             if (steps != null) 'steps': steps[dayKey(d)],
+            if (distance != null) 'distance_m': distance[dayKey(d)]?.round(),
             if (energy != null) 'active_energy_kcal': energy[dayKey(d)]?.round(),
           },
       ],

@@ -9,6 +9,15 @@ updated: 2026-10-06
 
 **Built (2026-10-06, D-020):** Me → Health apps, with one switch per type: read steps, active energy, and body weight; write finished workouts and eaten meals. Each switch explains the type, read or write, and the benefit, then opens the system sheet for that type only. Code: `app/lib/health/`. Not yet tested on real devices.
 
+**Precise totals and live steps (2026-10-12, owner request, v0.4.17):**
+
+- **Daily totals from the store.** Steps, distance, and active energy per day come from the health store's own totals, not from adding up raw readings. Android: Health Connect `aggregateGroupByPeriod` with one-day periods in local time (native code in `MainActivity`, because the plugin's interval query fails on Android: it reads its bucket length as a `Long`, and Flutter sends small numbers as an `Integer`). iPhone: HealthKit statistics collection queries through the plugin, one bucket a day; a day with a clock change gets its own 23- or 25-hour bucket (`dayRuns`). Both count a moment once when the phone and a watch both recorded it, by the user's source priority, and split a reading that crosses midnight. A day with no data is left out, never 0. Earlier builds added raw active-energy readings, which counted phone and watch twice.
+- **Distance** is a new read type (`READ_DISTANCE`; Apple: walking and running distance). Health Connect's distance also includes cycling and other distance that apps record.
+- **Live steps** (switch, off by default, shown when Steps is on): while RepArc is open, the phone's step sensor (`pedometer` 4.2.0, MIT) counts steps after the last store read and adds them on screen. It needs "Physical activity" on Android 10+ (asked only when the switch is turned on) or "Motion & Fitness" on iPhone. The store's total is read again every 5 minutes and when the app comes back (every minute without Live steps), and the number never goes down within a day, because the apps that write steps to the store do it in batches. Nothing from the sensor is stored. Code: `app/lib/health/live_steps.dart`.
+- **Today** refreshes on its own; each type is read separately, so one failure never hides the others.
+- **Analytics → Workout → Steps and distance:** steps a day (average over the days with data), total distance, and a bar per day for the 7, 30, or 90 days chosen. Health Connect lets an app read only 30 days before its first permission was granted, so older days can be gaps.
+- **Not done (owner decision needed, 9.3):** heart rate, sleep, and reading other apps' workouts.
+
 ## 9.1 Purpose
 
 Use HealthKit on iPhone and Health Connect on Android only for a named feature. Manual logging must work when a user declines.
@@ -67,5 +76,5 @@ Official guidance:
 - **Minimum access:** Request one justified data type at a time.
 - **Fallback:** Manual logging remains available.
 - **Never:** Infer denial from an empty query.
-- **Chosen:** `health` 13.3.2; types in D-020. Health values are read when needed and never copied to a server.
+- **Chosen:** `health` 13.3.2 and `pedometer` 4.2.0; types in D-020 plus distance (2026-10-12). Health values are read when needed and never copied to a server.
 - **To confirm:** Behaviour on real devices, and store declarations before submission.

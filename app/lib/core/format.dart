@@ -79,3 +79,14 @@ int? parseWhole(String text) {
   if (t.isEmpty) return null;
   return int.tryParse(t) ?? -1;
 }
+
+/// Distance in the user's unit from metres: "4.2 km", "2.6 mi", "850 m".
+/// Null stays null: no data is not zero.
+String? fmtDistance(double? metres, String unit) {
+  if (metres == null) return null;
+  return switch (unit) {
+    'mi' => '${fmtNum(metres / 1609.344, maxDecimals: metres < 16093 ? 2 : 1)} mi',
+    'm' => '${fmtNum(metres, maxDecimals: 0)} m',
+    _ => '${fmtNum(metres / 1000, maxDecimals: metres < 10000 ? 2 : 1)} km',
+  };
+}

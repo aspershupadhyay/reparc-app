@@ -23,6 +23,9 @@ import '../exercises/library/library.dart';
 import '../exercises/muscle_map.dart';
 import '../exercises/rig/anatomy.dart';
 import 'charts.dart';
+import '../me/health_screen.dart';
+import '../../health/health_service.dart';
+import '../../health/live_steps.dart';
 
 enum _Range {
   // Rolling windows that end today, named by their length so they are not
@@ -139,7 +142,92 @@ class _WorkoutTab extends ConsumerWidget {
         ],
         const SizedBox(height: Space.m),
         _BodyWeight(s: s, weights: weights, unit: unit),
+        if (ref.watch(currentSettingsProvider).health.any((h) => h == 'steps' || h == 'distance')) ...[
+          const SizedBox(height: Space.m),
+          _Activity(s: s),
+        ],
       ],
+    );
+  }
+}
+
+/// Steps and distance for each day of the range, from Apple Health or
+/// Health Connect (handbook 9.5). Read live; days with no data are gaps,
+/// never zero.
+class _Activity extends ConsumerWidget {
+  const _Activity({required this.s});
+  final ProgressSummary s;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final p = context.pal;
+    final t = Theme.of(context).textTheme;
+    final settings = ref.watch(currentSettingsProvider);
+    final data = ref.watch(healthDaysProvider((s.fromDay, s.toDay))).value;
+    final days = [for (var d = s.fromDay; !d.isAfter(s.toDay); d = addDays(d, 1)) dayKey(d)];
+    final steps = data?.steps;
+    final distance = data?.distance;
+    // Today's steps count up live when Live steps is on.
+    final live = ref.watch(liveStepsProvider);
+    int? stepsOn(String day) => day == live.day && live.steps != null ? live.steps : steps?[day];
+    final withSteps = [for (final d in days) ?stepsOn(d)];
+    final avg = withSteps.isEmpty ? null : withSteps.reduce((a, b) => a + b) / withSteps.length;
+    final metres = [for (final d in days) ?distance?[d]];
+    final total = metres.isEmpty ? null : metres.reduce((a, b) => a + b);
+    return AppCard(
+      padding: const EdgeInsets.all(Space.l),
+      onTap: () => context.push('/me/health'),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Row(
+            children: [
+              IconBadge(LucideIcons.footprints, color: p.surfaceAlt, size: 36, glyph: p.ink),
+              const SizedBox(width: Space.m),
+              Expanded(child: Text('Steps and distance', style: t.titleMedium)),
+            ],
+          ),
+          const SizedBox(height: Space.m),
+          Row(
+            children: [
+              if (steps != null)
+                Expanded(
+                  child: Metric(
+                    label: 'Steps a day',
+                    value: avg == null ? '–' : fmtNum(avg, maxDecimals: 0),
+                    semanticValue: avg == null ? 'No data' : null,
+                    note: withSteps.isEmpty ? null : 'over ${withSteps.length} of ${days.length} days',
+                  ),
+                ),
+              if (distance != null)
+                Expanded(
+                  child: Metric(
+                    label: 'Distance',
+                    value: fmtDistance(total, settings.distanceUnit) ?? '–',
+                    semanticValue: total == null ? 'No data' : null,
+                  ),
+                ),
+            ],
+          ),
+          if (steps != null) ...[
+            const SizedBox(height: Space.m),
+            Bars(
+              values: [for (final d in days) stepsOn(d)?.toDouble()],
+              labels: [fmtDayMonth(s.fromDay), fmtDayMonth(s.toDay)],
+              color: p.green,
+              height: 100,
+              semanticLabel: 'Steps per day. ${withSteps.length} of ${days.length} days have data.',
+            ),
+          ],
+          const SizedBox(height: Space.s),
+          Text(
+            data == null
+                ? 'Reading ${ref.watch(healthSourceProvider).platformName}…'
+                : 'From ${ref.watch(healthSourceProvider).platformName}. A gap means no data, not zero.',
+            style: t.bodySmall?.copyWith(color: p.inkSoft),
+          ),
+        ],
+      ),
     );
   }
 }

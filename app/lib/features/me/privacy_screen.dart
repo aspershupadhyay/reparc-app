@@ -27,8 +27,9 @@ class PrivacyScreen extends StatelessWidget {
       (
         LucideIcons.heartPulse,
         'Apple Health or Health Connect: RepArc asks for one data type at a time, only when you switch it on in '
-            'Me → Health apps. It reads steps, active energy, or weight, and writes finished workouts and eaten meals. '
-            'Health values are not copied to any server and are never used for ads.',
+            'Me → Health apps. It reads steps, distance, active energy, or weight, and writes finished workouts and eaten meals. '
+            'Health values are not copied to any server and are never used for ads. '
+            'Live steps, if you turn it on, reads the phone\'s step sensor while RepArc is open and saves nothing.',
       ),
       (
         LucideIcons.sparkles,

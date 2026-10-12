@@ -6,38 +6,85 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import '../../core/clock.dart';
 import '../../core/dates.dart';
+import '../../core/format.dart';
 import '../../core/palette.dart';
 import '../../core/tokens.dart';
 import '../../core/widgets.dart';
 import '../../data/providers.dart';
 import '../../health/health_service.dart';
 import '../../health/health_sync.dart';
+import '../../health/live_steps.dart';
 
 final healthAvailabilityProvider = FutureProvider.autoDispose(
   (ref) => ref.watch(healthSourceProvider).availability(),
 );
 
+/// Today's values from the health store.
+typedef HealthToday = ({int? steps, double? distance, double? energy, WeightReading? weight});
+
 /// Today's values for the types the user switched on. Read live from the
-/// platform; RepArc does not copy them into its database.
-final healthTodayProvider = FutureProvider.autoDispose<({int? steps, double? energy, WeightReading? weight})>((
-  ref,
-) async {
+/// platform; RepArc does not copy them into its database. Each type is read
+/// on its own, so one failure never hides the others. The values are read
+/// again when the app comes back, and while a screen shows them: every 5
+/// minutes with Live steps on (the step sensor counts in between), else
+/// every minute.
+final healthTodayProvider = FutureProvider.autoDispose<HealthToday>((ref) async {
   final s = ref.watch(currentSettingsProvider);
   final h = ref.watch(healthSourceProvider);
-  final today = dayOf(DateTime.now());
+  final timer = Timer(Duration(minutes: s.liveSteps ? 5 : 1), ref.invalidateSelf);
+  final life = AppLifecycleListener(onResume: ref.invalidateSelf);
+  ref.onDispose(() {
+    timer.cancel();
+    life.dispose();
+  });
+  final today = dayOf(ref.read(clockProvider)());
   final key = dayKey(today);
-  int? steps;
-  double? energy;
-  WeightReading? weight;
-  try {
-    if (s.health.contains(HealthFeature.steps.name)) steps = (await h.dailySteps(today, today))[key];
-    if (s.health.contains(HealthFeature.activeEnergy.name)) energy = (await h.dailyActiveEnergy(today, today))[key];
-    if (s.health.contains(HealthFeature.weight.name)) weight = await h.latestWeight(addDays(today, 1));
-  } catch (_) {
-    // Shown as "no data"; never as zero.
+  bool on(HealthFeature f) => s.health.contains(f.name);
+  // Shown as "no data" on failure; never as zero.
+  Future<T?> read<T>(HealthFeature f, Future<T?> Function() get) async {
+    if (!on(f)) return null;
+    try {
+      return await get();
+    } catch (_) {
+      return null;
+    }
   }
-  return (steps: steps, energy: energy, weight: weight);
+
+  final (steps, distance, energy, weight) = await (
+    read(HealthFeature.steps, () async => (await h.dailySteps(today, today))[key]),
+    read(HealthFeature.distance, () async => (await h.dailyDistance(today, today))[key]),
+    read(HealthFeature.activeEnergy, () async => (await h.dailyActiveEnergy(today, today))[key]),
+    read(HealthFeature.weight, () => h.latestWeight(addDays(today, 1))),
+  ).wait;
+  return (steps: steps, distance: distance, energy: energy, weight: weight);
+});
+
+/// Steps, distance, and active energy for each day of a range, for
+/// Analytics. Keyed by (first day, last day). Read live, never stored.
+typedef HealthDays = ({Map<String, int>? steps, Map<String, double>? distance, Map<String, double>? energy});
+
+final healthDaysProvider = FutureProvider.autoDispose.family<HealthDays, (DateTime, DateTime)>((ref, range) async {
+  final s = ref.watch(currentSettingsProvider);
+  final h = ref.watch(healthSourceProvider);
+  final life = AppLifecycleListener(onResume: ref.invalidateSelf);
+  ref.onDispose(life.dispose);
+  Future<Map<String, T>?> read<T>(HealthFeature f, Future<Map<String, T>> Function() get) async {
+    if (!s.health.contains(f.name)) return null;
+    try {
+      return await get();
+    } catch (_) {
+      return null;
+    }
+  }
+
+  final (steps, distance, energy) = await (
+    read(HealthFeature.steps, () => h.dailySteps(range.$1, range.$2)),
+    read(HealthFeature.distance, () => h.dailyDistance(range.$1, range.$2)),
+    read(HealthFeature.activeEnergy, () => h.dailyActiveEnergy(range.$1, range.$2)),
+  ).wait;
+  return (steps: steps, distance: distance, energy: energy);
 });
 
 /// Me → Health apps (handbook section 9, D-020).
@@ -137,6 +184,33 @@ class HealthScreen extends ConsumerWidget {
               s.health,
               toggle,
             ),
+            if (s.health.contains(HealthFeature.steps.name)) ...[
+              const SizedBox(height: Space.s),
+              AppCard(
+                padding: const EdgeInsets.symmetric(vertical: Space.xs),
+                child: SwitchListTile(
+                  title: const Text('Live steps'),
+                  subtitle: Text(
+                    'Counts each step as you walk while RepArc is open, with your phone\'s step sensor. '
+                    '${health.platformName} stays the base: its total is read again every few minutes. '
+                    '${Platform.isIOS ? 'Needs Motion & Fitness.' : 'Needs Physical activity.'}',
+                  ),
+                  value: s.liveSteps,
+                  onChanged: (on) async {
+                    final repo = ref.read(settingsRepoProvider);
+                    if (!on) return repo.setLiveSteps(false);
+                    final allowed = await ref.read(stepSensorProvider).request();
+                    if (allowed) return repo.setLiveSteps(true);
+                    if (context.mounted) {
+                      showMessage(
+                        context,
+                        'Live steps needs the Physical activity permission. Allow it in Settings → Apps → RepArc.',
+                      );
+                    }
+                  },
+                ),
+              ),
+            ],
             const SectionHeader('Write to health'),
             _card(
               context,
@@ -164,7 +238,10 @@ class HealthScreen extends ConsumerWidget {
                   data: (v) => Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      if (s.health.contains('steps')) Text('Steps: ${num(v.steps, '')}', style: t.bodyLarge),
+                      if (s.health.contains('steps'))
+                        Text('Steps: ${num(ref.watch(liveStepsProvider).steps ?? v.steps, '')}', style: t.bodyLarge),
+                      if (s.health.contains('distance'))
+                        Text('Distance: ${fmtDistance(v.distance, s.distanceUnit) ?? 'No data'}', style: t.bodyLarge),
                       if (s.health.contains('activeEnergy'))
                         Text('Active energy: ${num(v.energy?.round(), 'kcal')}', style: t.bodyLarge),
                       if (s.health.contains('weight'))

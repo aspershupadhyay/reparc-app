@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:health/health.dart';
 
@@ -15,6 +16,13 @@ enum HealthFeature {
     'Read',
     'Shows today\'s steps on Home and in your AI summary.',
     HealthDataType.STEPS,
+    HealthDataAccess.READ,
+  ),
+  distance(
+    'Distance',
+    'Read',
+    'Shows how far you walked and ran each day, next to your steps.',
+    HealthDataType.DISTANCE_DELTA,
     HealthDataAccess.READ,
   ),
   activeEnergy(
@@ -46,14 +54,19 @@ enum HealthFeature {
     HealthDataAccess.WRITE,
   );
 
-  const HealthFeature(this.label, this.access, this.purpose, this.type, this.permission);
+  const HealthFeature(this.label, this.access, this.purpose, this._type, this.permission);
 
   final String label;
 
   /// 'Read' or 'Write', shown to the user before the system sheet opens.
   final String access;
   final String purpose;
-  final HealthDataType type;
+  final HealthDataType _type;
+
+  /// The platform's type. Apple Health keeps walking and running distance
+  /// as its own type; Health Connect has one distance type.
+  HealthDataType get type =>
+      this == HealthFeature.distance && Platform.isIOS ? HealthDataType.DISTANCE_WALKING_RUNNING : _type;
   final HealthDataAccess permission;
 
   bool get writes => permission == HealthDataAccess.WRITE;
@@ -101,6 +114,9 @@ abstract class HealthSource {
   /// Active energy per local day in kcal.
   Future<Map<String, double>> dailyActiveEnergy(DateTime fromDay, DateTime toDay);
 
+  /// Distance per local day in metres.
+  Future<Map<String, double>> dailyDistance(DateTime fromDay, DateTime toDay);
+
   /// Latest weight on or before [until], within the last 90 days.
   Future<WeightReading?> latestWeight(DateTime until);
 
@@ -126,11 +142,37 @@ abstract class HealthSource {
 String _day(DateTime d) =>
     '${d.year.toString().padLeft(4, '0')}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';
 
+/// Local days from [fromDay] to [toDay] as query runs: (start, end, bucket
+/// length in seconds). The health stores cut a range into equal buckets, so
+/// days of 24 hours share one run, and a day with a clock change (23 or 25
+/// hours) gets a run of its own. Each bucket then starts at local midnight.
+List<(DateTime, DateTime, int)> dayRuns(DateTime fromDay, DateTime toDay) {
+  final runs = <(DateTime, DateTime, int)>[];
+  var day = DateTime(fromDay.year, fromDay.month, fromDay.day);
+  final last = DateTime(toDay.year, toDay.month, toDay.day);
+  DateTime? runStart;
+  while (!day.isAfter(last)) {
+    final next = DateTime(day.year, day.month, day.day + 1);
+    final length = next.difference(day);
+    if (length == const Duration(days: 1)) {
+      runStart ??= day;
+    } else {
+      if (runStart != null) runs.add((runStart, day, Duration.secondsPerDay));
+      runStart = null;
+      runs.add((day, next, length.inSeconds));
+    }
+    day = next;
+  }
+  if (runStart != null) runs.add((runStart, day, Duration.secondsPerDay));
+  return runs;
+}
+
 /// The real platform stores through the `health` package.
 class PlatformHealth implements HealthSource {
   PlatformHealth();
 
   final Health _health = Health();
+  static const _channel = MethodChannel('app.reparc/health');
   bool _configured = false;
 
   Future<void> _ready() async {
@@ -178,29 +220,57 @@ class PlatformHealth implements HealthSource {
     return _health.getHealthDataFromTypes(types: [type], startTime: fromDay, endTime: end);
   }
 
-  @override
-  Future<Map<String, int>> dailySteps(DateTime fromDay, DateTime toDay) async {
+  /// Totals per local day, worked out by the health store itself.
+  ///
+  /// Adding up raw readings counts a step twice when the phone and a watch
+  /// both record it. Health Connect's aggregate and HealthKit's statistics
+  /// query count each moment once, by the user's source priority, and split
+  /// a reading that crosses midnight between the two days.
+  Future<Map<String, double>> _dailyTotals(HealthFeature feature, DateTime fromDay, DateTime toDay) async {
     await _ready();
-    final out = <String, int>{};
-    // Per-day totals from the platform avoid double counting between sources.
-    for (var d = fromDay; !d.isAfter(toDay); d = DateTime(d.year, d.month, d.day + 1)) {
-      final n = await _health.getTotalStepsInInterval(d, DateTime(d.year, d.month, d.day + 1));
-      if (n != null) out[_day(d)] = n;
+    if (Platform.isAndroid) {
+      // Health Connect's daily groups, in local days (MainActivity). The
+      // plugin's interval query sends its bucket length in a form that
+      // Android cannot read, so the app asks Health Connect directly.
+      final raw = await _channel.invokeMapMethod<String, double>('dailyTotals', {
+        'type': feature.name,
+        'from': _day(fromDay),
+        'to': _day(toDay),
+      });
+      return raw ?? {};
+    }
+    final type = feature.type;
+    final out = <String, double>{};
+    for (final (start, end, slice) in dayRuns(fromDay, toDay)) {
+      final points = await _health.getHealthIntervalDataFromTypes(
+        startDate: start,
+        endDate: end,
+        types: [type],
+        interval: slice,
+      );
+      for (final p in points) {
+        // HealthKit leaves days with no data out, so none becomes 0.
+        final v = p.value;
+        if (v is! NumericHealthValue) continue;
+        final key = _day(p.dateFrom.toLocal());
+        out[key] = (out[key] ?? 0) + v.numericValue.toDouble();
+      }
     }
     return out;
   }
 
   @override
-  Future<Map<String, double>> dailyActiveEnergy(DateTime fromDay, DateTime toDay) async {
-    final out = <String, double>{};
-    for (final p in await _points(HealthDataType.ACTIVE_ENERGY_BURNED, fromDay, toDay)) {
-      final v = p.value;
-      if (v is! NumericHealthValue) continue;
-      final key = _day(p.dateFrom.toLocal());
-      out[key] = (out[key] ?? 0) + v.numericValue.toDouble();
-    }
-    return out;
-  }
+  Future<Map<String, int>> dailySteps(DateTime fromDay, DateTime toDay) async => {
+    for (final e in (await _dailyTotals(HealthFeature.steps, fromDay, toDay)).entries) e.key: e.value.round(),
+  };
+
+  @override
+  Future<Map<String, double>> dailyActiveEnergy(DateTime fromDay, DateTime toDay) =>
+      _dailyTotals(HealthFeature.activeEnergy, fromDay, toDay);
+
+  @override
+  Future<Map<String, double>> dailyDistance(DateTime fromDay, DateTime toDay) =>
+      _dailyTotals(HealthFeature.distance, fromDay, toDay);
 
   @override
   Future<WeightReading?> latestWeight(DateTime until) async {

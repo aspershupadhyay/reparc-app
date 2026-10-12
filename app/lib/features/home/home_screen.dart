@@ -20,6 +20,7 @@ import '../../data/providers.dart';
 import '../../data/workout_repository.dart' show SessionSummary;
 import '../../domain/nutrition.dart';
 import '../../health/health_service.dart';
+import '../../health/live_steps.dart';
 import '../../updates/update_controller.dart';
 import '../me/body_screen.dart';
 import '../me/health_screen.dart';
@@ -106,6 +107,7 @@ class HomeScreen extends ConsumerWidget {
               streakTarget: target,
             ),
             if (settings.health.contains(HealthFeature.steps.name) ||
+                settings.health.contains(HealthFeature.distance.name) ||
                 settings.health.contains(HealthFeature.activeEnergy.name)) ...[
               const SizedBox(height: Space.m),
               const _HealthRow(),
@@ -235,30 +237,45 @@ class _HealthRow extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final s = ref.watch(currentSettingsProvider);
     final v = ref.watch(healthTodayProvider).value;
+    // Steps count up live while the phone's sensor runs (Live steps).
+    final steps = ref.watch(liveStepsProvider).steps ?? v?.steps;
+    final distance = fmtDistance(v?.distance, s.distanceUnit);
+    final tiles = [
+      if (s.health.contains(HealthFeature.steps.name))
+        _Tile(
+          icon: LucideIcons.footprints,
+          label: 'Steps',
+          value: steps == null ? '–' : NumberFormat.decimalPattern().format(steps),
+          caption: switch ((steps, distance)) {
+            (null, null) => 'No data',
+            (_, final d?) => 'today · $d',
+            _ => 'today',
+          },
+          onTap: () => context.push('/me/health'),
+        )
+      else if (s.health.contains(HealthFeature.distance.name))
+        _Tile(
+          icon: LucideIcons.route,
+          label: 'Distance',
+          value: distance ?? '–',
+          caption: distance == null ? 'No data' : 'today',
+          onTap: () => context.push('/me/health'),
+        ),
+      if (s.health.contains(HealthFeature.activeEnergy.name))
+        _Tile(
+          icon: LucideIcons.zap,
+          label: 'Active',
+          value: v?.energy == null ? '–' : '${v!.energy!.round()}',
+          caption: v?.energy == null ? 'No data' : 'kcal burned',
+          onTap: () => context.push('/me/health'),
+        ),
+    ];
     return Row(
       children: [
-        if (s.health.contains(HealthFeature.steps.name))
-          Expanded(
-            child: _Tile(
-              icon: LucideIcons.footprints,
-              label: 'Steps',
-              value: v?.steps == null ? '–' : NumberFormat.decimalPattern().format(v!.steps),
-              caption: v?.steps == null ? 'No data' : 'today',
-              onTap: () => context.push('/me/health'),
-            ),
-          ),
-        if (s.health.contains(HealthFeature.steps.name) && s.health.contains(HealthFeature.activeEnergy.name))
-          const SizedBox(width: Space.m),
-        if (s.health.contains(HealthFeature.activeEnergy.name))
-          Expanded(
-            child: _Tile(
-              icon: LucideIcons.zap,
-              label: 'Active',
-              value: v?.energy == null ? '–' : '${v!.energy!.round()}',
-              caption: v?.energy == null ? 'No data' : 'kcal burned',
-              onTap: () => context.push('/me/health'),
-            ),
-          ),
+        for (final (i, tile) in tiles.indexed) ...[
+          if (i > 0) const SizedBox(width: Space.m),
+          Expanded(child: tile),
+        ],
       ],
     );
   }

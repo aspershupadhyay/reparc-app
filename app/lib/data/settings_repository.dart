@@ -19,6 +19,7 @@ class AppSettings {
     this.health = const {},
     this.lastBackupAt,
     this.introSeen = false,
+    this.liveSteps = false,
     this.onboarded = false,
     this.foodCountry,
     this.updatesAuto = true,
@@ -127,6 +128,12 @@ class AppSettings {
   /// The user has seen the animated intro once.
   final bool introSeen;
 
+  /// Count steps live with the phone's step sensor while RepArc is open,
+  /// on top of the health store's total (handbook 9.5). Off by default; it
+  /// needs the "Physical activity" (Android) or "Motion & Fitness"
+  /// (iPhone) permission.
+  final bool liveSteps;
+
   /// The first-run setup (goal, level, days) was finished or skipped.
   final bool onboarded;
 
@@ -172,6 +179,7 @@ class AppSettings {
     },
     lastBackupAt: DateTime.tryParse(m['backup.lastAt'] ?? ''),
     introSeen: m['introSeen'] == 'true',
+    liveSteps: m['liveSteps'] == 'true',
     onboarded: m['onboarded'] == 'true',
     foodCountry: m['food.country'],
     updatesAuto: m['updates.auto'] != 'false',
@@ -257,6 +265,7 @@ class SettingsRepository {
 
   Future<void> setLastBackupAt(DateTime at) => set('backup.lastAt', at.toUtc().toIso8601String());
   Future<void> setIntroSeen() => set('introSeen', 'true');
+  Future<void> setLiveSteps(bool on) => set('liveSteps', on ? 'true' : null);
   Future<void> setOnboarded() => set('onboarded', 'true');
   Future<void> setFoodCountry(String? code) => set('food.country', code);
   Future<void> setGuideOn(bool v) => set('guide.on', v ? null : 'false');

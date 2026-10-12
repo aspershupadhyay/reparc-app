@@ -236,11 +236,14 @@ Check each answer against the app before submitting. If a data flow changes, upd
 |---|---|---|
 | `READ_STEPS` | Me → Health apps → Steps | Shows the user's daily steps next to their workouts and meals. |
 | `READ_ACTIVE_CALORIES_BURNED` | Active energy | Shows energy burned next to energy eaten. |
+| `READ_DISTANCE` | Me → Health apps → Distance | Shows how far the user walked and ran each day, next to their steps. |
 | `READ_WEIGHT` | Body weight | Shows body weight in the user's progress charts. |
 | `WRITE_EXERCISE` | Save workouts to Health Connect | Saves finished workouts so the user's other health apps see them. |
 | `WRITE_NUTRITION` | Save meals to Health Connect | Saves eaten meals so the user's other health apps see them. |
 
 Each is asked for only when the user switches that feature on. Health data is not sent to any server, not used for ads, and not sold.
+
+**Physical activity (`ACTIVITY_RECOGNITION`):** asked for only when the user turns on Me → Health apps → Live steps (from 0.4.17). The phone's step sensor counts steps while RepArc is open, on top of the Health Connect total. Nothing is stored or sent. Data safety stays **No collection**, because nothing leaves the phone.
 
 **Content rating and audience:** fitness, no user-generated content shared with others, no ads, no purchases. Target 18+ (16+ at the youngest), as the launch review proposes. **To confirm (owner).**
 

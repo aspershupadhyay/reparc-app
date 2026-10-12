@@ -104,5 +104,9 @@ dependencies {
     // FileProvider, to hand a checked update APK to Android's installer
     // (MainActivity). The same version url_launcher already brings in.
     implementation("androidx.core:core:1.17.0")
+    // Daily health totals (MainActivity, handbook 9.5). The same Health
+    // Connect client the health plugin uses, so one copy ships.
+    implementation("androidx.health.connect:connect-client:1.2.0-alpha02")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.9.0")
     coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.4")
 }
