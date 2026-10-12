@@ -8,7 +8,7 @@ The icons were made on 2026-10-12 with Figma's image generation (model `gpt-imag
 
 > Realistic anatomical muscle illustration for a premium fitness app icon. All muscles in soft neutral light grey with fine muscle fiber detail and subtle shading. ONLY the <muscle> is highlighted in vivid saturated red-orange. Plain flat pure white background, centered, no text, no labels, no skin, minimal, consistent soft studio lighting.
 
-Each result was checked by eye for the right muscle before use. Rights in AI-generated images under Figma's terms are **To confirm** before a store release.
+Each result was checked by eye for the right muscle before use. The owner confirmed use of these images in the app on 2026-10-12 (Figma Education plan).
 
 ## Rebuild
 
