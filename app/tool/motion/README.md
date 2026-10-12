@@ -53,7 +53,7 @@ Research (2026-10-12): the best open anatomical muscle models, Z-Anatomy and Bod
 
 References: Ramos and Larboulette, "A Muscle Model for Enhanced Character Skinning", Journal of WSCG 2013 (parametric muscles over skinning with volume preservation); OpenSim musculoskeletal models (muscle paths with via points).
 
-Live demo (private to the owner): https://claude.ai/artifact/JArExRx3VRAxtg3YQW92c2
+Live demo (private to the owner): https://claude.ai/artifact/Gxrcz3spGVHuVqL2Vyov3E (sculpted and painted). Older: https://claude.ai/artifact/JArExRx3VRAxtg3YQW92c2 (atlas only)
 
 ## What it does
 
