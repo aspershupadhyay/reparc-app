@@ -22,6 +22,13 @@ come in as the `_MUSCLE` point attribute and the tables as scene custom properti
 (`../render.py` imports it and renders it). Edits made by hand in Blender do not reach the Motion Lab, which
 builds from `model.json`: put a change into the scripts instead.
 
+**Blender file: `reparc-gym-model.blend`** (13 MB, every texture packed). The same body as a real person:
+material slot 1 "Skin" (MakeHuman's CC0 skin with painted shorts, a little subsurface scattering) and slot 2
+"Painted anatomy". Eyes, brows, lashes, and short hair follow the "head" bone; the armature has the 51 bones.
+Three area lights and a camera are set; F12 renders with Cycles. To show the anatomy: select the body, Tab,
+select all, pick "Painted anatomy" in the material list, Assign. Built by `../blend.py` (read its top comment).
+Edits in this file do not reach the Motion Lab: put lasting changes into the scripts.
+
 Rebuild it after any change to the painting, the muscle atlas, or the mesh, with the commands in
 `../README.md` ("Rebuild and check"), and commit the new file. Do not edit it by hand.
 

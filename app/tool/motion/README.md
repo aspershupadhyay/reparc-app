@@ -40,7 +40,7 @@ The page opens in the skin look; the **Skin / Muscles** button switches to the p
 - **Shorts.** The skins are nude, so charcoal compression shorts are painted on, from 7.5 cm above the hip joints to 45 % of the way to the knee.
 - **Head.** Eyes, eyebrows, eyelashes, and short hair (`short02`): MakeHuman proxies fitted to the shaped body with their `.mhclo` (three body points, weights, and a scaled offset, as MakeHuman fits them). The page hangs them on the head bone.
 - **Assets.** MakeHuman's CC0 system assets pack: https://static.makehumancommunity.org/assets/assetpacks/makehuman_system_assets.html (`makehuman_system_assets_cc0.zip`, 267 MB; not committed). Every asset in the pack is marked CC0.
-- **Not yet:** the `.glb` still carries only the painted look; the skin look is in the page. Skin tone is one texture; the others are one command away (`skin.py … young_african_male`).
+- **Files:** the page opens in the skin look; `dist/reparc-gym-model.blend` (`blend.py`) carries both looks for Blender; the `.glb` carries only the painted look. Skin tone is one texture; the others are one command away (`skin.py … young_african_male`).
 
 **More paintings.** `paint/sheets.json` takes more sheets (another pose and other views); `build` blends them all. A sheet with the arms raised seen from four low three-quarter views would cut the badly seen surface from 21 % to 7 % (measured). It was not painted: the owner's Weave workspace allows 2 free model runs, both used (2026-10-12); more runs need a paid Weave plan.
 
@@ -105,6 +105,7 @@ python3 -I tool/motion/skin.py /tmp/mh/makehuman/data /tmp/mhsys /tmp/base.npz /
 python3 -I tool/motion/sculpt.py /tmp/paint-out                                                  # muscle relief into the mesh, a few seconds (needs scipy)
 python3 -I tool/motion/build.py /tmp/paint-out/model.json /tmp/paint-out /tmp/motion-lab.html     # the page, 3.3 MB
 python3 -I tool/motion/glb.py /tmp/paint-out/model.json /tmp/paint-out tool/motion/dist/reparc-gym-model.glb   # painted .glb, 8.3 MB (committed)
+python3 tool/motion/blend.py tool/motion/dist/reparc-gym-model.glb /tmp/paint-out tool/motion/dist/reparc-gym-model.blend   # Blender file, skin look (committed)
 python3 tool/motion/render.py tool/motion/dist/reparc-gym-model.glb /tmp/clay.png clay torso      # Blender check render (pip install bpy), about 1 min
 python3 -I tool/motion/build.py /tmp/gym.json /tmp/gym-tex /tmp/motion-lab-atlas.html            # older atlas-only page
 # A new painting: python3 -I tool/motion/paint.py views /tmp/base.npz /tmp/gym.json tool/motion/paint/sheets.json 0 /tmp/sheet_in.png
