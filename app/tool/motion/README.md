@@ -32,6 +32,16 @@ The painting alone left the surface smooth: bellies and grooves were only painte
 
 `render.py` opens the `.glb` in Blender (the `bpy` package, `pip install bpy`, or `blender -b -P`) and renders four views with studio light in Cycles. `clay` drops the paint so only the shape shows; `torso` and `legs` frame close up. Judge the relief in clay renders, before and after (`model-smooth.json` gives the before).
 
+## Skin look (`skin.py`): the same body as a real person
+
+The page opens in the skin look; the **Skin / Muscles** button switches to the painted anatomy. Both light the working muscles red (the skin look lets them glow through the skin).
+
+- **Skin.** MakeHuman's CC0 skin texture (default `young_asian_male`; any folder in the system assets' `skins/`) re-baked into our UV layout. Every triangle of our mesh lies in one MakeHuman body quad, so each corner's MakeHuman UV is exact (an original point takes its corner's UV, an edge middle the mean of two, a quad centre the mean of four). `export.py` saves the refine's parents in the base cache for this.
+- **Shorts.** The skins are nude, so charcoal compression shorts are painted on, from 7.5 cm above the hip joints to 45 % of the way to the knee.
+- **Head.** Eyes, eyebrows, eyelashes, and short hair (`short02`): MakeHuman proxies fitted to the shaped body with their `.mhclo` (three body points, weights, and a scaled offset, as MakeHuman fits them). The page hangs them on the head bone.
+- **Assets.** MakeHuman's CC0 system assets pack: https://static.makehumancommunity.org/assets/assetpacks/makehuman_system_assets.html (`makehuman_system_assets_cc0.zip`, 267 MB; not committed). Every asset in the pack is marked CC0.
+- **Not yet:** the `.glb` still carries only the painted look; the skin look is in the page. Skin tone is one texture; the others are one command away (`skin.py … young_african_male`).
+
 **More paintings.** `paint/sheets.json` takes more sheets (another pose and other views); `build` blends them all. A sheet with the arms raised seen from four low three-quarter views would cut the badly seen surface from 21 % to 7 % (measured). It was not painted: the owner's Weave workspace allows 2 free model runs, both used (2026-10-12); more runs need a paid Weave plan.
 
 ## Holding the weights
@@ -90,8 +100,10 @@ BASE_CACHE=/tmp/base.npz python3 -I tool/motion/export.py /tmp/mh/makehuman/data
 python3 -I tool/motion/gym.py /tmp/base.npz /tmp/gym.json                                         # gym model, about 15 s
 python3 -I tool/motion/bake.py /tmp/gym-tex                                                       # textures, about 20 s
 python3 -I tool/motion/paint.py build /tmp/base.npz /tmp/gym.json tool/motion/paint/sheets.json /tmp/paint-out   # painted model + textures, about 90 s
+curl -L -o /tmp/sys.zip https://files2.makehumancommunity.org/asset_packs/makehuman_system_assets/makehuman_system_assets_cc0.zip && unzip -q /tmp/sys.zip -d /tmp/mhsys
+python3 -I tool/motion/skin.py /tmp/mh/makehuman/data /tmp/mhsys /tmp/base.npz /tmp/paint-out          # skin look: skin, shorts, eyes, brows, hair, about 20 s
 python3 -I tool/motion/sculpt.py /tmp/paint-out                                                  # muscle relief into the mesh, a few seconds (needs scipy)
-python3 -I tool/motion/build.py /tmp/paint-out/model.json /tmp/paint-out /tmp/motion-lab.html     # painted page, 2.7 MB
+python3 -I tool/motion/build.py /tmp/paint-out/model.json /tmp/paint-out /tmp/motion-lab.html     # the page, 3.3 MB
 python3 -I tool/motion/glb.py /tmp/paint-out/model.json /tmp/paint-out tool/motion/dist/reparc-gym-model.glb   # painted .glb, 8.3 MB (committed)
 python3 tool/motion/render.py tool/motion/dist/reparc-gym-model.glb /tmp/clay.png clay torso      # Blender check render (pip install bpy), about 1 min
 python3 -I tool/motion/build.py /tmp/gym.json /tmp/gym-tex /tmp/motion-lab-atlas.html            # older atlas-only page
@@ -108,7 +120,8 @@ To update the live demo, publish `/tmp/motion-lab.html` with the Artifact tool a
 - Poses are set by hand as joint angles (minutes for each move); the checks catch mistakes. Building poses from the library's start and end photos with a pose-estimation model is a possible next step, not started.
 - Fibre lines are drawn by the shader along each muscle's set direction; they are an illustration, not traced fibres.
 - Deep muscles (rhomboids, iliopsoas, rotator cuff under the deltoid) are not drawn: the model shows the surface layer.
-- Size: the page is 2.7 MB (a 1.75 MB base mesh and three 2048 px textures); in the browser the mesh is 112,292 points and 202,968 triangles after subdivision. Building it takes about 130 ms on a desktop and about 470 ms with the CPU slowed 4× (Pixel 7 emulation). Phones get a pixel ratio of at most 1.5 and a 1024 px shadow map, and the page steps the pixel ratio down to 1 if frames average over 28 ms for 2 s. `__lab.perf()` reports all of this. **Not measured:** frame rate on a real phone (the cloud browser draws in software, so its frame times say nothing about a phone GPU).
+- Size: the page is 3.3 MB (a 1.75 MB base mesh, four 2048 px textures, and the head parts); in the browser the mesh is 112,292 points and 202,968 triangles after subdivision. Building it takes about 130 ms on a desktop and about 470 ms with the CPU slowed 4× (Pixel 7 emulation). Phones get a pixel ratio of at most 1.5 and a 1024 px shadow map, and the page steps the pixel ratio down to 1 if frames average over 28 ms for 2 s. `__lab.perf()` reports all of this. **Not measured:** frame rate on a real phone (the cloud browser draws in software, so its frame times say nothing about a phone GPU).
 - Hidden areas (sides of the chest under the arms, armpits, inner thighs) carry diffused paint with drawn fibre strokes, not real painting. They are softer than the rest; a second painting fixes this (see "More paintings").
+- Skin look: the face and the skin are MakeHuman's stock textures (a young man), not a scan; there are no clothes but painted shorts. Red glows through the shorts too when the glutes or quads work.
 - The red highlight follows the painted edges where a view sees the muscle clearly; elsewhere it uses our atlas, which can sit a little off the painted muscle.
 - Fingers close as one grip; the thumb is approximate.

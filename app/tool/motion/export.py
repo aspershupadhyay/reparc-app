@@ -128,7 +128,11 @@ nrm = build.normals(pos, tri)
 label, mw, groove = muscles.label(pos, nrm, tri, joints, seg2)
 if os.environ.get('BASE_CACHE'):
     np.savez(os.environ['BASE_CACHE'], pos=pos, nrm=nrm, tri=tri, W=W, seg=np.array([str(x) for x in seg2]), label=label,
-             joints=json.dumps({k: [float(x) for x in v] for k, v in joints.items()}), bones=json.dumps(BONES))
+             joints=json.dumps({k: [float(x) for x in v] for k, v in joints.items()}), bones=json.dumps(BONES),
+             # For skin.py: the shaped full mesh (eyes, helpers), its transform, the kept vertices, and the
+             # parents of each point the refine added (2 = edge middle, 4 = quad centre).
+             vfull=v, origin=origin, scale=s, used=used,
+             par=np.array([p + [-1] * (4 - len(p)) for p in par], dtype=np.int64))
 
 ao = muscles.occlusion(pos, nrm, tri)
 

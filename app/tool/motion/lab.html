@@ -98,6 +98,7 @@ ul.plain { margin: 0; padding-left: 18px; display: grid; gap: 4px; line-height: 
     <div class="row">
       <button class="btn" id="play" type="button">Pause</button>
       <button class="btn" id="slow" type="button">Half speed</button>
+      <button class="btn" id="look" type="button" hidden aria-pressed="true">Skin</button>
       <span class="spacer"></span>
       <button class="btn" data-view="front" type="button">Front</button>
       <button class="btn" data-view="side" type="button">Side</button>
@@ -284,8 +285,10 @@ geo.setAttribute('color', new THREE.BufferAttribute(colors, 3));
 const texLoader = new THREE.TextureLoader();
 function tex(url, nearest) {
   const t = texLoader.load(url);
-  t.flipY = false; t.anisotropy = renderer.capabilities.getMaxAnisotropy();
+  t.flipY = false;
+  // Id maps are read exactly (nearest, no anisotropy: anisotropic filtering averages ids at part borders into other ids).
   if (nearest) { t.magFilter = THREE.NearestFilter; t.minFilter = THREE.NearestFilter; t.generateMipmaps = false; }
+  else t.anisotropy = renderer.capabilities.getMaxAnisotropy();
   return t;
 }
 const uState = { value: new Array(NA).fill(0) }, uDebug = { value: 0 };
@@ -295,8 +298,11 @@ const mat = PAINTED
 if (PAINTED) { mat.defines = { PAINTED: '' }; renderer.toneMappingExposure = 0.74; }  // the painting is light already
 const uDetail = { value: PAINTED ? null : tex('__DETAIL__') }, uId = { value: tex(PAINTED ? '__LABEL__' : '__ID__', true) };
 const uAlbedo = { value: PAINTED ? tex('__ALBEDO__') : null };
+// Skin look (skin.py): MakeHuman's skin and shorts on the same body; the working muscles glow red through the skin.
+const HAS_SKIN = PAINTED && !!D.head;
+const uSkinTex = { value: HAS_SKIN ? tex('__SKIN__') : null }, uSkin = { value: HAS_SKIN ? 1 : 0 };
 mat.onBeforeCompile = (sh) => {
-  Object.assign(sh.uniforms, { uBulge: bulge, uState, uDebug, uDetail, uId, uAlbedo });
+  Object.assign(sh.uniforms, { uBulge: bulge, uState, uDebug, uDetail, uId, uAlbedo, uSkinTex, uSkin });
   sh.vertexShader = sh.vertexShader
     .replace('#include <common>', `#include <common>\nattribute float mw;\nattribute float cav;\nattribute float mid;\nuniform float uBulge[${NM}];\nvarying float vCav;`)
     .replace('#include <begin_vertex>', `#include <begin_vertex>
@@ -304,7 +310,7 @@ mat.onBeforeCompile = (sh) => {
       // Constant volume: a shorter muscle gets thicker (set per muscle on the CPU).
       if (mid < ${NM}.0) transformed += objectNormal * mw * uBulge[int(mid + 0.5)];`);
   sh.fragmentShader = sh.fragmentShader
-    .replace('#include <common>', `#include <common>\nuniform sampler2D uDetail;\nuniform sampler2D uId;\nuniform sampler2D uAlbedo;\nuniform float uDebug;\nuniform float uState[${NA}];\nvarying float vCav;`)
+    .replace('#include <common>', `#include <common>\nuniform sampler2D uDetail;\nuniform sampler2D uId;\nuniform sampler2D uAlbedo;\nuniform sampler2D uSkinTex;\nuniform float uSkin;\nuniform float uDebug;\nuniform float uState[${NA}];\nvarying float vCav;`)
     .replace('#include <color_fragment>', `#include <color_fragment>
       {
         int ii = int(floor(texture2D(uId, vUv).r * 255.0 + 0.5));
@@ -319,6 +325,14 @@ mat.onBeforeCompile = (sh) => {
         vec3 base = st > 1.5 ? mix(pcol, red, 0.5) : st > 0.5 ? red : pcol;
         if (uDebug > 0.5 && ii < ${NA}) base = mix(pcol, dbg, 0.7);
         diffuseColor.rgb = base * 0.82 * mix(1.0, vColor.r, 0.3);
+        if (uSkin > 0.5) {
+          // Real skin: lit by the scene. Main muscles glow red through it, helpers a little.
+          vec3 scol = pow(texture2D(uSkinTex, vUv).rgb, vec3(2.2));
+          vec3 glow = vec3(0.95, 0.09, 0.03) * (0.35 + 0.65 * smoothstep(0.0, 0.25, lum));
+          vec3 sb = st > 1.5 ? mix(scol, glow, 0.35) : st > 0.5 ? mix(scol, glow, 0.62) : scol;
+          if (uDebug > 0.5 && ii < ${NA}) sb = mix(scol, dbg, 0.7);
+          diffuseColor.rgb = sb * mix(1.0, vColor.r, 0.5);
+        }
         #else
         vec4 det = texture2D(uDetail, vUv);
         vec3 skin = vec3(0.42, 0.42, 0.41), mus = vec3(0.5, 0.495, 0.485), ten = vec3(0.74, 0.73, 0.7);
@@ -335,7 +349,7 @@ mat.onBeforeCompile = (sh) => {
       }`)
     .replace('#include <emissivemap_fragment>', `#include <emissivemap_fragment>
       #ifdef PAINTED
-      totalEmissiveRadiance += diffuseColor.rgb * 0.22;   // keep the painted light; scene light adds only a little
+      totalEmissiveRadiance += diffuseColor.rgb * mix(0.22, 0.02, uSkin);   // keep the painted light; skin takes the scene's
       #endif`);
 };
 const bones = [], B = {}, bind = {};
@@ -349,6 +363,32 @@ body.castShadow = true; body.frustumCulled = false;
 body.add(B.hips); body.updateMatrixWorld(true);
 body.bind(new THREE.Skeleton(bones));
 scene.add(body);
+// Eyes, brows, lashes and hair (skin.py): MakeHuman proxies fitted to this body, riding the head bone.
+const headParts = [];
+for (const h of D.head || []) {
+  const g = new THREE.BufferGeometry();
+  const P = dec(h.pos, Float32Array).slice(), hb = bind.head;
+  for (let i = 0; i < P.length; i += 3) { P[i] -= hb.x; P[i + 1] -= hb.y; P[i + 2] -= hb.z; }
+  g.setAttribute('position', new THREE.BufferAttribute(P, 3));
+  g.setAttribute('uv', new THREE.BufferAttribute(dec(h.uv, Float32Array), 2));
+  g.setIndex(new THREE.BufferAttribute(dec(h.index, Uint16Array), 1));
+  g.computeVertexNormals();
+  const t = texLoader.load(h.tex); t.flipY = false; t.encoding = THREE.sRGBEncoding;
+  const m = new THREE.MeshStandardMaterial({ map: t, roughness: h.name === 'eyes' ? 0.15 : 0.8, metalness: 0,
+    transparent: h.alpha, alphaTest: h.alpha ? 0.25 : 0, side: h.alpha ? THREE.DoubleSide : THREE.FrontSide, depthWrite: !h.alpha });
+  const mesh = new THREE.Mesh(g, m); mesh.name = h.name; mesh.frustumCulled = false;
+  B.head.add(mesh); headParts.push(mesh);
+}
+function setLook(skin) {
+  if (!HAS_SKIN) return;
+  uSkin.value = skin ? 1 : 0;
+  mat.normalScale.set(skin ? 0.35 : 1, skin ? -0.35 : -1);
+  mat.roughness = skin ? 0.58 : 0.72;
+  renderer.toneMappingExposure = skin ? 0.95 : 0.74;
+  for (const m of headParts) m.visible = skin || m.name === 'eyes';
+  const b = $('look'); b.textContent = skin ? 'Skin' : 'Muscles'; b.setAttribute('aria-pressed', String(skin));
+  b.setAttribute('aria-label', skin ? 'Look: skin. Switch to muscles' : 'Look: muscles. Switch to skin');
+}
 const hipsBind = B.hips.position.clone();
 const X = k => V(...D.extra[k]);
 
@@ -818,6 +858,7 @@ for (const e of EX) {
 }
 $('play').addEventListener('click', () => { playing = !playing; $('play').textContent = playing ? 'Pause' : 'Play'; });
 $('slow').addEventListener('click', () => { speed = speed === 1 ? 0.5 : 1; $('slow').classList.toggle('on', speed !== 1); });
+if (HAS_SKIN) { $('look').hidden = false; $('look').addEventListener('click', () => setLook(uSkin.value < 0.5)); setLook(true); }
 $('play').textContent = playing ? 'Pause' : 'Play';
 const views = { front: [0, 0.2, 3.3], side: [3.3, 0.15, 0], back: [0, 0.2, -3.3] };
 for (const b of document.querySelectorAll('[data-view]')) b.addEventListener('click', () => {
@@ -830,12 +871,12 @@ function resize() {
   camera.updateProjectionMatrix();
 }
 new ResizeObserver(resize).observe(stageEl); resize();
-window.__lab = { select: id => select(EX.find(e => e.id === id)).map(r => ({ ...r })), freeze: a => { frozen = a; }, ids: EX.map(e => e.id), look: (pos, target) => { camT = 1; camera.position.set(...pos); controls.target.set(...target); },
+window.__lab = { skin: on => setLook(!!on), select: id => select(EX.find(e => e.id === id)).map(r => ({ ...r })), freeze: a => { frozen = a; }, ids: EX.map(e => e.id), look: (pos, target) => { camT = 1; camera.position.set(...pos); controls.target.set(...target); },
   parts: (names) => { uDebug.value = 0; D.atlas.forEach((a, i) => { uState.value[i] = names.includes(a.name) ? 1 : 0; }); },
   debug: (on) => { uDebug.value = on ? 1 : 0; },
   highlight: (cats) => { D.atlas.forEach((a, i) => { uState.value[i] = a.kind === 'tendon' ? 0 : cats.includes(a.cat) ? 1 : 0; }); },
   perf: () => ({ phone: PHONE, pixelRatio, frameMs: +perf.ema.toFixed(1), qualitySteps: perf.steps, meshMs: Math.round(meshMs),
-    vertices: nv, triangles: geo.index.count / 3, textures: PAINTED ? '3 x 2048 px' : '3 x 2048 px (atlas)' }),
+    vertices: nv, triangles: geo.index.count / 3, textures: HAS_SKIN ? '4 x 2048 px' : PAINTED ? '3 x 2048 px' : '3 x 2048 px (atlas)' }),
   bulge: () => D.muscles.map((m, i) => [m.name + ' ' + m.side, +(bulge.value[i] * 1000).toFixed(2)]) };
 select(EX[0]);
 

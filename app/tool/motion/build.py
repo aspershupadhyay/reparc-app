@@ -16,6 +16,7 @@ if has('detail.webp'):
     page = page.replace('__NORMAL__', uri('normal.webp', 'image/webp')).replace('__DETAIL__', uri('detail.webp', 'image/webp')).replace('__ID__', uri('id.png', 'image/png'))
 page = page.replace('__ALBEDO__', uri('albedo.webp', 'image/webp') if has('albedo.webp') else '')
 page = page.replace('__PNORMAL__', uri('normal.webp', 'image/webp') if has('albedo.webp') else '')
+page = page.replace('__SKIN__', uri('skin.webp', 'image/webp') if has('skin.webp') else '')
 page = page.replace('__LABEL__', uri('label.png', 'image/png') if has('label.png') else '')
 page = page.replace('__BODY__', open(model).read())
 open(out, 'w').write(page)

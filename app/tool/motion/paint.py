@@ -222,7 +222,7 @@ def base_model(base_npz, meta_json):
     print(f'uv layout: {len(pos)} -> {len(vm)} points (seams split), {at.chart_count} charts')
     return {'meta': meta, 'pos': pos[vm], 'nrm': nrm[vm], 'tri': ntri.astype(np.int64), 'uv': uv.astype(np.float64),
             'orig': vm, 'si': idx[vm], 'sw': w4[vm], 'ao': ao[vm], 'gid': gid[vm], 'amp': amp[vm], 'fib': fib[vm],
-            'bare': np.isin(seg, ('head', 'hand', 'foot'))[vm]}
+            'bare': np.isin(seg, ('head', 'hand', 'foot'))[vm], 'seg': np.asarray(seg)[vm]}
 
 
 def fine(mdl, arm=0.0, leg=0.0):
@@ -518,13 +518,24 @@ def build(base_npz, meta_json, sheets_json, outdir):
     Hh = np.zeros((TEX, TEX, 1)); Hh[cov, 0] = hgt
     A = pushpull(A, cov)
     Hh = pushpull(Hh, cov)[..., 0]
+    # A part lives only on its own body segments: where the painting had a hand against the thigh,
+    # the watershed put hand and forearm parts on the thigh (red specks in a curl). Those keep the atlas part.
+    tseg = mdl['seg'][mdl['tri'][tfid[cov] % len(mdl['tri']), 0]]
+    moved = 0
+    for i, mu in enumerate(atlas.M):
+        bad = (lbest == i) & ~np.isin(tseg, mu['segs'] or atlas.CHART_SEGS[mu['chart']])
+        lbest[bad] = tl[bad]
+        moved += bad.sum()
+    print(f'texels with a part off its body segment (atlas part kept): {moved}')
     lbest = np.where(lbest == BARE, 255, lbest)
     L = np.full((TEX, TEX), 255, np.uint8); L[cov] = np.clip(lbest, 0, 255)
     L = mode_filter(L, cov)
-    pad = L.copy()
-    for _ in range(10):
-        grow = cv2.dilate(np.where(pad == 255, 0, pad.astype(int) + 1).astype(np.uint8), np.ones((3, 3))).astype(int) - 1
-        pad = np.where((pad == 255) & (grow >= 0) & ~cov, grow, pad).astype(np.uint8)
+    # Pad past the chart borders with the nearest covered texel's part (the page samples seam texels
+    # the bake missed; a max-dilation gave them a neighbour chart's part, seen as red specks).
+    _, near = cv2.distanceTransformWithLabels((~cov).astype(np.uint8), cv2.DIST_L2, 5, labelType=cv2.DIST_LABEL_PIXEL)
+    src = np.zeros(int(near.max()) + 1, np.uint8)
+    src[near[cov]] = L[cov]
+    pad = np.where(cov, L, src[near]).astype(np.uint8)
     # Normal map from the painted height, glTF convention (+x along u, +y up = against v).
     texel_m = np.sqrt(1.9 / cov.sum())  # metres per texel (body area about 1.9 m²)
     relief = 0.0015                     # metres of relief for a full luminance step
@@ -552,6 +563,8 @@ def build(base_npz, meta_json, sheets_json, outdir):
         'amp': b64(q8(mdl['amp'])), 'ao': b64(q8(mdl['ao'])),
     })
     json.dump(data, open(os.path.join(outdir, 'model.json'), 'w'))
+    if os.path.exists(os.path.join(outdir, 'model-smooth.json')):
+        os.remove(os.path.join(outdir, 'model-smooth.json'))  # sculpt.py and skin.py start again from this model
     print('model KB', os.path.getsize(os.path.join(outdir, 'model.json')) // 1024)
 
 
