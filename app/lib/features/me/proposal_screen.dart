@@ -60,7 +60,7 @@ class _Body extends ConsumerWidget {
             children: [
               Row(
                 children: [
-                  Icon(LucideIcons.sparkles, color: pal.brand),
+                  Icon(LucideIcons.inbox, color: pal.brand),
                   const SizedBox(width: Space.s),
                   Expanded(
                     child: Text(

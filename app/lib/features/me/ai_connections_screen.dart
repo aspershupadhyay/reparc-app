@@ -85,9 +85,8 @@ class _AiConnectionsScreenState extends ConsumerState<AiConnectionsScreen> {
         padding: const EdgeInsets.fromLTRB(Space.l, Space.s, Space.l, Space.xxl),
         children: [
           Text(
-            'Let an AI app such as Claude, ChatGPT, or Codex read your log and suggest workout and meal plans. '
-            'It works through MCP. Your records stay on this phone; the AI gets only the answers it asks for, '
-            'only from the data you switch on below, and only while access is on.',
+            'Let Claude, ChatGPT, or another AI app read the data you switch on below and suggest plans. '
+            'Your records stay on this phone.',
             style: t.bodyMedium?.copyWith(color: p.inkSoft),
           ),
           if (pending.isNotEmpty) ...[
@@ -567,7 +566,7 @@ class _OnlineCard extends ConsumerWidget {
                 const ListTile(title: Text('None yet'), subtitle: Text('Apps you approve appear here.')),
               for (final a in gateway?.apps ?? const <GatewayApp>[])
                 ListTile(
-                  leading: Icon(a.kind == 'key' ? LucideIcons.keyRound : LucideIcons.bot),
+                  leading: Icon(a.kind == 'key' ? LucideIcons.keyRound : LucideIcons.plug),
                   title: Text(a.name),
                   subtitle: Text(
                     a.lastUsedAt == null

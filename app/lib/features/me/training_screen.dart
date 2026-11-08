@@ -186,7 +186,7 @@ class TrainingScreen extends ConsumerWidget {
               (Cue.halfway, LucideIcons.chartPie, 'Halfway', 'In timed sets of 30 s or more'),
               (Cue.tenLeft, LucideIcons.timer, 'Ten seconds left', 'Before a rest ends'),
               (Cue.countdown, LucideIcons.listOrdered, '3-2-1 countdown', 'Before a rest or a timed set ends'),
-              (Cue.end, LucideIcons.bellRing, 'End of rest and set', '"Rest is up" and "Time! Good set."'),
+              (Cue.end, LucideIcons.bellRing, 'End of rest and set', 'Says "Rest is up" and "Time, good set"'),
             ])
               SwitchListTile(
                 secondary: lead(icon),

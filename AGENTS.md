@@ -13,6 +13,7 @@ Before you change code, data, design, or project rules:
 7. Use handbook/14-feature-spec-template.md when you add a new feature.
 8. Read handbook/16-production-and-app-updates.md before changing CI, release automation, signing, update checks, or store delivery.
 9. Read the launch review, handbook/reviews/2026-10-10-launch-review/index.html, before planning Play Store work, onboarding, food data, the body map, or other UX polish. It holds findings from a phone test and market research, with proposals. It is not a set of accepted decisions: treat its proposals as **Proposed** until the owner accepts them.
+10. Read the competitor review, handbook/reviews/2026-11-08-competitor-review.md, before planning food search, barcode scanning, import from other apps, exercise media, or Play Store media licences. Its proposals are **Proposed**.
 
 ## Repositories
 
@@ -55,6 +56,14 @@ Before you change code, data, design, or project rules:
 - Keep motion out of the user's way during data entry.
 - Respect reduced-motion settings.
 - Test screen readers, large text, and real-device performance.
+
+## No generic AI look (owner, 2026-11-08)
+
+- Follow handbook 3.16. Run `flutter test test/design_rules_test.dart` after any UI change; it must pass.
+- No sparkles, wand, robot, or brain icons; no marketing words ("seamless", "unlock", "journey", "powerful"); no exclamation marks or emoji in UI text; no rainbow of tinted icon circles; no decorative gradients; no colours or font sizes outside the theme.
+- Do not open a screen with a paragraph that explains it. One short sentence, only where the user needs it to act.
+- A hero title is never the same text as its button. A chip never repeats its section header.
+- Do not widen the test's allow lists to make it pass. Fix the code, or add the file with a reason in the handbook.
 
 ## Data and AI
 

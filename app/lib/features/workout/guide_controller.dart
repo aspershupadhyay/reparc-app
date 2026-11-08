@@ -745,7 +745,7 @@ class GuideController extends Notifier<GuideState> {
     Clips.three => '3',
     Clips.two => '2',
     Clips.one => '1',
-    Clips.time => 'Time! Set done',
+    Clips.time => 'Time. Set done',
     Clips.restOver => 'Rest is up',
     _ => label,
   };

@@ -292,6 +292,56 @@ On iPhone, open the app's App Store page. The user must start the update in the 
 
 Send push update alerts only to users who turn them on and grant system notification permission. If they decline push, keep the in-app update notice and the Settings check available.
 
+## 3.16 Plain design: no generic AI look
+
+**Accepted (owner request, 2026-11-08):** "check slopiness of our design and list all those AI slop components ... remove it and also mention in the code base for test and check so in future code sessions won't do such mistakes."
+
+A screen made by a model without taste tends to look the same everywhere: sparkles for anything "smart", an eyebrow over every title, pastel icon circles in a rainbow, a paragraph that explains the screen before the screen, and copy that sells instead of says. RepArc avoids these. `app/test/design_rules_test.dart` checks the rules marked **(test)**; the others are for review.
+
+### Words
+
+1. **(test)** No marketing or chat-bot words in UI text: seamless, effortless, unlock, elevate, supercharge, empower, journey, magic, powerful, ultimate, curated, holistic, "let's", "you've got this", "level up", and the rest of the list in the test.
+2. **(test)** No exclamation marks and no emoji in UI text. Confirm with a fact ("Saved. 3 sets, 2,400 kg"), not with praise.
+3. Say what a control does. A button is a verb and an object ("Start workout", "Allow all"), never "Get started" or "Let's go".
+4. One short sentence of help, only where the user needs it to act. If the screen already shows it, do not say it again. Do not open a settings screen with a paragraph about privacy and then repeat it in a footnote.
+5. A switch's subtitle says what changes for the user. Leave it out when the title says it.
+6. No greeting text that adds no fact. (The Home greeting stays: D-032 kept it small; review it again before Play.)
+
+### Icons and colour
+
+7. **(test)** No sparkles, wand, robot, star, or brain icons. AI features use the icon of what they do: a plug for a connection, an inbox for a plan to review, a list for a plan.
+8. **(test)** Card and row icons are neutral (D-032). Category colours (coral, blue, orange, green) show data only; they are never cycled over cards.
+9. **(test)** No decorative gradients; no colours or font sizes outside `palette.dart` and the theme, except in the files the test lists with a reason.
+10. Do not put an icon in a tinted circle on every row. Use one where it helps find the row (Me, settings), not as decoration on content cards.
+
+### Structure
+
+11. A hero card's title is not the same text as its button. (Fixed on Home 2026-11-08: the free state read "Start workout" twice.)
+12. No tag or chip that repeats its section header (Health apps showed "Read" next to each type under "Read from health"; removed).
+13. Icon-only buttons need a tooltip and should be rare. Prefer a label.
+14. One main action per area. Do not add a floating button when each row already has the same action.
+15. Empty states show the next action, not an illustration and a slogan.
+
+### Found and fixed on 2026-11-08
+
+| Where | Pattern | Fix |
+|---|---|---|
+| Home, free workout hero | Title and button both "Start workout" | Same hero as Workout: "Free workout" / "Add exercises as you go" |
+| Workout → Plan goals | Rainbow pastel icon circles (coral, blue, orange, green) | Neutral teal, as onboarding |
+| Aesthetic goal, AI rows, plan buttons, update card, "Plan my day" | Sparkles and wand icons | Shirt, plug, inbox, list-checks, download |
+| Health apps | "Read"/"Write" chips under "Read from health"/"Write to health" | Removed |
+| Health apps, AI connections | Opening paragraph of 3 sentences | One sentence |
+| Guide cue text | "Time! Set done" | "Time. Set done" (the spoken clip is unchanged) |
+| Live workout clock | Hand-set font size 48 | Theme `displayLarge` |
+
+### Found, not changed yet (review before Play)
+
+- Meal header: three round icon-only buttons (targets, settings, calendar). Add labels or move two into a menu.
+- Meal: the floating "Add food" button covers the timeline and repeats each slot's "+".
+- Home and Meal: four empty rings with a dash before any food is logged. The dash is right (missing is not zero), but four empty rings are noise; consider one line, "Nothing logged today", until the first entry.
+- Analytics empty state: icon in a circle + "Your progress shows here". Replace with the next step ("Finish a workout to see your lifts") and a button.
+- Settings screens still carry a `StatusLine` footnote under most cards (54 in the app). Keep only the ones a user needs before acting.
+
 ## 3.17 AI context
 
 - **Purpose:** Define screen behavior, shared appearance, and motion.

@@ -355,7 +355,7 @@ class _Summary extends StatelessWidget {
           OutlinedButton.icon(
             style: _compact,
             onPressed: () => showPlanDaySheet(context, day: day),
-            icon: const Icon(LucideIcons.wandSparkles, size: 18),
+            icon: const Icon(LucideIcons.listChecks, size: 18),
             label: const OneLine('Plan my day'),
           ),
         ],

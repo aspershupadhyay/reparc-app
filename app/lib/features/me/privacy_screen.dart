@@ -37,7 +37,7 @@ class PrivacyScreen extends StatelessWidget {
             'Routes stay on this phone. When a map shows, its images come from MapTiler, which sees the map area on screen.',
       ),
       (
-        LucideIcons.sparkles,
+        LucideIcons.plug,
         'AI connections are off until you turn one on, for a time you choose. An AI app then gets answers only from '
             'the data types you switched on. The AI provider receives those answers. AI plans are saved only if you '
             'approve them.',

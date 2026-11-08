@@ -18,7 +18,7 @@ import 'exercise_picker.dart';
 import 'start_workout.dart';
 
 IconData goalIcon(RoadmapGoal g) => switch (g) {
-  RoadmapGoal.aesthetic => LucideIcons.sparkles,
+  RoadmapGoal.aesthetic => LucideIcons.shirt,
   RoadmapGoal.bodybuilding => LucideIcons.dumbbell,
   RoadmapGoal.strength => LucideIcons.weight,
   RoadmapGoal.calisthenics => LucideIcons.personStanding,
@@ -83,7 +83,7 @@ Future<void> newPlan(BuildContext context, WidgetRef ref) async {
           const SizedBox(height: Space.m),
           FilledButton.icon(
             onPressed: () => Navigator.pop(context, 'build'),
-            icon: const Icon(LucideIcons.sparkles, size: IconSizes.s),
+            icon: const Icon(LucideIcons.listChecks, size: IconSizes.s),
             label: const Text('Build for my goal'),
           ),
           const SizedBox(height: Space.s),
@@ -162,7 +162,6 @@ class _ChooseGoal extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final p = context.pal;
     final t = Theme.of(context).textTheme;
-    final colors = [p.coral, p.blue, p.orange, p.green, p.brand];
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -174,14 +173,14 @@ class _ChooseGoal extends ConsumerWidget {
           style: t.bodyMedium?.copyWith(color: p.inkSoft),
         ),
         const SizedBox(height: Space.l),
-        for (final (i, g) in RoadmapGoal.values.indexed) ...[
+        for (final g in RoadmapGoal.values) ...[
           AppCard(
             onTap: () => context.push('/workout/plan/new?goal=${g.name}'),
             semanticLabel: '${g.label}. ${g.summary}',
             child: ExcludeSemantics(
               child: Row(
                 children: [
-                  IconBadge(goalIcon(g), color: colors[i].withValues(alpha: 0.15), glyph: colors[i], size: 48),
+                  IconBadge(goalIcon(g), color: p.brandSoft, glyph: p.brand, size: 48),
                   const SizedBox(width: Space.m),
                   Expanded(
                     child: Column(

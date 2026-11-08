@@ -230,7 +230,7 @@ class MeScreen extends ConsumerWidget {
             // everyday settings (launch review, 2026-10-10).
             group('Advanced', [
               link(
-                lead(LucideIcons.sparkles),
+                lead(LucideIcons.plug),
                 'AI connections',
                 ai.anyOn
                     ? 'On${ai.wifiOn ? ' · Wi-Fi' : ''}${ai.onlineOn ? ' · online' : ''}'

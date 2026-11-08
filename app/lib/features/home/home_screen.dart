@@ -210,7 +210,7 @@ class _ProposalBanner extends ConsumerWidget {
         onTap: () => context.push(pending.length == 1 ? '/me/ai/proposal/${first.id}' : '/me/ai'),
         child: Row(
           children: [
-            IconBadge(LucideIcons.sparkles, color: p.surface, glyph: p.brand, size: 40),
+            IconBadge(LucideIcons.inbox, color: p.surface, glyph: p.brand, size: 40),
             const SizedBox(width: Space.m),
             Expanded(
               child: Text(
@@ -424,7 +424,7 @@ class _Hero extends ConsumerWidget {
         'Get my plan',
         () => context.push('/welcome'),
       ),
-      _ => ('Train', 'Start workout', 'Add exercises as you go', 'Start workout', () => startWorkout(context, ref)),
+      _ => ('Free workout', 'Add exercises as you go', null, 'Start workout', () => startWorkout(context, ref)),
     };
 
     return Semantics(

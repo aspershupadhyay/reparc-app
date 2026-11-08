@@ -196,7 +196,7 @@ class _UpdateCard extends StatelessWidget {
         children: [
           Row(
             children: [
-              IconBadge(LucideIcons.sparkles, color: p.brand, size: 40),
+              IconBadge(LucideIcons.download, color: p.brand, size: 40),
               const SizedBox(width: Space.m),
               Expanded(child: Text('Version ${release.version} is ready', style: t.titleMedium)),
             ],

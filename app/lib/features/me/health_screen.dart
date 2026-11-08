@@ -339,13 +339,8 @@ class HealthScreen extends ConsumerWidget {
       children: [
         for (final f in features)
           SwitchListTile(
-            title: Row(
-              children: [
-                Flexible(child: Text(f.label)),
-                const SizedBox(width: Space.s),
-                Tag(f.access),
-              ],
-            ),
+            // The section header already says read or write.
+            title: Text(f.label),
             subtitle: Text(f.purpose),
             value: on.contains(f.name),
             onChanged: (v) => toggle(f, v),

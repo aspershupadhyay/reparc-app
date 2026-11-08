@@ -257,7 +257,7 @@ class _Hero extends ConsumerWidget {
                     ),
                     SessionClock(
                       sessionId: s.id,
-                      style: t.displaySmall!.copyWith(fontSize: 48, color: context.pal.energy).tabular,
+                      style: t.displayLarge!.copyWith(color: context.pal.energy).tabular,
                     ),
                     SizedBox(height: Space.l),
                     Row(
