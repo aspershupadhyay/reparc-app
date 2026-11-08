@@ -13,7 +13,9 @@ import 'package:reparc/data/providers.dart';
 import 'package:reparc/data/settings_repository.dart';
 import 'package:reparc/domain/track.dart';
 import 'package:reparc/features/exercises/library/library.dart';
+import 'package:reparc/health/live_steps.dart';
 
+import 'fake_health.dart';
 import 'fake_location.dart';
 import 'helpers.dart';
 
@@ -23,11 +25,13 @@ void main() {
   late AppDatabase db;
   late FakeLocation gps;
   late FakeClock clock;
+  late FakeStepSensor steps;
   final library = ExerciseLibrary.parse(File('assets/exercises/library.json').readAsStringSync());
 
   setUp(() {
     db = memoryDb();
     gps = FakeLocation();
+    steps = FakeStepSensor();
     clock = FakeClock(DateTime(2026, 3, 2, 6, 30));
   });
   tearDown(() => db.close());
@@ -48,6 +52,7 @@ void main() {
           clockProvider.overrideWithValue(clock.call),
           libraryProvider.overrideWith((ref) async => library),
           locationSourceProvider.overrideWithValue(gps),
+          stepSensorProvider.overrideWithValue(steps),
         ],
         child: ReparcApp(router: buildRouter(initialLocation: '/workout')),
       ),
@@ -86,7 +91,7 @@ void main() {
     expect(find.text('1.00'), findsOneWidget);
     expect(find.text('AVG PACE'), findsOneWidget);
     expect(find.text('4:10'), findsNWidgets(2), reason: 'Pace now and average pace');
-    expect(find.text('Good GPS'), findsOneWidget);
+    expect(find.text('GPS ready'), findsOneWidget);
 
     await tester.tap(find.text('Pause'));
     await tester.pumpAndSettle();
@@ -116,8 +121,55 @@ void main() {
     await pumpApp(tester);
     await tester.tap(find.bySemanticsLabel('Record a ride with GPS'));
     await tester.pumpAndSettle();
-    expect(find.textContaining('needs location'), findsOneWidget);
+    expect(find.textContaining('Rides need precise GPS'), findsOneWidget);
     expect(gps.starts, 0);
+    await unmount(tester);
+  });
+
+  testWidgets('without GPS a run records with steps and saves an estimate', (tester) async {
+    gps.access = LocationAccess.approximate;
+    await pumpApp(tester);
+    await tester.tap(find.bySemanticsLabel('Record a run with GPS'));
+    await tester.pumpAndSettle();
+    expect(find.text('No GPS'), findsOneWidget);
+    expect(find.textContaining('approximate location only'), findsOneWidget);
+    await tester.tap(find.text('Record with steps'));
+    await tester.pumpAndSettle();
+    expect(gps.starts, 0, reason: 'GPS stays off');
+    expect(find.text('Steps only · no GPS'), findsOneWidget);
+
+    // 1000 steps of 1.02 m (a running step for the default 170 cm).
+    steps.controller
+      ..add(5000)
+      ..add(6000);
+    clock.advance(const Duration(minutes: 5));
+    await tester.pump(const Duration(seconds: 4));
+    await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 50)));
+    await tester.pump(const Duration(seconds: 1));
+    expect(find.text('1.02'), findsOneWidget);
+    expect(find.text('1,000'), findsOneWidget, reason: 'Steps take the place of pace now');
+
+    await tester.tap(find.text('Finish'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Finish and save'));
+    await tester.pumpAndSettle();
+    expect(find.textContaining('Estimated from 1,000 steps'), findsOneWidget);
+    final a = await tester.runAsync(() => db.select(db.activities).getSingle());
+    expect((a!.distanceSource, a.steps, a.usesGps), ('steps', 1000, false));
+    expect(a.distanceM, closeTo(1020, 0.01));
+    await unmount(tester);
+  });
+
+  testWidgets('a refused location permission offers steps for a walk', (tester) async {
+    gps.access = LocationAccess.denied;
+    steps.allow = false;
+    await pumpApp(tester);
+    await tester.tap(find.bySemanticsLabel('Record a walk with GPS'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Record with steps'));
+    await tester.pumpAndSettle();
+    expect(find.textContaining('needs the Physical activity permission'), findsOneWidget);
+    expect(await tester.runAsync(() => db.select(db.activities).get()), isEmpty);
     await unmount(tester);
   });
 }

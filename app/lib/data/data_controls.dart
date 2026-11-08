@@ -50,7 +50,8 @@ class DataControls {
         'Meal entry nutrient values are per source serving. amount and amountUnit are the amount eaten.',
         'null means the value was not recorded. It does not mean zero.',
         'sodiumMg is milligrams. fiberG and sugarG are grams.',
-        'activities: distanceM is metres, maxSpeed is metres per second, movingSec is seconds. '
+        'activities: distanceM is metres, maxSpeed is metres per second, movingSec is seconds; '
+            'distanceSource is gps or steps (an estimate from steps), steps is the step count. '
             'activityPoints are the raw GPS fixes (lat and lon in degrees, accuracy and altitude in metres).',
         'programs.plan is a JSON document: the plan days, warm-ups, and exercise targets. '
             'An exerciseId of "user:<id>" points to a row in exercises.',
@@ -124,7 +125,12 @@ class DataControls {
       await db.copyLegacyPlans();
       await put(db.bodyWeights, 'bodyWeights', (j) => BodyWeight.fromJson(j, serializer: ser));
       await put(db.aiProposals, 'aiProposals', (j) => AiProposal.fromJson(j, serializer: ser));
-      await put(db.activities, 'activities', (j) => GpsActivity.fromJson(j, serializer: ser));
+      // Files from v7 have no usesGps: those activities all used GPS.
+      await put(
+        db.activities,
+        'activities',
+        (j) => GpsActivity.fromJson({'usesGps': true, ...j}, serializer: ser),
+      );
       await put(db.activityPoints, 'activityPoints', (j) => ActivityPoint.fromJson(j, serializer: ser));
       for (final r in rows('settings')) {
         final key = r['key'] as String;

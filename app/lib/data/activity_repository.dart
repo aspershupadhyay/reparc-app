@@ -15,6 +15,23 @@ class ActivityDetail {
   final GpsActivity activity;
   final List<TrackPoint> points;
   final TrackStats stats;
+
+  /// Distance and moving time to show. A finished activity shows what was
+  /// saved at Finish. While recording, the step estimate stands in when GPS
+  /// has not measured the distance (see [bestDistance]); with steps, moving
+  /// time is the elapsed time, because steps do not show stops.
+  ({double metres, Duration moving, bool fromSteps}) summary({double? heightCm, required Duration elapsed}) {
+    final a = activity;
+    if (a.status == ActivityStatus.finished && a.distanceSource != null) {
+      return (
+        metres: a.distanceM ?? 0,
+        moving: Duration(seconds: a.movingSec ?? 0),
+        fromSteps: a.distanceSource == 'steps',
+      );
+    }
+    final best = bestDistance(gpsMetres: stats.distance, steps: a.steps, kind: a.kind, heightCm: heightCm);
+    return (metres: best.metres, moving: best.fromSteps ? elapsed : stats.moving, fromSteps: best.fromSteps);
+  }
 }
 
 /// GPS runs, walks, and rides (handbook 4.14). Every point is saved on the
@@ -44,7 +61,7 @@ class ActivityRepository {
           .getSingleOrNull();
 
   /// Starts recording, or returns the activity that already records.
-  Future<String> start(ActivityKind kind) => db.transaction(() async {
+  Future<String> start(ActivityKind kind, {bool gps = true}) => db.transaction(() async {
     final existing = await live();
     if (existing != null) return existing.id;
     final id = _uuid.v4();
@@ -61,6 +78,7 @@ class ActivityRepository {
             startedAt: now,
             utcOffsetMinutes: local.timeZoneOffset.inMinutes,
             timeZoneName: local.timeZoneName,
+            usesGps: Value(gps),
             createdAt: now,
             updatedAt: now,
           ),
@@ -107,6 +125,17 @@ class ActivityRepository {
     return points.length;
   }
 
+  /// Adds [count] steps to [id]. Steps that arrive while it is paused or
+  /// finished are not added.
+  Future<void> addSteps(String id, int count) async {
+    if (count <= 0) return;
+    await db.customUpdate(
+      'UPDATE activities SET steps = COALESCE(steps, 0) + ? WHERE id = ? AND status = ?',
+      variables: [Variable.withInt(count), Variable.withString(id), Variable.withString(ActivityStatus.recording.name)],
+      updates: {db.activities},
+    );
+  }
+
   Future<void> pause(String id) => db.transaction(() async {
     final a = await _get(id);
     if (a.status != ActivityStatus.recording) return;
@@ -138,11 +167,13 @@ class ActivityRepository {
     now: _now,
   );
 
-  /// Ends the activity and saves its summary from the points.
-  Future<void> finish(String id) => db.transaction(() async {
+  /// Ends the activity and saves its summary from the points, or from the
+  /// steps when GPS did not measure it. [heightCm] sets the step length.
+  Future<void> finish(String id, {double? heightCm}) => db.transaction(() async {
     final a = await _get(id);
     if (a.status == ActivityStatus.finished) return;
     final stats = trackStats(await points(id), a.kind);
+    final best = bestDistance(gpsMetres: stats.distance, steps: a.steps, kind: a.kind, heightCm: heightCm);
     // A paused activity ends when it was paused, not now.
     final end = a.pausedAt ?? _now;
     await _write(
@@ -151,10 +182,11 @@ class ActivityRepository {
         status: const Value(ActivityStatus.finished),
         endedAt: Value(end),
         pausedAt: const Value(null),
-        distanceM: Value(stats.distance),
-        movingSec: Value(stats.moving.inSeconds),
-        elevationGainM: Value(stats.elevationGain),
-        maxSpeed: Value(stats.maxSpeed),
+        distanceM: Value(best.metres),
+        movingSec: Value(best.fromSteps ? elapsed(a).inSeconds : stats.moving.inSeconds),
+        elevationGainM: Value(best.fromSteps ? null : stats.elevationGain),
+        maxSpeed: Value(best.fromSteps ? null : stats.maxSpeed),
+        distanceSource: Value(best.fromSteps ? 'steps' : 'gps'),
       ),
     );
   });

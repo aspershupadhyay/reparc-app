@@ -132,6 +132,34 @@ class HealthScreen extends ConsumerWidget {
       }
     }
 
+    // One system sheet for every type that is still off (owner request,
+    // 2026-11-08). The card above the button lists each type first.
+    Future<void> connectAll() async {
+      final repo = ref.read(settingsRepoProvider);
+      final off = [
+        for (final f in HealthFeature.values)
+          if (!s.health.contains(f.name)) f,
+      ];
+      try {
+        final granted = await health.requestAll(off);
+        for (final f in granted) {
+          await repo.setHealth(f.name, true);
+        }
+        ref.invalidate(healthTodayProvider);
+        if (granted.any((f) => f.writes)) unawaited(ref.read(healthSyncProvider).run());
+        if (!context.mounted) return;
+        final missed = off.length - granted.length;
+        showMessage(
+          context,
+          missed == 0
+              ? 'Connected ${granted.length} types.'
+              : 'Connected ${granted.length} of ${off.length} types. Switch on the others below if you want them.',
+        );
+      } catch (_) {
+        if (context.mounted) showMessage(context, '${health.platformName} could not open. Try again.');
+      }
+    }
+
     String num(Object? v, String unit) => v == null ? 'No data' : '$v $unit';
 
     return Scaffold(
@@ -140,8 +168,8 @@ class HealthScreen extends ConsumerWidget {
         padding: const EdgeInsets.fromLTRB(Space.l, Space.s, Space.l, Space.xxl),
         children: [
           Text(
-            'Connect ${health.platformName} one data type at a time. RepArc asks only for the types you switch on, '
-            'reads them when a screen needs them, and does not copy them to any server. Logging works without any of this.',
+            'RepArc reads these values when a screen needs them and never copies them to a server. '
+            'Logging works without any of this.',
             style: t.bodyMedium?.copyWith(color: p.inkSoft),
           ),
           const SizedBox(height: Space.l),
@@ -173,6 +201,28 @@ class HealthScreen extends ConsumerWidget {
             },
           ),
           if (availability.value == HealthAvailability.available) ...[
+            if (HealthFeature.values.any((f) => !s.health.contains(f.name)))
+              AppCard(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Text('Connect everything at once', style: t.titleSmall),
+                    const SizedBox(height: Space.xs),
+                    Text(
+                      'Read: steps, distance, active energy, body weight. '
+                      'Write: finished workouts, runs, walks, and rides, and meals you mark as eaten.',
+                      style: t.bodyMedium,
+                    ),
+                    const SizedBox(height: Space.xs),
+                    Text(
+                      '${health.platformName} shows one screen with every type. Untick any you do not want.',
+                      style: t.bodySmall?.copyWith(color: p.inkSoft),
+                    ),
+                    const SizedBox(height: Space.m),
+                    FilledButton(onPressed: connectAll, child: const Text('Allow all')),
+                  ],
+                ),
+              ),
             const SectionHeader('Read from health', top: Space.s),
             _card(
               context,

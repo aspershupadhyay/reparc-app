@@ -349,7 +349,20 @@ Measure a run, walk, or ride (distance, pace or speed, time, route, splits, clim
 - Moving time leaves out stops (slower than 0.4 m/s walking, 1 m/s running, 1.5 m/s riding) and gaps over 60 s. Pace is moving time over distance. Splits are interpolated to the exact point where each km or mile was reached.
 - Climb uses GPS height with a 3 m dead band; it is an estimate. Top speed is over at least 10 seconds.
 - Tests (`app/test/track_test.dart`): a noisy 1 km walk (±4 m on every fix, five seeds) measures within 3%; a square route keeps its corners; 10 minutes standing still adds less than 15 m; jumps and poor fixes are dropped; nothing is counted across a pause.
-- **Limits:** GPS under trees, between tall buildings, and indoors is worse; a treadmill run measures nothing. Phone GPS is usually within 1–3% on an open route. **To confirm:** checks against a measured route on real phones.
+- **Limits:** GPS under trees, between tall buildings, and indoors is worse; with GPS only, a treadmill run measures nothing (see "Without GPS" below). Phone GPS is usually within 1–3% on an open route. **To confirm:** checks against a measured route on real phones.
+
+### Without GPS: distance from steps (2026-11-08, schema v8)
+
+Owner report: "run, walk and ride just finding GPS". Owner ask: make it work without the map.
+
+- **Why GPS can fail:** with **approximate** location (Android "Approximate", iPhone "Precise: Off") fixes are hundreds of metres off and arrive rarely, so every fix fails the 20 m limit. Indoors there is often no fix at all. The app now checks for approximate location at start and asks once for precise (Android's "Change to precise" dialog; iPhone's one-session request, `NSLocationTemporaryUsageDescriptionDictionary` key `ActivityRecording`).
+- **Status line:** "Searching for GPS" for 30 s, then "No GPS fix after 0:45. Go outside, away from tall buildings."; with a fix that is too poor, "Weak GPS: ±48 m, needs ±20 m". It updates each second.
+- **Steps next to GPS:** runs and walks also count steps with the phone's step sensor (Physical activity on Android, Motion & Fitness on iPhone; asked when a run or walk starts). Steps are saved every 3 s with the fixes, and not while paused.
+- **Which distance counts** (`bestDistance` in `app/lib/domain/track.dart`): GPS, when it measured at least half the distance the steps suggest; else steps × step length (0.415 × height walking, 0.6 × height running, height from Me → Body, 170 cm without one). Moving time is then the elapsed time. The activity page says "Estimated from N steps and your height" and hides the map, splits, climb, and top speed.
+- **Steps only:** when location is refused, off, or approximate, Run and Walk show a **No GPS** sheet with **Record with steps**. GPS stays off; the screen shows "Steps only · no GPS", time, distance, and steps. Rides need precise GPS and show a message instead.
+- **Data:** `activities.uses_gps` (false for steps only), `activities.steps`, `activities.distance_source` (`gps` or `steps`, set at Finish; null before v8). Backups from v7 restore as GPS activities.
+- **Tests:** `track_test.dart` (step length, which distance wins), `activity_flow_test.dart` (steps-only run saved as an estimate; refused step sensor starts nothing), `migration_test.dart` (v7 to v8), `data_controls_test.dart` (v7 file restores).
+- **To confirm:** step length against a measured route on real phones; whether the owner's phone had approximate location or no fix (test the release on the phone).
 
 ### Data
 

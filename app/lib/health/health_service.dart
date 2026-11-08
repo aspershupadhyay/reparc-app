@@ -107,6 +107,13 @@ abstract class HealthSource {
   /// request finished; this does not prove that read access was granted.
   Future<bool> request(HealthFeature feature);
 
+  /// Opens one system sheet for all [features] at once (owner request,
+  /// 2026-11-08). The user can still untick any type in that sheet.
+  /// Returns the features to switch on: on Android the ones Health Connect
+  /// reports as granted; on iPhone all of them, because Apple does not tell
+  /// apps whether read access was granted.
+  Future<Set<HealthFeature>> requestAll(List<HealthFeature> features);
+
   /// Opens the platform's install page (Android) when Health Connect is missing.
   Future<void> install();
 
@@ -216,6 +223,21 @@ class PlatformHealth implements HealthSource {
   Future<bool> request(HealthFeature feature) async {
     await _ready();
     return _health.requestAuthorization([feature.type], permissions: [feature.permission]);
+  }
+
+  @override
+  Future<Set<HealthFeature>> requestAll(List<HealthFeature> features) async {
+    await _ready();
+    await _health.requestAuthorization(
+      [for (final f in features) f.type],
+      permissions: [for (final f in features) f.permission],
+    );
+    if (Platform.isIOS) return features.toSet();
+    final granted = <HealthFeature>{};
+    for (final f in features) {
+      if (await _health.hasPermissions([f.type], permissions: [f.permission]) == true) granted.add(f);
+    }
+    return granted;
   }
 
   Future<List<HealthDataPoint>> _points(HealthDataType type, DateTime fromDay, DateTime toDay) async {

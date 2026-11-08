@@ -12,6 +12,11 @@ enum LocationAccess {
   /// that started on screen and goes on with the screen off.
   allowed,
 
+  /// Location is allowed, but only approximate (Android "Approximate",
+  /// iPhone "Precise: Off"). Fixes are hundreds of metres off and come
+  /// rarely, so GPS cannot measure distance. Runs and walks use steps.
+  approximate,
+
   /// The user said no this time. The app can ask again.
   denied,
 
@@ -42,11 +47,28 @@ class PlatformLocationSource implements LocationSource {
     if (!await Geolocator.isLocationServiceEnabled()) return LocationAccess.serviceOff;
     var p = await Geolocator.checkPermission();
     if (p == LocationPermission.denied) p = await Geolocator.requestPermission();
-    return switch (p) {
-      LocationPermission.always || LocationPermission.whileInUse => LocationAccess.allowed,
-      LocationPermission.deniedForever => LocationAccess.deniedForever,
-      _ => LocationAccess.denied,
-    };
+    switch (p) {
+      case LocationPermission.always || LocationPermission.whileInUse:
+        break;
+      case LocationPermission.deniedForever:
+        return LocationAccess.deniedForever;
+      default:
+        return LocationAccess.denied;
+    }
+    if (await Geolocator.getLocationAccuracy() == LocationAccuracyStatus.precise) return LocationAccess.allowed;
+    // Approximate only: ask once for precise. Android shows its "Change to
+    // precise location" dialog for a new request; iPhone asks for this
+    // session with the purpose in Info.plist.
+    try {
+      if (Platform.isIOS) {
+        await Geolocator.requestTemporaryFullAccuracy(purposeKey: 'ActivityRecording');
+      } else {
+        await Geolocator.requestPermission();
+      }
+    } catch (_) {}
+    return await Geolocator.getLocationAccuracy() == LocationAccuracyStatus.precise
+        ? LocationAccess.allowed
+        : LocationAccess.approximate;
   }
 
   @override

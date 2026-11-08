@@ -28,6 +28,18 @@ class FakeHealth implements HealthSource {
     return true;
   }
 
+  /// Features the fake user leaves unticked in the one system sheet.
+  Set<HealthFeature> refuse = {};
+
+  @override
+  Future<Set<HealthFeature>> requestAll(List<HealthFeature> features) async {
+    requested.addAll(features);
+    return {
+      for (final f in features)
+        if (!refuse.contains(f)) f,
+    };
+  }
+
   @override
   Future<void> install() async {}
 

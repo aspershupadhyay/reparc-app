@@ -165,4 +165,26 @@ void main() {
       expect(d, closeTo(1000, 30), reason: 'seed $seed: ${d.round()} m');
     }
   });
+
+  group('distance from steps', () {
+    test('uses height, with 170 cm when it is missing or not sensible', () {
+      expect(stepLength(ActivityKind.walk, 180), closeTo(0.747, 0.001));
+      expect(stepLength(ActivityKind.run, null), closeTo(1.02, 0.001));
+      expect(stepLength(ActivityKind.run, 20), closeTo(1.02, 0.001));
+    });
+
+    test('GPS wins when it measured at least half the step estimate', () {
+      final gps = bestDistance(gpsMetres: 900, steps: 1200, kind: ActivityKind.walk, heightCm: 170);
+      expect((gps.metres, gps.fromSteps), (900, false));
+      final indoor = bestDistance(gpsMetres: 40, steps: 1200, kind: ActivityKind.walk, heightCm: 170);
+      expect(indoor.fromSteps, isTrue);
+      expect(indoor.metres, closeTo(1200 * 0.7055, 0.01));
+    });
+
+    test('rides and a few steps never use steps', () {
+      expect(bestDistance(gpsMetres: 0, steps: 5000, kind: ActivityKind.ride).fromSteps, isFalse);
+      expect(bestDistance(gpsMetres: 0, steps: 10, kind: ActivityKind.walk).fromSteps, isFalse);
+      expect(bestDistance(gpsMetres: 0, steps: null, kind: ActivityKind.run).metres, 0);
+    });
+  });
 }

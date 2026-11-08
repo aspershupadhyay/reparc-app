@@ -265,6 +265,8 @@ Keep major choices here. Update the related chapter when a decision changes.
 
 **Update (2026-10-12, owner request "track steps very precisely"):** Distance is a fourth read type. Daily totals come from the store's own aggregates (handbook 9). A **Live steps** switch uses the phone's step sensor while the app is open; it needs the Physical activity (Android) or Motion & Fitness (iPhone) permission, asked only when the switch is turned on. The owner left the choice of types to the developer; heart rate and sleep stay out pending a separate decision (9.3).
 
+**Update (2026-11-08, owner request "why not give the user one option and get all the permission in one"):** Me → Health apps has an **Allow all** card at the top. It lists every type with read or write, then opens one system sheet for all types that are still off. The user can untick any type there. On Android, only the types Health Connect reports as granted are switched on; on iPhone all are switched on, because Apple does not tell apps about read access. The per-type switches stay below, to turn one type on or off. This replaces "one type at a time" in 9.2 and 9.7; each type is still named and explained before the sheet opens.
+
 **Why:** The owner asked for Apple Health and Health Connect, used wisely. Workout read from Health Connect was left out because the plugin also needs distance, total calories, and steps permissions for it.
 
 **Trade-off:** Edits after a write are not sent; the user edits the copy in the Health app.
@@ -520,6 +522,8 @@ This is one app, not a separate dev variant. See 17.10.
 **Why:** Owner request. GPS stays on the phone; the only network use is map tiles, and only in builds with a key.
 
 **To confirm:** Data safety answers for map tile requests (approximate area seen by MapTiler), the Play foreground-service declaration and its video, the MapTiler plan once usage passes the free tier, and accuracy on real phones.
+
+**Update (2026-11-08, owner report "run, walk and ride just finding GPS", and "make it work without map"):** Schema v8. Runs and walks count steps with the phone's step sensor next to GPS. When GPS measured less than half of what the steps suggest (indoors, a treadmill, no fix), the distance comes from steps × step length (0.415 × height walking, 0.6 × height running; 170 cm without a height) and is marked as an estimate. With location refused, off, or approximate only, a run or walk can start **with steps** (no GPS, no route, no map). Rides still need precise GPS. The app now checks for approximate location and asks for precise once; the recording screen shows the fix accuracy against the limit and how long it has searched. **To confirm:** step length against measured routes on real phones; the cause of the owner's "finding GPS" report on the phone.
 
 ## D-038: Rigged 3D exercise demos in three.js
 

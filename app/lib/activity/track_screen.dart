@@ -7,6 +7,7 @@ import 'package:go_router/go_router.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../core/clock.dart';
+import '../core/format.dart';
 import '../core/palette.dart';
 import '../core/theme.dart';
 import '../core/tokens.dart';
@@ -35,28 +36,70 @@ Future<void> startActivity(BuildContext context, WidgetRef ref, ActivityKind kin
   }
   final access = await ref.read(recorderProvider.notifier).start(kind);
   if (!context.mounted) return;
-  switch (access) {
-    case LocationAccess.allowed:
-      unawaited(HapticFeedback.mediumImpact());
-      final id = ref.read(liveActivityProvider).value?.id ?? (await ref.read(activityRepoProvider).live())?.id;
-      if (id != null && context.mounted) unawaited(context.push('/track/$id'));
-    case LocationAccess.denied:
-      showMessage(context, 'RepArc needs location to measure distance and pace. Nothing was started.');
-    case LocationAccess.deniedForever:
-      showMessage(
-        context,
-        'Location is off for RepArc. Allow it in Settings to record.',
-        actionLabel: 'Settings',
-        onAction: () => ref.read(locationSourceProvider).openSettings(),
-      );
-    case LocationAccess.serviceOff:
-      showMessage(
-        context,
-        'Turn on location for the phone to record.',
-        actionLabel: 'Turn on',
-        onAction: () => ref.read(locationSourceProvider).openSettings(),
-      );
+  if (access == LocationAccess.allowed) return _open(context, ref);
+  final settings = switch (access) {
+    LocationAccess.serviceOff => 'Turn on location',
+    LocationAccess.deniedForever || LocationAccess.approximate => 'Open settings',
+    _ => null,
+  };
+  final why = switch (access) {
+    LocationAccess.serviceOff => 'Location is off for this phone.',
+    LocationAccess.approximate =>
+      'RepArc has approximate location only. It is hundreds of metres off, so GPS cannot measure distance.',
+    LocationAccess.deniedForever => 'Location is not allowed for RepArc.',
+    _ => 'Location was not allowed.',
+  };
+  if (kind == ActivityKind.ride) {
+    showMessage(
+      context,
+      '$why Rides need precise GPS. Nothing was started.',
+      actionLabel: settings == null ? null : 'Settings',
+      onAction: settings == null ? null : () => ref.read(locationSourceProvider).openSettings(),
+    );
+    return;
   }
+  // Runs and walks can still be measured by steps.
+  final choice = await showAppSheet<String>(context, (ctx) {
+    final t = Theme.of(ctx).textTheme;
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(Space.l, 0, Space.l, Space.xl),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Text('No GPS', style: t.titleLarge),
+          const SizedBox(height: Space.s),
+          Text(
+            '$why\n\nYou can record with steps instead. Distance is estimated from your steps and height. '
+            'There is no route.',
+            style: t.bodyMedium,
+          ),
+          const SizedBox(height: Space.l),
+          FilledButton(onPressed: () => Navigator.pop(ctx, 'steps'), child: const Text('Record with steps')),
+          if (settings != null) ...[
+            const SizedBox(height: Space.s),
+            OutlinedButton(onPressed: () => Navigator.pop(ctx, 'settings'), child: Text(settings)),
+          ],
+          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
+        ],
+      ),
+    );
+  });
+  if (!context.mounted || choice == null) return;
+  if (choice == 'settings') return ref.read(locationSourceProvider).openSettings();
+  final ok = await ref.read(recorderProvider.notifier).startWithSteps(kind);
+  if (!context.mounted) return;
+  if (ok) return _open(context, ref);
+  showMessage(
+    context,
+    'Recording with steps needs the Physical activity permission. Allow it in Settings → Apps → RepArc.',
+  );
+}
+
+Future<void> _open(BuildContext context, WidgetRef ref) async {
+  unawaited(HapticFeedback.mediumImpact());
+  final id = ref.read(liveActivityProvider).value?.id ?? (await ref.read(activityRepoProvider).live())?.id;
+  if (id != null && context.mounted) unawaited(context.push('/track/$id'));
 }
 
 /// The recording screen: time, distance, and pace in large type, the route,
@@ -90,10 +133,40 @@ class TrackScreen extends ConsumerWidget {
     }
     final paused = a.status == ActivityStatus.paused;
     final kind = a.kind;
-    final (dist, distUnit) = distanceParts(d.stats.distance, unit);
-    final avg = paceOrSpeed(kind, secPerKm: d.stats.paceSecPerKm, metresPerSec: d.stats.avgSpeed, unit: unit);
+    final settings = ref.watch(currentSettingsProvider);
+    final sum = d.summary(heightCm: settings.profile.heightCm, elapsed: ref.read(activityRepoProvider).elapsed(a));
+    final (dist, distUnit) = distanceParts(sum.metres, unit);
+    final avg = paceOrSpeed(
+      kind,
+      secPerKm: sum.metres < 10 ? null : sum.moving.inMilliseconds / 1000 / (sum.metres / 1000),
+      metresPerSec: sum.moving.inSeconds == 0 ? null : sum.metres / sum.moving.inSeconds,
+      unit: unit,
+    );
     final now = paceOrSpeed(kind, secPerKm: currentPace(d.stats.used), unit: unit);
-    final signal = GpsSignal.of(rec.lastFix, kind, ref.watch(clockProvider)().toUtc());
+    // Worked out again each second, so the search time and a stale fix show.
+    (GpsSignal, String) status() {
+      final clock = ref.read(clockProvider)().toUtc();
+      final signal = GpsSignal.of(rec.lastFix, kind, clock);
+      final searching = rec.since == null ? Duration.zero : clock.difference(rec.since!);
+      final text = paused
+          ? 'Paused'
+          : !a.usesGps
+          ? 'Steps only · no GPS'
+          : rec.lost
+          ? 'GPS lost. Is location on?'
+          : switch (signal) {
+              GpsSignal.good => sum.fromSteps ? 'GPS ready · distance from steps so far' : signal.label,
+              GpsSignal.weak =>
+                'Weak GPS: ±${rec.lastFix!.accuracy.round()} m, needs ±${kind.maxAccuracy.round()} m'
+                    '${rec.counting ? ' · steps count meanwhile' : ''}',
+              GpsSignal.none =>
+                searching.inSeconds < 30
+                    ? signal.label
+                    : 'No GPS fix after ${fmtActivityTime(searching)}. Go outside, away from tall buildings.'
+                          '${rec.counting ? ' Steps count meanwhile.' : ''}',
+            };
+      return (signal, text);
+    }
 
     Widget big(String label, String value, String unit, {bool hero = false}) => Semantics(
       label: '$label $value $unit',
@@ -132,32 +205,41 @@ class TrackScreen extends ConsumerWidget {
         child: ListView(
           padding: const EdgeInsets.fromLTRB(Space.l, 0, Space.l, Space.xl),
           children: [
-            Row(
-              children: [
-                Icon(
-                  switch (signal) {
-                    GpsSignal.good => LucideIcons.signalHigh,
-                    GpsSignal.weak => LucideIcons.signalLow,
-                    GpsSignal.none => LucideIcons.signalZero,
-                  },
-                  size: IconSizes.s,
-                  color: signal == GpsSignal.good ? p.energy : p.orange,
-                ),
-                const SizedBox(width: Space.xs),
-                Text(
-                  paused ? 'Paused · GPS off' : (rec.lost ? 'GPS lost. Is location on?' : signal.label),
-                  style: t.bodySmall?.copyWith(color: p.onPanelSoft),
-                ),
-              ],
+            Ticker1s(
+              builder: (_) {
+                final (signal, text) = status();
+                return Row(
+                  children: [
+                    Icon(
+                      !a.usesGps
+                          ? LucideIcons.footprints
+                          : switch (signal) {
+                              GpsSignal.good => LucideIcons.signalHigh,
+                              GpsSignal.weak => LucideIcons.signalLow,
+                              GpsSignal.none => LucideIcons.signalZero,
+                            },
+                      size: IconSizes.s,
+                      color: signal == GpsSignal.good || !a.usesGps ? p.energy : p.orange,
+                    ),
+                    const SizedBox(width: Space.xs),
+                    Expanded(
+                      child: Text(text, style: t.bodySmall?.copyWith(color: p.onPanelSoft)),
+                    ),
+                  ],
+                );
+              },
             ),
             const SizedBox(height: Space.s),
-            RouteMap(points: d.stats.used, follow: !paused, height: 220),
-            const SizedBox(height: Space.l),
+            if (a.usesGps) ...[
+              RouteMap(points: d.stats.used, follow: !paused, height: 220),
+              const SizedBox(height: Space.l),
+            ] else
+              const SizedBox(height: Space.xl),
             Ticker1s(
               builder: (_) => big(
                 'Time',
                 fmtActivityTime(ref.read(activityRepoProvider).elapsed(a)),
-                paused ? 'paused' : 'moving ${fmtActivityTime(d.stats.moving)}',
+                paused ? 'paused' : (sum.fromSteps ? '' : 'moving ${fmtActivityTime(sum.moving)}'),
                 hero: true,
               ),
             ),
@@ -165,7 +247,11 @@ class TrackScreen extends ConsumerWidget {
             Row(
               children: [
                 Expanded(child: big('Distance', dist, distUnit)),
-                Expanded(child: big(kind.showsSpeed ? 'Speed' : 'Pace', now.$1, now.$2)),
+                Expanded(
+                  child: sum.fromSteps
+                      ? big('Steps', fmtNum(a.steps ?? 0, maxDecimals: 0), 'estimate')
+                      : big(kind.showsSpeed ? 'Speed' : 'Pace', now.$1, now.$2),
+                ),
                 Expanded(child: big(kind.showsSpeed ? 'Average' : 'Avg pace', avg.$1, avg.$2)),
               ],
             ),
@@ -196,7 +282,7 @@ class TrackScreen extends ConsumerWidget {
                       side: BorderSide(color: p.onPanelSoft),
                       minimumSize: const Size.fromHeight(64),
                     ),
-                    onPressed: () => _finish(context, ref, a, d.stats),
+                    onPressed: () => _finish(context, ref, a, sum.metres),
                     icon: const Icon(LucideIcons.flag, size: 22),
                     label: const Text('Finish'),
                   ),
@@ -209,10 +295,10 @@ class TrackScreen extends ConsumerWidget {
     );
   }
 
-  Future<void> _finish(BuildContext context, WidgetRef ref, GpsActivity a, TrackStats stats) async {
+  Future<void> _finish(BuildContext context, WidgetRef ref, GpsActivity a, double metres) async {
     final choice = await showAppSheet<String>(context, (ctx) {
       final t = Theme.of(ctx).textTheme;
-      final empty = stats.distance < 10;
+      final empty = metres < 10;
       return Padding(
         padding: const EdgeInsets.fromLTRB(Space.l, 0, Space.l, Space.xl),
         child: Column(
@@ -223,8 +309,10 @@ class TrackScreen extends ConsumerWidget {
             const SizedBox(height: Space.s),
             Text(
               empty
-                  ? 'GPS has not measured any distance. Keep going, or end without saving.'
-                  : 'Saves the route, distance, and times on this phone.',
+                  ? 'No distance yet. Keep going, or end without saving.'
+                  : a.usesGps
+                  ? 'Saves the route, distance, and times on this phone.'
+                  : 'Saves the distance from steps and the times on this phone.',
               style: t.bodyMedium,
             ),
             const SizedBox(height: Space.l),
@@ -243,7 +331,7 @@ class TrackScreen extends ConsumerWidget {
     if (!context.mounted || choice == null) return;
     final rec = ref.read(recorderProvider.notifier);
     if (choice == 'discard') {
-      if (stats.distance >= 10) {
+      if (metres >= 10) {
         final sure = await confirmAction(
           context,
           title: 'Discard this ${a.kind.label.toLowerCase()}?',
@@ -260,7 +348,7 @@ class TrackScreen extends ConsumerWidget {
       }
       return;
     }
-    await rec.finish(a.id);
+    await rec.finish(a.id, heightCm: ref.read(currentSettingsProvider).profile.heightCm);
     unawaited(HapticFeedback.heavyImpact());
     if (context.mounted) {
       context.go('/workout/activity/${a.id}');

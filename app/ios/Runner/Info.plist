@@ -28,6 +28,11 @@
 	<string>Reparc reads only the types you switch on in Me → Health apps: steps, walking and running distance, active energy, or body weight. It shows them next to your workouts and meals, and shares them with an AI app only if you allow health data there.</string>
 	<key>NSLocationWhenInUseUsageDescription</key>
 	<string>RepArc uses GPS to measure the distance, pace, and route of a run, walk, or ride that you start. The route stays on this phone.</string>
+	<key>NSLocationTemporaryUsageDescriptionDictionary</key>
+	<dict>
+		<key>ActivityRecording</key>
+		<string>Precise location measures the distance and pace of this run, walk, or ride. Approximate location is off by hundreds of metres.</string>
+	</dict>
 	<key>UIBackgroundModes</key>
 	<array>
 		<string>location</string>

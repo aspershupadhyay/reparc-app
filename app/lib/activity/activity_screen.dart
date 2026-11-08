@@ -86,9 +86,15 @@ class _Body extends ConsumerWidget {
     final s = d.stats;
     final day = localDayOfInstant(a.startedAt, a.utcOffsetMinutes);
     final start = a.startedAt.toUtc().add(Duration(minutes: a.utcOffsetMinutes));
-    final (dist, distUnit) = distanceParts(s.distance, unit);
-    final avg = paceOrSpeed(a.kind, secPerKm: s.paceSecPerKm, metresPerSec: s.avgSpeed, unit: unit);
     final elapsed = ref.read(activityRepoProvider).elapsed(a);
+    final sum = d.summary(heightCm: ref.watch(currentSettingsProvider).profile.heightCm, elapsed: elapsed);
+    final (dist, distUnit) = distanceParts(sum.metres, unit);
+    final avg = paceOrSpeed(
+      a.kind,
+      secPerKm: sum.metres < 10 ? null : sum.moving.inMilliseconds / 1000 / (sum.metres / 1000),
+      metresPerSec: sum.moving.inSeconds == 0 ? null : sum.metres / sum.moving.inSeconds,
+      unit: unit,
+    );
     final miles = unit == 'mi';
 
     Widget stat(String label, String value, [String? unit]) => Expanded(
@@ -103,12 +109,14 @@ class _Body extends ConsumerWidget {
           style: t.bodySmall,
         ),
         const SizedBox(height: Space.m),
-        RouteMap(
-          points: s.used,
-          height: 280,
-          semanticLabel: 'Map of the route, ${speakDistance(s.distance, unit)}.',
-        ),
-        const SizedBox(height: Space.l),
+        if (!sum.fromSteps) ...[
+          RouteMap(
+            points: s.used,
+            height: 280,
+            semanticLabel: 'Map of the route, ${speakDistance(sum.metres, unit)}.',
+          ),
+          const SizedBox(height: Space.l),
+        ],
         AppCard(
           padding: const EdgeInsets.all(Space.l),
           child: Column(
@@ -122,31 +130,36 @@ class _Body extends ConsumerWidget {
               const SizedBox(height: Space.l),
               Row(
                 children: [
-                  stat('Moving time', fmtActivityTime(s.moving)),
+                  sum.fromSteps
+                      ? stat('Steps', fmtNum(a.steps ?? 0, maxDecimals: 0))
+                      : stat('Moving time', fmtActivityTime(sum.moving)),
                   stat('Elapsed', fmtActivityTime(elapsed)),
                 ],
               ),
-              const SizedBox(height: Space.l),
-              Row(
-                children: [
-                  stat(
-                    'Climb',
-                    s.elevationGain == null
-                        ? '–'
-                        : fmtNum(miles ? s.elevationGain! * 3.28084 : s.elevationGain!, maxDecimals: 0),
-                    s.elevationGain == null ? null : (miles ? 'ft' : 'm'),
-                  ),
-                  stat(
-                    'Top speed',
-                    s.maxSpeed == null ? '–' : (miles ? s.maxSpeed! * 2.236936 : s.maxSpeed! * 3.6).toStringAsFixed(1),
-                    s.maxSpeed == null ? null : (miles ? 'mph' : 'km/h'),
-                  ),
-                ],
-              ),
+              if (!sum.fromSteps) const SizedBox(height: Space.l),
+              if (!sum.fromSteps)
+                Row(
+                  children: [
+                    stat(
+                      'Climb',
+                      s.elevationGain == null
+                          ? '–'
+                          : fmtNum(miles ? s.elevationGain! * 3.28084 : s.elevationGain!, maxDecimals: 0),
+                      s.elevationGain == null ? null : (miles ? 'ft' : 'm'),
+                    ),
+                    stat(
+                      'Top speed',
+                      s.maxSpeed == null
+                          ? '–'
+                          : (miles ? s.maxSpeed! * 2.236936 : s.maxSpeed! * 3.6).toStringAsFixed(1),
+                      s.maxSpeed == null ? null : (miles ? 'mph' : 'km/h'),
+                    ),
+                  ],
+                ),
             ],
           ),
         ),
-        if (s.splits.length > 1) ...[
+        if (s.splits.length > 1 && !sum.fromSteps) ...[
           const SectionHeader('Splits'),
           AppCard(
             padding: const EdgeInsets.symmetric(horizontal: Space.l, vertical: Space.s),
@@ -171,13 +184,16 @@ class _Body extends ConsumerWidget {
         const SizedBox(height: Space.m),
         StatusLine(
           icon: LucideIcons.info,
-          text: 'Measured with GPS on this phone. Moving time leaves out stops. Climb is an estimate from GPS height.',
+          text: sum.fromSteps
+              ? 'Estimated from ${fmtNum(a.steps ?? 0, maxDecimals: 0)} steps and your height (Me → Body). '
+                    'GPS did not measure this one.'
+              : 'Measured with GPS on this phone. Moving time leaves out stops. Climb is an estimate from GPS height.',
         ),
         if (a.note != null) ...[const SizedBox(height: Space.m), Text(a.note!, style: t.bodyMedium)],
         Padding(
           padding: const EdgeInsets.only(top: Space.l),
           child: Text(
-            '${s.used.length} GPS points. The route stays on this phone.',
+            sum.fromSteps ? 'Recorded on this phone.' : '${s.used.length} GPS points. The route stays on this phone.',
             style: t.bodySmall?.copyWith(color: p.inkSoft),
           ),
         ),

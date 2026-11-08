@@ -9,7 +9,9 @@ import 'package:reparc/core/clock.dart';
 import 'package:reparc/data/models.dart';
 import 'package:reparc/data/providers.dart';
 import 'package:reparc/domain/track.dart';
+import 'package:reparc/health/live_steps.dart';
 
+import 'fake_health.dart';
 import 'fake_location.dart';
 import 'helpers.dart';
 
@@ -26,6 +28,7 @@ void main() {
         databaseProvider.overrideWithValue(db),
         clockProvider.overrideWithValue(clock.call),
         locationSourceProvider.overrideWithValue(gps),
+        stepSensorProvider.overrideWithValue(FakeStepSensor()),
       ],
     );
     addTearDown(c.dispose);
@@ -73,7 +76,11 @@ void main() {
       final db = memoryDb();
       final gps = FakeLocation();
       final c = ProviderContainer(
-        overrides: [databaseProvider.overrideWithValue(db), locationSourceProvider.overrideWithValue(gps)],
+        overrides: [
+          databaseProvider.overrideWithValue(db),
+          locationSourceProvider.overrideWithValue(gps),
+          stepSensorProvider.overrideWithValue(FakeStepSensor()),
+        ],
       );
       final rec = c.read(recorderProvider.notifier);
       rec.start(ActivityKind.walk);
@@ -100,7 +107,11 @@ void main() {
     addTearDown(db.close);
     final gps = FakeLocation();
     final c = ProviderContainer(
-      overrides: [databaseProvider.overrideWithValue(db), locationSourceProvider.overrideWithValue(gps)],
+      overrides: [
+        databaseProvider.overrideWithValue(db),
+        locationSourceProvider.overrideWithValue(gps),
+        stepSensorProvider.overrideWithValue(FakeStepSensor()),
+      ],
     );
     addTearDown(c.dispose);
     final id = await c.read(activityRepoProvider).start(ActivityKind.ride);

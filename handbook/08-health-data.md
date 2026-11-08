@@ -19,6 +19,8 @@ updated: 2026-10-06
 - **Vehicles (from 0.5.0):** Live steps does not add sensor steps while Android (Google Play services activity recognition) or iPhone (Core Motion) says, with at least 50% confidence, that the user is in a vehicle or on a bicycle. Home shows "held: in a vehicle". It uses the same Physical activity or Motion & Fitness permission, reads only while RepArc is open, and saves nothing. The plugin's own health-type foreground service is removed from the Android manifest. The store's total itself is not changed: if the app that writes steps there counted bumps, RepArc cannot tell.
 - **Not done (owner decision needed, 9.3):** heart rate, sleep, and reading other apps' workouts.
 
+**Allow all (2026-11-08, owner request, D-020 update):** a card at the top of Me → Health apps names every type (read: steps, distance, active energy, body weight; write: workouts and meals) and opens one system sheet for all types still off. The user unticks any type they do not want. Android switches on only the types Health Connect reports as granted; iPhone switches on all, because Apple hides read grants. Per-type switches stay for turning one type on or off. Test: `app/test/health_screens_test.dart`.
+
 ## 9.1 Purpose
 
 Use HealthKit on iPhone and Health Connect on Android only for a named feature. Manual logging must work when a user declines.
@@ -29,7 +31,7 @@ Use HealthKit on iPhone and Health Connect on Android only for a named feature. 
 2. Name the data type.
 3. Say whether the app will read or write it.
 4. Explain the user benefit.
-5. Ask for that data type only when its feature needs it.
+5. Ask for the types the user chose: one switch, or **Allow all** for every type in one system sheet (D-020 update, 2026-11-08).
 6. Request permission with the system dialog.
 7. Continue without the feature if the user declines.
 8. Provide a link to platform settings.
@@ -74,7 +76,7 @@ Official guidance:
 
 - **Purpose:** Exchange only data needed for a feature the user selected.
 - **Default:** Do not ask for health access during general onboarding.
-- **Minimum access:** Request one justified data type at a time.
+- **Minimum access:** Request only types a built feature uses. Allow all asks for all of them in one sheet, after it lists each one.
 - **Fallback:** Manual logging remains available.
 - **Never:** Infer denial from an empty query.
 - **Chosen:** `health` 13.3.2 and `pedometer` 4.2.0; types in D-020 plus distance (2026-10-12). Health values are read when needed and never copied to a server.

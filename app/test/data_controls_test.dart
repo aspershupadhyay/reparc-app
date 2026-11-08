@@ -1,11 +1,13 @@
 import 'dart:convert';
 
 import 'package:flutter_test/flutter_test.dart';
+import 'package:reparc/data/activity_repository.dart';
 import 'package:reparc/data/data_controls.dart';
 import 'package:reparc/data/database.dart';
 import 'package:reparc/data/meal_repository.dart';
 import 'package:reparc/data/models.dart';
 import 'package:reparc/data/workout_repository.dart';
+import 'package:reparc/domain/track.dart';
 
 import 'helpers.dart';
 
@@ -44,6 +46,21 @@ void main() {
     expect(entry['source'], sourceManual);
     expect(entry['createdAt'], '2026-03-02T08:00:00.000Z');
     expect(entry['status'], 'eaten');
+  });
+
+  test('a file from before steps restores its activities as GPS ones', () async {
+    final controls = DataControls(db, clock.call);
+    final id = await ActivityRepository(db, clock.call).start(ActivityKind.run);
+    final json = jsonDecode(await controls.exportJson(appVersion: '0.5.1')) as Map<String, dynamic>;
+    final activity = ((json['tables'] as Map)['activities'] as List).single as Map;
+    // The v7 shape had none of these keys.
+    activity
+      ..remove('usesGps')
+      ..remove('steps')
+      ..remove('distanceSource');
+    await controls.importJson(jsonEncode(json));
+    final a = await db.select(db.activities).getSingle();
+    expect((a.id, a.usesGps, a.steps), (id, true, null));
   });
 
   test('delete all removes records and restores default slots', () async {

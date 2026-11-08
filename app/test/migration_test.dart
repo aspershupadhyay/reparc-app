@@ -38,7 +38,7 @@ void main() {
     expect(slots['own']!.kind, isNull);
     expect(slots['own']!.name, 'Pre-workout');
     final v = await db.customSelect('PRAGMA user_version').getSingle();
-    expect(v.data.values.first, 7);
+    expect(v.data.values.first, 8);
     await db.close();
   });
 
@@ -68,7 +68,7 @@ void main() {
     expect(await db.select(db.aiProposals).get(), isEmpty);
     expect(await db.select(db.healthWrites).get(), isEmpty);
     final v = await db.customSelect('PRAGMA user_version').getSingle();
-    expect(v.data.values.first, 7);
+    expect(v.data.values.first, 8);
     await db.close();
   });
 
@@ -107,7 +107,7 @@ void main() {
     expect(await db.select(db.programs).get(), isEmpty);
     expect(await db.select(db.bodyWeights).get(), isEmpty);
     final v = await db.customSelect('PRAGMA user_version').getSingle();
-    expect(v.data.values.first, 7);
+    expect(v.data.values.first, 8);
     await db.close();
   });
 
@@ -175,7 +175,7 @@ void main() {
     // Running the copy again changes nothing.
     expect(await db.copyLegacyPlans(), 0);
     final v = await db.customSelect('PRAGMA user_version').getSingle();
-    expect(v.data.values.first, 7);
+    expect(v.data.values.first, 8);
     await db.close();
   });
 
@@ -220,7 +220,7 @@ void main() {
       reason: 'A set outside a plan is the user\'s',
     );
     final v = await db.customSelect('PRAGMA user_version').getSingle();
-    expect(v.data.values.first, 7);
+    expect(v.data.values.first, 8);
     await db.close();
   });
 
@@ -247,7 +247,34 @@ void main() {
     expect(await db.select(db.activities).get(), isEmpty);
     expect(await db.select(db.activityPoints).get(), isEmpty);
     final v = await db.customSelect('PRAGMA user_version').getSingle();
-    expect(v.data.values.first, 7);
+    expect(v.data.values.first, 8);
+    await db.close();
+  });
+
+  test('v7 to v8 keeps GPS activities and adds steps', () async {
+    final file = File('${dir.path}/v7.sqlite');
+    driftRuntimeOptions.dontWarnAboutMultipleDatabases = true;
+    final fresh = AppDatabase(NativeDatabase(file));
+    await fresh.customSelect('SELECT 1').get();
+    await fresh.close();
+    final raw = sql.sqlite3.open(file.path);
+    // The v7 shape: the activity table without the v8 columns.
+    raw.execute('ALTER TABLE activities DROP COLUMN uses_gps');
+    raw.execute('ALTER TABLE activities DROP COLUMN steps');
+    raw.execute('ALTER TABLE activities DROP COLUMN distance_source');
+    const t = '2026-03-02T08:00:00.000Z';
+    raw.execute(
+      'INSERT INTO activities (id, created_at, updated_at, kind, name, status, started_at, utc_offset_minutes, '
+      "time_zone_name, distance_m) VALUES ('a1', '$t', '$t', 'run', 'Morning run', 'finished', '$t', 330, 'IST', 5012.5)",
+    );
+    raw.execute('PRAGMA user_version = 7');
+    raw.close();
+
+    final db = AppDatabase(NativeDatabase(file));
+    final a = await db.select(db.activities).getSingle();
+    expect((a.name, a.distanceM, a.usesGps, a.steps, a.distanceSource), ('Morning run', 5012.5, true, null, null));
+    final v = await db.customSelect('PRAGMA user_version').getSingle();
+    expect(v.data.values.first, 8);
     await db.close();
   });
 }

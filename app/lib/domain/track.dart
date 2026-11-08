@@ -307,3 +307,29 @@ double? currentPace(List<TrackPoint> used, {Duration window = const Duration(sec
   if (metres < 20 || secs < 5) return null;
   return secs / (metres / 1000);
 }
+
+/// Step length in metres, for distance without GPS (owner request,
+/// 2026-11-08: indoors, a treadmill, or no precise location). A walking
+/// step is about 0.415 of body height; a running step at an easy pace about
+/// 0.6. Without a height, 170 cm is used. It is an estimate: real steps
+/// change with speed, slope, and the person.
+double stepLength(ActivityKind kind, double? heightCm) {
+  final h = (heightCm == null || heightCm < 100 || heightCm > 250 ? 170 : heightCm) / 100;
+  return h * (kind == ActivityKind.run ? 0.6 : 0.415);
+}
+
+/// The distance to show: GPS when it measured the activity, else the step
+/// estimate. GPS counts when it found at least half the distance the steps
+/// suggest; less means it had no usable fix for much of the time (indoors,
+/// a treadmill). Rides have no steps, so they always use GPS.
+({double metres, bool fromSteps}) bestDistance({
+  required double gpsMetres,
+  required int? steps,
+  required ActivityKind kind,
+  double? heightCm,
+}) {
+  if (kind == ActivityKind.ride || steps == null || steps < 20) return (metres: gpsMetres, fromSteps: false);
+  final estimate = steps * stepLength(kind, heightCm);
+  if (gpsMetres >= 10 && gpsMetres >= estimate / 2) return (metres: gpsMetres, fromSteps: false);
+  return (metres: estimate, fromSteps: true);
+}

@@ -9498,6 +9498,41 @@ class $ActivitiesTable extends Activities
     type: DriftSqlType.string,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _usesGpsMeta = const VerificationMeta(
+    'usesGps',
+  );
+  @override
+  late final GeneratedColumn<bool> usesGps = GeneratedColumn<bool>(
+    'uses_gps',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("uses_gps" IN (0, 1))',
+    ),
+    defaultValue: const Constant(true),
+  );
+  static const VerificationMeta _stepsMeta = const VerificationMeta('steps');
+  @override
+  late final GeneratedColumn<int> steps = GeneratedColumn<int>(
+    'steps',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _distanceSourceMeta = const VerificationMeta(
+    'distanceSource',
+  );
+  @override
+  late final GeneratedColumn<String> distanceSource = GeneratedColumn<String>(
+    'distance_source',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -9518,6 +9553,9 @@ class $ActivitiesTable extends Activities
     elevationGainM,
     maxSpeed,
     note,
+    usesGps,
+    steps,
+    distanceSource,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -9647,6 +9685,27 @@ class $ActivitiesTable extends Activities
         note.isAcceptableOrUnknown(data['note']!, _noteMeta),
       );
     }
+    if (data.containsKey('uses_gps')) {
+      context.handle(
+        _usesGpsMeta,
+        usesGps.isAcceptableOrUnknown(data['uses_gps']!, _usesGpsMeta),
+      );
+    }
+    if (data.containsKey('steps')) {
+      context.handle(
+        _stepsMeta,
+        steps.isAcceptableOrUnknown(data['steps']!, _stepsMeta),
+      );
+    }
+    if (data.containsKey('distance_source')) {
+      context.handle(
+        _distanceSourceMeta,
+        distanceSource.isAcceptableOrUnknown(
+          data['distance_source']!,
+          _distanceSourceMeta,
+        ),
+      );
+    }
     return context;
   }
 
@@ -9732,6 +9791,18 @@ class $ActivitiesTable extends Activities
         DriftSqlType.string,
         data['${effectivePrefix}note'],
       ),
+      usesGps: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}uses_gps'],
+      )!,
+      steps: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}steps'],
+      ),
+      distanceSource: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}distance_source'],
+      ),
     );
   }
 
@@ -9775,6 +9846,17 @@ class GpsActivity extends DataClass implements Insertable<GpsActivity> {
   /// Metres per second over at least 10 seconds.
   final double? maxSpeed;
   final String? note;
+
+  /// False for an activity recorded with steps only, without GPS. Added in v8.
+  final bool usesGps;
+
+  /// Steps the phone's step sensor counted while recording (runs and
+  /// walks), or null when the sensor was not available. Added in v8.
+  final int? steps;
+
+  /// Where the saved distance came from: 'gps' or 'steps' (an estimate).
+  /// Null for activities saved before v8, which are all GPS. Added in v8.
+  final String? distanceSource;
   const GpsActivity({
     required this.id,
     required this.createdAt,
@@ -9794,6 +9876,9 @@ class GpsActivity extends DataClass implements Insertable<GpsActivity> {
     this.elevationGainM,
     this.maxSpeed,
     this.note,
+    required this.usesGps,
+    this.steps,
+    this.distanceSource,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -9838,6 +9923,13 @@ class GpsActivity extends DataClass implements Insertable<GpsActivity> {
     if (!nullToAbsent || note != null) {
       map['note'] = Variable<String>(note);
     }
+    map['uses_gps'] = Variable<bool>(usesGps);
+    if (!nullToAbsent || steps != null) {
+      map['steps'] = Variable<int>(steps);
+    }
+    if (!nullToAbsent || distanceSource != null) {
+      map['distance_source'] = Variable<String>(distanceSource);
+    }
     return map;
   }
 
@@ -9873,6 +9965,13 @@ class GpsActivity extends DataClass implements Insertable<GpsActivity> {
           ? const Value.absent()
           : Value(maxSpeed),
       note: note == null && nullToAbsent ? const Value.absent() : Value(note),
+      usesGps: Value(usesGps),
+      steps: steps == null && nullToAbsent
+          ? const Value.absent()
+          : Value(steps),
+      distanceSource: distanceSource == null && nullToAbsent
+          ? const Value.absent()
+          : Value(distanceSource),
     );
   }
 
@@ -9904,6 +10003,9 @@ class GpsActivity extends DataClass implements Insertable<GpsActivity> {
       elevationGainM: serializer.fromJson<double?>(json['elevationGainM']),
       maxSpeed: serializer.fromJson<double?>(json['maxSpeed']),
       note: serializer.fromJson<String?>(json['note']),
+      usesGps: serializer.fromJson<bool>(json['usesGps']),
+      steps: serializer.fromJson<int?>(json['steps']),
+      distanceSource: serializer.fromJson<String?>(json['distanceSource']),
     );
   }
   @override
@@ -9932,6 +10034,9 @@ class GpsActivity extends DataClass implements Insertable<GpsActivity> {
       'elevationGainM': serializer.toJson<double?>(elevationGainM),
       'maxSpeed': serializer.toJson<double?>(maxSpeed),
       'note': serializer.toJson<String?>(note),
+      'usesGps': serializer.toJson<bool>(usesGps),
+      'steps': serializer.toJson<int?>(steps),
+      'distanceSource': serializer.toJson<String?>(distanceSource),
     };
   }
 
@@ -9954,6 +10059,9 @@ class GpsActivity extends DataClass implements Insertable<GpsActivity> {
     Value<double?> elevationGainM = const Value.absent(),
     Value<double?> maxSpeed = const Value.absent(),
     Value<String?> note = const Value.absent(),
+    bool? usesGps,
+    Value<int?> steps = const Value.absent(),
+    Value<String?> distanceSource = const Value.absent(),
   }) => GpsActivity(
     id: id ?? this.id,
     createdAt: createdAt ?? this.createdAt,
@@ -9975,6 +10083,11 @@ class GpsActivity extends DataClass implements Insertable<GpsActivity> {
         : this.elevationGainM,
     maxSpeed: maxSpeed.present ? maxSpeed.value : this.maxSpeed,
     note: note.present ? note.value : this.note,
+    usesGps: usesGps ?? this.usesGps,
+    steps: steps.present ? steps.value : this.steps,
+    distanceSource: distanceSource.present
+        ? distanceSource.value
+        : this.distanceSource,
   );
   GpsActivity copyWithCompanion(ActivitiesCompanion data) {
     return GpsActivity(
@@ -10002,6 +10115,11 @@ class GpsActivity extends DataClass implements Insertable<GpsActivity> {
           : this.elevationGainM,
       maxSpeed: data.maxSpeed.present ? data.maxSpeed.value : this.maxSpeed,
       note: data.note.present ? data.note.value : this.note,
+      usesGps: data.usesGps.present ? data.usesGps.value : this.usesGps,
+      steps: data.steps.present ? data.steps.value : this.steps,
+      distanceSource: data.distanceSource.present
+          ? data.distanceSource.value
+          : this.distanceSource,
     );
   }
 
@@ -10025,13 +10143,16 @@ class GpsActivity extends DataClass implements Insertable<GpsActivity> {
           ..write('movingSec: $movingSec, ')
           ..write('elevationGainM: $elevationGainM, ')
           ..write('maxSpeed: $maxSpeed, ')
-          ..write('note: $note')
+          ..write('note: $note, ')
+          ..write('usesGps: $usesGps, ')
+          ..write('steps: $steps, ')
+          ..write('distanceSource: $distanceSource')
           ..write(')'))
         .toString();
   }
 
   @override
-  int get hashCode => Object.hash(
+  int get hashCode => Object.hashAll([
     id,
     createdAt,
     updatedAt,
@@ -10050,7 +10171,10 @@ class GpsActivity extends DataClass implements Insertable<GpsActivity> {
     elevationGainM,
     maxSpeed,
     note,
-  );
+    usesGps,
+    steps,
+    distanceSource,
+  ]);
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -10072,7 +10196,10 @@ class GpsActivity extends DataClass implements Insertable<GpsActivity> {
           other.movingSec == this.movingSec &&
           other.elevationGainM == this.elevationGainM &&
           other.maxSpeed == this.maxSpeed &&
-          other.note == this.note);
+          other.note == this.note &&
+          other.usesGps == this.usesGps &&
+          other.steps == this.steps &&
+          other.distanceSource == this.distanceSource);
 }
 
 class ActivitiesCompanion extends UpdateCompanion<GpsActivity> {
@@ -10094,6 +10221,9 @@ class ActivitiesCompanion extends UpdateCompanion<GpsActivity> {
   final Value<double?> elevationGainM;
   final Value<double?> maxSpeed;
   final Value<String?> note;
+  final Value<bool> usesGps;
+  final Value<int?> steps;
+  final Value<String?> distanceSource;
   final Value<int> rowid;
   const ActivitiesCompanion({
     this.id = const Value.absent(),
@@ -10114,6 +10244,9 @@ class ActivitiesCompanion extends UpdateCompanion<GpsActivity> {
     this.elevationGainM = const Value.absent(),
     this.maxSpeed = const Value.absent(),
     this.note = const Value.absent(),
+    this.usesGps = const Value.absent(),
+    this.steps = const Value.absent(),
+    this.distanceSource = const Value.absent(),
     this.rowid = const Value.absent(),
   });
   ActivitiesCompanion.insert({
@@ -10135,6 +10268,9 @@ class ActivitiesCompanion extends UpdateCompanion<GpsActivity> {
     this.elevationGainM = const Value.absent(),
     this.maxSpeed = const Value.absent(),
     this.note = const Value.absent(),
+    this.usesGps = const Value.absent(),
+    this.steps = const Value.absent(),
+    this.distanceSource = const Value.absent(),
     this.rowid = const Value.absent(),
   }) : id = Value(id),
        createdAt = Value(createdAt),
@@ -10164,6 +10300,9 @@ class ActivitiesCompanion extends UpdateCompanion<GpsActivity> {
     Expression<double>? elevationGainM,
     Expression<double>? maxSpeed,
     Expression<String>? note,
+    Expression<bool>? usesGps,
+    Expression<int>? steps,
+    Expression<String>? distanceSource,
     Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
@@ -10185,6 +10324,9 @@ class ActivitiesCompanion extends UpdateCompanion<GpsActivity> {
       if (elevationGainM != null) 'elevation_gain_m': elevationGainM,
       if (maxSpeed != null) 'max_speed': maxSpeed,
       if (note != null) 'note': note,
+      if (usesGps != null) 'uses_gps': usesGps,
+      if (steps != null) 'steps': steps,
+      if (distanceSource != null) 'distance_source': distanceSource,
       if (rowid != null) 'rowid': rowid,
     });
   }
@@ -10208,6 +10350,9 @@ class ActivitiesCompanion extends UpdateCompanion<GpsActivity> {
     Value<double?>? elevationGainM,
     Value<double?>? maxSpeed,
     Value<String?>? note,
+    Value<bool>? usesGps,
+    Value<int?>? steps,
+    Value<String?>? distanceSource,
     Value<int>? rowid,
   }) {
     return ActivitiesCompanion(
@@ -10229,6 +10374,9 @@ class ActivitiesCompanion extends UpdateCompanion<GpsActivity> {
       elevationGainM: elevationGainM ?? this.elevationGainM,
       maxSpeed: maxSpeed ?? this.maxSpeed,
       note: note ?? this.note,
+      usesGps: usesGps ?? this.usesGps,
+      steps: steps ?? this.steps,
+      distanceSource: distanceSource ?? this.distanceSource,
       rowid: rowid ?? this.rowid,
     );
   }
@@ -10294,6 +10442,15 @@ class ActivitiesCompanion extends UpdateCompanion<GpsActivity> {
     if (note.present) {
       map['note'] = Variable<String>(note.value);
     }
+    if (usesGps.present) {
+      map['uses_gps'] = Variable<bool>(usesGps.value);
+    }
+    if (steps.present) {
+      map['steps'] = Variable<int>(steps.value);
+    }
+    if (distanceSource.present) {
+      map['distance_source'] = Variable<String>(distanceSource.value);
+    }
     if (rowid.present) {
       map['rowid'] = Variable<int>(rowid.value);
     }
@@ -10321,6 +10478,9 @@ class ActivitiesCompanion extends UpdateCompanion<GpsActivity> {
           ..write('elevationGainM: $elevationGainM, ')
           ..write('maxSpeed: $maxSpeed, ')
           ..write('note: $note, ')
+          ..write('usesGps: $usesGps, ')
+          ..write('steps: $steps, ')
+          ..write('distanceSource: $distanceSource, ')
           ..write('rowid: $rowid')
           ..write(')'))
         .toString();
@@ -16729,6 +16889,9 @@ typedef $$ActivitiesTableCreateCompanionBuilder = ActivitiesCompanion Function({
   Value<double?> elevationGainM,
   Value<double?> maxSpeed,
   Value<String?> note,
+  Value<bool> usesGps,
+  Value<int?> steps,
+  Value<String?> distanceSource,
   Value<int> rowid,
 });
 typedef $$ActivitiesTableUpdateCompanionBuilder = ActivitiesCompanion Function({
@@ -16750,6 +16913,9 @@ typedef $$ActivitiesTableUpdateCompanionBuilder = ActivitiesCompanion Function({
   Value<double?> elevationGainM,
   Value<double?> maxSpeed,
   Value<String?> note,
+  Value<bool> usesGps,
+  Value<int?> steps,
+  Value<String?> distanceSource,
   Value<int> rowid,
 });
 
@@ -16877,6 +17043,21 @@ class $$ActivitiesTableFilterComposer
     builder: (column) => ColumnFilters(column),
   );
 
+  ColumnFilters<bool> get usesGps => $composableBuilder(
+    column: $table.usesGps,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get steps => $composableBuilder(
+    column: $table.steps,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get distanceSource => $composableBuilder(
+    column: $table.distanceSource,
+    builder: (column) => ColumnFilters(column),
+  );
+
   Expression<bool> activityPointsRefs(
     Expression<bool> Function($$ActivityPointsTableFilterComposer f) f,
   ) {
@@ -17001,6 +17182,21 @@ class $$ActivitiesTableOrderingComposer
     column: $table.note,
     builder: (column) => ColumnOrderings(column),
   );
+
+  ColumnOrderings<bool> get usesGps => $composableBuilder(
+    column: $table.usesGps,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get steps => $composableBuilder(
+    column: $table.steps,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get distanceSource => $composableBuilder(
+    column: $table.distanceSource,
+    builder: (column) => ColumnOrderings(column),
+  );
 }
 
 class $$ActivitiesTableAnnotationComposer
@@ -17071,6 +17267,17 @@ class $$ActivitiesTableAnnotationComposer
 
   GeneratedColumn<String> get note =>
       $composableBuilder(column: $table.note, builder: (column) => column);
+
+  GeneratedColumn<bool> get usesGps =>
+      $composableBuilder(column: $table.usesGps, builder: (column) => column);
+
+  GeneratedColumn<int> get steps =>
+      $composableBuilder(column: $table.steps, builder: (column) => column);
+
+  GeneratedColumn<String> get distanceSource => $composableBuilder(
+    column: $table.distanceSource,
+    builder: (column) => column,
+  );
 
   Expression<T> activityPointsRefs<T extends Object>(
     Expression<T> Function($$ActivityPointsTableAnnotationComposer a) f,
@@ -17144,6 +17351,9 @@ class $$ActivitiesTableTableManager
                 Value<double?> elevationGainM = const Value.absent(),
                 Value<double?> maxSpeed = const Value.absent(),
                 Value<String?> note = const Value.absent(),
+                Value<bool> usesGps = const Value.absent(),
+                Value<int?> steps = const Value.absent(),
+                Value<String?> distanceSource = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => ActivitiesCompanion(
                 id: id,
@@ -17164,6 +17374,9 @@ class $$ActivitiesTableTableManager
                 elevationGainM: elevationGainM,
                 maxSpeed: maxSpeed,
                 note: note,
+                usesGps: usesGps,
+                steps: steps,
+                distanceSource: distanceSource,
                 rowid: rowid,
               ),
           createCompanionCallback:
@@ -17186,6 +17399,9 @@ class $$ActivitiesTableTableManager
                 Value<double?> elevationGainM = const Value.absent(),
                 Value<double?> maxSpeed = const Value.absent(),
                 Value<String?> note = const Value.absent(),
+                Value<bool> usesGps = const Value.absent(),
+                Value<int?> steps = const Value.absent(),
+                Value<String?> distanceSource = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => ActivitiesCompanion.insert(
                 id: id,
@@ -17206,6 +17422,9 @@ class $$ActivitiesTableTableManager
                 elevationGainM: elevationGainM,
                 maxSpeed: maxSpeed,
                 note: note,
+                usesGps: usesGps,
+                steps: steps,
+                distanceSource: distanceSource,
                 rowid: rowid,
               ),
           withReferenceMapper: (p0) => p0

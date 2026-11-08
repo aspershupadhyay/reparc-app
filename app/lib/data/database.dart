@@ -260,6 +260,17 @@ class Activities extends Table with RecordColumns {
   /// Metres per second over at least 10 seconds.
   RealColumn get maxSpeed => real().nullable()();
   TextColumn get note => text().nullable()();
+
+  /// False for an activity recorded with steps only, without GPS. Added in v8.
+  BoolColumn get usesGps => boolean().withDefault(const Constant(true))();
+
+  /// Steps the phone's step sensor counted while recording (runs and
+  /// walks), or null when the sensor was not available. Added in v8.
+  IntColumn get steps => integer().nullable()();
+
+  /// Where the saved distance came from: 'gps' or 'steps' (an estimate).
+  /// Null for activities saved before v8, which are all GPS. Added in v8.
+  TextColumn get distanceSource => text().nullable()();
 }
 
 /// The GPS fixes of an activity, as the phone gave them. Filtering and
@@ -335,7 +346,7 @@ class AppDatabase extends _$AppDatabase {
   ''');
 
   @override
-  int get schemaVersion => 7;
+  int get schemaVersion => 8;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -381,6 +392,13 @@ class AppDatabase extends _$AppDatabase {
       if (from < 7) {
         await m.createTable(activities);
         await m.createTable(activityPoints);
+      }
+      // v7 -> v8: activities without GPS (steps). A v6 database got the
+      // whole table above, columns included.
+      if (from == 7) {
+        await m.addColumn(activities, activities.usesGps);
+        await m.addColumn(activities, activities.steps);
+        await m.addColumn(activities, activities.distanceSource);
       }
     },
     beforeOpen: (details) async {

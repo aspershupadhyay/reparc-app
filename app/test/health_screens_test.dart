@@ -86,6 +86,29 @@ void main() {
     await unmount(tester);
   });
 
+  testWidgets('Allow all asks for every type that is off in one sheet', (tester) async {
+    health.refuse = {HealthFeature.weight};
+    await pumpApp(tester, '/me/health');
+    await tester.tap(find.text('Allow all'));
+    await tester.pumpAndSettle();
+    // Steps and distance were already on; the other four go in one request.
+    expect(health.requested, [
+      HealthFeature.activeEnergy,
+      HealthFeature.weight,
+      HealthFeature.writeWorkouts,
+      HealthFeature.writeMeals,
+    ]);
+    expect(find.textContaining('Connected 3 of 4 types'), findsOneWidget);
+    bool on(String label) => tester.widget<SwitchListTile>(find.widgetWithText(SwitchListTile, label)).value;
+    expect(on('Active energy'), isTrue);
+    expect(on('Body weight'), isFalse, reason: 'left unticked in the system sheet');
+    expect(on('Workouts'), isTrue);
+    // Let the write-back that Allow all started finish before the database closes.
+    await tester.pump(const Duration(seconds: 4));
+    await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 200)));
+    await unmount(tester);
+  });
+
   testWidgets('Live steps stays off when the permission is refused', (tester) async {
     sensor.allow = false;
     await pumpApp(tester, '/me/health');
