@@ -120,6 +120,31 @@ void main() {
     await unmount(tester);
   });
 
+  testWidgets('a tap on Home steps opens the steps trend, not the permission page', (tester) async {
+    await pumpApp(tester, '/home');
+    await tester.tap(find.textContaining('4,321', findRichText: true));
+    await tester.pumpAndSettle();
+    expect(find.text('Steps'), findsWidgets);
+    expect(find.text('Allow all'), findsNothing, reason: 'Not Me → Health apps');
+    expect(find.text('DAY BY DAY'), findsOneWidget);
+    expect(find.text('6,161 steps'), findsWidgets, reason: 'The average over the 2 days with data');
+    expect(find.textContaining('2 of 30 days'), findsOneWidget);
+    await unmount(tester);
+  });
+
+  testWidgets('a trend whose health type is off connects it on the same page', (tester) async {
+    await pumpApp(tester, '/trend/activeEnergy');
+    expect(find.text('Connect active energy'), findsOneWidget);
+    health.energy = {'2026-03-02': 420};
+    await tester.tap(find.text('Connect active energy'));
+    await tester.pumpAndSettle();
+    expect(health.requested, [HealthFeature.activeEnergy]);
+    expect(find.text('420 kcal'), findsWidgets);
+    await tester.pump(const Duration(seconds: 4));
+    await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 200)));
+    await unmount(tester);
+  });
+
   testWidgets('Analytics shows steps a day and distance, with gaps for missing days', (tester) async {
     await pumpApp(tester, '/analytics');
     expect(find.text('6,161'), findsOneWidget, reason: '(8000 + 4321) / 2 days with data');

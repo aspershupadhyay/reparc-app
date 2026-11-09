@@ -57,6 +57,21 @@ class HomeScreen extends ConsumerWidget {
         ? null
         : (week?.sessions.where((s) => s.session.programId == program.id).length ?? 0);
 
+    // A new user goes to setup first, not to an empty dashboard (owner
+    // request, 2026-11-09). Only when nothing is logged yet, so an update
+    // never sends an existing user there. Skip in setup counts as done.
+    final history = ref.watch(historyProvider);
+    if (ref.watch(settingsProvider).hasValue &&
+        !settings.onboarded &&
+        history.hasValue &&
+        history.value!.isEmpty &&
+        program == null &&
+        ref.watch(liveSessionProvider).value == null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (context.mounted) context.go('/welcome');
+      });
+    }
+
     return Scaffold(
       body: SafeArea(
         child: ListView(
@@ -253,7 +268,7 @@ class _HealthRow extends ConsumerWidget {
             (_, final d?) => 'today · $d',
             _ => 'today',
           },
-          onTap: () => context.push('/me/health'),
+          onTap: () => context.push('/trend/steps'),
         )
       else if (s.health.contains(HealthFeature.distance.name))
         _Tile(
@@ -261,7 +276,7 @@ class _HealthRow extends ConsumerWidget {
           label: 'Distance',
           value: distance ?? '–',
           caption: distance == null ? 'No data' : 'today',
-          onTap: () => context.push('/me/health'),
+          onTap: () => context.push('/trend/distance'),
         ),
       if (s.health.contains(HealthFeature.activeEnergy.name))
         _Tile(
@@ -269,7 +284,7 @@ class _HealthRow extends ConsumerWidget {
           label: 'Active',
           value: v?.energy == null ? '–' : '${v!.energy!.round()}',
           caption: v?.energy == null ? 'No data' : 'kcal burned',
-          onTap: () => context.push('/me/health'),
+          onTap: () => context.push('/trend/activeEnergy'),
         ),
     ];
     return Row(
@@ -616,7 +631,7 @@ class _WeekCard extends StatelessWidget {
     // the workout count, not "0/0".
     final planned = roadmapPlanned == 0 ? null : roadmapPlanned;
     return AppCard(
-      onTap: () => context.go('/analytics'),
+      onTap: () => context.push('/trend/workouts'),
       semanticLabel:
           'This week: $count workouts on ${trained.length} days'
           '${planned == null ? '' : ', ${roadmapDone ?? 0} of $planned plan days'}'

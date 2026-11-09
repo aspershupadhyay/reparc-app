@@ -10,6 +10,7 @@ import 'package:reparc/core/clock.dart';
 import 'package:reparc/data/database.dart';
 import 'package:reparc/data/models.dart';
 import 'package:reparc/data/providers.dart';
+import 'package:reparc/data/settings_repository.dart';
 import 'package:reparc/features/analytics/analytics_screen.dart';
 import 'package:reparc/features/exercises/library/library.dart';
 import 'package:reparc/features/me/ai_connections_screen.dart';
@@ -32,10 +33,11 @@ void main() {
   // Close outside the fake-async test zone.
   tearDown(() => db.close());
 
-  Future<void> pumpApp(WidgetTester tester, {String at = '/home'}) async {
+  Future<void> pumpApp(WidgetTester tester, {String at = '/home', bool onboarded = true}) async {
     tester.view.physicalSize = const Size(1170, 2532);
     tester.view.devicePixelRatio = 3;
     addTearDown(tester.view.reset);
+    if (onboarded) await tester.runAsync(() => SettingsRepository(db).setOnboarded());
 
     await tester.pumpWidget(
       ProviderScope(
@@ -85,40 +87,55 @@ void main() {
     await unmount(tester);
   });
 
-  testWidgets('a new user answers three questions and gets a plan and a first workout', (tester) async {
-    await pumpApp(tester);
-    expect(find.text('A plan that fits you'), findsOneWidget);
-    await tester.tap(find.text('A plan that fits you'));
+  testWidgets('a new user lands in setup, answers, and gets a plan, targets, and a first workout', (tester) async {
+    await pumpApp(tester, onboarded: false);
+    expect(find.text('Build my plan'), findsOneWidget, reason: 'Setup, not an empty dashboard');
+    await tester.tap(find.text('Build my plan'));
     await tester.pumpAndSettle();
-    expect(find.text('Step 1 of 3'), findsOneWidget);
-    await tester.tap(find.text('Strength'));
-    await tester.pumpAndSettle();
-    await tester.tap(find.text('Beginner'));
-    await tester.pumpAndSettle();
+    Future<void> pick(String text) async {
+      await tester.tap(find.text(text));
+      await tester.pump(const Duration(milliseconds: 300));
+      await tester.pumpAndSettle();
+    }
+
+    await pick('Strength');
+    await pick('Beginner');
     expect(find.text('Suggested for you'), findsOneWidget);
-    await tester.tap(find.text('Make my plan'));
+    await pick('3 days');
+    expect(find.text('About you'), findsOneWidget);
+    await tester.tap(find.text('Male'));
+    await tester.enterText(find.widgetWithText(TextField, 'Age'), '30');
+    await tester.enterText(find.widgetWithText(TextField, 'Height'), '178');
+    await tester.enterText(find.widgetWithText(TextField, 'Weight'), '80');
+    await tester.tap(find.text('Next'));
+    await tester.pumpAndSettle();
+    await pick('Build muscle');
+    await pick('Eat everything');
+    await pick('Moderate');
+    expect(find.text('Bring in your steps'), findsOneWidget);
+    await tester.tap(find.text('Finish'));
     await tester.pumpAndSettle();
     expect(find.text('Your plan is ready'), findsOneWidget);
-    expect(find.text('YOUR FIRST WORKOUT'), findsOneWidget);
-    final programs = await db.select(db.programs).get();
-    expect(programs.single.active, isTrue);
-    expect(programs.single.goal, 'strength');
+    expect(find.text('FIRST WORKOUT'), findsOneWidget);
+    expect(find.text('Each day'), findsOneWidget, reason: 'Targets from the answers');
+    final programs = await tester.runAsync(() => db.select(db.programs).get());
+    expect(programs!.single.goal, 'strength');
     expect(programs.single.level, 'beginner');
-    await tester.tap(find.text('Later'));
+    final weights = await tester.runAsync(() => db.select(db.bodyWeights).get());
+    expect(weights!.single.value, 80);
+    await tester.tap(find.text('Go to Home'));
     await tester.pumpAndSettle();
-    expect(find.text('A plan that fits you'), findsNothing, reason: 'Home now shows the plan');
     expect(find.text('NEXT IN YOUR PLAN'), findsOneWidget);
     await unmount(tester);
   });
 
   testWidgets('the first-run setup can be skipped and does not come back', (tester) async {
-    await pumpApp(tester);
-    await tester.tap(find.text('A plan that fits you'));
+    await pumpApp(tester, onboarded: false);
+    await tester.tap(find.text('Skip, I will set it up later'));
     await tester.pumpAndSettle();
-    await tester.tap(find.text('Skip'));
-    await tester.pumpAndSettle();
-    expect(find.text('A plan that fits you'), findsNothing);
-    expect(await db.select(db.programs).get(), isEmpty);
+    expect(find.text('Build my plan'), findsNothing);
+    expect(find.text('Good evening'), findsOneWidget);
+    expect(await tester.runAsync(() => db.select(db.programs).get()), isEmpty);
     await unmount(tester);
   });
 

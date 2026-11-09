@@ -151,7 +151,7 @@ fails twice becomes a finding.
 ### Checks run (second pass)
 
 - `flutter analyze`: no issues.
-- `flutter test`: all 445 tests pass, including the new
+- `flutter test`: all 447 tests pass after merging the 0.5.4 onboarding work, including the new
   `typography_test.dart` and the colour-meaning check.
 - Screenshots in light and dark at iPhone size, in the test harness with real
   fonts. Not a real phone.

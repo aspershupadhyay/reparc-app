@@ -178,7 +178,7 @@ class _Activity extends ConsumerWidget {
     final total = metres.isEmpty ? null : metres.reduce((a, b) => a + b);
     return AppCard(
       padding: const EdgeInsets.all(Space.l),
-      onTap: () => context.push('/me/health'),
+      onTap: () => context.push('/trend/steps'),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
@@ -645,6 +645,7 @@ class _WeeklyVolume extends StatelessWidget {
     final factor = unit == 'lb' ? 1 / kgPerLb : 1.0;
     return AppCard(
       padding: const EdgeInsets.all(Space.l),
+      onTap: () => context.push('/trend/volume'),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
@@ -681,7 +682,7 @@ class _BodyWeight extends StatelessWidget {
     ];
     return AppCard(
       padding: const EdgeInsets.all(Space.l),
-      onTap: () => context.push('/me/body'),
+      onTap: () => context.push('/trend/weight'),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
@@ -916,7 +917,7 @@ class _Nutrition extends StatelessWidget {
     final daily = [for (final d in s.days) byDay[dayKey(d)]?.energyKcal.value];
     return AppCard(
       padding: const EdgeInsets.all(Space.l),
-      onTap: () => _openRecords(context, 'meals', s),
+      onTap: () => context.push('/trend/eaten'),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [

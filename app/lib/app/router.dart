@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import '../activity/activity_screen.dart';
 import '../activity/track_screen.dart';
 import '../features/analytics/analytics_screen.dart';
+import '../features/analytics/metric_screen.dart';
 import '../features/analytics/source_records_screen.dart';
 import '../features/exercises/catalog/model.dart';
 import '../features/exercises/guide_screen.dart';
@@ -172,6 +173,13 @@ GoRouter buildRouter({String initialLocation = '/home'}) => GoRouter(
       path: '/welcome',
       parentNavigatorKey: rootNavigatorKey,
       builder: (_, _) => const WelcomeScreen(),
+    ),
+    // A metric's drill-down, opened from a chart or a card on any tab.
+    // Above the tabs, so Back returns to where the user tapped.
+    GoRoute(
+      path: '/trend/:metric',
+      parentNavigatorKey: rootNavigatorKey,
+      builder: (_, s) => MetricScreen(metric: TrendMetric.values.byName(s.pathParameters['metric']!)),
     ),
     // The live workout is a focused full-screen flow without the tab bar.
     GoRoute(

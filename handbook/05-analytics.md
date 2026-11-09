@@ -41,6 +41,18 @@ Each chart must show:
 
 Let the user open a chart point or summary and see its source records. Do not draw a line across missing dates as if the user recorded data. Do not compare unlike exercise variations. Do not rank users.
 
+### Drill-down pages (2026-11-09, owner request)
+
+Owner: "for each dashboard if user clicks on it it shouldn't direct them to the permission page, it should drill down about their data", and charts that anyone understands at one glance.
+
+- **Route:** `/trend/<metric>` above the tabs, so Back returns to the card. Metrics: steps, distance, active energy, body weight, workouts, volume lifted, energy eaten, protein. Code: `app/lib/features/analytics/metric_screen.dart`, chart `trend_chart.dart`.
+- **Opened from:** Home's steps, distance, and active energy tiles and its week card; Analytics' steps, body weight, weekly volume, and nutrition cards. None of them opens Me → Health apps or a form any more.
+- **Page:** range (7 days, 30 days, 90 days, 1 year; 30 by default); the headline (a daily average over days with data, a total for workouts and volume, the latest value for weight); the change against the period before, in plain words; the chart; three numbers (average or per week, best day, days with data; for weight lowest, highest, change); and every day with data, newest first.
+- **Chart:** bars for daily amounts, a line for weight. The newest point is in full colour, older ones lighter. A dashed line is the average; a solid line is the user's target (energy and protein). Tap or drag reads one point's value and day, with a haptic tick. A day with no data is a dot on the base line, never a bar of 0. One year shows weeks. The chart reads out as one sentence for screen readers.
+- **Not connected:** a health metric whose type is off shows **Connect <metric>** on the same page, which opens the system sheet for that one type.
+- **Bars elsewhere** (Analytics cards) also show the newest bar in full colour and the rest lighter.
+- **Tests:** `app/test/health_screens_test.dart` (Home steps opens the trend with the right average; Connect on the page).
+
 ## 6.4 Goals
 
 A goal is optional and user-set. The app can show progress against it. Do not shame the user or describe a missed goal as failure.

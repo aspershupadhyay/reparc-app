@@ -355,7 +355,7 @@ See [the platform design audit](reviews/2026-11-09-platform-design-audit.md).
 | Where | Pattern | Fix |
 |---|---|---|
 | Android dialogs and back | iOS alert and slide on Android | Material dialog and predictive back transition on Android (D-023 update) |
-| Me rows | Second lines described the row ("Weight, goal, diet, and daily targets") | Second lines show state ("Targets off", "No backup file yet", "Version 0.5.4"), or nothing |
+| Me rows | Second lines described the row ("Weight, goal, diet, and daily targets") | Second lines show state ("Targets off", "No backup file yet", the version), or nothing |
 | Export or delete | A "Phone backups" card said RepArc runs no backup, which Backup and restore contradicts | One link to Backup and restore |
 | Colour | Protein, chest, dinner, and main muscles used the error red | systemPink; red for errors and Delete only |
 | Type | One tracking for both fonts; display sizes tracked tighter than Apple's table on iPhone | Per-font tracking (`trackingFor`) |
