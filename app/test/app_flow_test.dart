@@ -87,8 +87,8 @@ void main() {
 
   testWidgets('a new user answers three questions and gets a plan and a first workout', (tester) async {
     await pumpApp(tester);
-    expect(find.text('Get your plan'), findsOneWidget);
-    await tester.tap(find.text('Get your plan'));
+    expect(find.text('A plan that fits you'), findsOneWidget);
+    await tester.tap(find.text('A plan that fits you'));
     await tester.pumpAndSettle();
     expect(find.text('Step 1 of 3'), findsOneWidget);
     await tester.tap(find.text('Strength'));
@@ -106,18 +106,18 @@ void main() {
     expect(programs.single.level, 'beginner');
     await tester.tap(find.text('Later'));
     await tester.pumpAndSettle();
-    expect(find.text('Get your plan'), findsNothing, reason: 'Home now shows the plan');
+    expect(find.text('A plan that fits you'), findsNothing, reason: 'Home now shows the plan');
     expect(find.text('NEXT IN YOUR PLAN'), findsOneWidget);
     await unmount(tester);
   });
 
   testWidgets('the first-run setup can be skipped and does not come back', (tester) async {
     await pumpApp(tester);
-    await tester.tap(find.text('Get your plan'));
+    await tester.tap(find.text('A plan that fits you'));
     await tester.pumpAndSettle();
     await tester.tap(find.text('Skip'));
     await tester.pumpAndSettle();
-    expect(find.text('Get your plan'), findsNothing);
+    expect(find.text('A plan that fits you'), findsNothing);
     expect(await db.select(db.programs).get(), isEmpty);
     await unmount(tester);
   });
@@ -363,6 +363,11 @@ void main() {
     await tester.enterText(find.widgetWithText(TextField, 'Amount'), '2');
     await tester.pumpAndSettle();
     expect(find.textContaining('For this amount: 300 kcal'), findsOneWidget);
+    // A tap on plain text closes the number pad (iPhone's has no Done key).
+    expect(FocusManager.instance.primaryFocus?.context?.findAncestorWidgetOfExactType<EditableText>(), isNotNull);
+    await tester.tap(find.textContaining('For this amount: 300 kcal'));
+    await tester.pumpAndSettle();
+    expect(FocusManager.instance.primaryFocus?.context?.findAncestorWidgetOfExactType<EditableText>(), isNull);
     await tester.ensureVisible(find.widgetWithText(FilledButton, 'Save'));
     await tester.tap(find.widgetWithText(FilledButton, 'Save'));
     await tester.pumpAndSettle();
@@ -385,7 +390,10 @@ void main() {
       300,
       scrollable: _scrollableIn(find.byType(MeScreen)),
     );
-    expect(find.text('Apple Health, Health Connect. Off.'), findsOneWidget);
+    expect(
+      find.descendant(of: find.widgetWithText(ListTile, 'Health apps'), matching: find.text('Off')),
+      findsOneWidget,
+    );
     await tester.scrollUntilVisible(
       find.text('Off. Nothing is shared.'),
       300,

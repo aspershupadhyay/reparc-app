@@ -1,3 +1,4 @@
+import 'package:go_router/go_router.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
@@ -123,11 +124,24 @@ class _PlanDaySheetState extends ConsumerState<_PlanDaySheet> {
               Text(_diet.hint, style: t.bodySmall),
               const SizedBox(height: Space.m),
               if (byN.isEmpty)
-                const StatusLine(
-                  icon: LucideIcons.info,
-                  text:
-                      'No targets set, so portions are standard sizes. Set targets in Me → Body and goals '
-                      'to size the plan for you.',
+                Row(
+                  children: [
+                    const Expanded(
+                      child: StatusLine(
+                        icon: LucideIcons.info,
+                        text: 'No targets set, so portions are standard sizes.',
+                      ),
+                    ),
+                    TextButton(
+                      onPressed: () {
+                        // Close the sheet first, so Body and goals opens on top.
+                        final router = GoRouter.of(context);
+                        Navigator.pop(context);
+                        router.push('/me/body');
+                      },
+                      child: const Text('Set targets'),
+                    ),
+                  ],
                 )
               else
                 StatusLine(

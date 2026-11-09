@@ -165,13 +165,10 @@ class _ChooseGoal extends ConsumerWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Text('What do you want to work towards?', style: t.titleLarge),
+        // A title and one short line, not a paragraph (handbook 3.16).
+        Text('Choose a goal', style: t.titleLarge),
         const SizedBox(height: Space.xs),
-        Text(
-          'Pick a goal and get a plan for it. You choose the level, days, and equipment next, and you can '
-          'change any part later.',
-          style: t.bodyMedium?.copyWith(color: p.inkSoft),
-        ),
+        Text('Level, days, and equipment come next.', style: t.bodyMedium?.copyWith(color: p.inkSoft)),
         const SizedBox(height: Space.l),
         for (final g in RoadmapGoal.values) ...[
           AppCard(

@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:flutter/cupertino.dart' show CupertinoPageTransitionsBuilder, NoDefaultCupertinoThemeData;
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -21,8 +23,46 @@ TextStyle appText(double size, FontWeight weight, {double? height, Color? color,
     fontVariations: [FontVariation.weight(weight.value.toDouble())],
     height: height,
     color: color,
-    letterSpacing: spacing,
+    letterSpacing: spacing ?? trackingFor(size, ios: appFontFamily == null),
   );
+}
+
+/// Letter spacing in logical pixels for a font size, as each typeface's
+/// designer specifies it (platform design audit, 2026-11-09).
+///
+/// - iPhone (SF Pro): Apple's tracking table for iOS (HIG Typography,
+///   "Tracking values"). Text sizes are tight; display sizes from about
+///   24 pt open up slightly, which is how Apple's own large titles read.
+/// - Android (Inter): Inter's dynamic metrics, tracking = -0.0223 +
+///   0.185 × e^(-0.1745 × size) em (rsms.me/inter/dynmetrics). Large sizes
+///   tighten; small sizes stay open.
+double trackingFor(double size, {required bool ios}) {
+  if (!ios) return size * (-0.0223 + 0.185 * math.exp(-0.1745 * size));
+  // Points from Apple's iOS table, linear between them.
+  const table = <(double, double)>[
+    (11, 0.06),
+    (12, 0),
+    (13, -0.08),
+    (14, -0.15),
+    (15, -0.23),
+    (16, -0.31),
+    (17, -0.43),
+    (20, -0.45),
+    (22, -0.26),
+    (24, 0.07),
+    (28, 0.38),
+    (34, 0.40),
+    (48, 0.40),
+  ];
+  if (size <= table.first.$1) return table.first.$2;
+  for (var i = 1; i < table.length; i++) {
+    final (s1, t1) = table[i];
+    if (size <= s1) {
+      final (s0, t0) = table[i - 1];
+      return t0 + (t1 - t0) * (size - s0) / (s1 - s0);
+    }
+  }
+  return table.last.$2;
 }
 
 extension WeightStyle on TextStyle {
@@ -38,17 +78,17 @@ ThemeData buildTheme(Palette p) {
   // iOS text styles: Large Title 34, Title 2 22, Headline 17, Body 17,
   // Subheadline 15, Footnote 13, Caption 12.
   final t = TextTheme(
-    displayLarge: appText(48, FontWeight.w700, height: 1.05, color: p.ink, spacing: -1.2),
-    displaySmall: appText(34, FontWeight.w700, height: 1.12, color: p.ink, spacing: -0.8),
-    headlineSmall: appText(28, FontWeight.w700, height: 1.15, color: p.ink, spacing: -0.6),
-    titleLarge: appText(22, FontWeight.w700, height: 1.25, color: p.ink, spacing: -0.4),
-    titleMedium: appText(17, FontWeight.w600, height: 1.3, color: p.ink, spacing: -0.4),
-    titleSmall: appText(15, FontWeight.w600, height: 1.35, color: p.ink, spacing: -0.2),
-    bodyLarge: appText(17, FontWeight.w400, height: 1.35, color: p.ink, spacing: -0.4),
-    bodyMedium: appText(15, FontWeight.w400, height: 1.4, color: p.ink, spacing: -0.2),
-    bodySmall: appText(13, FontWeight.w400, height: 1.35, color: p.inkSoft, spacing: -0.1),
-    labelLarge: appText(17, FontWeight.w600, height: 1.25, color: p.ink, spacing: -0.4),
-    labelMedium: appText(15, FontWeight.w600, height: 1.3, color: p.ink, spacing: -0.2),
+    displayLarge: appText(48, FontWeight.w700, height: 1.05, color: p.ink),
+    displaySmall: appText(34, FontWeight.w700, height: 1.12, color: p.ink),
+    headlineSmall: appText(28, FontWeight.w700, height: 1.15, color: p.ink),
+    titleLarge: appText(22, FontWeight.w700, height: 1.25, color: p.ink),
+    titleMedium: appText(17, FontWeight.w600, height: 1.3, color: p.ink),
+    titleSmall: appText(15, FontWeight.w600, height: 1.35, color: p.ink),
+    bodyLarge: appText(17, FontWeight.w400, height: 1.35, color: p.ink),
+    bodyMedium: appText(15, FontWeight.w400, height: 1.4, color: p.ink),
+    bodySmall: appText(13, FontWeight.w400, height: 1.35, color: p.inkSoft),
+    labelLarge: appText(17, FontWeight.w600, height: 1.25, color: p.ink),
+    labelMedium: appText(15, FontWeight.w600, height: 1.3, color: p.ink),
     labelSmall: appText(12, FontWeight.w500, height: 1.3, color: p.inkSoft),
   );
 
@@ -252,7 +292,9 @@ ThemeData buildTheme(Palette p) {
     ),
     pageTransitionsTheme: const PageTransitionsTheme(
       builders: {
-        TargetPlatform.android: _ReducedMotionAware(CupertinoPageTransitionsBuilder()),
+        // Android: the predictive back transition, so the back swipe previews
+        // the page below (Android predictive back; owner, 2026-11-09).
+        TargetPlatform.android: _ReducedMotionAware(PredictiveBackPageTransitionsBuilder()),
         TargetPlatform.iOS: _ReducedMotionAware(CupertinoPageTransitionsBuilder()),
       },
     ),

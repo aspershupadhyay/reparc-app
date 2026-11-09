@@ -110,8 +110,11 @@ class Palette extends ThemeExtension<Palette> {
     blueSoft: Color(0xFFE0EEFF),
     orange: Color(0xFFC46A00), // deeper systemOrange
     orangeSoft: Color(0xFFFFF0DB),
-    coral: Color(0xFFD70015), // systemRed, high contrast
-    coralSoft: Color(0xFFFFE5E3),
+    // systemPink (Increase Contrast), not systemRed: red is kept for errors
+    // and Delete, so protein and main muscles never read as a warning
+    // (platform design audit, 2026-11-09; HIG Color: one colour, one meaning).
+    coral: Color(0xFFD30F45),
+    coralSoft: Color(0xFFFFE4EA),
   );
 
   static const dark = Palette(
@@ -142,8 +145,8 @@ class Palette extends ThemeExtension<Palette> {
     blueSoft: Color(0xFF0A2340),
     orange: Color(0xFFFF9F0A),
     orangeSoft: Color(0xFF2E1F06),
-    coral: Color(0xFFFF453A),
-    coralSoft: Color(0xFF33110F),
+    coral: Color(0xFFFF375F), // systemPink (dark)
+    coralSoft: Color(0xFF34101A),
   );
 
   /// Readable glyph colour on [c]: white or ink, whichever has more contrast.

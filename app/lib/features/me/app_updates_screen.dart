@@ -132,7 +132,7 @@ class _AppUpdatesScreenState extends ConsumerState<AppUpdatesScreen> {
             padding: EdgeInsets.zero,
             child: SwitchListTile(
               title: const Text('Check automatically'),
-              subtitle: const Text('Once a day, when you open the app. Home tells you when a new version is out.'),
+              subtitle: const Text('Once a day, when you open the app'),
               value: settings.updatesAuto,
               onChanged: (v) => ref.read(settingsRepoProvider).setUpdatesAuto(v),
             ),

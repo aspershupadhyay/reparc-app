@@ -55,7 +55,7 @@ void main() {
 
   testWidgets('choose a roadmap, open today, and start it with warm-up sets', (tester) async {
     await pumpApp(tester, at: '/workout');
-    expect(find.text('What do you want to work towards?'), findsOneWidget);
+    expect(find.text('Choose a goal'), findsOneWidget);
     for (final g in ['Aesthetic', 'Bodybuilding', 'Strength', 'Calisthenics', 'Lean & fit']) {
       expect(find.text(g, skipOffstage: false), findsOneWidget);
     }

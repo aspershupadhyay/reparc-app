@@ -26,6 +26,9 @@ you need the full text or want to check for changes.
 - `references/apple-checklist.md`: HIG rules by topic, with numbers (sizes, contrast, text styles).
 - `references/android-checklist.md`: Android rules by topic, with numbers (dp, sp, insets, back).
 - `references/wwdc26-design-principles.md`: notes from the WWDC26 talk.
+- `references/ux-ui-components.md`: the whole-product pass: research, IA,
+  flows, testing, design system, typography, colour psychology, navigation,
+  inputs, feedback, and motion. Use it after the platform checklists.
 - `references/page-index.md`: every HIG and Android page, grouped, with links.
 - `references/report-template.md`: the format for the audit report.
 - `scripts/fetch_guidelines.py`: crawls both sites into Markdown files.
@@ -48,6 +51,10 @@ you need the full text or want to check for changes.
    first run, empty, loading, error, offline, large text (200% and the largest
    accessibility size), dark mode, screen reader, reduced motion, small phone
    (360 dp / iPhone SE width), and a long translated label.
+   Then make the whole-product pass in `references/ux-ui-components.md`.
+   Take screenshots of each main screen (light and dark) and look at them
+   as Apple's design team would: compare with Apple's own app for the same
+   job, and list every place where ours would not ship.
 5. **Write findings.** One finding = one problem on one screen. Give each:
    severity, the evidence (file and line, or a screenshot), the rule with its
    source link, the smallest fix, and the risk of the fix. Severities:
@@ -106,7 +113,11 @@ These catch most problems in most apps:
 16. **Android specifics:** draw edge-to-edge and handle insets; opt in to
     predictive back; no touch targets under gesture insets; notification
     channels; system back always works.
-17. **iOS specifics:** tab bar for navigation only (never actions), labels on
+17. **One colour, one meaning.** The error red is never a data colour.
+18. **Type follows the platform:** iOS text styles and Apple's tracking for
+    SF Pro; the font's own metrics elsewhere; tabular figures for numbers.
+19. **The keyboard can always be closed** (iPhone's number pad has no Done).
+20. **iOS specifics:** tab bar for navigation only (never actions), labels on
     every tab, large titles on top-level screens, sheets with a clear dismiss,
     swipe-to-dismiss where safe.
 

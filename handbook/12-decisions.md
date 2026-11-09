@@ -305,6 +305,10 @@ Keep major choices here. Update the related chapter when a decision changes.
 
 **License:** Inter uses the SIL Open Font License 1.1. The bundled file is a Latin subset. The license is in `app/assets/fonts/Inter-OFL.txt`. SF Pro is not bundled; iPhone supplies it.
 
+**Update (owner, 2026-11-09):** The look stays the same on both platforms, but Android gets Android's system behaviour (platform design audit). Confirmation alerts use the Material dialog on Android and the iOS alert on iPhone (`confirmAction`). Android pages use the predictive back transition, so a back swipe previews the page below; iPhone keeps the swipe-back slide. Letter spacing follows each font's own table: Apple's iOS tracking values for SF Pro, Inter's dynamic metrics for Inter (`trackingFor`).
+
+**Update (2026-11-09, colour meaning):** The "coral" category colour is now Apple's systemPink (#D30F45 light, #FF375F dark), not systemRed. Red stays only for errors and Delete, so protein, chest, dinner, and main muscles never read as a warning (HIG Color: one colour, one meaning). `palette_test.dart` checks that no data colour equals the error colour.
+
 ## D-024: Browse exercises by body area, then muscle
 
 **Status:** Accepted by the user.

@@ -565,6 +565,9 @@ class AsyncBody<T> extends StatelessWidget {
   }
 }
 
+/// True on iPhone, iPad, and Mac, where the app uses Apple's controls.
+bool isCupertinoPlatform(TargetPlatform p) => p == TargetPlatform.iOS || p == TargetPlatform.macOS;
+
 Future<bool> confirmAction(
   BuildContext context, {
   required String title,
@@ -572,21 +575,38 @@ Future<bool> confirmAction(
   required String confirmLabel,
   bool destructive = false,
 }) async {
+  // The platform's own alert: the iOS alert on iPhone, the Material dialog
+  // on Android (handbook 3.1; Android "Translate iOS designs": use system
+  // dialogs). Cancel comes first; a destructive choice is red, never default.
+  final ios = isCupertinoPlatform(Theme.of(context).platform);
   final ok = await showDialog<bool>(
     context: context,
-    builder: (context) => CupertinoAlertDialog(
-      title: Text(title),
-      content: Text(body),
-      actions: [
-        CupertinoDialogAction(onPressed: () => Navigator.pop(context, false), child: const Text('Cancel')),
-        CupertinoDialogAction(
-          onPressed: () => Navigator.pop(context, true),
-          isDestructiveAction: destructive,
-          isDefaultAction: !destructive,
-          child: Text(confirmLabel),
-        ),
-      ],
-    ),
+    builder: (context) => ios
+        ? CupertinoAlertDialog(
+            title: Text(title),
+            content: Text(body),
+            actions: [
+              CupertinoDialogAction(onPressed: () => Navigator.pop(context, false), child: const Text('Cancel')),
+              CupertinoDialogAction(
+                onPressed: () => Navigator.pop(context, true),
+                isDestructiveAction: destructive,
+                isDefaultAction: !destructive,
+                child: Text(confirmLabel),
+              ),
+            ],
+          )
+        : AlertDialog(
+            title: Text(title),
+            content: Text(body),
+            actions: [
+              TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Cancel')),
+              TextButton(
+                onPressed: () => Navigator.pop(context, true),
+                style: destructive ? TextButton.styleFrom(foregroundColor: context.pal.error) : null,
+                child: Text(confirmLabel),
+              ),
+            ],
+          ),
   );
   return ok ?? false;
 }

@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:geolocator/geolocator.dart' show Geolocator;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -92,7 +93,9 @@ Future<void> startActivity(BuildContext context, WidgetRef ref, ActivityKind kin
   if (ok) return _open(context, ref);
   showMessage(
     context,
-    'Recording with steps needs the Physical activity permission. Allow it in Settings → Apps → RepArc.',
+    'Recording with steps needs the Physical activity permission.',
+    actionLabel: 'Settings',
+    onAction: Geolocator.openAppSettings,
   );
 }
 

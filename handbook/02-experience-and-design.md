@@ -125,7 +125,8 @@ Colours live in `app/lib/core/palette.dart`. Screens read colours only from ther
 | Green / soft | #248A3D / #E3F6E7 | #30D158 / #0F2A17 | Fibre, legs, lunch |
 | Blue / soft | #007AFF / #E0EEFF | #0A84FF / #0A2340 | Fat, back, breakfast |
 | Orange / soft | #C46A00 / #FFF0DB | #FF9F0A / #2E1F06 | Carbs, shoulders, snacks, helper muscles |
-| Coral / soft | #D70015 / #FFE5E3 | #FF453A / #33110F | Protein, chest, dinner |
+| Coral / soft | #D30F45 / #FFE4EA | #FF375F / #34101A | Protein, chest, dinner, main muscles (systemPink; red is for errors only, 2026-11-09) |
+| Error | #D70015 | #FF453A | Errors and Delete only |
 
 **Contrast fix (2026-10-08, owner request):** In light mode, lime on white was about 1.3:1, and green and orange icons on their soft tints were about 2:1. Light green, orange, and coral now use Apple's "Increase Contrast" shades, so every category icon is at least 3:1 on its soft tint and on white. Lime stays on the dark panel and on fills with a black glyph; on light surfaces the app uses Energy strong. `app/test/palette_test.dart` checks these pairs.
 
@@ -349,8 +350,24 @@ See [the platform design audit](reviews/2026-11-09-platform-design-audit.md).
 
 ### Found, not changed yet (review before Play)
 
-- Settings screens still carry a `StatusLine` footnote under most cards (54 in the app). Keep only the ones a user needs before acting. Android's settings guide: secondary text shows the current value, not a description.
-- Android uses the iOS alert dialog and page slide (D-023). The platform audit proposes Material dialogs and the predictive-back transition on Android only. **Proposed.**
+### Found and fixed on 2026-11-09, second pass
+
+| Where | Pattern | Fix |
+|---|---|---|
+| Android dialogs and back | iOS alert and slide on Android | Material dialog and predictive back transition on Android (D-023 update) |
+| Me rows | Second lines described the row ("Weight, goal, diet, and daily targets") | Second lines show state ("Targets off", "No backup file yet", "Version 0.5.4"), or nothing |
+| Export or delete | A "Phone backups" card said RepArc runs no backup, which Backup and restore contradicts | One link to Backup and restore |
+| Colour | Protein, chest, dinner, and main muscles used the error red | systemPink; red for errors and Delete only |
+| Type | One tracking for both fonts; display sizes tracked tighter than Apple's table on iPhone | Per-font tracking (`trackingFor`) |
+| Home | "Log food" twice (card link and shortcut); hero "Get your plan" next to "Get my plan" | Card link removed; hero title "A plan that fits you" |
+| Text | "Log your weight in Me → Body and goals", "Allow it in Settings → Apps → RepArc", "Set targets in Me → …", "Back up in Me" | Buttons that open the place: Log weight, Settings, Set targets, Back up (HIG Writing) |
+| Keyboard | No way to close iPhone's number pad (it has no Done key) | A tap on empty space closes the keyboard, app-wide |
+| Workout → Plan | A title and a two-line paragraph | "Choose a goal" and one line |
+
+### Found, not changed yet (review before Play)
+
+- About 50 `StatusLine` notes remain. Most carry safety, privacy, or estimate disclosures and stay. Review each before Play.
+- The main button is teal in light mode and lime in dark mode. Apple keeps one tint in both modes. Recorded as a conflict; an owner decision.
 
 ## 3.17 AI context
 

@@ -50,10 +50,12 @@ class MeScreen extends ConsumerWidget {
     // carry no category colour (visual review, 2026-10-09).
     Widget lead(IconData icon) => IconBadge(icon, color: p.surfaceAlt, glyph: p.ink, size: 36);
 
-    Widget link(Widget leading, String title, String subtitle, String path) => ListTile(
+    // The second line shows the current state, never a description of the
+    // row (Android settings guide; HIG settings). Left out when there is none.
+    Widget link(Widget leading, String title, String? subtitle, String path) => ListTile(
       leading: leading,
       title: Text(title),
-      subtitle: Text(subtitle),
+      subtitle: subtitle == null ? null : Text(subtitle),
       trailing: Icon(LucideIcons.chevronRight, size: IconSizes.s, color: p.inkSoft),
       onTap: () => context.push(path),
     );
@@ -87,7 +89,7 @@ class MeScreen extends ConsumerWidget {
               link(
                 lead(LucideIcons.personStanding),
                 'Body and goals',
-                s.targetsOn ? 'Targets on' : 'Weight, goal, diet, and daily targets',
+                s.targetsOn ? 'Targets on' : 'Targets off',
                 '/me/body',
               ),
             ]),
@@ -165,16 +167,14 @@ class MeScreen extends ConsumerWidget {
                 lead(LucideIcons.cloudUpload),
                 'Backup and restore',
                 s.lastBackupAt == null
-                    ? 'Phone backup and encrypted backup files'
+                    ? 'No backup file yet'
                     : 'Last backup file ${DateFormat.MMMd().format(s.lastBackupAt!.toLocal())}',
                 '/me/backup',
               ),
               link(
                 lead(LucideIcons.heartPulse),
                 'Health apps',
-                s.health.isEmpty
-                    ? 'Apple Health, Health Connect. Off.'
-                    : '${s.health.length} type${s.health.length == 1 ? '' : 's'} connected',
+                s.health.isEmpty ? 'Off' : '${s.health.length} type${s.health.length == 1 ? '' : 's'} connected',
                 '/me/health',
               ),
             ]),
@@ -182,10 +182,10 @@ class MeScreen extends ConsumerWidget {
               link(
                 lead(LucideIcons.download),
                 'Export or delete',
-                'Back up all records',
+                null,
                 '/me/data',
               ),
-              link(lead(LucideIcons.shield), 'Privacy', 'What is stored and where', '/me/privacy'),
+              link(lead(LucideIcons.shield), 'Privacy', null, '/me/privacy'),
             ]),
             group('App', [
               // Google Play delivers updates to the Play build (handbook 17.10).
@@ -201,13 +201,14 @@ class MeScreen extends ConsumerWidget {
                 link(
                   lead(LucideIcons.refreshCw),
                   'App updates',
-                  'Version and updates',
+                  ref.watch(installedVersionProvider).value == null
+                      ? null
+                      : 'Version ${ref.watch(installedVersionProvider).value}',
                   '/me/updates',
                 ),
               ListTile(
                 leading: lead(LucideIcons.fileText),
                 title: const Text('Licenses'),
-                subtitle: const Text('Notices for fonts, icons, photos, and the body model'),
                 trailing: Icon(LucideIcons.chevronRight, size: IconSizes.s, color: p.inkSoft),
                 onTap: () => showLicensePage(
                   context: context,

@@ -32,7 +32,10 @@ class ReparcApp extends ConsumerWidget {
       themeMode: mode,
       routerConfig: router,
       scrollBehavior: const _IosScroll(),
-      builder: intro ? (context, child) => IntroGate(child: child ?? const SizedBox.shrink()) : null,
+      builder: (context, child) {
+        final page = _DismissKeyboard(child: child ?? const SizedBox.shrink());
+        return intro ? IntroGate(child: page) : page;
+      },
     );
   }
 }
@@ -47,4 +50,21 @@ class _IosScroll extends MaterialScrollBehavior {
 
   @override
   Widget buildOverscrollIndicator(BuildContext context, Widget child, ScrollableDetails details) => child;
+}
+
+/// A tap on empty space closes the keyboard. iPhone's number pad has no
+/// Done key, so without this a keyboard could stay over a Save button
+/// (platform design audit, 2026-11-09). Taps on controls still go to them:
+/// this detector only wins when nothing below it takes the tap.
+class _DismissKeyboard extends StatelessWidget {
+  const _DismissKeyboard({required this.child});
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) => GestureDetector(
+    behavior: HitTestBehavior.translucent,
+    excludeFromSemantics: true,
+    onTap: () => FocusManager.instance.primaryFocus?.unfocus(),
+    child: child,
+  );
 }

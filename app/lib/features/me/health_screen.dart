@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:io';
 
+import 'package:geolocator/geolocator.dart' show Geolocator;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
@@ -254,7 +255,9 @@ class HealthScreen extends ConsumerWidget {
                     if (context.mounted) {
                       showMessage(
                         context,
-                        'Live steps needs the Physical activity permission. Allow it in Settings → Apps → RepArc.',
+                        'Live steps needs the Physical activity permission.',
+                        actionLabel: 'Settings',
+                        onAction: Geolocator.openAppSettings,
                       );
                     }
                   },

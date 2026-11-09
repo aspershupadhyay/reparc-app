@@ -136,7 +136,7 @@ class GuideScreen extends ConsumerWidget {
             ),
           ),
           const SectionHeader('Avoid'),
-          _Bullets(items: e.mistakes, icon: LucideIcons.circleX, color: p.coral),
+          _Bullets(items: e.mistakes, icon: LucideIcons.circleX, color: p.error),
           const SectionHeader('Adjust it'),
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,

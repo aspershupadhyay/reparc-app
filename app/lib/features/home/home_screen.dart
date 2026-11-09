@@ -419,7 +419,8 @@ class _Hero extends ConsumerWidget {
       ),
       _ when welcome => (
         'Welcome',
-        'Get your plan',
+        // Not the button's words again (handbook 3.16 rule 11).
+        'A plan that fits you',
         'Three questions, about 20 seconds',
         'Get my plan',
         () => context.push('/welcome'),
@@ -523,21 +524,11 @@ class _TodayFood extends ConsumerWidget {
             ],
           ),
           const SizedBox(height: Space.s),
-          // Before the first food of the day, one line says so. Four empty
-          // rings with dashes were noise (handbook 3.16).
+          // One line until the first food: four empty rings with dashes were
+          // noise (handbook 3.16). The whole card opens Meal, and Log food is
+          // already a shortcut below, so there is no second button here.
           if (meals.isEmpty)
-            Row(
-              children: [
-                Expanded(
-                  child: Text('Nothing logged today', style: t.bodyMedium?.copyWith(color: p.inkSoft)),
-                ),
-                TextButton.icon(
-                  onPressed: () => context.go('/meal'),
-                  icon: const Icon(LucideIcons.plus, size: 18),
-                  label: const Text('Log food'),
-                ),
-              ],
-            )
+            Text('Nothing logged today', style: t.bodyMedium?.copyWith(color: p.inkSoft))
           else
             Row(
               children: [
@@ -574,7 +565,7 @@ class _TodayFood extends ConsumerWidget {
                               child: Text(
                                 target == null ? n.unit : 'of ${fmtNum(target.amount, maxDecimals: 0)} ${n.unit}',
                                 maxLines: 1,
-                                style: t.labelSmall?.copyWith(fontSize: 11),
+                                style: t.labelSmall,
                               ),
                             ),
                           ],
@@ -750,7 +741,8 @@ class _StorageNote extends ConsumerWidget {
         children: [
           Icon(LucideIcons.smartphone, size: 20, color: p.brand),
           const SizedBox(width: Space.m),
-          Expanded(child: Text('Saved on this phone only. Back up in Me.', style: t.bodyMedium)),
+          Expanded(child: Text('Saved on this phone only', style: t.bodyMedium)),
+          TextButton(onPressed: () => context.push('/me/backup'), child: const Text('Back up')),
           IconButton(
             tooltip: 'Dismiss',
             onPressed: () => ref.read(settingsRepoProvider).setStorageNoticeSeen(),

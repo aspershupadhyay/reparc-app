@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
@@ -90,9 +91,8 @@ class _DataScreenState extends ConsumerState<DataScreen> {
                 Text('Export a copy', style: t.titleMedium),
                 const SizedBox(height: Space.s),
                 Text(
-                  'Creates one JSON file with all your records. It keeps field names, units, times, sources, '
-                  'and empty values. You choose where to send or save it. The file is not encrypted. '
-                  'Anyone who gets it can read your records.',
+                  'One JSON file with all your records, units, times, and sources. It is not encrypted: '
+                  'anyone who gets it can read your records.',
                   style: t.bodyMedium,
                 ),
                 const SizedBox(height: Space.l),
@@ -105,18 +105,16 @@ class _DataScreenState extends ConsumerState<DataScreen> {
             ),
           ),
           const SizedBox(height: Space.l),
+          // The phone-backup text here said RepArc runs no backup, which
+          // Backup and restore now contradicts. One link instead of a second
+          // explanation (platform design audit, 2026-11-09).
           AppCard(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Text('Phone backups', style: t.titleMedium),
-                const SizedBox(height: Space.s),
-                Text(
-                  'RepArc does not run its own backup. Your phone\'s system backup may or may not include '
-                  'RepArc records. Do not rely on it. Export a copy to be sure.',
-                  style: t.bodyMedium,
-                ),
-              ],
+            padding: EdgeInsets.zero,
+            child: ListTile(
+              title: const Text('Backup and restore'),
+              subtitle: const Text('Encrypted backup files and phone backup'),
+              trailing: Icon(LucideIcons.chevronRight, size: IconSizes.s, color: context.pal.inkSoft),
+              onTap: () => context.push('/me/backup'),
             ),
           ),
           const SizedBox(height: Space.l),

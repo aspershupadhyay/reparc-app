@@ -34,6 +34,14 @@ void main() {
       expect(contrast(p.on(p.energyStrong), p.energyStrong), greaterThanOrEqualTo(4.5));
     });
 
+    // HIG Color: one colour, one meaning. Red means error and Delete, so no
+    // data colour may be the error colour (platform design audit, 2026-11-09).
+    test('$name data colours are not the error colour', () {
+      for (final c in [p.green, p.blue, p.orange, p.coral, p.brand, p.energy]) {
+        expect(c, isNot(p.error));
+      }
+    });
+
     test('$name icon glyphs on category colours meet 3:1', () {
       for (final c in [p.green, p.blue, p.orange, p.coral, p.brand, p.energy]) {
         expect(contrast(p.on(c), c), greaterThanOrEqualTo(3));

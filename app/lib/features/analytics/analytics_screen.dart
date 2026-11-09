@@ -704,7 +704,15 @@ class _BodyWeight extends StatelessWidget {
           ),
           const SizedBox(height: Space.m),
           if (inRange.isEmpty)
-            Text('Log your weight in Me → Body and goals.', style: t.bodyMedium?.copyWith(color: p.inkSoft))
+            // A button to the place, not directions to it (HIG Writing).
+            Row(
+              children: [
+                Expanded(
+                  child: Text('No weight logged', style: t.bodyMedium?.copyWith(color: p.inkSoft)),
+                ),
+                TextButton(onPressed: () => context.push('/me/body'), child: const Text('Log weight')),
+              ],
+            )
           else
             LineChart(
               points: inRange,
