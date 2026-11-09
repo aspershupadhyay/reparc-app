@@ -10,6 +10,7 @@ import 'package:reparc/app/router.dart';
 import 'package:reparc/core/clock.dart';
 import 'package:reparc/data/database.dart';
 import 'package:reparc/data/providers.dart';
+import 'package:reparc/data/settings_repository.dart';
 import 'package:reparc/features/exercises/library/library.dart';
 import 'package:reparc/updates/apk_installer.dart';
 import 'package:reparc/updates/update_check.dart';
@@ -224,6 +225,7 @@ void main() {
     tester.view.physicalSize = const Size(1170, 2532);
     tester.view.devicePixelRatio = 3;
     addTearDown(tester.view.reset);
+    await tester.runAsync(() => SettingsRepository(db).setOnboarded());
     await tester.pumpWidget(
       ProviderScope(
         overrides: [

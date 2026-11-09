@@ -189,7 +189,7 @@ class Bars extends StatelessWidget {
       builder: (context, k, _) => Row(
         crossAxisAlignment: CrossAxisAlignment.end,
         children: [
-          for (final v in values)
+          for (final (i, v) in values.indexed)
             Expanded(
               child: Padding(
                 padding: EdgeInsets.symmetric(horizontal: values.length > 14 ? 1 : 3),
@@ -205,7 +205,11 @@ class Bars extends StatelessWidget {
                         heightFactor: math.max(0.04, v / maxV * k),
                         alignment: Alignment.bottomCenter,
                         child: Container(
-                          decoration: BoxDecoration(color: color, borderRadius: BorderRadius.circular(6)),
+                          // The newest bar reads first; the rest step back.
+                          decoration: BoxDecoration(
+                            color: i == values.lastIndexWhere((e) => e != null) ? color : color.withValues(alpha: 0.4),
+                            borderRadius: BorderRadius.circular(6),
+                          ),
                         ),
                       ),
               ),
