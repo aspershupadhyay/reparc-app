@@ -523,51 +523,67 @@ class _TodayFood extends ConsumerWidget {
             ],
           ),
           const SizedBox(height: Space.s),
-          Row(
-            children: [
-              for (final (n, color) in shown)
+          // Before the first food of the day, one line says so. Four empty
+          // rings with dashes were noise (handbook 3.16).
+          if (meals.isEmpty)
+            Row(
+              children: [
                 Expanded(
-                  child: Builder(
-                    builder: (context) {
-                      final v = totals.of(n).value;
-                      final target = byN[n];
-                      final short = switch (n) {
-                        Nutrient.energy => 'Energy',
-                        Nutrient.fiber => 'Fibre',
-                        _ => n.label,
-                      };
-                      return Column(
-                        children: [
-                          Ring(
-                            value: target?.progress(v) ?? (v == null ? 0 : 1),
-                            color: color,
-                            track: color.withValues(alpha: 0.15),
-                            size: 64,
-                            stroke: 7,
-                            semanticLabel:
-                                '${n.label}: ${v == null ? missingLabel : '${fmtNum(v, maxDecimals: 0)} ${n.unit}'}'
-                                '${target == null ? '' : ' of ${fmtNum(target.amount, maxDecimals: 0)}'}',
-                            child: Text(fmtNum(v, maxDecimals: 0), style: t.labelMedium?.tabular),
-                          ),
-                          const SizedBox(height: 4),
-                          Text(short, style: t.labelSmall),
-                          // Shrinks to fit instead of cutting the target off
-                          // with large text (launch review, 2026-10-10).
-                          FittedBox(
-                            fit: BoxFit.scaleDown,
-                            child: Text(
-                              target == null ? n.unit : 'of ${fmtNum(target.amount, maxDecimals: 0)} ${n.unit}',
-                              maxLines: 1,
-                              style: t.labelSmall?.copyWith(fontSize: 11),
-                            ),
-                          ),
-                        ],
-                      );
-                    },
-                  ),
+                  child: Text('Nothing logged today', style: t.bodyMedium?.copyWith(color: p.inkSoft)),
                 ),
-            ],
-          ),
+                TextButton.icon(
+                  onPressed: () => context.go('/meal'),
+                  icon: const Icon(LucideIcons.plus, size: 18),
+                  label: const Text('Log food'),
+                ),
+              ],
+            )
+          else
+            Row(
+              children: [
+                for (final (n, color) in shown)
+                  Expanded(
+                    child: Builder(
+                      builder: (context) {
+                        final v = totals.of(n).value;
+                        final target = byN[n];
+                        final short = switch (n) {
+                          Nutrient.energy => 'Energy',
+                          Nutrient.fiber => 'Fibre',
+                          _ => n.label,
+                        };
+                        return Column(
+                          children: [
+                            Ring(
+                              value: target?.progress(v) ?? (v == null ? 0 : 1),
+                              color: color,
+                              track: color.withValues(alpha: 0.15),
+                              size: 64,
+                              stroke: 7,
+                              semanticLabel:
+                                  '${n.label}: ${v == null ? missingLabel : '${fmtNum(v, maxDecimals: 0)} ${n.unit}'}'
+                                  '${target == null ? '' : ' of ${fmtNum(target.amount, maxDecimals: 0)}'}',
+                              child: Text(fmtNum(v, maxDecimals: 0), style: t.labelMedium?.tabular),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(short, style: t.labelSmall),
+                            // Shrinks to fit instead of cutting the target off
+                            // with large text (launch review, 2026-10-10).
+                            FittedBox(
+                              fit: BoxFit.scaleDown,
+                              child: Text(
+                                target == null ? n.unit : 'of ${fmtNum(target.amount, maxDecimals: 0)} ${n.unit}',
+                                maxLines: 1,
+                                style: t.labelSmall?.copyWith(fontSize: 11),
+                              ),
+                            ),
+                          ],
+                        );
+                      },
+                    ),
+                  ),
+              ],
+            ),
         ],
       ),
     );

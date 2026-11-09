@@ -254,9 +254,10 @@ class Metric extends StatelessWidget {
 }
 
 class EmptyState extends StatelessWidget {
-  const EmptyState({super.key, required this.icon, required this.title, this.body, this.action, this.color});
+  const EmptyState({super.key, this.icon, required this.title, this.body, this.action, this.color});
 
-  final IconData icon;
+  /// Optional. Leave it out when the next step says enough (handbook 3.16).
+  final IconData? icon;
   final String title;
   final String? body;
   final Widget? action;
@@ -270,8 +271,10 @@ class EmptyState extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: Space.xl, vertical: Space.xxl),
       child: Column(
         children: [
-          IconBadge(icon, color: color ?? p.brandSoft, glyph: p.brand, size: 64),
-          const SizedBox(height: Space.l),
+          if (icon != null) ...[
+            IconBadge(icon!, color: color ?? p.brandSoft, glyph: p.brand, size: 64),
+            const SizedBox(height: Space.l),
+          ],
           Text(title, style: t.titleMedium, textAlign: TextAlign.center),
           if (body != null) ...[
             const SizedBox(height: Space.xs),

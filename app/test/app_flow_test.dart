@@ -61,15 +61,19 @@ void main() {
     expect(find.text('FREE WORKOUT'), findsOneWidget);
     await tester.tap(find.bySemanticsLabel('Meal, tab 3 of 5'));
     await tester.pumpAndSettle();
-    expect(find.text('Eaten'), findsOneWidget);
+    expect(find.text('Nothing logged'), findsOneWidget, reason: 'An empty day is one line, not rows of dashes');
     await tester.tap(find.bySemanticsLabel('Analytics, tab 4 of 5'));
     await tester.pumpAndSettle();
     await tester.scrollUntilVisible(
-      find.text('Your progress shows here'),
+      find.text('Finish a workout to see your lifts'),
       300,
       scrollable: _scrollableIn(find.byType(AnalyticsScreen)),
     );
-    expect(find.text('Your progress shows here'), findsOneWidget, reason: 'No zeros before the first workout');
+    expect(
+      find.text('Finish a workout to see your lifts'),
+      findsOneWidget,
+      reason: 'No zeros before the first workout',
+    );
     expect(find.text('Best lifts'), findsNothing);
     await tester.tap(find.bySemanticsLabel('Me, tab 5 of 5'));
     await tester.pumpAndSettle();
@@ -346,7 +350,9 @@ void main() {
 
   testWidgets('log a meal; missing values stay missing', (tester) async {
     await pumpApp(tester, at: '/meal');
-    await tester.tap(find.text('Add food'));
+    // Food is added from a meal in the timeline; there is no floating button.
+    expect(find.text('Add food'), findsNothing);
+    await tester.tap(find.text('Breakfast'));
     await tester.pumpAndSettle();
     // Search comes first; the manual form opens on request.
     await tester.tap(find.text('Can\'t find it? Enter it yourself'));

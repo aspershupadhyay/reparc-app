@@ -62,34 +62,35 @@ class _MealScreenState extends ConsumerState<MealScreen> {
     final settings = ref.watch(currentSettingsProvider);
     final today = dayOf(ref.watch(clockProvider)());
     return Scaffold(
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => showMealEntrySheet(context, day: key),
-        backgroundColor: context.pal.action,
-        foregroundColor: context.pal.onAction,
-        elevation: 2,
-        shape: const StadiumBorder(),
-        icon: const Icon(LucideIcons.plus),
-        label: const Text('Add food'),
-      ),
       body: SafeArea(
         child: ListView(
-          padding: const EdgeInsets.fromLTRB(Space.l, Space.l, Space.l, 120),
+          padding: const EdgeInsets.fromLTRB(Space.l, Space.l, Space.l, Space.xxl),
           children: [
             ScreenTitle(
               'Meals',
               subtitle: _day == today ? 'Today' : fmtDayLong(_day),
+              // Two buttons, not three: the date picker, and one menu with
+              // labelled items for the rarer settings (HIG toolbars: a More
+              // menu; handbook 3.16, "Found, not changed yet").
               actions: [
-                RoundButton(
-                  icon: LucideIcons.target,
-                  tooltip: settings.targets.isEmpty ? 'Set targets' : 'Targets',
-                  onPressed: () => context.push('/me/body'),
-                ),
-                RoundButton(
-                  icon: LucideIcons.slidersHorizontal,
-                  tooltip: 'Edit meal times',
-                  onPressed: () => showSlotsSheet(context),
-                ),
                 RoundButton(icon: LucideIcons.calendar, tooltip: 'Choose a date', onPressed: _pickDate),
+                PopupMenuButton<String>(
+                  tooltip: 'More',
+                  style: IconButton.styleFrom(
+                    backgroundColor: context.pal.surface,
+                    foregroundColor: context.pal.ink,
+                    fixedSize: const Size(52, 52),
+                  ),
+                  icon: const Icon(LucideIcons.ellipsis, size: 22),
+                  onSelected: (v) => v == 'targets' ? context.push('/me/body') : showSlotsSheet(context),
+                  itemBuilder: (context) => [
+                    PopupMenuItem(
+                      value: 'targets',
+                      child: _MenuRow(LucideIcons.target, settings.targets.isEmpty ? 'Set targets' : 'Targets'),
+                    ),
+                    const PopupMenuItem(value: 'slots', child: _MenuRow(LucideIcons.clock, 'Meal times')),
+                  ],
+                ),
               ],
             ),
             _DayStrip(selected: _day, today: today, onSelect: (d) => setState(() => _day = d)),
@@ -277,6 +278,44 @@ class _Summary extends StatelessWidget {
       return target == null ? value : '$value (under ${fmtNum(target.amount, maxDecimals: 0)} $unit)';
     }
 
+    // An empty day without targets: one line and the next step, not six
+    // rows of dashes (handbook 3.16; HIG: clear next steps on blank screens).
+    if (entries.isEmpty && targets.isEmpty) {
+      return AppCard(
+        padding: const EdgeInsets.all(Space.l),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Text('Nothing logged', style: t.titleMedium),
+            const SizedBox(height: Space.xs),
+            Text('Tap a meal below to add food.', style: t.bodyMedium?.copyWith(color: p.inkSoft)),
+            const SizedBox(height: Space.m),
+            Row(
+              children: [
+                Expanded(
+                  child: OutlinedButton.icon(
+                    style: _compact,
+                    onPressed: () => showPlanDaySheet(context, day: day),
+                    icon: const Icon(LucideIcons.listChecks, size: 18),
+                    label: const OneLine('Plan my day'),
+                  ),
+                ),
+                const SizedBox(width: Space.s),
+                Expanded(
+                  child: OutlinedButton.icon(
+                    style: _compact,
+                    onPressed: () => context.push('/me/body'),
+                    icon: const Icon(LucideIcons.target, size: 18),
+                    label: const OneLine('Set targets'),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      );
+    }
+
     final plannedProtein = planned.proteinG.value;
     return AppCard(
       padding: const EdgeInsets.all(Space.l),
@@ -362,6 +401,22 @@ class _Summary extends StatelessWidget {
       ),
     );
   }
+}
+
+/// A menu item with a neutral icon and a label.
+class _MenuRow extends StatelessWidget {
+  const _MenuRow(this.icon, this.label);
+  final IconData icon;
+  final String label;
+
+  @override
+  Widget build(BuildContext context) => Row(
+    children: [
+      Icon(icon, size: IconSizes.s, color: context.pal.inkSoft),
+      const SizedBox(width: Space.m),
+      Text(label),
+    ],
+  );
 }
 
 class _Timeline extends ConsumerWidget {

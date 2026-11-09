@@ -123,10 +123,12 @@ class _WorkoutTab extends ConsumerWidget {
         // (launch review, 2026-10-10).
         if (s.sessions.isEmpty && records.isEmpty) ...[
           const SizedBox(height: Space.m),
-          const EmptyState(
-            icon: LucideIcons.chartLine,
-            title: 'Your progress shows here',
-            body: 'Finish one workout to see how much you lifted, your hard sets, and your best lifts.',
+          // The next step and a way to take it, not an icon and a slogan
+          // (handbook 3.16; HIG writing: clear next steps on blank screens).
+          EmptyState(
+            title: 'Finish a workout to see your lifts',
+            body: 'Weight lifted, hard sets, and best lifts show here.',
+            action: FilledButton(onPressed: () => context.go('/workout'), child: const Text('Open Workout')),
           ),
         ] else ...[
           const SizedBox(height: Space.m),

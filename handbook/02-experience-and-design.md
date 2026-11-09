@@ -2,7 +2,7 @@
 title: Screens, design system, and motion
 status: proposed
 owner: product-design
-updated: 2026-10-09
+updated: 2026-11-09
 ---
 
 # Section 3: Screens, design system, and motion
@@ -334,13 +334,23 @@ A screen made by a model without taste tends to look the same everywhere: sparkl
 | Guide cue text | "Time! Set done" | "Time. Set done" (the spoken clip is unchanged) |
 | Live workout clock | Hand-set font size 48 | Theme `displayLarge` |
 
+### Found and fixed on 2026-11-09 (platform design audit)
+
+See [the platform design audit](reviews/2026-11-09-platform-design-audit.md).
+
+| Where | Pattern | Fix |
+|---|---|---|
+| Meal header | Three round icon-only buttons | Date button, and one **More** menu with labelled **Targets** and **Meal times** |
+| Meal | Floating "Add food" covered the timeline and repeated each meal's add row | Removed; each meal's row adds food |
+| Meal, empty day without targets | Six rows of dashes | "Nothing logged", **Plan my day**, **Set targets** |
+| Home, before the first food | Four empty rings with dashes | "Nothing logged today" and **Log food** |
+| Analytics empty state | Icon in a circle + "Your progress shows here" | "Finish a workout to see your lifts" and **Open Workout** |
+| Android back | No predictive back preview | `enableOnBackInvokedCallback` on |
+
 ### Found, not changed yet (review before Play)
 
-- Meal header: three round icon-only buttons (targets, settings, calendar). Add labels or move two into a menu.
-- Meal: the floating "Add food" button covers the timeline and repeats each slot's "+".
-- Home and Meal: four empty rings with a dash before any food is logged. The dash is right (missing is not zero), but four empty rings are noise; consider one line, "Nothing logged today", until the first entry.
-- Analytics empty state: icon in a circle + "Your progress shows here". Replace with the next step ("Finish a workout to see your lifts") and a button.
-- Settings screens still carry a `StatusLine` footnote under most cards (54 in the app). Keep only the ones a user needs before acting.
+- Settings screens still carry a `StatusLine` footnote under most cards (54 in the app). Keep only the ones a user needs before acting. Android's settings guide: secondary text shows the current value, not a description.
+- Android uses the iOS alert dialog and page slide (D-023). The platform audit proposes Material dialogs and the predictive-back transition on Android only. **Proposed.**
 
 ## 3.17 AI context
 

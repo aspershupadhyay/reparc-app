@@ -14,6 +14,7 @@ Before you change code, data, design, or project rules:
 8. Read handbook/16-production-and-app-updates.md before changing CI, release automation, signing, update checks, or store delivery.
 9. Read the launch review, handbook/reviews/2026-10-10-launch-review/index.html, before planning Play Store work, onboarding, food data, the body map, or other UX polish. It holds findings from a phone test and market research, with proposals. It is not a set of accepted decisions: treat its proposals as **Proposed** until the owner accepts them.
 10. Read the competitor review, handbook/reviews/2026-11-08-competitor-review.md, before planning food search, barcode scanning, import from other apps, exercise media, or Play Store media licences. Its proposals are **Proposed**.
+11. Read the platform design audit, handbook/reviews/2026-11-09-platform-design-audit.md, before a UI change. To audit a screen against Apple's Human Interface Guidelines and Android's design guidance, use the skill in `.claude/skills/mobile-design-audit/` (it works in other projects too: copy the folder to `~/.claude/skills/`). Its proposals are **Proposed**.
 
 ## Repositories
 

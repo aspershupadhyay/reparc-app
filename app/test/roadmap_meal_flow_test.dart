@@ -143,11 +143,11 @@ void main() {
 
   testWidgets('Analytics has separate Workout and Meal tabs', (tester) async {
     await pumpApp(tester, at: '/analytics');
-    expect(find.text('Your progress shows here'), findsOneWidget);
+    expect(find.text('Finish a workout to see your lifts'), findsOneWidget);
     await tester.tap(find.bySemanticsLabel('Meal'));
     await tester.pumpAndSettle();
     expect(find.text('Daily average'), findsOneWidget);
-    expect(find.text('Your progress shows here'), findsNothing);
+    expect(find.text('Finish a workout to see your lifts'), findsNothing);
     await unmount(tester);
   });
 

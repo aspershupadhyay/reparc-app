@@ -32,6 +32,7 @@ This handbook plans an open-source fitness app for iPhone and Android. Its chose
 
 - [Launch review, 2026-10-10](reviews/2026-10-10-launch-review/index.html): Play Store readiness, design gaps, two data bugs found in a real workout, user pain points, and the open decisions. Findings and proposals only, not accepted decisions. Open the file in a browser.
 - [Competitor review, 2026-11-08](reviews/2026-11-08-competitor-review.md): RepArc against Hevy, MyFitnessPal, and openGym; the gaps; why people would switch; and the Play Store risk of the exercise photos, voice clips, and icons. Proposals only.
+- [Platform design audit, 2026-11-09](reviews/2026-11-09-platform-design-audit.md): the app against every page of Apple's Human Interface Guidelines and Android's design guidance, and Apple's WWDC26 design principles talk. Lists what was fixed and what is proposed. The method is the skill in `.claude/skills/mobile-design-audit/`.
 
 ## Supplied UI references
 
