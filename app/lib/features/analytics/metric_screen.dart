@@ -300,20 +300,12 @@ class _Body extends StatelessWidget {
       children: [
         Text(caption, style: t.bodySmall?.copyWith(color: p.inkSoft)),
         const SizedBox(height: Space.xs),
-        Row(
-          crossAxisAlignment: CrossAxisAlignment.end,
-          children: [
-            Flexible(
-              child: FittedBox(
-                fit: BoxFit.scaleDown,
-                alignment: Alignment.centerLeft,
-                child: Text(value == null ? '–' : format(value), style: t.displaySmall?.tabular),
-              ),
-            ),
-            const SizedBox(width: Space.m),
-            if (value != null && prev != null) _Change(now: value, before: prev, line: m.line, format: format),
-          ],
+        FittedBox(
+          fit: BoxFit.scaleDown,
+          alignment: Alignment.centerLeft,
+          child: Text(value == null ? '–' : format(value), style: t.displaySmall?.tabular),
         ),
+        if (value != null && prev != null) _Change(now: value, before: prev, line: m.line, format: format),
         const SizedBox(height: Space.l),
         AppCard(
           padding: const EdgeInsets.fromLTRB(Space.l, Space.m, Space.l, Space.l),
@@ -420,7 +412,7 @@ class _Change extends StatelessWidget {
         ? 'New'
         : '${diff > 0 ? '+' : '−'}${pct.abs().round()}%';
     return Padding(
-      padding: const EdgeInsets.only(bottom: Space.s),
+      padding: const EdgeInsets.only(top: Space.xs),
       child: Semantics(
         label: '$text against the period before',
         excludeSemantics: true,
@@ -437,8 +429,20 @@ class _Change extends StatelessWidget {
               color: p.inkSoft,
             ),
             const SizedBox(width: Space.xs),
-            Text(text, style: t.labelMedium),
-            Text(' vs before', style: t.bodySmall?.copyWith(color: p.inkSoft)),
+            Flexible(
+              child: Text.rich(
+                TextSpan(
+                  children: [
+                    TextSpan(text: text, style: t.labelMedium),
+                    TextSpan(
+                      text: ' vs the period before',
+                      style: t.bodySmall?.copyWith(color: p.inkSoft),
+                    ),
+                  ],
+                ),
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
           ],
         ),
       ),

@@ -126,7 +126,7 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('Steps'), findsWidgets);
     expect(find.text('Allow all'), findsNothing, reason: 'Not Me → Health apps');
-    expect(find.text('Day by day'), findsOneWidget);
+    expect(find.text('DAY BY DAY'), findsOneWidget);
     expect(find.text('6,161 steps'), findsWidgets, reason: 'The average over the 2 days with data');
     expect(find.textContaining('2 of 30 days'), findsOneWidget);
     await unmount(tester);
